@@ -51,8 +51,6 @@ export const router = createBrowserRouter([
       { path: 'upload/:registrationId', element: <SubmissionUpload /> },
       { path: 'growth', element: <StudentGrowth /> },
       { path: 'achievements/upload', element: <AchievementUpload /> },
-      { path: 'calendar', element: <StudentHome /> },
-      { path: 'works', element: <CompetitionsHub /> },
     ],
   },
   {

@@ -10,9 +10,7 @@ interface NavItem {
 const studentNav: NavItem[] = [
   { icon: 'space_dashboard', label: '工作台', path: '/student' },
   { icon: 'emoji_events', label: '赛事大厅', path: '/student/competitions' },
-  { icon: 'calendar_month', label: '赛事日历', path: '/student/calendar' },
   { icon: 'group_add', label: '招募大厅', path: '/student/teams' },
-  { icon: 'auto_awesome', label: '光荣榜', path: '/student/works' },
   { icon: 'assignment_ind', label: '我的参赛', path: '/student/registrations' },
   { icon: 'trending_up', label: '能力雷达', path: '/student/growth' },
   { icon: 'upload_file', label: '上传成果', path: '/student/achievements/upload' },

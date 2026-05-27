@@ -226,7 +226,7 @@ export default function StudentHome() {
         </motion.div>
       </section>
 
-      {/* Stepper */}
+      {/* Current Focus */}
       <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -236,50 +236,75 @@ export default function StudentHome() {
         <div className="flex items-center justify-between mb-lg flex-wrap gap-3">
           <div>
             <h2 className="text-[21px] font-semibold tracking-tight">当前聚焦</h2>
-            <p className="text-[15px] text-ink-muted-80 mt-1">全国大学生数学建模竞赛 · 初赛阶段</p>
+            {registrations.length > 0 ? (
+              <p className="text-[15px] text-ink-muted-80 mt-1">
+                {registrations[0].teamName || '我的团队'} · {registrations[0].status}
+              </p>
+            ) : (
+              <p className="text-[15px] text-ink-muted-80 mt-1">暂无进行中的赛事</p>
+            )}
           </div>
-          <span className="chip chip-primary">进行中</span>
+          {registrations.length > 0 && (
+            <span className={`chip ${
+              registrations[0].status === '审核通过' ? 'chip-success' :
+              registrations[0].status === '已提交' || registrations[0].status === '审核中' ? 'chip-primary' :
+              'chip-warning'
+            }`}>{registrations[0].status}</span>
+          )}
         </div>
 
-        <div className="grid grid-cols-4 gap-md relative">
-          <div className="absolute top-5 left-[12.5%] right-[12.5%] h-px bg-hairline" />
-          <div className="absolute top-5 left-[12.5%] w-[37.5%] h-px bg-primary" />
-          {[
-            { step: 1, title: '提交报名', status: 'done' },
-            { step: 2, title: '材料审核', status: 'done' },
-            { step: 3, title: '初赛评审', status: 'active' },
-            { step: 4, title: '决赛答辩', status: 'pending' },
-          ].map((s) => (
-            <div key={s.step} className="flex flex-col items-center text-center relative">
-              <div
-                className={`w-10 h-10 rounded-full grid place-items-center text-[14px] font-semibold relative z-10 ${
-                  s.status === 'done'
-                    ? 'bg-primary text-on-primary'
-                    : s.status === 'active'
-                    ? 'bg-canvas border-2 border-primary text-primary'
-                    : 'bg-canvas border border-hairline text-ink-muted-48'
-                }`}
-              >
-                {s.status === 'done' ? (
-                  <span className="material-symbols-outlined text-[18px]">check</span>
-                ) : (
-                  s.step
-                )}
+        {registrations.length > 0 ? (
+          <div className="grid grid-cols-4 gap-md relative">
+            <div className="absolute top-5 left-[12.5%] right-[12.5%] h-px bg-hairline" />
+            <div className="absolute top-5 left-[12.5%] w-[37.5%] h-px bg-primary" />
+            {[
+              { step: 1, title: '提交报名', status: 'done' },
+              { step: 2, title: '材料审核', status: registrations[0].status === '待完善' ? 'active' : 'done' },
+              { step: 3, title: '作品评审', status: registrations[0].status === '已提交' || registrations[0].status === '审核中' ? 'active' : registrations[0].status === '审核通过' ? 'done' : 'pending' },
+              { step: 4, title: '完成', status: registrations[0].status === '审核通过' ? 'active' : 'pending' },
+            ].map((s) => (
+              <div key={s.step} className="flex flex-col items-center text-center relative">
+                <div
+                  className={`w-10 h-10 rounded-full grid place-items-center text-[14px] font-semibold relative z-10 ${
+                    s.status === 'done'
+                      ? 'bg-primary text-on-primary'
+                      : s.status === 'active'
+                      ? 'bg-canvas border-2 border-primary text-primary'
+                      : 'bg-canvas border border-hairline text-ink-muted-48'
+                  }`}
+                >
+                  {s.status === 'done' ? (
+                    <span className="material-symbols-outlined text-[18px]">check</span>
+                  ) : (
+                    s.step
+                  )}
+                </div>
+                <div
+                  className={`mt-3 text-[14px] ${
+                    s.status === 'pending'
+                      ? 'text-ink-muted-48'
+                      : s.status === 'active'
+                      ? 'text-primary font-semibold'
+                      : 'text-ink font-medium'
+                  }`}
+                >
+                  {s.title}
+                </div>
               </div>
-              <div
-                className={`mt-3 text-[14px] ${
-                  s.status === 'pending'
-                    ? 'text-ink-muted-48'
-                    : s.status === 'active'
-                    ? 'text-primary font-semibold'
-                    : 'text-ink font-medium'
-                }`}
-              >
-                {s.title}
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <span className="material-symbols-outlined text-[40px] text-ink-muted-48">emoji_events</span>
+            <p className="text-[14px] text-ink-muted-48 mt-2">还没有报名赛事</p>
+            <button
+              onClick={() => navigate('/student/competitions')}
+              className="btn-primary mt-4 !py-1.5 !text-[13px]"
+            >
+              去报名赛事
+            </button>
+          </div>
+        )}
       </motion.section>
     </div>
   );
