@@ -71,6 +71,7 @@ export const router = createBrowserRouter([
       { index: true, element: <AdminHome /> },
       { path: 'competitions', element: <CompetitionsHub /> },
       { path: 'publish', element: <CompetitionPublish /> },
+      { path: 'publish/:id', element: <CompetitionPublish /> },
       { path: 'works', element: <ExcellentWorks /> },
       { path: 'audit', element: <SubmissionAudit /> },
     ],

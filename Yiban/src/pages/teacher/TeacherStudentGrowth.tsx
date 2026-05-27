@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import CascadeFilter, { type FilterValues } from '../../components/CascadeFilter';
 
 function ExportButton() {
   const [exporting, setExporting] = useState(false);
@@ -156,6 +157,11 @@ export default function TeacherStudentGrowth() {
   const [loadingGrowth, setLoadingGrowth] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState<FilterValues>({});
+
+  const handleFilterChange = useCallback((f: FilterValues) => {
+    setFilters(f);
+  }, []);
 
   // Load supervised student list
   useEffect(() => {
@@ -163,9 +169,12 @@ export default function TeacherStudentGrowth() {
     const loadStudents = async () => {
       setLoadingList(true);
       try {
-        const data: any = await apiClient.get('/teacher/monitor/registrations', {
-          params: { current: 1, size: 200 },
-        });
+        const params: Record<string, any> = { current: 1, size: 200 };
+        if (filters.college) params.college = filters.college;
+        if (filters.grade) params.grade = filters.grade;
+        if (filters.major) params.major = filters.major;
+        if (filters.className) params.className = filters.className;
+        const data: any = await apiClient.get('/teacher/monitor/registrations', { params });
         if (cancelled) return;
         const records: any[] = Array.isArray(data) ? data : data?.records ?? [];
         const map = new Map<string, SupervisedStudent>();
@@ -194,7 +203,7 @@ export default function TeacherStudentGrowth() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [filters]);
 
   // Load growth for selected student
   useEffect(() => {
@@ -275,6 +284,9 @@ export default function TeacherStudentGrowth() {
           </>
         )}
       />
+
+      {/* Filters */}
+      <CascadeFilter onChange={handleFilterChange} />
 
       {/* KPIs */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">

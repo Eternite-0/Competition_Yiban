@@ -43,6 +43,12 @@ public class CompetitionServiceImpl extends ServiceImpl<CompetitionMapper, Compe
         } else {
             vo.setTags(new ArrayList<>());
         }
+        String tracks = c.getTracks();
+        if (StrUtil.isNotBlank(tracks) && JSONUtil.isTypeJSON(tracks)) {
+            vo.setTracks(JSONUtil.toList(tracks, String.class));
+        } else {
+            vo.setTracks(new ArrayList<>());
+        }
         return vo;
     }
 

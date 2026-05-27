@@ -185,18 +185,20 @@ export default function SubmissionAudit() {
       const regRecords: any[] = Array.isArray(regData) ? regData : regData?.records ?? [];
       const subRecords: any[] = Array.isArray(subData) ? subData : subData?.records ?? [];
 
-      // Map registrations
-      const fromRegs: Submission[] = regRecords.map((item: any) => ({
-        id: `reg-${item.id ?? item.registrationId}`,
-        studentName: item.studentName ?? (item.studentId != null ? `学号 ${item.studentId}` : '未知学生'),
-        competitionTitle: item.competitionName ?? item.competitionTitle ?? (item.competitionId != null ? `赛事 #${item.competitionId}` : '未知赛事'),
-        fileName: item.fileName ?? (item.teamName ? `团队：${item.teamName}` : '—'),
-        fileUrl: item.fileUrl ?? '',
-        fileSize: item.fileSize,
-        uploadDate: item.uploadDate ?? item.submitDate ?? '',
-        status: '待审核',
-        source: 'registration' as const,
-      }));
+      // Map registrations — only those with uploaded files (status 审核中)
+      const fromRegs: Submission[] = regRecords
+        .filter((item: any) => item.status === '审核中')
+        .map((item: any) => ({
+          id: `reg-${item.id ?? item.registrationId}`,
+          studentName: item.studentName ?? (item.studentId != null ? `学号 ${item.studentId}` : '未知学生'),
+          competitionTitle: item.competitionName ?? item.competitionTitle ?? (item.competitionId != null ? `赛事 #${item.competitionId}` : '未知赛事'),
+          fileName: item.fileName ?? (item.teamName ? `团队：${item.teamName}` : '—'),
+          fileUrl: item.fileUrl ?? '',
+          fileSize: item.fileSize,
+          uploadDate: item.uploadDate ?? item.submitDate ?? '',
+          status: '待审核',
+          source: 'registration' as const,
+        }));
 
       // Map standalone submissions (only those without registration)
       const fromSubs: Submission[] = subRecords
@@ -274,6 +276,13 @@ export default function SubmissionAudit() {
     }
   };
 
+  const handleReturnForSupplement = () => {
+    if (!note.trim()) {
+      toast.error('退回补充时必须填写需要补充的内容');
+      return;
+    }
+    handleAudit(false, `【退回补充】${note}`);
+  };
   const handleApprove = () => handleAudit(true, note || '');
   const handleReject = () => {
     if (!note.trim()) {
@@ -478,7 +487,7 @@ export default function SubmissionAudit() {
                     同步发送站内消息
                   </label>
                   <div className="flex gap-2">
-                    <button className="btn-secondary !py-2 !text-[13px]">退回补充</button>
+                    <button className="btn-secondary !py-2 !text-[13px]" onClick={handleReturnForSupplement}>退回补充</button>
                     <button
                       className="!py-2 !text-[13px] !px-5 rounded-pill bg-error/10 text-error border border-error/20 font-medium hover:bg-error/15 transition flex items-center gap-2 active:scale-[0.96]"
                       onClick={handleReject}

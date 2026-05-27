@@ -17,4 +17,5 @@ public class User {
     private String college;
     private String major;
     private String className;
+    private String grade;
 }

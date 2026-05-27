@@ -9,7 +9,7 @@ export interface User {
   studentId?: string;
 }
 
-export type CompetitionLevel = '国家级' | '省级' | '校级';
+export type CompetitionLevel = '国家级' | '省级' | '校级' | '院级';
 export type CompetitionCategory = 'A' | 'B' | 'C';
 export type CompetitionStatus = '报名中' | '进行中' | '已结束' | '即将截止';
 

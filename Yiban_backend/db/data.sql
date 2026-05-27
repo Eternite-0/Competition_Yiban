@@ -17,26 +17,35 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- 1. 用户表数据 (User)
 -- ----------------------------
 -- 密码均为: 123456
-INSERT INTO `user` (`id`, `username`, `password`, `real_name`, `role`, `college`, `major`, `class_name`) VALUES
+INSERT INTO `user` (`id`, `username`, `password`, `real_name`, `role`, `college`, `major`, `class_name`, `grade`) VALUES
 -- 管理员
-(1, 'admin', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '系统管理员', 'admin', '系统管理中心', NULL, NULL),
+(1, 'admin', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '系统管理员', 'admin', '系统管理中心', NULL, NULL, NULL),
 -- 教师/辅导员
-(2, 'teacher1', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '王辅导员', 'teacher', '计算机学院', NULL, NULL),
-(3, 'teacher2', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '徐教授', 'teacher', '电子学院', NULL, NULL),
--- 学生组 - 计算机学院 (学号前缀 202301)
-(4, '20230101', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '张三', 'student', '计算机学院', '软件工程', '软工2301'),
-(5, '20230102', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '李四', 'student', '计算机学院', '计算机科学与技术', '计科2302'),
-(6, '20230103', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '王五', 'student', '计算机学院', '软件工程', '软工2301'),
-(7, '20230104', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '赵六', 'student', '计算机学院', '人工智能', '智科2301'),
--- 学生组 - 电子学院 (学号前缀 202302)
-(8, '20230201', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '陈七', 'student', '电子学院', '电子信息工程', '电信2301'),
-(9, '20230202', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '刘八', 'student', '电子学院', '通信工程', '通信2302'),
--- 学生组 - 商学院 (学号前缀 202303)
-(10, '20230301', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '钱九', 'student', '商学院', '工商管理', '工商2301'),
-(11, '20230302', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '孙十', 'student', '商学院', '市场营销', '营销2301'),
--- 学生组 - 设计学院 (学号前缀 202304)
-(12, '20230401', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '周十一', 'student', '设计学院', '工业设计', '工设2301'),
-(13, '20230402', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '吴十二', 'student', '设计学院', '视觉传达设计', '视传2302');
+(2, 'teacher1', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '王辅导员', 'teacher', '计算机学院', NULL, NULL, NULL),
+(3, 'teacher2', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '徐教授', 'teacher', '电子学院', NULL, NULL, NULL),
+-- 学生组 - 计算机学院 - 2023级
+(4, '20230101', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '张三', 'student', '计算机学院', '软件工程', '软工2301', '2023'),
+(5, '20230102', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '李四', 'student', '计算机学院', '计算机科学与技术', '计科2302', '2023'),
+(6, '20230103', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '王五', 'student', '计算机学院', '软件工程', '软工2301', '2023'),
+(7, '20230104', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '赵六', 'student', '计算机学院', '人工智能', '智科2301', '2023'),
+-- 学生组 - 计算机学院 - 2022级
+(14, '20220101', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '郑十三', 'student', '计算机学院', '软件工程', '软工2201', '2022'),
+(15, '20220102', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '冯十四', 'student', '计算机学院', '计算机科学与技术', '计科2201', '2022'),
+-- 学生组 - 计算机学院 - 2024级
+(16, '20240101', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '韩十五', 'student', '计算机学院', '软件工程', '软工2401', '2024'),
+-- 学生组 - 电子学院 - 2023级
+(8, '20230201', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '陈七', 'student', '电子学院', '电子信息工程', '电信2301', '2023'),
+(9, '20230202', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '刘八', 'student', '电子学院', '通信工程', '通信2302', '2023'),
+-- 学生组 - 电子学院 - 2022级
+(17, '20220201', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '曹十六', 'student', '电子学院', '电子信息工程', '电信2201', '2022'),
+-- 学生组 - 商学院 - 2023级
+(10, '20230301', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '钱九', 'student', '商学院', '工商管理', '工商2301', '2023'),
+(11, '20230302', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '孙十', 'student', '商学院', '市场营销', '营销2301', '2023'),
+-- 学生组 - 设计学院 - 2023级
+(12, '20230401', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '周十一', 'student', '设计学院', '工业设计', '工设2301', '2023'),
+(13, '20230402', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '吴十二', 'student', '设计学院', '视觉传达设计', '视传2302', '2023'),
+-- 学生组 - 设计学院 - 2024级
+(18, '20240401', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '孟十七', 'student', '设计学院', '视觉传达设计', '视传2401', '2024');
 
 -- ----------------------------
 -- 2. 赛事/竞赛表数据 (Competition)
@@ -75,7 +84,15 @@ INSERT INTO `registration` (`id`, `competition_id`, `student_id`, `team_name`, `
 -- 艺术设计大赛 报名
 (16, 5, 12, '匠心视界队', '审核通过', '2026-05-15 08:30:00'),
 (17, 5, 13, '匠心视界队', '审核通过', '2026-05-15 09:15:00'),
-(18, 5, 6, '匠心视界队', '审核通过', '2026-05-15 10:02:00');
+(18, 5, 6, '匠心视界队', '审核通过', '2026-05-15 10:02:00'),
+-- 2022级学生报名
+(19, 3, 14, NULL, '审核通过', '2026-05-18 09:00:00'),
+(20, 3, 15, NULL, '审核通过', '2026-05-18 10:30:00'),
+(21, 4, 14, '先锋建模组', '审核通过', '2026-05-26 08:00:00'),
+(22, 4, 17, '电磁先锋组', '审核通过', '2026-05-26 09:00:00'),
+-- 2024级学生报名
+(23, 3, 16, NULL, '已提交', '2026-05-22 16:00:00'),
+(24, 5, 18, '视界新星队', '审核中', '2026-05-20 14:00:00');
 
 -- ----------------------------
 -- 4. 组队大厅招募贴数据 (TeamPost)

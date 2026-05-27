@@ -151,6 +151,18 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
             msg.setCreateTime(LocalDateTime.now());
             messageService.save(msg);
         }
+
+        // Sync linked submission status so it doesn't stay "待审核" forever
+        List<Submission> linkedSubs = submissionService.list(
+                new LambdaQueryWrapper<Submission>().eq(Submission::getRegistrationId, id));
+        for (Submission sub : linkedSubs) {
+            if ("待审核".equalsIgnoreCase(sub.getStatus())) {
+                sub.setStatus("已审核");
+                sub.setApproved(Boolean.TRUE.equals(approve));
+                sub.setReviewNote(reviewNote);
+                submissionService.updateById(sub);
+            }
+        }
     }
 
     @Override
@@ -211,6 +223,8 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
                 vo.setFileName(sub.getFileName());
                 vo.setFileUrl(sub.getFileUrl());
                 vo.setFileSize(sub.getFileSize());
+                vo.setReviewNote(sub.getReviewNote());
+                vo.setApproved(sub.getApproved());
             }
             return vo;
         }).collect(Collectors.toList());

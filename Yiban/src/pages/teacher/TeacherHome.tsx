@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import { useStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
+import CascadeFilter, { type FilterValues } from '../../components/CascadeFilter';
 
 interface DashboardStats {
   totalStudents?: number;
@@ -29,14 +30,25 @@ export default function TeacherHome() {
   const [stats, setStats] = useState<DashboardStats>({});
   const [pending, setPending] = useState<PendingItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<FilterValues>({});
+
+  const handleFilterChange = useCallback((f: FilterValues) => {
+    setFilters(f);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       setLoading(true);
       try {
+        const filterParams: Record<string, any> = {};
+        if (filters.college) filterParams.college = filters.college;
+        if (filters.grade) filterParams.grade = filters.grade;
+        if (filters.major) filterParams.major = filters.major;
+        if (filters.className) filterParams.className = filters.className;
+
         const [dash, pendingPage] = await Promise.all([
-          apiClient.get('/teacher/dashboard').catch((e) => {
+          apiClient.get('/teacher/dashboard', { params: filterParams }).catch((e) => {
             console.error('dashboard failed', e);
             return {} as DashboardStats;
           }),
@@ -67,7 +79,7 @@ export default function TeacherHome() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [filters]);
 
   const metrics = [
     { label: '待审核数', value: String(stats.pendingReviews ?? 0), suffix: '', icon: 'pending_actions' },
@@ -95,6 +107,9 @@ export default function TeacherHome() {
           </>
         )}
       />
+
+      {/* Filters */}
+      <CascadeFilter onChange={handleFilterChange} />
 
       {/* Metrics */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-md">

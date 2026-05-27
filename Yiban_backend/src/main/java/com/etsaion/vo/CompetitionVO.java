@@ -19,6 +19,7 @@ public class CompetitionVO {
     private String coverUrl;
     private String content;
     private List<String> tags;
+    private List<String> tracks;
     private String status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;

@@ -14,6 +14,8 @@ type Registration = {
   teamName?: string;
   status: string;
   submitDate?: string;
+  reviewNote?: string;
+  approved?: boolean;
 };
 
 // Backend statuses: 待完善 / 已提交 / 审核中 / 审核通过 / 审核驳回
@@ -118,7 +120,10 @@ export default function MyRegistrations() {
               </div>
             ) : (
               filtered.map((reg, i) => {
-                const statusInfo = STATUS_CHIP[reg.status] || { label: reg.status || '未知', chip: 'chip' };
+                const isReturnForSupplement = reg.status === '审核驳回' && reg.reviewNote?.startsWith('【退回补充】');
+                const statusInfo = isReturnForSupplement
+                  ? { label: '需补充', chip: 'chip chip-warning' }
+                  : STATUS_CHIP[reg.status] || { label: reg.status || '未知', chip: 'chip' };
                 const isPendingCompletion = reg.status === '待完善';
                 const compName = reg.competitionName || `赛事 #${reg.competitionId}`;
 
@@ -162,6 +167,26 @@ export default function MyRegistrations() {
                       />
                     </div>
 
+                    {reg.status === '审核驳回' && reg.reviewNote && (() => {
+                      const isReturn = reg.reviewNote.startsWith('【退回补充】');
+                      const displayNote = isReturn ? reg.reviewNote.replace('【退回补充】', '') : reg.reviewNote;
+                      return (
+                        <div className={`rounded-md p-3 mb-md ${isReturn ? 'bg-warning/5 border border-warning/15' : 'bg-error/5 border border-error/15'}`}>
+                          <div className="flex items-start gap-2">
+                            <span className={`material-symbols-outlined text-[16px] mt-0.5 shrink-0 ${isReturn ? 'text-warning' : 'text-error'}`}>
+                              {isReturn ? 'assignment_return' : 'info'}
+                            </span>
+                            <div>
+                              <p className={`text-[12px] font-medium mb-0.5 ${isReturn ? 'text-warning' : 'text-error'}`}>
+                                {isReturn ? '需要补充材料' : '驳回原因'}
+                              </p>
+                              <p className="text-[13px] text-ink">{displayNote}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
                     <div className="flex justify-end gap-2 pt-3 border-t border-hairline">
                       <button
                         className="btn-secondary !py-2 !text-[13px]"
@@ -182,8 +207,10 @@ export default function MyRegistrations() {
                           className="btn-primary !py-2 !text-[13px]"
                           onClick={() => navigate(`/student/upload/${reg.id}`)}
                         >
-                          <span className="material-symbols-outlined text-[16px]">refresh</span>
-                          重新提交
+                          <span className="material-symbols-outlined text-[16px]">
+                            {reg.reviewNote?.startsWith('【退回补充】') ? 'assignment_return' : 'refresh'}
+                          </span>
+                          {reg.reviewNote?.startsWith('【退回补充】') ? '补充材料' : '重新提交'}
                         </button>
                       ) : (
                         <button

@@ -25,6 +25,7 @@ public class Competition {
     private String content; // 富文本赛事简介/要求
     private String organizer; // 主办单位
     private String tags; // JSON-encoded array of tag strings, e.g. ["AI","学科竞赛"]
+    private String tracks; // JSON-encoded array of track strings, e.g. ["软件开发","AI大模型"]
     private String status; // draft/published/closed
 
     @TableField(fill = FieldFill.INSERT)

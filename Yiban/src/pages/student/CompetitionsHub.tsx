@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
+import { useStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
 
 type BackendCompetition = {
@@ -77,6 +78,8 @@ function formatDate(value?: string) {
 
 export default function CompetitionsHub() {
   const navigate = useNavigate();
+  const currentUser = useStore((s) => s.currentUser);
+  const isAdmin = currentUser?.role === 'admin';
   const [competitions, setCompetitions] = useState<BackendCompetition[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -201,7 +204,7 @@ export default function CompetitionsHub() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03, duration: 0.35 }}
                 >
-                  <CompetitionCard comp={comp} navigate={navigate} />
+                  <CompetitionCard comp={comp} navigate={navigate} isAdmin={isAdmin} />
                 </motion.div>
               ))}
             </div>
@@ -272,7 +275,7 @@ function Segmented({
   );
 }
 
-function CompetitionCard({ comp, navigate }: { comp: BackendCompetition; navigate: ReturnType<typeof useNavigate> }) {
+function CompetitionCard({ comp, navigate, isAdmin }: { comp: BackendCompetition; navigate: ReturnType<typeof useNavigate>; isAdmin: boolean }) {
   return (
     <div className="glass overflow-hidden flex flex-col h-full transition-all hover:border-primary/25">
       {/* Cover */}
@@ -319,17 +322,19 @@ function CompetitionCard({ comp, navigate }: { comp: BackendCompetition; navigat
 
         <div className="flex gap-2 mt-auto">
           <button
-            onClick={() => navigate(`/student/competitions/${comp.id}`)}
+            onClick={() => navigate(isAdmin ? `/admin/publish/${comp.id}` : `/student/competitions/${comp.id}`)}
             className="btn-secondary flex-1 !py-2 !text-[13px]"
           >
-            详情
+            {isAdmin ? '编辑' : '详情'}
           </button>
-          <button
-            onClick={() => navigate(`/student/registrations/workbench/${comp.id}`)}
-            className="btn-primary flex-1 !py-2 !text-[13px]"
-          >
-            立即报名
-          </button>
+          {!isAdmin && (
+            <button
+              onClick={() => navigate(`/student/registrations/workbench/${comp.id}`)}
+              className="btn-primary flex-1 !py-2 !text-[13px]"
+            >
+              立即报名
+            </button>
+          )}
         </div>
       </div>
     </div>

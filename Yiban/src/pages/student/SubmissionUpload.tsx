@@ -13,6 +13,8 @@ type Registration = {
   teamName?: string;
   status: string;
   submitDate?: string;
+  reviewNote?: string;
+  approved?: boolean;
 };
 
 function formatDate(value?: string) {
@@ -34,7 +36,6 @@ export default function SubmissionUpload() {
   const [fileName, setFileName] = useState('');
   const [fileSize, setFileSize] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -181,6 +182,26 @@ export default function SubmissionUpload() {
         <div className="lg:col-span-8 flex flex-col gap-lg">
           {/* Basic Info */}
           <section className="glass p-xl">
+            {registration.status === '审核驳回' && registration.reviewNote && (() => {
+              const note = registration.reviewNote;
+              const isReturn = note.startsWith('【退回补充】');
+              const displayNote = isReturn ? note.replace('【退回补充】', '') : note;
+              return (
+                <div className={`rounded-md p-3 mb-md ${isReturn ? 'bg-warning/5 border border-warning/15' : 'bg-error/5 border border-error/15'}`}>
+                  <div className="flex items-start gap-2">
+                    <span className={`material-symbols-outlined text-[16px] mt-0.5 shrink-0 ${isReturn ? 'text-warning' : 'text-error'}`}>
+                      {isReturn ? 'assignment_return' : 'info'}
+                    </span>
+                    <div>
+                      <p className={`text-[12px] font-medium mb-0.5 ${isReturn ? 'text-warning' : 'text-error'}`}>
+                        {isReturn ? '请根据以下意见补充材料' : '上次驳回原因'}
+                      </p>
+                      <p className="text-[13px] text-ink">{displayNote}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
             <h3 className="text-[19px] font-semibold tracking-tight text-ink mb-md pb-md border-b border-hairline">基本信息</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
               <div className="flex flex-col gap-1.5 md:col-span-2">

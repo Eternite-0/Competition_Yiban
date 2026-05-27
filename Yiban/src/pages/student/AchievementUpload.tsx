@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import { uploadToQiniu } from '../../api/qiniu';
 import PageHero from '../../components/PageHero';
+import { useStore } from '../../store/useStore';
 
 interface Competition {
   id: number | string;
@@ -104,6 +105,8 @@ export default function AchievementUpload() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [currentUploadIdx, setCurrentUploadIdx] = useState(0);
 
+  const currentUser = useStore((s) => s.currentUser);
+
   // Load competitions
   useEffect(() => {
     apiClient.get('/competition/list', { params: { current: 1, size: 100, status: 'published' } })
@@ -113,6 +116,18 @@ export default function AchievementUpload() {
       })
       .catch(() => {});
   }, []);
+
+  // Auto-add current user as team member
+  useEffect(() => {
+    if (!currentUser) return;
+    const self: Student = {
+      id: Number(currentUser.id),
+      username: currentUser.studentId || '',
+      realName: currentUser.name,
+      college: currentUser.department,
+    };
+    setSelectedMembers([self]);
+  }, [currentUser]);
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -138,7 +153,7 @@ export default function AchievementUpload() {
     apiClient.get('/auth/search-students', { params: { keyword: keyword.trim() } })
       .then((data: any) => {
         const list: Student[] = Array.isArray(data) ? data : [];
-        setMemberResults(list.filter(s => !selectedMembers.some(m => m.id === s.id)));
+        setMemberResults(list.filter(s => !selectedMembers.some(m => m.id === s.id) && s.id !== Number(currentUser?.id)));
         setShowMemberDropdown(true);
       })
       .catch(() => setMemberResults([]))
@@ -371,7 +386,7 @@ export default function AchievementUpload() {
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">person_search</span>
               <input
                 className="input-glass h-11 pl-9 text-[14px]"
-                placeholder="输入学号或姓名搜索队友…"
+                placeholder="输入学号或姓名搜索其他队友…"
                 value={memberSearch}
                 onChange={(e) => handleMemberSearchChange(e.target.value)}
                 onFocus={() => { if (memberResults.length > 0) setShowMemberDropdown(true); }}
@@ -428,26 +443,34 @@ export default function AchievementUpload() {
             {/* Selected members list */}
             {selectedMembers.length > 0 ? (
               <div className="flex flex-col gap-2">
-                {selectedMembers.map(m => (
-                  <div key={m.id} className="rounded-md border border-hairline p-3 bg-canvas flex items-center justify-between group hover:border-primary/40 transition">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-primary/10 grid place-items-center text-primary text-[12px] font-semibold">
-                        {m.realName[0]}
+                {selectedMembers.map(m => {
+                  const isSelf = m.id === Number(currentUser?.id);
+                  return (
+                    <div key={m.id} className={`rounded-md border p-3 bg-canvas flex items-center justify-between group transition ${isSelf ? 'border-primary/30 bg-primary/3' : 'border-hairline hover:border-primary/40'}`}>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-full grid place-items-center text-[12px] font-semibold ${isSelf ? 'bg-primary/20 text-primary' : 'bg-primary/10 text-primary'}`}>
+                          {m.realName[0]}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-[14px] font-medium text-ink">{m.realName}</p>
+                            {isSelf && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium">我</span>}
+                          </div>
+                          <p className="text-[11px] text-ink-muted-48">{m.username} · {m.college}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[14px] font-medium text-ink">{m.realName}</p>
-                        <p className="text-[11px] text-ink-muted-48">{m.username} · {m.college}</p>
-                      </div>
+                      {!isSelf && (
+                        <button
+                          onClick={() => removeMember(m.id)}
+                          className="text-ink-muted-48 hover:text-primary p-2 rounded-md hover:bg-primary/6 transition opacity-0 group-hover:opacity-100"
+                          title="移除"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">close</span>
+                        </button>
+                      )}
                     </div>
-                    <button
-                      onClick={() => removeMember(m.id)}
-                      className="text-ink-muted-48 hover:text-primary p-2 rounded-md hover:bg-primary/6 transition opacity-0 group-hover:opacity-100"
-                      title="移除"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">close</span>
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-6 text-ink-muted-48">

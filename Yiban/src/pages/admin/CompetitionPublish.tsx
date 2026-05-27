@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
-import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRef, useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '../../api/client';
 import type { CompetitionLevel, CompetitionCategory } from '../../types';
 import PageHero from '../../components/PageHero';
@@ -17,10 +17,9 @@ interface PublishFormState {
   description: string;
   detailContent: string;
   tags: string;
-  openTeam: boolean;
-  showExcellent: boolean;
   coverUrl: string;
   maxTeamSize: number;
+  tracks: string[];
 }
 
 interface UploadResponse {
@@ -29,23 +28,20 @@ interface UploadResponse {
   fileSize: number;
 }
 
-// Map the form state to the backend EventPublishDTO shape.
-// Backend expects: name, level, category, startTime, endTime,
-// competitionStart, competitionEnd, maxTeamSize, coverUrl, content, status.
-const toPublishPayload = (
-  form: PublishFormState,
-  status: 'draft' | 'published'
-) => ({
+const toPublishPayload = (form: PublishFormState, status: 'draft' | 'published') => ({
   name: form.title,
   level: form.level || '校级',
   category: form.category || 'A',
-  startTime: form.regStart,
-  endTime: form.regEnd,
-  competitionStart: form.compStart,
-  competitionEnd: form.compEnd,
+  organizer: form.organizer,
+  startTime: form.regStart || null,
+  endTime: form.regEnd || null,
+  competitionStart: form.compStart || null,
+  competitionEnd: form.compEnd || null,
   maxTeamSize: form.maxTeamSize,
   coverUrl: form.coverUrl,
   content: form.detailContent || form.description,
+  tags: form.tags ? form.tags.split(/[,，]/).map((t) => t.trim()).filter(Boolean) : [],
+  tracks: form.tracks,
   status,
 });
 
@@ -53,6 +49,7 @@ const levelOptions: { value: CompetitionLevel; label: string }[] = [
   { value: '国家级', label: '国家级' },
   { value: '省级', label: '省级' },
   { value: '校级', label: '校级' },
+  { value: '院级', label: '院级' },
 ];
 
 const categoryOptions: { value: CompetitionCategory; label: string }[] = [
@@ -61,33 +58,82 @@ const categoryOptions: { value: CompetitionCategory; label: string }[] = [
   { value: 'C', label: '文化艺术' },
 ];
 
-const tracks = ['AI 与大数据', '软件开发', '硬件创新', '创业实践', '学术论文'];
+const defaultForm: PublishFormState = {
+  title: '',
+  level: '',
+  category: '',
+  organizer: '',
+  regStart: '',
+  regEnd: '',
+  compStart: '',
+  compEnd: '',
+  description: '',
+  detailContent: '',
+  tags: '',
+  coverUrl: '',
+  maxTeamSize: 5,
+  tracks: [],
+};
+
+const defaultTracks = ['软件开发', 'AI 大模型', '数字媒体', '硬件创新', '学术论文', '创业实践'];
+
+function formatDateForInput(value?: string) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return '';
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 export default function CompetitionPublish() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const isEdit = !!id;
 
-  const [form, setForm] = useState<PublishFormState>({
-    title: '',
-    level: '',
-    category: '',
-    organizer: '',
-    regStart: '',
-    regEnd: '',
-    compStart: '',
-    compEnd: '',
-    description: '',
-    detailContent: '',
-    tags: '',
-    openTeam: true,
-    showExcellent: false,
-    coverUrl: '',
-    maxTeamSize: 5,
-  });
-
+  const [form, setForm] = useState<PublishFormState>({ ...defaultForm });
   const [errors, setErrors] = useState<Partial<Record<keyof PublishFormState, string>>>({});
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(isEdit);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Load existing competition data when editing
+  useEffect(() => {
+    if (!id) return;
+    const load = async () => {
+      try {
+        setPageLoading(true);
+        const data: any = await apiClient.get(`/competition/detail/${id}`);
+        if (!data) {
+          toast.error('赛事不存在');
+          navigate('/admin');
+          return;
+        }
+        setForm({
+          title: data.name || '',
+          level: data.level || '',
+          category: data.category || '',
+          organizer: data.organizer || '',
+          regStart: formatDateForInput(data.startTime),
+          regEnd: formatDateForInput(data.endTime),
+          compStart: formatDateForInput(data.competitionStart),
+          compEnd: formatDateForInput(data.competitionEnd),
+          description: data.content || '',
+          detailContent: '',
+          tags: Array.isArray(data.tags) ? data.tags.join(', ') : '',
+          coverUrl: data.coverUrl || '',
+          maxTeamSize: data.maxTeamSize || 5,
+          tracks: Array.isArray(data.tracks) ? data.tracks : [],
+        });
+      } catch (err) {
+        console.error('Failed to load competition', err);
+        toast.error('加载赛事信息失败');
+        navigate('/admin');
+      } finally {
+        setPageLoading(false);
+      }
+    };
+    load();
+  }, [id, navigate]);
 
   const updateField = <K extends keyof PublishFormState>(field: K, value: PublishFormState[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -100,6 +146,15 @@ export default function CompetitionPublish() {
     }
   };
 
+  const toggleTrack = (track: string) => {
+    setForm((prev) => ({
+      ...prev,
+      tracks: prev.tracks.includes(track)
+        ? prev.tracks.filter((t) => t !== track)
+        : [...prev.tracks, track],
+    }));
+  };
+
   const validate = (): boolean => {
     const errs: Partial<Record<keyof PublishFormState, string>> = {};
     if (!form.title.trim()) errs.title = '请输入赛事名称';
@@ -108,42 +163,29 @@ export default function CompetitionPublish() {
     if (!form.organizer.trim()) errs.organizer = '请输入主办单位';
     if (!form.regStart || !form.regEnd) errs.regStart = '请填写报名时间';
     if (!form.compStart || !form.compEnd) errs.compStart = '请填写比赛时间';
-    if (!form.description.trim()) errs.description = '请输入赛事简介';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
-  const handlePublish = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
+  const handleSubmit = async (status: 'draft' | 'published') => {
+    if (status === 'published' && !validate()) return;
     setLoading(true);
     try {
-      await apiClient.post('/competition/admin/publish', toPublishPayload(form, 'published'));
-      toast.success('发布成功');
-      navigate('/admin/competitions');
+      const payload = toPublishPayload(
+        status === 'draft' ? { ...form, title: form.title || '未命名赛事', level: form.level || '校级', category: form.category || 'A' } : form,
+        status
+      );
+      if (isEdit) {
+        await apiClient.put(`/competition/admin/update/${id}`, payload);
+        toast.success('更新成功');
+      } else {
+        await apiClient.post('/competition/admin/publish', payload);
+        toast.success(status === 'draft' ? '已保存为草稿' : '发布成功');
+      }
+      navigate('/admin');
     } catch (error) {
-      console.error('Publish error:', error);
-      toast.error('发布失败，请检查网络或联系管理员');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveDraft = async () => {
-    setLoading(true);
-    try {
-      const draftForm: PublishFormState = {
-        ...form,
-        title: form.title || '未命名赛事',
-        level: form.level || '校级',
-        category: form.category || 'A',
-      };
-      await apiClient.post('/competition/admin/publish', toPublishPayload(draftForm, 'draft'));
-      toast.success('已保存为草稿');
-      navigate('/admin/competitions');
-    } catch (error) {
-      console.error('Save draft error:', error);
-      toast.error('保存失败');
+      console.error('Submit error:', error);
+      toast.error(isEdit ? '更新失败' : '发布失败');
     } finally {
       setLoading(false);
     }
@@ -191,13 +233,21 @@ export default function CompetitionPublish() {
     if (file) handleCoverFile(file);
   };
 
+  if (pageLoading) {
+    return (
+      <div className="py-section text-center text-ink-muted-48">
+        <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
+        <p className="mt-2 text-[14px]">加载中…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="py-lg flex flex-col gap-lg pb-32">
-      {/* Header */}
       <PageHero
-        eyebrow="Publish"
-        title="发布新赛事"
-        description="填写赛事基本信息，右侧预览即时反映你的修改。"
+        eyebrow={isEdit ? 'Edit' : 'Publish'}
+        title={isEdit ? '编辑赛事' : '发布新赛事'}
+        description={isEdit ? '修改赛事信息，保存后立即生效。' : '填写赛事基本信息，右侧预览即时反映你的修改。'}
       />
 
       <div className="flex flex-col lg:flex-row gap-lg">
@@ -211,83 +261,45 @@ export default function CompetitionPublish() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
               <Field label="赛事名称" required error={errors.title} className="md:col-span-2">
-                <input
-                  className="input-glass"
-                  placeholder="输入完整的赛事名称"
-                  value={form.title}
-                  onChange={(e) => updateField('title', e.target.value)}
-                />
+                <input className="input-glass" placeholder="输入完整的赛事名称" value={form.title} onChange={(e) => updateField('title', e.target.value)} />
               </Field>
 
               <Field label="赛事分类" required error={errors.category}>
-                <select
-                  className="input-glass"
-                  value={form.category}
-                  onChange={(e) => updateField('category', e.target.value as CompetitionCategory)}
-                >
+                <select className="input-glass" value={form.category} onChange={(e) => updateField('category', e.target.value as CompetitionCategory)}>
                   <option value="">请选择分类</option>
-                  {categoryOptions.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
+                  {categoryOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </Field>
 
               <Field label="赛事级别" required error={errors.level}>
-                <select
-                  className="input-glass"
-                  value={form.level}
-                  onChange={(e) => updateField('level', e.target.value as CompetitionLevel)}
-                >
+                <select className="input-glass" value={form.level} onChange={(e) => updateField('level', e.target.value as CompetitionLevel)}>
                   <option value="">请选择级别</option>
-                  {levelOptions.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
+                  {levelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </Field>
 
               <Field label="主办单位" required error={errors.organizer} className="md:col-span-2">
-                <input
-                  className="input-glass"
-                  placeholder="输入主办单位名称，多个用逗号分隔"
-                  value={form.organizer}
-                  onChange={(e) => updateField('organizer', e.target.value)}
-                />
+                <input className="input-glass" placeholder="输入主办单位名称" value={form.organizer} onChange={(e) => updateField('organizer', e.target.value)} />
               </Field>
 
               <Field label="报名时间" required error={errors.regStart}>
                 <div className="flex items-center gap-2">
-                  <input
-                    className="input-glass"
-                    type="date"
-                    value={form.regStart}
-                    onChange={(e) => updateField('regStart', e.target.value)}
-                  />
+                  <input className="input-glass" type="date" value={form.regStart} onChange={(e) => updateField('regStart', e.target.value)} />
                   <span className="text-ink-muted-48">→</span>
-                  <input
-                    className="input-glass"
-                    type="date"
-                    value={form.regEnd}
-                    onChange={(e) => updateField('regEnd', e.target.value)}
-                  />
+                  <input className="input-glass" type="date" value={form.regEnd} onChange={(e) => updateField('regEnd', e.target.value)} />
                 </div>
               </Field>
 
               <Field label="比赛时间" required error={errors.compStart}>
                 <div className="flex items-center gap-2">
-                  <input
-                    className="input-glass"
-                    type="date"
-                    value={form.compStart}
-                    onChange={(e) => updateField('compStart', e.target.value)}
-                  />
+                  <input className="input-glass" type="date" value={form.compStart} onChange={(e) => updateField('compStart', e.target.value)} />
                   <span className="text-ink-muted-48">→</span>
-                  <input
-                    className="input-glass"
-                    type="date"
-                    value={form.compEnd}
-                    onChange={(e) => updateField('compEnd', e.target.value)}
-                  />
+                  <input className="input-glass" type="date" value={form.compEnd} onChange={(e) => updateField('compEnd', e.target.value)} />
                 </div>
+              </Field>
+
+              <Field label="最大团队人数">
+                <input className="input-glass" type="number" min={1} value={form.maxTeamSize} onChange={(e) => updateField('maxTeamSize', Number(e.target.value) || 1)} />
               </Field>
 
               <Field label="赛事封面" className="md:col-span-2">
@@ -299,33 +311,19 @@ export default function CompetitionPublish() {
                 >
                   {form.coverUrl ? (
                     <>
-                      <img
-                        src={form.coverUrl}
-                        alt="封面预览"
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                      <div className="relative z-10 bg-canvas/90 border border-hairline px-3 py-1.5 rounded-pill text-ink text-[12px]">
-                        点击或拖拽以替换封面
-                      </div>
+                      <img src={form.coverUrl} alt="封面预览" className="absolute inset-0 w-full h-full object-cover" />
+                      <div className="relative z-10 bg-canvas/90 border border-hairline px-3 py-1.5 rounded-pill text-ink text-[12px]">点击或拖拽以替换封面</div>
                     </>
                   ) : (
                     <>
                       <div className="w-12 h-12 rounded-full bg-primary/10 grid place-items-center text-primary mb-3 group-hover:scale-110 transition">
-                        <span className="material-symbols-outlined">
-                          {uploading ? 'hourglass_top' : 'add_photo_alternate'}
-                        </span>
+                        <span className="material-symbols-outlined">{uploading ? 'hourglass_top' : 'add_photo_alternate'}</span>
                       </div>
                       <p className="text-[14px] text-ink">{uploading ? '上传中…' : '点击或拖拽上传图片'}</p>
                       <p className="text-[12px] text-ink-muted-48 mt-1">推荐 16:9，JPG / PNG，最大 5MB</p>
                     </>
                   )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={onCoverInputChange}
-                  />
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onCoverInputChange} />
                 </div>
               </Field>
             </div>
@@ -339,39 +337,15 @@ export default function CompetitionPublish() {
             </div>
             <div className="flex flex-col gap-md">
               <Field label="赛事简介" required error={errors.description}>
-                <textarea
-                  className="input-glass !h-auto py-2.5 resize-none"
-                  rows={3}
-                  placeholder="简要描述赛事背景和目的…"
-                  value={form.description}
-                  onChange={(e) => updateField('description', e.target.value)}
-                />
+                <textarea className="input-glass !h-auto py-2.5 resize-none" rows={3} placeholder="简要描述赛事背景和目的…" value={form.description} onChange={(e) => updateField('description', e.target.value)} />
               </Field>
 
               <Field label="详细要求与流程">
-                <div className="rounded-t-lg border border-hairline border-b-0 bg-canvas p-2 flex flex-wrap gap-1">
-                  {['format_bold', 'format_italic', 'format_underlined', 'format_list_bulleted', 'format_list_numbered', 'link', 'image'].map((icon) => (
-                    <button key={icon} type="button" className="p-1.5 rounded hover:bg-primary/6 text-ink-muted-80 transition">
-                      <span className="material-symbols-outlined text-[16px]">{icon}</span>
-                    </button>
-                  ))}
-                </div>
-                <textarea
-                  className="input-glass !h-auto !rounded-t-none py-3 resize-none"
-                  rows={8}
-                  placeholder="在此编辑赛事详细内容…"
-                  value={form.detailContent}
-                  onChange={(e) => updateField('detailContent', e.target.value)}
-                />
+                <textarea className="input-glass !h-auto py-3 resize-none" rows={8} placeholder="在此编辑赛事详细内容…" value={form.detailContent} onChange={(e) => updateField('detailContent', e.target.value)} />
               </Field>
 
               <Field label="标签">
-                <input
-                  className="input-glass"
-                  placeholder="输入标签，用逗号分隔，如：IT/计算机, 创新创业"
-                  value={form.tags}
-                  onChange={(e) => updateField('tags', e.target.value)}
-                />
+                <input className="input-glass" placeholder="输入标签，用逗号分隔，如：IT/计算机, 创新创业" value={form.tags} onChange={(e) => updateField('tags', e.target.value)} />
               </Field>
             </div>
           </section>
@@ -380,33 +354,62 @@ export default function CompetitionPublish() {
           <section className="glass p-lg">
             <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
               <span className="material-symbols-outlined text-[20px] text-primary">settings</span>
-              <h2 className="text-[17px] font-semibold tracking-tight text-ink">扩展设置</h2>
+              <h2 className="text-[17px] font-semibold tracking-tight text-ink">参赛赛道</h2>
             </div>
-            <div className="flex flex-col gap-3">
-              <Toggle
-                label="开放组队"
-                description="允许选手在平台上寻找队友并组建队伍"
-                checked={form.openTeam}
-                onChange={(v) => updateField('openTeam', v)}
-              />
-              <Toggle
-                label="展示优秀作品"
-                description="赛事结束后，允许将获奖作品展示在公共区域"
-                checked={form.showExcellent}
-                onChange={(v) => updateField('showExcellent', v)}
-              />
-              <div className="pt-3 border-t border-hairline">
-                <label className="text-[13px] font-medium text-ink mb-2 block">参赛赛道</label>
-                <div className="flex flex-wrap gap-2">
-                  {tracks.map((track) => (
-                    <label key={track} className="flex items-center gap-2 px-3 py-1.5 rounded-pill bg-canvas border border-hairline cursor-pointer hover:border-primary/30 transition">
-                      <input type="checkbox" className="w-3.5 h-3.5 rounded-xs accent-primary cursor-pointer" />
-                      <span className="text-[12px] text-ink-muted-80">{track}</span>
-                    </label>
-                  ))}
-                </div>
+            <p className="text-[13px] text-ink-muted-80 mb-md">选择该赛事开放的赛道，学生报名时可从中选择。</p>
+            <div className="flex flex-wrap gap-2">
+              {defaultTracks.map((track) => (
+                <label
+                  key={track}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-pill border cursor-pointer transition ${
+                    form.tracks.includes(track)
+                      ? 'bg-primary/10 border-primary text-primary'
+                      : 'bg-canvas border-hairline text-ink-muted-80 hover:border-primary/30'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={form.tracks.includes(track)}
+                    onChange={() => toggleTrack(track)}
+                  />
+                  <span className={`material-symbols-outlined text-[16px] ${form.tracks.includes(track) ? 'icon-fill' : ''}`}>
+                    {form.tracks.includes(track) ? 'check_circle' : 'radio_button_unchecked'}
+                  </span>
+                  <span className="text-[13px]">{track}</span>
+                </label>
+              ))}
+            </div>
+            <div className="mt-md">
+              <Field label="自定义赛道">
+                <input
+                  className="input-glass"
+                  placeholder="输入自定义赛道名称，按回车添加"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const val = (e.target as HTMLInputElement).value.trim();
+                      if (val && !form.tracks.includes(val)) {
+                        updateField('tracks', [...form.tracks, val]);
+                        (e.target as HTMLInputElement).value = '';
+                      }
+                    }
+                  }}
+                />
+              </Field>
+            </div>
+            {form.tracks.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {form.tracks.map((t) => (
+                  <span key={t} className="chip chip-primary flex items-center gap-1">
+                    {t}
+                    <button type="button" onClick={() => toggleTrack(t)} className="ml-0.5 hover:text-error transition">
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  </span>
+                ))}
               </div>
-            </div>
+            )}
           </section>
         </div>
 
@@ -418,7 +421,6 @@ export default function CompetitionPublish() {
               发布效果预览
             </h3>
             <div className="glass-strong overflow-hidden rounded-lg">
-              {/* Cover */}
               <div className="aspect-video bg-canvas-parchment relative overflow-hidden">
                 {form.coverUrl ? (
                   <img src={form.coverUrl} alt="封面预览" className="absolute inset-0 w-full h-full object-cover" />
@@ -438,28 +440,14 @@ export default function CompetitionPublish() {
                   {form.title || '赛事名称将在这里显示…'}
                 </h4>
                 <div className="flex flex-wrap gap-1.5 mb-3">
-                  {form.category && (
-                    <span className="chip chip-primary">{categoryOptions.find((o) => o.value === form.category)?.label}</span>
-                  )}
+                  {form.category && <span className="chip chip-primary">{categoryOptions.find((o) => o.value === form.category)?.label}</span>}
                   {form.level && <span className="chip">{form.level}</span>}
-                  {form.openTeam && <span className="chip">支持组队</span>}
+                  {form.tracks.length > 0 && <span className="chip">{form.tracks.length} 个赛道</span>}
                 </div>
                 <div className="flex flex-col gap-2 mb-4 text-[12px]">
                   <PreviewLine icon="apartment" label="主办" value={form.organizer || '主办单位名称'} />
-                  <PreviewLine
-                    icon="how_to_reg"
-                    label="报名"
-                    value={form.regStart && form.regEnd ? `${form.regStart} ~ ${form.regEnd}` : 'YYYY/MM/DD - YYYY/MM/DD'}
-                  />
-                  <PreviewLine
-                    icon="event"
-                    label="比赛"
-                    value={form.compStart && form.compEnd ? `${form.compStart} ~ ${form.compEnd}` : 'YYYY/MM/DD - YYYY/MM/DD'}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <button className="btn-secondary flex-1 opacity-70 cursor-not-allowed !py-2">查看详情</button>
-                  <button className="btn-primary flex-1 opacity-70 cursor-not-allowed !py-2">立即报名</button>
+                  <PreviewLine icon="how_to_reg" label="报名" value={form.regStart && form.regEnd ? `${form.regStart} ~ ${form.regEnd}` : 'YYYY/MM/DD - YYYY/MM/DD'} />
+                  <PreviewLine icon="event" label="比赛" value={form.compStart && form.compEnd ? `${form.compStart} ~ ${form.compEnd}` : 'YYYY/MM/DD - YYYY/MM/DD'} />
                 </div>
               </div>
             </div>
@@ -471,17 +459,17 @@ export default function CompetitionPublish() {
       <div className="fixed bottom-0 left-0 lg:left-[240px] right-0 z-40">
         <div className="bg-canvas border-t border-hairline px-lg py-3">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="text-[12px] text-ink-muted-48 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[14px]">edit_note</span>
-              未保存的更改
-            </div>
+            <button type="button" onClick={() => navigate('/admin')} className="btn-secondary">
+              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+              返回
+            </button>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={handleSaveDraft} disabled={loading || uploading} className="btn-secondary disabled:opacity-60 disabled:cursor-not-allowed">
+              <button type="button" onClick={() => handleSubmit('draft')} disabled={loading || uploading} className="btn-secondary disabled:opacity-60">
                 保存草稿
               </button>
-              <button type="button" onClick={handlePublish} disabled={loading || uploading} className="btn-primary disabled:opacity-60 disabled:cursor-not-allowed">
+              <button type="button" onClick={() => handleSubmit('published')} disabled={loading || uploading} className="btn-primary disabled:opacity-60">
                 <span className="material-symbols-outlined text-[18px]">publish</span>
-                {loading ? '提交中…' : '发布赛事'}
+                {loading ? '提交中…' : isEdit ? '保存修改' : '发布赛事'}
               </button>
             </div>
           </div>
@@ -491,57 +479,14 @@ export default function CompetitionPublish() {
   );
 }
 
-function Field({
-  label,
-  required,
-  error,
-  children,
-  className = '',
-}: {
-  label: string;
-  required?: boolean;
-  error?: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
+function Field({ label, required, error, children, className = '' }: { label: string; required?: boolean; error?: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
       <label className="text-[13px] font-medium text-ink">
-        {label}
-        {required && <span className="text-error ml-0.5">*</span>}
+        {label}{required && <span className="text-error ml-0.5">*</span>}
       </label>
       {children}
       {error && <span className="text-[11px] text-error">{error}</span>}
-    </div>
-  );
-}
-
-function Toggle({
-  label,
-  description,
-  checked,
-  onChange,
-}: {
-  label: string;
-  description: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="flex items-center justify-between p-3 rounded-md bg-canvas border border-hairline">
-      <div className="flex-1 mr-3">
-        <h3 className="text-[13px] font-medium text-ink">{label}</h3>
-        <p className="text-[11px] text-ink-muted-80 mt-0.5">{description}</p>
-      </div>
-      <label className="relative inline-flex items-center cursor-pointer">
-        <input
-          type="checkbox"
-          className="sr-only peer"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-        />
-        <div className="w-10 h-5.5 bg-primary/12 rounded-full peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-[18px] after:h-[18px] after:bg-white after:rounded-full after:shadow after:transition-transform peer-checked:after:translate-x-[18px]"></div>
-      </label>
     </div>
   );
 }

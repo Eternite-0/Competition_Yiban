@@ -30,12 +30,17 @@ public class TeacherController {
     @Autowired
     private TeacherService teacherService;
 
+    // ---- existing (updated) ----
+
     @Operation(summary = "获取辅导员仪表盘概览统计")
     @GetMapping("/dashboard")
     public Result<Map<String, Object>> getDashboard(
-            @RequestParam(required = false) String college) {
-        
-        Map<String, Object> stats = teacherService.getDashboardStats(college);
+            @RequestParam(required = false) String college,
+            @RequestParam(required = false) String grade,
+            @RequestParam(required = false) String major,
+            @RequestParam(required = false) String className) {
+
+        Map<String, Object> stats = teacherService.getDashboardStats(college, grade, major, className);
         return Result.success(stats);
     }
 
@@ -46,9 +51,12 @@ public class TeacherController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String studentName,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String className) {
+            @RequestParam(required = false) String className,
+            @RequestParam(required = false) String college,
+            @RequestParam(required = false) String grade,
+            @RequestParam(required = false) String major) {
 
-        Page<RegistrationVO> page = teacherService.monitorStudentEvents(current, size, studentName, status, className);
+        Page<RegistrationVO> page = teacherService.monitorStudentEvents(current, size, studentName, status, className, college, grade, major);
         return Result.success(page);
     }
 
@@ -57,9 +65,11 @@ public class TeacherController {
     public Result<List<UserVO>> listStudents(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String college,
-            @RequestParam(required = false) String className) {
+            @RequestParam(required = false) String className,
+            @RequestParam(required = false) String grade,
+            @RequestParam(required = false) String major) {
 
-        List<UserVO> list = teacherService.listStudents(keyword, college, className);
+        List<UserVO> list = teacherService.listStudents(keyword, college, className, grade, major);
         return Result.success(list);
     }
 
@@ -69,16 +79,15 @@ public class TeacherController {
             @RequestParam String academicYear,
             @RequestParam(required = false) String major,
             HttpServletResponse response) throws IOException {
-        
+
         List<StudentComprehensiveVO> list = teacherService.getComprehensiveData(academicYear, major);
-        
+
         Workbook workbook = ExcelUtil.export(
-                list, 
-                "综合素质测评数据", 
+                list,
+                "综合素质测评数据",
                 new String[]{"学生姓名", "学号/工号", "班级专业信息", "参赛次数", "累计综测加分"}
         );
 
-        // Configure response headers for file download
         String filename = URLEncoder.encode("综测数据_" + academicYear + ".xlsx", StandardCharsets.UTF_8.toString());
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + filename);
@@ -86,5 +95,56 @@ public class TeacherController {
 
         workbook.write(response.getOutputStream());
         workbook.close();
+    }
+
+    // ---- cascade filter APIs ----
+
+    @Operation(summary = "获取所有学院列表")
+    @GetMapping("/colleges")
+    public Result<List<String>> listColleges() {
+        return Result.success(teacherService.listColleges());
+    }
+
+    @Operation(summary = "获取学院下的专业列表")
+    @GetMapping("/majors")
+    public Result<List<String>> listMajors(@RequestParam(required = false) String college) {
+        return Result.success(teacherService.listMajors(college));
+    }
+
+    @Operation(summary = "获取年级列表")
+    @GetMapping("/grades")
+    public Result<List<String>> listGrades(
+            @RequestParam(required = false) String college,
+            @RequestParam(required = false) String major) {
+        return Result.success(teacherService.listGrades(college, major));
+    }
+
+    @Operation(summary = "获取班级列表")
+    @GetMapping("/classes")
+    public Result<List<String>> listClasses(
+            @RequestParam(required = false) String college,
+            @RequestParam(required = false) String major,
+            @RequestParam(required = false) String grade) {
+        return Result.success(teacherService.listClasses(college, major, grade));
+    }
+
+    // ---- college overview ----
+
+    @Operation(summary = "学院总览数据")
+    @GetMapping("/college-overview")
+    public Result<Map<String, Object>> collegeOverview(
+            @RequestParam(required = false) String college,
+            @RequestParam(required = false) String grade,
+            @RequestParam(required = false) String major) {
+
+        return Result.success(teacherService.getCollegeOverview(college, grade, major));
+    }
+
+    // ---- student detail ----
+
+    @Operation(summary = "学生详情")
+    @GetMapping("/student-detail")
+    public Result<Map<String, Object>> studentDetail(@RequestParam Long studentId) {
+        return Result.success(teacherService.getStudentDetail(studentId));
     }
 }

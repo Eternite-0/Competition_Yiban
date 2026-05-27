@@ -19,6 +19,7 @@ type BackendCompetition = {
   maxTeamSize?: number;
   coverUrl?: string;
   content?: string;
+  tracks?: string[];
 };
 
 function formatDate(value?: string) {
@@ -91,6 +92,7 @@ export default function RegistrationWorkbench() {
       await apiClient.post('/registration/submit', {
         competitionId: Number(comp.id),
         teamName: teamName.trim(),
+        track: selectedTrack || undefined,
       });
       toast.success('报名成功');
       navigate('/student/registrations');
@@ -127,11 +129,9 @@ export default function RegistrationWorkbench() {
     { label: '提交报名', done: false },
   ];
 
-  const tracks = [
-    { id: 'sw', icon: 'code', name: '软件开发', desc: 'C/C++、Java、Python' },
-    { id: 'ai', icon: 'smart_toy', name: 'AI 大模型', desc: '基于大模型的应用创新' },
-    { id: 'dm', icon: 'movie_edit', name: '数字媒体', desc: '动画、视频、UI/UX' },
-  ];
+  const trackList: string[] = Array.isArray(comp.tracks) && comp.tracks.length > 0
+    ? comp.tracks
+    : ['软件开发', 'AI 大模型', '数字媒体'];
 
   return (
     <motion.div
@@ -305,24 +305,23 @@ export default function RegistrationWorkbench() {
             {/* Track */}
             <div className="flex flex-col gap-2">
               <label className="text-[13px] font-medium text-ink">
-                选择赛道（参考）
+                选择赛道
               </label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {tracks.map((track) => (
+                {trackList.map((track) => (
                   <button
-                    key={track.id}
-                    onClick={() => setSelectedTrack(track.id)}
-                    className={`text-left rounded-md p-md border transition group ${
-                      selectedTrack === track.id
+                    key={track}
+                    onClick={() => setSelectedTrack(track)}
+                    className={`text-left rounded-md p-md border transition ${
+                      selectedTrack === track
                         ? 'border-primary bg-primary/5'
                         : 'border-hairline bg-canvas hover:border-primary/40'
                     }`}
                   >
-                    <span className={`material-symbols-outlined text-[22px] icon-fill ${
-                      selectedTrack === track.id ? 'text-primary' : 'text-primary'
-                    }`}>{track.icon}</span>
-                    <h3 className="text-[14px] font-semibold text-ink mt-2">{track.name}</h3>
-                    <p className="text-[11px] text-ink-muted-48 mt-1">{track.desc}</p>
+                    <span className={`material-symbols-outlined text-[22px] ${
+                      selectedTrack === track ? 'text-primary icon-fill' : 'text-ink-muted-48'
+                    }`}>flag</span>
+                    <h3 className="text-[14px] font-semibold text-ink mt-2">{track}</h3>
                   </button>
                 ))}
               </div>

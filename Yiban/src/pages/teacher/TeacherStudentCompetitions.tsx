@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import CascadeFilter, { type FilterValues } from '../../components/CascadeFilter';
 
 interface MonitorRow {
   id: string;
@@ -35,6 +36,11 @@ export default function TeacherStudentCompetitions() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('全部');
   const [total, setTotal] = useState(0);
+  const [filters, setFilters] = useState<FilterValues>({});
+
+  const handleFilterChange = useCallback((f: FilterValues) => {
+    setFilters(f);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,6 +50,10 @@ export default function TeacherStudentCompetitions() {
         const params: Record<string, any> = { current: 1, size: 50 };
         if (searchQuery.trim()) params.studentName = searchQuery.trim();
         if (selectedStatus !== '全部') params.status = selectedStatus;
+        if (filters.college) params.college = filters.college;
+        if (filters.grade) params.grade = filters.grade;
+        if (filters.major) params.major = filters.major;
+        if (filters.className) params.className = filters.className;
         const data: any = await apiClient.get('/teacher/monitor/registrations', { params });
         if (cancelled) return;
         const records: any[] = Array.isArray(data) ? data : data?.records ?? [];
@@ -70,7 +80,7 @@ export default function TeacherStudentCompetitions() {
     return () => {
       cancelled = true;
     };
-  }, [searchQuery, selectedStatus]);
+  }, [searchQuery, selectedStatus, filters]);
 
   const kpiCards = useMemo(() => {
     const pendingCnt = rows.filter((r) => r.status === '已提交' || r.status === '审核中' || r.status === '待审核').length;
@@ -95,6 +105,7 @@ export default function TeacherStudentCompetitions() {
 
       {/* Filters */}
       <div className="glass-tint flex flex-wrap gap-sm items-center px-md py-3">
+        <CascadeFilter onChange={handleFilterChange} />
         <select
           className="h-9 px-3 rounded-pill bg-canvas border border-hairline text-[13px] text-ink focus:outline-none focus:border-primary-focus"
           value={selectedStatus}

@@ -15,6 +15,7 @@ CREATE TABLE `user` (
   `college` varchar(100) DEFAULT NULL,
   `major` varchar(100) DEFAULT NULL,
   `class_name` varchar(50) DEFAULT NULL,
+  `grade` varchar(10) DEFAULT NULL COMMENT '年级(入学年份)',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
@@ -37,6 +38,7 @@ CREATE TABLE `competition` (
   `content` text COMMENT '富文本赛事简介/要求',
   `organizer` varchar(200) DEFAULT NULL COMMENT '主办单位',
   `tags` varchar(500) DEFAULT NULL COMMENT 'JSON数组 - 赛事标签',
+  `tracks` varchar(1000) DEFAULT NULL COMMENT 'JSON数组 - 赛道列表，如["软件开发","AI大模型"]',
   `status` varchar(20) DEFAULT 'draft' COMMENT 'draft/published/closed',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

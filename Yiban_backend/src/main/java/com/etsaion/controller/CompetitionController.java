@@ -55,12 +55,17 @@ public class CompetitionController {
     @RequireRole("admin")
     public Result<CompetitionVO> publishCompetition(@Validated @RequestBody EventPublishDTO dto) {
         Competition comp = new Competition();
-        BeanUtils.copyProperties(dto, comp, "tags");
+        BeanUtils.copyProperties(dto, comp, "tags", "tracks");
 
         if (CollUtil.isNotEmpty(dto.getTags())) {
             comp.setTags(JSONUtil.toJsonStr(dto.getTags()));
         } else {
             comp.setTags("[]");
+        }
+        if (CollUtil.isNotEmpty(dto.getTracks())) {
+            comp.setTracks(JSONUtil.toJsonStr(dto.getTracks()));
+        } else {
+            comp.setTracks("[]");
         }
 
         String status = dto.getStatus();
@@ -83,9 +88,12 @@ public class CompetitionController {
         if (comp == null) {
             return Result.error("赛事不存在");
         }
-        BeanUtils.copyProperties(dto, comp, "tags", "createTime");
+        BeanUtils.copyProperties(dto, comp, "tags", "tracks", "createTime");
         if (CollUtil.isNotEmpty(dto.getTags())) {
             comp.setTags(JSONUtil.toJsonStr(dto.getTags()));
+        }
+        if (CollUtil.isNotEmpty(dto.getTracks())) {
+            comp.setTracks(JSONUtil.toJsonStr(dto.getTracks()));
         }
         if (dto.getStatus() != null && !dto.getStatus().isBlank()) {
             comp.setStatus(dto.getStatus());

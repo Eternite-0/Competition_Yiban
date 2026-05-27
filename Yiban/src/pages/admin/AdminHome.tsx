@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import { useStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
@@ -170,6 +171,30 @@ export default function AdminHome() {
 
   const greetingName = currentUser?.name?.trim() || '管理员';
 
+  const handleDelete = async (id: string | number | undefined) => {
+    if (!id) return;
+    if (!confirm('确定要删除这个赛事吗？此操作不可恢复。')) return;
+    try {
+      await apiClient.delete(`/competition/admin/delete/${id}`);
+      toast.success('已删除');
+      setRecords((prev) => prev.filter((r) => r.id !== id));
+    } catch {
+      toast.error('删除失败');
+    }
+  };
+
+  const handleToggleStatus = async (comp: CompetitionRecord) => {
+    if (!comp.id) return;
+    const newStatus = comp.status === 'published' ? 'closed' : 'published';
+    try {
+      await apiClient.put(`/competition/admin/update/${comp.id}`, { status: newStatus });
+      toast.success(newStatus === 'published' ? '已上架' : '已下架');
+      setRecords((prev) => prev.map((r) => r.id === comp.id ? { ...r, status: newStatus } : r));
+    } catch {
+      toast.error('操作失败');
+    }
+  };
+
   return (
     <div className="py-lg flex flex-col gap-lg">
       <PageHero
@@ -305,12 +330,13 @@ export default function AdminHome() {
                     <th className="py-3 px-md font-medium">级别</th>
                     <th className="py-3 px-md font-medium">状态</th>
                     <th className="py-3 px-md font-medium text-right">截止日期</th>
+                    <th className="py-3 px-md font-medium text-right">操作</th>
                   </tr>
                 </thead>
                 <tbody className="text-[13px]">
                   {recentCompetitions.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-12 text-center text-ink-muted-48 text-[13px]">
+                      <td colSpan={5} className="py-12 text-center text-ink-muted-48 text-[13px]">
                         {loading ? '加载中…' : '暂无赛事数据'}
                       </td>
                     </tr>
@@ -318,7 +344,7 @@ export default function AdminHome() {
                     const display = statusLabel(comp.status);
                     return (
                       <tr key={comp.id ?? idx} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
-                        <td className="py-3 px-md font-medium text-ink truncate max-w-[300px]">{comp.name || comp.title || '未命名赛事'}</td>
+                        <td className="py-3 px-md font-medium text-ink truncate max-w-[260px]">{comp.name || comp.title || '未命名赛事'}</td>
                         <td className="py-3 px-md">
                           <span className="chip">{comp.level || '校级'}</span>
                         </td>
@@ -334,6 +360,37 @@ export default function AdminHome() {
                         </td>
                         <td className="py-3 px-md text-ink-muted-48 tabular-nums text-right">
                           {(comp.endTime || comp.deadline || '—').slice(0, 10)}
+                        </td>
+                        <td className="py-3 px-md text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => navigate(`/admin/publish/${comp.id}`)}
+                              className="p-1.5 rounded-md text-ink-muted-48 hover:text-primary hover:bg-primary/8 transition"
+                              title="编辑"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">edit</span>
+                            </button>
+                            <button
+                              onClick={() => handleToggleStatus(comp)}
+                              className={`p-1.5 rounded-md transition ${
+                                comp.status === 'published'
+                                  ? 'text-ink-muted-48 hover:text-primary hover:bg-primary/8'
+                                  : 'text-ink-muted-48 hover:text-primary hover:bg-primary/8'
+                              }`}
+                              title={comp.status === 'published' ? '下架' : '上架'}
+                            >
+                              <span className="material-symbols-outlined text-[16px]">
+                                {comp.status === 'published' ? 'visibility_off' : 'visibility'}
+                              </span>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(comp.id)}
+                              className="p-1.5 rounded-md text-ink-muted-48 hover:text-error hover:bg-error/8 transition"
+                              title="删除"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">delete</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

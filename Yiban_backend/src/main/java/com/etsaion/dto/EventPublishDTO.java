@@ -36,5 +36,6 @@ public class EventPublishDTO {
     private String coverUrl;
     private String content;
     private List<String> tags;
+    private List<String> tracks;
     private String status; // draft / published, optional - defaults to published
 }

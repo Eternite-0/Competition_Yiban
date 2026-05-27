@@ -11,4 +11,5 @@ public class UserVO {
     private String college;
     private String major;
     private String className;
+    private String grade;
 }

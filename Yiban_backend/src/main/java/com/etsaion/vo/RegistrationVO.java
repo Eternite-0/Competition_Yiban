@@ -24,4 +24,8 @@ public class RegistrationVO {
     private String fileName;
     private String fileUrl;
     private Long fileSize;
+
+    // review feedback from teacher
+    private String reviewNote;
+    private Boolean approved;
 }
