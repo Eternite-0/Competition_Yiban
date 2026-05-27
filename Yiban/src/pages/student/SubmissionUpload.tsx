@@ -222,17 +222,6 @@ export default function SubmissionUpload() {
                 </label>
                 <input className="input-glass" readOnly value={formatDate(registration.submitDate)} />
               </div>
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <label className="text-[13px] font-medium text-ink">备注说明</label>
-                <textarea
-                  className="input-glass !h-auto py-2.5 resize-none"
-                  rows={4}
-                  placeholder="如有特殊情况，请在此说明（选填，最多 200 字）"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value.slice(0, 200))}
-                />
-                <div className="text-right text-[11px] text-ink-muted-48 tabular-nums">{notes.length} / 200</div>
-              </div>
             </div>
           </section>
 

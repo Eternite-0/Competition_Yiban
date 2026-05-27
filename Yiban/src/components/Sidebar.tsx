@@ -18,6 +18,7 @@ const studentNav: NavItem[] = [
 
 const teacherNav: NavItem[] = [
   { icon: 'space_dashboard', label: '工作台', path: '/teacher' },
+  { icon: 'analytics', label: '学院总览', path: '/teacher/college-overview' },
   { icon: 'emoji_events', label: '赛事大厅', path: '/teacher/competitions' },
   { icon: 'fact_check', label: '成果审批', path: '/teacher/audit' },
   { icon: 'school', label: '学生看板', path: '/teacher/student-competitions' },

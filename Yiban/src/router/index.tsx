@@ -20,6 +20,9 @@ import TeacherHome from '../pages/teacher/TeacherHome';
 import SubmissionAudit from '../pages/teacher/SubmissionAudit';
 import TeacherStudentCompetitions from '../pages/teacher/TeacherStudentCompetitions';
 import TeacherStudentGrowth from '../pages/teacher/TeacherStudentGrowth';
+import CollegeOverview from '../pages/teacher/CollegeOverview';
+import StudentDetail from '../pages/teacher/StudentDetail';
+import StudentCompare from '../pages/teacher/StudentCompare';
 
 // Admin pages
 import AdminHome from '../pages/admin/AdminHome';
@@ -58,10 +61,12 @@ export const router = createBrowserRouter([
     element: <RequireAuth role="teacher"><Layout /></RequireAuth>,
     children: [
       { index: true, element: <TeacherHome /> },
+      { path: 'college-overview', element: <CollegeOverview /> },
       { path: 'competitions', element: <CompetitionsHub /> },
       { path: 'audit', element: <SubmissionAudit /> },
       { path: 'student-competitions', element: <TeacherStudentCompetitions /> },
       { path: 'student-growth', element: <TeacherStudentGrowth /> },
+      { path: 'student-detail', element: <StudentDetail /> },
     ],
   },
   {

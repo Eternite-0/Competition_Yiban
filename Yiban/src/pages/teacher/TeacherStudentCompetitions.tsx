@@ -202,12 +202,20 @@ export default function TeacherStudentCompetitions() {
                       <span className={statusChip[reg.status] || 'chip'}>{reg.status}</span>
                     </td>
                     <td className="py-3 px-md text-right">
-                      <button
-                        onClick={() => navigate(`/teacher/student-growth?studentId=${reg.studentId}`)}
-                        className="text-[12px] text-primary hover:text-primary-focus font-medium"
-                      >
-                        查看成长 →
-                      </button>
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => navigate(`/teacher/student-detail?studentId=${reg.studentId}`)}
+                          className="text-[12px] text-primary hover:text-primary-focus font-medium"
+                        >
+                          详情 →
+                        </button>
+                        <button
+                          onClick={() => navigate(`/teacher/student-growth?studentId=${reg.studentId}`)}
+                          className="text-[12px] text-primary hover:text-primary-focus font-medium"
+                        >
+                          成长 →
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))

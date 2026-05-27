@@ -356,35 +356,39 @@ export default function CompetitionPublish() {
               <span className="material-symbols-outlined text-[20px] text-primary">settings</span>
               <h2 className="text-[17px] font-semibold tracking-tight text-ink">参赛赛道</h2>
             </div>
-            <p className="text-[13px] text-ink-muted-80 mb-md">选择该赛事开放的赛道，学生报名时可从中选择。</p>
-            <div className="flex flex-wrap gap-2">
-              {defaultTracks.map((track) => (
-                <label
-                  key={track}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-pill border cursor-pointer transition ${
-                    form.tracks.includes(track)
-                      ? 'bg-primary/10 border-primary text-primary'
-                      : 'bg-canvas border-hairline text-ink-muted-80 hover:border-primary/30'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={form.tracks.includes(track)}
-                    onChange={() => toggleTrack(track)}
-                  />
-                  <span className={`material-symbols-outlined text-[16px] ${form.tracks.includes(track) ? 'icon-fill' : ''}`}>
-                    {form.tracks.includes(track) ? 'check_circle' : 'radio_button_unchecked'}
-                  </span>
-                  <span className="text-[13px]">{track}</span>
-                </label>
-              ))}
+            <p className="text-[13px] text-ink-muted-80 mb-4">选择该赛事开放的赛道，学生报名时可从中选择。</p>
+
+            {/* Preset tracks */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {defaultTracks.map((track) => {
+                const selected = form.tracks.includes(track);
+                return (
+                  <button
+                    key={track}
+                    type="button"
+                    onClick={() => toggleTrack(track)}
+                    className={`group relative flex items-center gap-2 pl-3 pr-4 py-2 rounded-lg border text-[13px] font-medium transition-all ${
+                      selected
+                        ? 'bg-primary text-on-primary border-primary shadow-sm shadow-primary/20'
+                        : 'bg-canvas border-hairline text-ink-muted-80 hover:border-primary/40 hover:text-ink'
+                    }`}
+                  >
+                    <span className={`material-symbols-outlined text-[18px] transition-transform ${selected ? 'scale-110' : 'group-hover:scale-105'}`}>
+                      {selected ? 'check_circle' : 'add_circle_outline'}
+                    </span>
+                    {track}
+                  </button>
+                );
+              })}
             </div>
-            <div className="mt-md">
-              <Field label="自定义赛道">
+
+            {/* Custom track input */}
+            <div className="flex items-center gap-2 mb-4">
+              <div className="relative flex-1">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-ink-muted-48">edit</span>
                 <input
-                  className="input-glass"
-                  placeholder="输入自定义赛道名称，按回车添加"
+                  className="input-glass !pl-10"
+                  placeholder="输入自定义赛道名称…"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -396,18 +400,32 @@ export default function CompetitionPublish() {
                     }
                   }}
                 />
-              </Field>
+              </div>
+              <span className="text-[12px] text-ink-muted-48">按回车添加</span>
             </div>
+
+            {/* Selected tracks */}
             {form.tracks.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {form.tracks.map((t) => (
-                  <span key={t} className="chip chip-primary flex items-center gap-1">
-                    {t}
-                    <button type="button" onClick={() => toggleTrack(t)} className="ml-0.5 hover:text-error transition">
-                      <span className="material-symbols-outlined text-[14px]">close</span>
-                    </button>
-                  </span>
-                ))}
+              <div className="p-3 rounded-lg bg-canvas-parchment/60 border border-hairline">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="material-symbols-outlined text-[16px] text-primary">flag</span>
+                  <span className="text-[12px] font-medium text-ink-muted-80">已选赛道 ({form.tracks.length})</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {form.tracks.map((t) => (
+                    <span key={t} className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-md bg-primary/8 border border-primary/20 text-[13px] text-primary font-medium group">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                      {t}
+                      <button
+                        type="button"
+                        onClick={() => toggleTrack(t)}
+                        className="ml-1 p-0.5 rounded-full hover:bg-primary/20 text-primary/60 hover:text-primary transition"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">close</span>
+                      </button>
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </section>

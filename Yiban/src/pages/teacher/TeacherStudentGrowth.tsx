@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
@@ -147,6 +147,7 @@ function mapRadar(raw: any): RadarDim[] {
 }
 
 export default function TeacherStudentGrowth() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialId = searchParams.get('studentId') ?? '';
 
@@ -280,6 +281,15 @@ export default function TeacherStudentGrowth() {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            {selectedId && (
+              <button
+                onClick={() => navigate(`/teacher/student-detail?studentId=${selectedId}`)}
+                className="btn-secondary h-9 flex items-center gap-1.5 text-[13px]"
+              >
+                <span className="material-symbols-outlined text-[16px]">person</span>
+                查看详情
+              </button>
+            )}
             <ExportButton />
           </>
         )}

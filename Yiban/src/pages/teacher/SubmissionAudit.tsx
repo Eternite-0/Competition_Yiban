@@ -170,7 +170,6 @@ export default function SubmissionAudit() {
   const [note, setNote] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTab, setFilterTab] = useState<'全部' | '待审核'>('全部');
-  const [sendMessage, setSendMessage] = useState(true);
   const [previewFile, setPreviewFile] = useState<{ fileName: string; fileUrl: string } | null>(null);
 
   const fetchPending = async () => {
@@ -476,16 +475,7 @@ export default function SubmissionAudit() {
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                 />
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer text-[12px] text-ink-muted-80 hover:text-ink transition">
-                    <input
-                      type="checkbox"
-                      className="w-[14px] h-[14px] rounded-xs accent-primary cursor-pointer"
-                      checked={sendMessage}
-                      onChange={(e) => setSendMessage(e.target.checked)}
-                    />
-                    同步发送站内消息
-                  </label>
+                <div className="flex items-center justify-end flex-wrap gap-3">
                   <div className="flex gap-2">
                     <button className="btn-secondary !py-2 !text-[13px]" onClick={handleReturnForSupplement}>退回补充</button>
                     <button
