@@ -215,15 +215,19 @@ export default function TeamRecruitment() {
   };
 
   const handleApplicationAction = async (appId: number | string, status: 'approved' | 'rejected') => {
+    const prevStatus = teamApplications.find((app) => app.id === appId)?.status;
     try {
       setHandlingAppId(appId);
-      await apiClient.post(`/team/application/${appId}/handle`, { status });
-      toast.success(status === 'approved' ? '已通过' : '已拒绝');
       setTeamApplications((prev) =>
         prev.map((app) => (app.id === appId ? { ...app, status } : app))
       );
+      await apiClient.post(`/team/application/${appId}/handle`, { status });
+      toast.success(status === 'approved' ? '已通过' : '已拒绝');
     } catch (err: any) {
       toast.error(err.message || '操作失败');
+      setTeamApplications((prev) =>
+        prev.map((app) => (app.id === appId ? { ...app, status: prevStatus as TeamApplicationVO['status'] } : app))
+      );
     } finally {
       setHandlingAppId(null);
     }
@@ -506,7 +510,7 @@ export default function TeamRecruitment() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/12 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/12 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="创建招募">
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -574,7 +578,7 @@ export default function TeamRecruitment() {
 
       {/* Contact TA Modal */}
       {contactTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,102,204,0.12)', backdropFilter: 'blur(4px)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,102,204,0.12)', backdropFilter: 'blur(4px)' }} role="dialog" aria-modal="true" aria-label="联系 TA">
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -584,7 +588,7 @@ export default function TeamRecruitment() {
           >
             <div className="flex items-center justify-between" style={{ marginBottom: '17px' }}>
               <h3 className="text-[20px] font-semibold tracking-tight text-ink">联系 TA</h3>
-              <button onClick={() => setContactTarget(null)} className="text-ink-muted-48 hover:text-ink">
+              <button onClick={() => setContactTarget(null)} className="text-ink-muted-48 hover:text-ink" aria-label="关闭">
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
@@ -629,7 +633,7 @@ export default function TeamRecruitment() {
 
       {/* Apply to Join Modal */}
       {applyTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,102,204,0.12)', backdropFilter: 'blur(4px)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,102,204,0.12)', backdropFilter: 'blur(4px)' }} role="dialog" aria-modal="true" aria-label="申请加入">
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -639,7 +643,7 @@ export default function TeamRecruitment() {
           >
             <div className="flex items-center justify-between" style={{ marginBottom: '17px' }}>
               <h3 className="text-[20px] font-semibold tracking-tight text-ink">申请加入</h3>
-              <button onClick={() => setApplyTarget(null)} className="text-ink-muted-48 hover:text-ink">
+              <button onClick={() => setApplyTarget(null)} className="text-ink-muted-48 hover:text-ink" aria-label="关闭">
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>
@@ -706,7 +710,7 @@ export default function TeamRecruitment() {
 
       {/* Applications Management Modal (Captain) */}
       {applicationsTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,102,204,0.12)', backdropFilter: 'blur(4px)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,102,204,0.12)', backdropFilter: 'blur(4px)' }} role="dialog" aria-modal="true" aria-label="申请管理">
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -716,7 +720,7 @@ export default function TeamRecruitment() {
           >
             <div className="flex items-center justify-between" style={{ marginBottom: '17px' }}>
               <h3 className="text-[20px] font-semibold tracking-tight text-ink">申请管理</h3>
-              <button onClick={() => { setApplicationsTarget(null); setTeamApplications([]); }} className="text-ink-muted-48 hover:text-ink">
+              <button onClick={() => { setApplicationsTarget(null); setTeamApplications([]); }} className="text-ink-muted-48 hover:text-ink" aria-label="关闭">
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </div>

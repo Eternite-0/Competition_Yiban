@@ -61,6 +61,21 @@ const monthsAgoLabel = (offset: number): { key: string; label: string } => {
   return { key, label: `${d.getMonth() + 1}月` };
 };
 
+const getCompPageWindow = (current: number, total: number): (number | '...')[] => {
+  if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | '...')[] = [];
+  let start = Math.max(2, current - 1);
+  let end = Math.min(total - 1, current + 1);
+  if (current <= 3) { start = 2; end = 4; }
+  if (current >= total - 2) { start = total - 3; end = total - 1; }
+  pages.push(1);
+  if (start > 2) pages.push('...');
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (end < total - 1) pages.push('...');
+  pages.push(total);
+  return pages;
+};
+
 export default function AdminHome() {
   const navigate = useNavigate();
   const currentUser = useStore((s) => s.currentUser);
@@ -71,6 +86,7 @@ export default function AdminHome() {
   const [pendingRegCount, setPendingRegCount] = useState<number | null>(null);
   const [pendingSubCount, setPendingSubCount] = useState<number | null>(null);
   const [totalSubCount, setTotalSubCount] = useState<number | null>(null);
+  const [currentCompPage, setCurrentCompPage] = useState(1);
 
   // Fetch registration and submission counts
   useEffect(() => {
@@ -157,6 +173,9 @@ export default function AdminHome() {
   const maxBar = Math.max(1, ...barData.map((b) => b.value));
 
   const recentCompetitions = useMemo(() => records.slice(0, 5), [records]);
+  const compPageSize = 5;
+  const totalCompPages = Math.max(1, Math.ceil(recentCompetitions.length / compPageSize));
+  const pagedCompetitions = recentCompetitions.slice((currentCompPage - 1) * compPageSize, currentCompPage * compPageSize);
 
   const metrics = [
     { label: '赛事总数', value: total, suffix: '场', icon: 'event' },
@@ -283,7 +302,20 @@ export default function AdminHome() {
 
       {/* Metrics */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-md">
-        {metrics.map((m, i) => (
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="glass p-lg flex flex-col gap-2 animate-pulse">
+              <div className="flex items-center justify-between">
+                <div className="h-3 w-16 bg-gray-200 rounded" />
+                <div className="h-[18px] w-[18px] bg-gray-200 rounded" />
+              </div>
+              <div className="flex items-baseline gap-1">
+                <div className="h-8 w-20 bg-gray-200 rounded" />
+                <div className="h-3 w-6 bg-gray-200 rounded" />
+              </div>
+            </div>
+          ))
+        ) : metrics.map((m, i) => (
           <motion.div
             key={m.label}
             initial={{ opacity: 0, y: 10 }}
@@ -298,7 +330,7 @@ export default function AdminHome() {
               }`}>{m.icon}</span>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="font-display font-semibold text-[34px] leading-none tabular-nums text-ink">{loading || (m as any).loaded === false ? '—' : m.value}</span>
+              <span className="font-display font-semibold text-[34px] leading-none tabular-nums text-ink">{(m as any).loaded === false ? '—' : m.value}</span>
               <span className="text-[12px] text-ink-muted-48">{m.suffix}</span>
             </div>
           </motion.div>
@@ -322,31 +354,40 @@ export default function AdminHome() {
                 <h3 className="text-[15px] font-semibold tracking-tight text-ink">发布趋势</h3>
                 <span className="text-[11px] text-ink-muted-48">近 6 个月</span>
               </div>
-              <div className="flex items-end gap-2 h-40 border-b border-hairline pb-2">
-                {barData.map((bar) => {
-                  const isMax = bar.value === maxBar && bar.value > 0;
-                  return (
-                    <div key={bar.label} className="flex-1 flex flex-col items-center gap-2 group">
-                      <span className="text-[11px] tabular-nums text-ink-muted-48 opacity-0 group-hover:opacity-100 transition">
-                        {bar.value}
-                      </span>
-                      <div className="w-full flex justify-center items-end h-full">
-                        <div
-                          className={`w-full max-w-[24px] rounded-t-sm transition-all ${
-                            isMax ? 'bg-primary' : 'bg-primary/12 group-hover:bg-primary/60'
-                          }`}
-                          style={{ height: `${(bar.value / maxBar) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                {barData.map((d) => (
-                  <span key={d.label} className="flex-1 text-center text-[11px] text-ink-muted-48">{d.label}</span>
-                ))}
-              </div>
+              {barData.every((b) => b.value === 0) ? (
+                <div className="h-40 grid place-items-center text-ink-muted-48 gap-2">
+                  <span className="material-symbols-outlined text-[32px] opacity-40">bar_chart</span>
+                  <p className="text-[13px]">暂无数据</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-end gap-2 h-40 border-b border-hairline pb-2">
+                    {barData.map((bar) => {
+                      const isMax = bar.value === maxBar && bar.value > 0;
+                      return (
+                        <div key={bar.label} className="flex-1 flex flex-col items-center gap-2 group">
+                          <span className="text-[11px] tabular-nums text-ink-muted-48 opacity-0 group-hover:opacity-100 transition">
+                            {bar.value}
+                          </span>
+                          <div className="w-full flex justify-center items-end h-full">
+                            <div
+                              className={`w-full max-w-[24px] rounded-t-sm transition-all ${
+                                isMax ? 'bg-primary' : 'bg-primary/12 group-hover:bg-primary/60'
+                              }`}
+                              style={{ height: `${(bar.value / maxBar) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    {barData.map((d) => (
+                      <span key={d.label} className="flex-1 text-center text-[11px] text-ink-muted-48">{d.label}</span>
+                    ))}
+                  </div>
+                </>
+              )}
             </motion.div>
 
             {/* Level distribution */}
@@ -406,13 +447,23 @@ export default function AdminHome() {
                   </tr>
                 </thead>
                 <tbody className="text-[13px]">
-                  {recentCompetitions.length === 0 ? (
+                  {loading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <tr key={i} className="border-b border-hairline last:border-0 animate-pulse">
+                        <td className="py-3 px-md"><div className="h-4 w-40 bg-gray-200 rounded" /></td>
+                        <td className="py-3 px-md"><div className="h-6 w-12 bg-gray-200 rounded-full" /></td>
+                        <td className="py-3 px-md"><div className="h-4 w-16 bg-gray-200 rounded" /></td>
+                        <td className="py-3 px-md text-right"><div className="h-4 w-20 bg-gray-200 rounded ml-auto" /></td>
+                        <td className="py-3 px-md text-right"><div className="h-4 w-12 bg-gray-200 rounded ml-auto" /></td>
+                      </tr>
+                    ))
+                  ) : pagedCompetitions.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-12 text-center text-ink-muted-48 text-[13px]">
-                        {loading ? '加载中…' : '暂无赛事数据'}
+                        暂无赛事数据
                       </td>
                     </tr>
-                  ) : recentCompetitions.map((comp, idx) => {
+                  ) : pagedCompetitions.map((comp, idx) => {
                     const display = statusLabel(comp.status);
                     return (
                       <tr key={comp.id ?? idx} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
@@ -439,6 +490,7 @@ export default function AdminHome() {
                               onClick={() => navigate(`/admin/publish/${comp.id}`)}
                               className="p-1.5 rounded-md text-ink-muted-48 hover:text-primary hover:bg-primary/8 transition"
                               title="编辑"
+                              aria-label="编辑"
                             >
                               <span className="material-symbols-outlined text-[16px]">edit</span>
                             </button>
@@ -450,6 +502,7 @@ export default function AdminHome() {
                                   : 'text-ink-muted-48 hover:text-primary hover:bg-primary/8'
                               }`}
                               title={comp.status === 'published' ? '下架' : '上架'}
+                              aria-label={comp.status === 'published' ? '下架' : '上架'}
                             >
                               <span className="material-symbols-outlined text-[16px]">
                                 {comp.status === 'published' ? 'visibility_off' : 'visibility'}
@@ -459,6 +512,7 @@ export default function AdminHome() {
                               onClick={() => handleDelete(comp.id)}
                               className="p-1.5 rounded-md text-ink-muted-48 hover:text-error hover:bg-error/8 transition"
                               title="删除"
+                              aria-label="删除"
                             >
                               <span className="material-symbols-outlined text-[16px]">delete</span>
                             </button>
@@ -470,6 +524,46 @@ export default function AdminHome() {
                 </tbody>
               </table>
             </div>
+            {totalCompPages > 1 && (
+              <div className="px-md py-3 border-t border-hairline flex items-center justify-between">
+                <span className="text-[12px] text-ink-muted-48">
+                  共 <span className="text-ink font-medium tabular-nums">{recentCompetitions.length}</span> 条
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    className="w-8 h-8 rounded-pill grid place-items-center text-ink-muted-80 hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                    disabled={currentCompPage === 1}
+                    onClick={() => setCurrentCompPage((p) => Math.max(1, p - 1))}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+                  </button>
+                  {getCompPageWindow(currentCompPage, totalCompPages).map((page, i) =>
+                    page === '...' ? (
+                      <span key={`e${i}`} className="w-8 h-8 grid place-items-center text-[12px] text-ink-muted-48">...</span>
+                    ) : (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentCompPage(page)}
+                        className={`w-8 h-8 rounded-pill text-[12px] font-medium tabular-nums transition ${
+                          currentCompPage === page
+                            ? 'bg-primary text-white'
+                            : 'text-ink-muted-80 hover:text-ink hover:bg-primary/6'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  )}
+                  <button
+                    className="w-8 h-8 rounded-pill grid place-items-center text-ink-muted-80 hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                    disabled={currentCompPage === totalCompPages}
+                    onClick={() => setCurrentCompPage((p) => Math.min(totalCompPages, p + 1))}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </motion.div>
         </div>
 

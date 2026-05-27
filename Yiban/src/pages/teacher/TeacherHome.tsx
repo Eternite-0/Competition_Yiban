@@ -105,11 +105,11 @@ export default function TeacherHome() {
         description={`欢迎回来，${currentUser?.name ?? '老师'}。`}
         actions={(
           <>
-            <button className="btn-secondary" onClick={() => navigate('/teacher/audit')}>
+            <button className="btn-secondary" onClick={() => navigate('/teacher/audit')} aria-label="前往审核">
               <span className="material-symbols-outlined text-[18px]">fact_check</span>
               前往审核
             </button>
-            <button className="btn-primary" onClick={() => navigate('/teacher/student-competitions')}>
+            <button className="btn-primary" onClick={() => navigate('/teacher/student-competitions')} aria-label="学生动态">
               <span className="material-symbols-outlined text-[18px]">groups</span>
               学生动态
             </button>
@@ -122,7 +122,20 @@ export default function TeacherHome() {
 
       {/* Metrics */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-md">
-        {metrics.map((m, i) => (
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="glass p-lg flex flex-col gap-2 animate-pulse">
+              <div className="flex items-center justify-between">
+                <div className="h-3 w-16 bg-gray-200 rounded" />
+                <div className="h-[18px] w-[18px] bg-gray-200 rounded" />
+              </div>
+              <div className="flex items-baseline gap-1">
+                <div className="h-8 w-20 bg-gray-200 rounded" />
+                <div className="h-3 w-6 bg-gray-200 rounded" />
+              </div>
+            </div>
+          ))
+        ) : metrics.map((m, i) => (
           <motion.div
             key={m.label}
             initial={{ opacity: 0, y: 10 }}
@@ -212,8 +225,19 @@ export default function TeacherHome() {
             </button>
           </div>
           {loading ? (
-            <div className="py-10 grid place-items-center text-ink-muted-48">
-              <span className="material-symbols-outlined animate-spin text-[28px]">progress_activity</span>
+            <div className="flex flex-col">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between py-3 border-b border-hairline last:border-0 animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-gray-200" />
+                    <div className="flex flex-col gap-1.5">
+                      <div className="h-3.5 w-24 bg-gray-200 rounded" />
+                      <div className="h-3 w-32 bg-gray-200 rounded" />
+                    </div>
+                  </div>
+                  <div className="h-6 w-14 bg-gray-200 rounded-full" />
+                </div>
+              ))}
             </div>
           ) : pending.length === 0 ? (
             <div className="py-10 grid place-items-center text-ink-muted-48 gap-2">

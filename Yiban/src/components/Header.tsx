@@ -68,6 +68,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -79,6 +80,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
     if (searchQuery.trim().length < 1) {
       setSearchResults([]);
       setSearchOpen(false);
+      setActiveIndex(-1);
       return;
     }
     setSearchLoading(true);
@@ -91,16 +93,16 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
           signal: abortRef.current.signal,
         });
         const records = Array.isArray(data) ? data : data?.records ?? [];
-        setSearchResults(
-          records.map((r: any) => ({
+        const mapped = records.map((r: any) => ({
             id: r.id,
             type: 'competition' as const,
             name: r.name || r.title || '未命名赛事',
             level: r.level,
             status: r.status,
-          }))
-        );
-        setSearchOpen(records.length > 0);
+          }));
+        setSearchResults(mapped);
+        setActiveIndex(-1);
+        setSearchOpen(true);
       } catch (e: any) {
         if (e?.name !== 'CanceledError' && e?.code !== 'ERR_CANCELED') {
           setSearchResults([]);
@@ -135,7 +137,9 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
       }
       if (e.key === 'Escape') {
         setSearchOpen(false);
+        setActiveIndex(-1);
         searchInputRef.current?.blur();
+        setPanelOpen(false);
       }
     }
     document.addEventListener('keydown', handleKey);
@@ -145,9 +149,25 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
   const handleSearchSelect = (result: SearchResult) => {
     setSearchOpen(false);
     setSearchQuery('');
+    setActiveIndex(-1);
     if (result.type === 'competition') {
       const role = user?.role || 'student';
       navigate(`/${role}/competitions/${result.id}`);
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (!searchOpen) return;
+    const count = searchResults.length;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev + 1) % count);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev - 1 + count) % count);
+    } else if (e.key === 'Enter' && activeIndex >= 0 && activeIndex < count) {
+      e.preventDefault();
+      handleSearchSelect(searchResults[activeIndex]);
     }
   };
 
@@ -239,7 +259,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
 
       <div className="flex items-center gap-3">
         <div ref={searchRef} className="relative hidden lg:block">
-          <div className="flex items-center h-9 w-[220px] rounded-pill bg-canvas border border-hairline focus-within:border-primary-focus transition-all">
+          <div className="flex items-center h-9 w-[220px] rounded-pill bg-canvas border border-hairline focus-within:border-primary-focus transition-all" aria-expanded={searchOpen}>
             <span className="material-symbols-outlined text-[17px] text-ink-muted-48 ml-3.5">search</span>
             <input
               ref={searchInputRef}
@@ -249,6 +269,9 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => searchResults.length > 0 && setSearchOpen(true)}
+              onKeyDown={handleSearchKeyDown}
+              aria-haspopup="listbox"
+              aria-activedescendant={activeIndex >= 0 ? `search-option-${searchResults[activeIndex]?.id}` : undefined}
             />
             {searchLoading ? (
               <span className="material-symbols-outlined text-[16px] text-ink-muted-48 mr-2 animate-spin">progress_activity</span>
@@ -258,7 +281,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
           </div>
 
           <AnimatePresence>
-            {searchOpen && searchResults.length > 0 && (
+            {searchOpen && (
               <motion.div
                 initial={{ opacity: 0, y: -4, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -269,12 +292,21 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
                 <div className="px-3 py-2 border-b border-hairline">
                   <span className="text-[11px] text-ink-muted-48">搜索结果</span>
                 </div>
-                <ul className="max-h-[260px] overflow-y-auto">
-                  {searchResults.map((r) => (
+                {searchResults.length === 0 ? (
+                  <div className="px-3 py-6 text-center text-[13px] text-ink-muted-48">无匹配结果</div>
+                ) : (
+                <ul className="max-h-[260px] overflow-y-auto" role="listbox">
+                  {searchResults.map((r, i) => (
                     <li
                       key={r.id}
+                      id={`search-option-${r.id}`}
+                      role="option"
+                      aria-selected={i === activeIndex}
                       onClick={() => handleSearchSelect(r)}
-                      className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-primary/6 transition border-b border-hairline/50 last:border-b-0"
+                      onMouseEnter={() => setActiveIndex(i)}
+                      className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition border-b border-hairline/50 last:border-b-0 ${
+                        i === activeIndex ? 'bg-primary/6' : 'hover:bg-primary/6'
+                      }`}
                     >
                       <span className="material-symbols-outlined text-[18px] text-primary shrink-0">emoji_events</span>
                       <div className="min-w-0 flex-1">
@@ -289,6 +321,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
                     </li>
                   ))}
                 </ul>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -300,6 +333,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
             ref={bellRef}
             onClick={() => setPanelOpen((v) => !v)}
             className="relative w-9 h-9 grid place-items-center rounded-full hover:bg-primary/6 active:scale-95 transition-all text-ink-muted-80 hover:text-ink"
+            aria-label="消息通知"
           >
             <span className="material-symbols-outlined text-[20px]">notifications</span>
             {unreadCount > 0 && (
@@ -333,10 +367,11 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
                       <span className="text-xs">暂无消息</span>
                     </div>
                   ) : (
-                    <ul>
+                    <ul role="menu">
                       {messages.map((msg) => (
                         <li
                           key={msg.id}
+                          role="menuitem"
                           onClick={() => msg.isRead === 0 && handleMarkRead(msg.id)}
                           className={`flex gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-hairline/50 last:border-b-0 hover:bg-primary/4 ${
                             msg.isRead === 0 ? 'bg-primary/3' : ''

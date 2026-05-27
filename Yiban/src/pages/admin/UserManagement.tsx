@@ -41,6 +41,21 @@ const roleLabel: Record<string, string> = {
   admin: '管理员',
 };
 
+const getPageWindow = (current: number, total: number): (number | '...')[] => {
+  if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | '...')[] = [];
+  let start = Math.max(2, current - 1);
+  let end = Math.min(total - 1, current + 1);
+  if (current <= 3) { start = 2; end = 4; }
+  if (current >= total - 2) { start = total - 3; end = total - 1; }
+  pages.push(1);
+  if (start > 2) pages.push('...');
+  for (let i = start; i <= end; i++) pages.push(i);
+  if (end < total - 1) pages.push('...');
+  pages.push(total);
+  return pages;
+};
+
 export default function UserManagement() {
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [total, setTotal] = useState(0);
@@ -170,7 +185,7 @@ export default function UserManagement() {
       </section>
 
       {/* Filter bar */}
-      <div className="glass-tint flex flex-wrap gap-sm items-center px-md py-3">
+      <div className="glass-tint flex flex-wrap gap-sm items-center px-md py-3" role="search">
         <div className="relative w-full md:w-[280px]">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">
             search
@@ -178,6 +193,7 @@ export default function UserManagement() {
           <input
             className="input-glass h-9 pl-9 text-[13px] !rounded-pill"
             placeholder="搜索用户名 / 姓名"
+            aria-label="搜索用户名 / 姓名"
             value={keyword}
             onChange={(e) => {
               setKeyword(e.target.value);
@@ -262,6 +278,7 @@ export default function UserManagement() {
                         onClick={() => handleDelete(user)}
                         className="p-1.5 rounded-md text-ink-muted-48 hover:text-error hover:bg-error/8 transition"
                         title="删除用户"
+                        aria-label="删除用户"
                       >
                         <span className="material-symbols-outlined text-[16px]">delete</span>
                       </button>
@@ -286,19 +303,23 @@ export default function UserManagement() {
             >
               <span className="material-symbols-outlined text-[16px]">chevron_left</span>
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-8 h-8 rounded-pill text-[12px] font-medium tabular-nums transition ${
-                  currentPage === page
-                    ? 'bg-primary text-white'
-                    : 'text-ink-muted-80 hover:text-ink hover:bg-primary/6'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
+            {getPageWindow(currentPage, totalPages).map((page, i) =>
+              page === '...' ? (
+                <span key={`e${i}`} className="w-8 h-8 grid place-items-center text-[12px] text-ink-muted-48">...</span>
+              ) : (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 rounded-pill text-[12px] font-medium tabular-nums transition ${
+                    currentPage === page
+                      ? 'bg-primary text-white'
+                      : 'text-ink-muted-80 hover:text-ink hover:bg-primary/6'
+                  }`}
+                >
+                  {page}
+                </button>
+              )
+            )}
             <button
               className="w-8 h-8 rounded-pill grid place-items-center text-ink-muted-80 hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition"
               disabled={currentPage === totalPages}

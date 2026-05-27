@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
@@ -133,6 +133,21 @@ export default function CompetitionCalendar() {
     setSelectedDay(null);
   };
 
+  const touchStartX = useRef(0);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    if (Math.abs(dx) > 50) {
+      if (dx > 0) goPrev();
+      else goNext();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [year, month]);
+
   const selectedCompetitions = selectedDay ? (dayMap[selectedDay] ?? []) : [];
 
   return (
@@ -209,7 +224,7 @@ export default function CompetitionCalendar() {
           </div>
 
           {/* Grid */}
-          <div className="grid grid-cols-7 gap-y-2 gap-x-1 text-center">
+          <div className="grid grid-cols-7 gap-y-2 gap-x-1 text-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
             {WEEKDAYS.map((d) => (
               <div key={d} className="text-[11px] text-ink-muted-48 font-medium uppercase tracking-widest pb-2">
                 {d}
@@ -219,10 +234,13 @@ export default function CompetitionCalendar() {
               const events = dayMap[c.key] ?? [];
               const isToday = c.key === todayKey;
               const isSelected = c.key === selectedDay;
+              const dateLabel = `${parseInt(c.key.split('-')[1])}月${parseInt(c.key.split('-')[2])}日${events.length > 0 ? `, ${events.length}个赛事` : ''}`;
               return (
                 <button
                   key={c.key}
                   onClick={() => setSelectedDay(isSelected ? null : c.key)}
+                  aria-label={dateLabel}
+                  aria-pressed={isSelected}
                   className={`group relative h-14 sm:h-16 flex flex-col items-center justify-start pt-1 rounded-lg transition ${
                     isSelected ? 'bg-primary/8 ring-1 ring-primary/30' : 'hover:bg-primary/4'
                   }`}

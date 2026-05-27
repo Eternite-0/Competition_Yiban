@@ -1,3 +1,4 @@
+import { Component, type ReactNode } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -46,7 +47,9 @@ export default function Layout() {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
-                <Outlet />
+                <PageErrorBoundary>
+                  <Outlet />
+                </PageErrorBoundary>
               </motion.div>
             </AnimatePresence>
           </div>
@@ -54,4 +57,38 @@ export default function Layout() {
       </div>
     </div>
   );
+}
+
+interface EBState {
+  hasError: boolean;
+}
+
+class PageErrorBoundary extends Component<{ children: ReactNode }, EBState> {
+  state: EBState = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  handleRetry = () => {
+    this.setState({ hasError: false });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <span className="text-[15px] text-ink-muted-80">页面加载出错</span>
+          <button
+            type="button"
+            onClick={this.handleRetry}
+            className="px-4 py-1.5 rounded-lg bg-primary text-on-primary text-sm font-medium hover:opacity-90 transition"
+          >
+            重试
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }

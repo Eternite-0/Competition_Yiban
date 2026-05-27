@@ -44,6 +44,15 @@ function levelChipClass(level?: string) {
   }
 }
 
+function levelGradient(level?: string) {
+  switch (level) {
+    case '国家级': return 'linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.04))';
+    case '省级': return 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.04))';
+    case '校级': return 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04))';
+    default: return 'linear-gradient(135deg, rgba(156,163,175,0.1), rgba(156,163,175,0.03))';
+  }
+}
+
 function formatFileSize(bytes?: number) {
   if (!bytes) return '—';
   if (bytes < 1024) return `${bytes} B`;
@@ -379,11 +388,23 @@ function WorkCard({ work, onClick }: { work: SubmissionVO; onClick: () => void }
   const tags = work.competitionTags ?? [];
   const hasTeam = Boolean(work.teamMembers && work.teamMembers.length > 0);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  };
+
   return (
     <div
       className="glass overflow-hidden flex flex-col h-full transition-all hover:border-primary/25 cursor-pointer group"
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
     >
+      {/* Image placeholder */}
+      <div className="h-12 w-full" style={{ background: levelGradient(work.competitionLevel) }} />
       {/* Header accent */}
       <div className="h-1.5 bg-gradient-to-r from-primary via-primary/60 to-primary/30" />
 
