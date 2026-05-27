@@ -24,4 +24,10 @@ public interface TeacherService {
 
     // Student detail
     Map<String, Object> getStudentDetail(Long studentId);
+
+    // Trend data
+    Map<String, Object> getTrend(String college, String grade, String major);
+
+    // Student detail export
+    Map<String, Object> getStudentExportData(Long studentId);
 }

@@ -67,6 +67,7 @@ export const router = createBrowserRouter([
       { path: 'student-competitions', element: <TeacherStudentCompetitions /> },
       { path: 'student-growth', element: <TeacherStudentGrowth /> },
       { path: 'student-detail', element: <StudentDetail /> },
+      { path: 'student-compare', element: <StudentCompare /> },
     ],
   },
   {

@@ -159,9 +159,24 @@ export default function TeacherStudentGrowth() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterValues>({});
+  const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
 
   const handleFilterChange = useCallback((f: FilterValues) => {
     setFilters(f);
+  }, []);
+
+  const toggleCompare = useCallback((id: string) => {
+    setCompareIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size < 4) {
+        next.add(id);
+      } else {
+        toast.warning('最多选择 4 名学生进行对比');
+      }
+      return next;
+    });
   }, []);
 
   // Load supervised student list
@@ -290,6 +305,15 @@ export default function TeacherStudentGrowth() {
                 查看详情
               </button>
             )}
+            {compareIds.size >= 2 && (
+              <button
+                onClick={() => navigate(`/teacher/student-compare?ids=${Array.from(compareIds).join(',')}`)}
+                className="btn-primary h-9 flex items-center gap-1.5 text-[13px]"
+              >
+                <span className="material-symbols-outlined text-[16px]">compare</span>
+                对比 ({compareIds.size})
+              </button>
+            )}
             <ExportButton />
           </>
         )}
@@ -343,20 +367,28 @@ export default function TeacherStudentGrowth() {
               </div>
             ) : (
               filteredStudents.map((s) => (
-                <button
-                  key={s.studentId}
-                  onClick={() => setSelectedId(s.studentId)}
-                  className={`w-full text-left p-2 rounded-md transition mb-1 ${
-                    selectedId === s.studentId ? 'bg-primary/8' : 'hover:bg-primary/6'
-                  }`}
-                >
-                  <div className={`text-[13px] ${selectedId === s.studentId ? 'text-primary font-semibold' : 'text-ink font-medium'}`}>
-                    {s.studentName}
-                  </div>
-                  <div className="text-[11px] text-ink-muted-48 mt-0.5">
-                    {s.studentId}{s.className ? ` · ${s.className}` : ''}
-                  </div>
-                </button>
+                <div key={s.studentId} className={`flex items-center gap-2 p-2 rounded-md transition mb-1 ${
+                  selectedId === s.studentId ? 'bg-primary/8' : 'hover:bg-primary/6'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={compareIds.has(s.studentId)}
+                    onChange={() => toggleCompare(s.studentId)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-4 h-4 rounded border-hairline text-primary focus:ring-primary/30 shrink-0 accent-primary"
+                  />
+                  <button
+                    onClick={() => setSelectedId(s.studentId)}
+                    className="flex-1 text-left min-w-0"
+                  >
+                    <div className={`text-[13px] ${selectedId === s.studentId ? 'text-primary font-semibold' : 'text-ink font-medium'} truncate`}>
+                      {s.studentName}
+                    </div>
+                    <div className="text-[11px] text-ink-muted-48 mt-0.5 truncate">
+                      {s.studentId}{s.className ? ` · ${s.className}` : ''}
+                    </div>
+                  </button>
+                </div>
               ))
             )}
           </div>
