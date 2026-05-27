@@ -15,6 +15,11 @@ interface DashboardStats {
   recentActivities?: Array<{ studentName: string; class?: string; submitDate?: string; status?: string }>;
 }
 
+interface TrendPoint {
+  month: string;
+  count: number;
+}
+
 interface PendingItem {
   id: string;
   studentLabel: string;
@@ -31,6 +36,7 @@ export default function TeacherHome() {
   const [pending, setPending] = useState<PendingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<FilterValues>({});
+  const [trend, setTrend] = useState<TrendPoint[]>([]);
 
   const handleFilterChange = useCallback((f: FilterValues) => {
     setFilters(f);
@@ -47,15 +53,16 @@ export default function TeacherHome() {
         if (filters.major) filterParams.major = filters.major;
         if (filters.className) filterParams.className = filters.className;
 
-        const [dash, pendingPage] = await Promise.all([
+        const [dash, pendingPage, trendData] = await Promise.all([
           apiClient.get('/teacher/dashboard', { params: filterParams }).catch((e) => {
             console.error('dashboard failed', e);
             return {} as DashboardStats;
           }),
-          apiClient.get('/registration/pending', { params: { current: 1, size: 5 } }).catch((e) => {
+          apiClient.get('/registration/pending', { params: { current: 1, size: 5, ...filterParams } }).catch((e) => {
             console.error('pending failed', e);
             return { records: [] } as any;
           }),
+          apiClient.get('/teacher/trend', { params: filterParams }).catch(() => ({ monthly: [] })),
         ]);
         if (cancelled) return;
         setStats((dash as DashboardStats) || {});
@@ -69,6 +76,8 @@ export default function TeacherHome() {
             status: r.status ?? '待审核',
           }))
         );
+        const monthly: TrendPoint[] = (trendData as any)?.monthly ?? [];
+        setTrend(monthly.slice(-6));
       } catch (e: any) {
         toast.error(e?.message || '加载概览失败');
       } finally {
@@ -132,6 +141,57 @@ export default function TeacherHome() {
           </motion.div>
         ))}
       </section>
+
+      {/* Trend chart */}
+      {trend.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12, duration: 0.4 }}
+          className="glass p-lg"
+        >
+          <div className="flex items-center justify-between mb-md">
+            <h3 className="text-[15px] font-semibold tracking-tight text-ink">报名趋势</h3>
+            <span className="text-[11px] text-ink-muted-48">近 {trend.length} 个月</span>
+          </div>
+          {loading ? (
+            <div className="h-32 grid place-items-center text-ink-muted-48">
+              <span className="material-symbols-outlined animate-spin text-[28px]">progress_activity</span>
+            </div>
+          ) : trend.every((t) => t.count === 0) ? (
+            <div className="h-32 grid place-items-center text-ink-muted-48 gap-2">
+              <span className="material-symbols-outlined text-[32px] opacity-40">bar_chart</span>
+              <p className="text-[13px]">暂无数据</p>
+            </div>
+          ) : (
+            <div className="flex items-end gap-2 h-32 border-b border-hairline pb-2">
+              {(() => {
+                const maxVal = Math.max(1, ...trend.map((t) => t.count));
+                return trend.map((t) => {
+                  const isMax = t.count === maxVal && t.count > 0;
+                  const label = t.month.split('-')[1] + '月';
+                  return (
+                    <div key={t.month} className="flex-1 flex flex-col items-center gap-1 group">
+                      <span className="text-[11px] tabular-nums text-ink-muted-48 opacity-0 group-hover:opacity-100 transition">
+                        {t.count}
+                      </span>
+                      <div className="w-full flex justify-center items-end h-full">
+                        <div
+                          className={`w-full max-w-[24px] rounded-t-sm transition-all ${
+                            isMax ? 'bg-primary' : 'bg-primary/12 group-hover:bg-primary/60'
+                          }`}
+                          style={{ height: `${(t.count / maxVal) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-ink-muted-48">{label}</span>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* Pending + Activity */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-lg">

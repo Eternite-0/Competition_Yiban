@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import { useStore } from '../../store/useStore';
 
 type TeamVO = {
   id: number | string;
@@ -21,8 +22,18 @@ type CompetitionOption = {
   name: string;
 };
 
+type TeamApplicationVO = {
+  id: number | string;
+  teamId: number | string;
+  applicantId: number | string;
+  role: string;
+  reason?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createTime?: string;
+};
+
 function formatDate(value?: string) {
-  if (!value) return new Date().toISOString().split('T')[0];
+  if (!value) return '未知日期';
   const d = new Date(value);
   if (isNaN(d.getTime())) return value;
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -55,6 +66,14 @@ export default function TeamRecruitment() {
 
   const [myApplications, setMyApplications] = useState<any[]>([]);
   const [loadingApps, setLoadingApps] = useState(false);
+
+  const currentUser = useStore((s) => s.currentUser);
+
+  const [showMyPosts, setShowMyPosts] = useState(false);
+  const [applicationsTarget, setApplicationsTarget] = useState<TeamVO | null>(null);
+  const [teamApplications, setTeamApplications] = useState<TeamApplicationVO[]>([]);
+  const [loadingTeamApps, setLoadingTeamApps] = useState(false);
+  const [handlingAppId, setHandlingAppId] = useState<number | string | null>(null);
 
   useEffect(() => {
     fetchPosts();
@@ -128,7 +147,6 @@ export default function TeamRecruitment() {
       setShowCreateModal(false);
       setCreateForm({ competitionId: '', content: '', rolesNeeded: '' });
       setPage(1);
-      fetchPosts();
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || '创建失败');
@@ -174,10 +192,40 @@ export default function TeamRecruitment() {
       toast.success('申请已提交，等待队长审核');
       setApplyTarget(null);
       setApplyForm({ role: '', reason: '' });
+      fetchMyApplications();
     } catch (err: any) {
       toast.error(err.message || '申请失败');
     } finally {
       setApplySubmitting(false);
+    }
+  };
+
+  const fetchTeamApplications = async (post: TeamVO) => {
+    setApplicationsTarget(post);
+    setLoadingTeamApps(true);
+    try {
+      const data: any = await apiClient.get(`/team/applications/${post.id}`);
+      setTeamApplications(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      toast.error(err.message || '获取申请列表失败');
+      setTeamApplications([]);
+    } finally {
+      setLoadingTeamApps(false);
+    }
+  };
+
+  const handleApplicationAction = async (appId: number | string, status: 'approved' | 'rejected') => {
+    try {
+      setHandlingAppId(appId);
+      await apiClient.post(`/team/application/${appId}/handle`, { status });
+      toast.success(status === 'approved' ? '已通过' : '已拒绝');
+      setTeamApplications((prev) =>
+        prev.map((app) => (app.id === appId ? { ...app, status } : app))
+      );
+    } catch (err: any) {
+      toast.error(err.message || '操作失败');
+    } finally {
+      setHandlingAppId(null);
     }
   };
 
@@ -311,24 +359,28 @@ export default function TeamRecruitment() {
                     <span>发布于 {formatDate(post.date)}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setApplyTarget(post);
-                        setApplyForm({ role: post.rolesNeeded?.[0] || '', reason: '' });
-                      }}
-                      className="btn-primary !py-1.5 !px-4 !text-[13px]"
-                    >
-                      申请加入
-                    </button>
-                    <button
-                      onClick={() => {
-                        setContactTarget(post);
-                        setContactForm({ title: `关于「${post.competitionName}」组队招募`, content: '' });
-                      }}
-                      className="btn-secondary !py-1.5 !px-4 !text-[13px]"
-                    >
-                      联系 TA
-                    </button>
+                    {String(post.authorId) !== String(currentUser?.id) && (
+                      <>
+                        <button
+                          onClick={() => {
+                            setApplyTarget(post);
+                            setApplyForm({ role: post.rolesNeeded?.[0] || '', reason: '' });
+                          }}
+                          className="btn-primary !py-1.5 !px-4 !text-[13px]"
+                        >
+                          申请加入
+                        </button>
+                        <button
+                          onClick={() => {
+                            setContactTarget(post);
+                            setContactForm({ title: `关于「${post.competitionName}」组队招募`, content: '' });
+                          }}
+                          className="btn-secondary !py-1.5 !px-4 !text-[13px]"
+                        >
+                          联系 TA
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -358,6 +410,49 @@ export default function TeamRecruitment() {
 
         {/* Right: Sidebar */}
         <aside className="lg:col-span-4 flex flex-col gap-md lg:sticky lg:top-[68px] lg:h-fit">
+          {/* My Posts - Captain Application Management */}
+          {currentUser && (
+            <div className="glass p-lg">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px] text-primary">post_add</span>
+                  我的帖子
+                </h3>
+                <button
+                  onClick={() => setShowMyPosts(!showMyPosts)}
+                  className="text-[12px] text-primary hover:underline"
+                >
+                  {showMyPosts ? '收起' : '展开'}
+                </button>
+              </div>
+              {showMyPosts && (
+                <div className="flex flex-col gap-2">
+                  {/* NOTE: 只能过滤当前分页内的帖子，后端暂不支持按 authorId 筛选 */}
+                  {teamPosts.filter((p) => String(p.authorId) === String(currentUser.id)).length === 0 ? (
+                    <p className="text-[12px] text-ink-muted-48 py-4 text-center">暂无发布的帖子</p>
+                  ) : (
+                    teamPosts
+                      .filter((p) => String(p.authorId) === String(currentUser.id))
+                      .map((post) => (
+                        <div key={post.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-canvas/50 text-[12px]">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-ink font-medium truncate">{post.competitionName}</p>
+                            <p className="text-ink-muted-48 mt-0.5 truncate">{post.content?.slice(0, 30)}...</p>
+                          </div>
+                          <button
+                            onClick={() => fetchTeamApplications(post)}
+                            className="btn-secondary !py-1 !px-2.5 !text-[11px] shrink-0 ml-2"
+                          >
+                            查看申请
+                          </button>
+                        </div>
+                      ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* My Applications */}
           <div className="glass p-lg">
             <div className="flex justify-between items-center mb-3">
@@ -604,6 +699,102 @@ export default function TeamRecruitment() {
                 {applySubmitting && <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>}
                 提交申请
               </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Applications Management Modal (Captain) */}
+      {applicationsTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,102,204,0.12)', backdropFilter: 'blur(4px)' }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="glass-strong w-full max-w-lg max-h-[80vh] flex flex-col"
+            style={{ padding: '32px' }}
+          >
+            <div className="flex items-center justify-between" style={{ marginBottom: '17px' }}>
+              <h3 className="text-[20px] font-semibold tracking-tight text-ink">申请管理</h3>
+              <button onClick={() => { setApplicationsTarget(null); setTeamApplications([]); }} className="text-ink-muted-48 hover:text-ink">
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+            <p className="text-[13px] text-ink-muted-48" style={{ marginBottom: '17px' }}>
+              帖子：<strong className="text-ink">{applicationsTarget.competitionName}</strong>
+              <span className="ml-2 text-ink-muted-48">{applicationsTarget.content?.slice(0, 40)}...</span>
+            </p>
+
+            <div className="flex-1 overflow-y-auto" style={{ minHeight: '120px' }}>
+              {loadingTeamApps ? (
+                <div className="flex justify-center py-8">
+                  <span className="material-symbols-outlined animate-spin text-[24px] text-ink-muted-48">progress_activity</span>
+                </div>
+              ) : teamApplications.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 gap-2 text-ink-muted-48">
+                  <span className="material-symbols-outlined text-[28px]">inbox</span>
+                  <span className="text-[13px]">暂无申请</span>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {teamApplications.map((app) => (
+                    <div key={app.id} className="rounded-lg bg-canvas/50 border border-hairline p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-canvas-parchment border border-hairline text-primary grid place-items-center text-[13px] font-semibold">
+                            {String(app.applicantId).slice(-2)}
+                          </div>
+                          <div>
+                            <p className="text-[13px] font-medium text-ink">用户 #{app.applicantId}</p>
+                            <p className="text-[11px] text-ink-muted-48">{formatDate(app.createTime)}</p>
+                          </div>
+                        </div>
+                        <span className={`chip !text-[11px] ${
+                          app.status === 'approved' ? 'chip-success' :
+                          app.status === 'rejected' ? 'chip-error' :
+                          'bg-canvas border border-hairline text-ink-muted-80'
+                        }`}>
+                          {app.status === 'approved' ? '已通过' :
+                           app.status === 'rejected' ? '已拒绝' : '待审核'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-[12px] text-ink-muted-48">申请角色</span>
+                        <span className="chip chip-primary !text-[11px]">{app.role}</span>
+                      </div>
+                      {app.reason && (
+                        <p className="text-[12px] text-ink-muted-80 mb-3 leading-relaxed">{app.reason}</p>
+                      )}
+                      {app.status === 'pending' && (
+                        <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
+                          <button
+                            onClick={() => handleApplicationAction(app.id, 'rejected')}
+                            disabled={handlingAppId === app.id}
+                            className="btn-secondary !py-1 !px-3 !text-[12px]"
+                          >
+                            {handlingAppId === app.id ? (
+                              <span className="material-symbols-outlined animate-spin text-[14px]">progress_activity</span>
+                            ) : '拒绝'}
+                          </button>
+                          <button
+                            onClick={() => handleApplicationAction(app.id, 'approved')}
+                            disabled={handlingAppId === app.id}
+                            className="btn-primary !py-1 !px-3 !text-[12px]"
+                          >
+                            {handlingAppId === app.id ? (
+                              <span className="material-symbols-outlined animate-spin text-[14px]">progress_activity</span>
+                            ) : '通过'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end" style={{ marginTop: '17px' }}>
+              <button onClick={() => { setApplicationsTarget(null); setTeamApplications([]); }} className="btn-secondary">关闭</button>
             </div>
           </motion.div>
         </div>

@@ -1,5 +1,18 @@
-import { useLocation } from 'react-router-dom';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useStore } from '../store/useStore';
+import { apiClient } from '../api/client';
+
+interface Message {
+  id: number;
+  fromUser: number;
+  toUser: number;
+  title: string;
+  content: string;
+  isRead: number;
+  createTime: string;
+}
 
 const titleMap: Record<string, string> = {
   '/student': '工作台',
@@ -36,10 +49,177 @@ interface HeaderProps {
   onToggleMobileNav: () => void;
 }
 
+interface SearchResult {
+  id: string | number;
+  type: 'competition';
+  name: string;
+  level?: string;
+  status?: string;
+}
+
 export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps) {
   const user = useStore((s) => s.currentUser);
   const location = useLocation();
+  const navigate = useNavigate();
   const title = resolveTitle(location.pathname);
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+  const abortRef = useRef<AbortController>();
+
+  // Debounced search with AbortController to prevent race conditions
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (searchQuery.trim().length < 1) {
+      setSearchResults([]);
+      setSearchOpen(false);
+      return;
+    }
+    setSearchLoading(true);
+    searchTimer.current = setTimeout(async () => {
+      abortRef.current?.abort();
+      abortRef.current = new AbortController();
+      try {
+        const data = await apiClient.get('/competition/list', {
+          params: { current: 1, size: 5, keyword: searchQuery.trim() },
+          signal: abortRef.current.signal,
+        });
+        const records = Array.isArray(data) ? data : data?.records ?? [];
+        setSearchResults(
+          records.map((r: any) => ({
+            id: r.id,
+            type: 'competition' as const,
+            name: r.name || r.title || '未命名赛事',
+            level: r.level,
+            status: r.status,
+          }))
+        );
+        setSearchOpen(records.length > 0);
+      } catch (e: any) {
+        if (e?.name !== 'CanceledError' && e?.code !== 'ERR_CANCELED') {
+          setSearchResults([]);
+        }
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+    return () => {
+      clearTimeout(searchTimer.current);
+    };
+  }, [searchQuery]);
+
+  // Close search on outside click
+  useEffect(() => {
+    if (!searchOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [searchOpen]);
+
+  // Ctrl+K shortcut
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      if (e.key === 'Escape') {
+        setSearchOpen(false);
+        searchInputRef.current?.blur();
+      }
+    }
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, []);
+
+  const handleSearchSelect = (result: SearchResult) => {
+    setSearchOpen(false);
+    setSearchQuery('');
+    if (result.type === 'competition') {
+      const role = user?.role || 'student';
+      navigate(`/${role}/competitions/${result.id}`);
+    }
+  };
+
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLButtonElement>(null);
+
+  const fetchMessages = useCallback(async () => {
+    try {
+      const data = await apiClient.get<Message[]>('/message/list');
+      const list = Array.isArray(data) ? data : [];
+      setMessages(list.slice(0, 10));
+      setUnreadCount(list.filter((m) => m.isRead === 0).length);
+    } catch {
+      // silently ignore — user may not be logged in yet
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMessages();
+    const timer = setInterval(fetchMessages, 60_000);
+    return () => clearInterval(timer);
+  }, [fetchMessages]);
+
+  // Close panel on outside click
+  useEffect(() => {
+    if (!panelOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (
+        panelRef.current && !panelRef.current.contains(e.target as Node) &&
+        bellRef.current && !bellRef.current.contains(e.target as Node)
+      ) {
+        setPanelOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [panelOpen]);
+
+  const handleMarkRead = async (id: number) => {
+    const msg = messages.find((m) => m.id === id);
+    if (!msg || msg.isRead === 1) return;
+    try {
+      await apiClient.post(`/message/read/${id}`);
+      setMessages((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, isRead: 1 } : m))
+      );
+      setUnreadCount((c) => Math.max(0, c - 1));
+    } catch {
+      // ignore
+    }
+  };
+
+  function formatTime(raw: string): string {
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return raw;
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMin = Math.floor(diffMs / 60_000);
+    if (diffMin < 1) return '刚刚';
+    if (diffMin < 60) return `${diffMin}分钟前`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}小时前`;
+    const diffDay = Math.floor(diffHr / 24);
+    if (diffDay < 7) return `${diffDay}天前`;
+    if (d.getFullYear() !== now.getFullYear()) {
+      return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+    }
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  }
 
   return (
     <header className="fixed left-0 right-0 top-0 z-30 flex h-[52px] items-center justify-between border-b border-hairline bg-canvas-parchment/85 px-md backdrop-blur-[20px] backdrop-saturate-150 sm:px-lg md:left-[260px] md:px-xl">
@@ -58,20 +238,146 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="hidden lg:flex items-center h-9 w-[220px] rounded-pill bg-canvas border border-hairline focus-within:border-primary-focus transition-all">
-          <span className="material-symbols-outlined text-[17px] text-ink-muted-48 ml-3.5">search</span>
-          <input
-            className="h-full flex-1 bg-transparent px-2 outline-none text-[14px] text-ink placeholder:text-ink-muted-48"
-            placeholder="搜索赛事、团队、作品"
-            type="text"
-          />
-          <kbd className="mr-2 px-1.5 py-0.5 rounded-xs bg-primary/8 text-[10px] text-ink-muted-48 font-mono">Ctrl K</kbd>
+        <div ref={searchRef} className="relative hidden lg:block">
+          <div className="flex items-center h-9 w-[220px] rounded-pill bg-canvas border border-hairline focus-within:border-primary-focus transition-all">
+            <span className="material-symbols-outlined text-[17px] text-ink-muted-48 ml-3.5">search</span>
+            <input
+              ref={searchInputRef}
+              className="h-full flex-1 bg-transparent px-2 outline-none text-[14px] text-ink placeholder:text-ink-muted-48"
+              placeholder="搜索赛事、团队、作品"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => searchResults.length > 0 && setSearchOpen(true)}
+            />
+            {searchLoading ? (
+              <span className="material-symbols-outlined text-[16px] text-ink-muted-48 mr-2 animate-spin">progress_activity</span>
+            ) : (
+              <kbd className="mr-2 px-1.5 py-0.5 rounded-xs bg-primary/8 text-[10px] text-ink-muted-48 font-mono">Ctrl K</kbd>
+            )}
+          </div>
+
+          <AnimatePresence>
+            {searchOpen && searchResults.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                transition={{ duration: 0.15 }}
+                className="absolute left-0 top-[42px] w-[320px] rounded-xl border border-hairline bg-canvas-parchment/95 shadow-xl backdrop-blur-xl overflow-hidden z-50"
+              >
+                <div className="px-3 py-2 border-b border-hairline">
+                  <span className="text-[11px] text-ink-muted-48">搜索结果</span>
+                </div>
+                <ul className="max-h-[260px] overflow-y-auto">
+                  {searchResults.map((r) => (
+                    <li
+                      key={r.id}
+                      onClick={() => handleSearchSelect(r)}
+                      className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-primary/6 transition border-b border-hairline/50 last:border-b-0"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-primary shrink-0">emoji_events</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[13px] font-medium text-ink truncate">{r.name}</div>
+                        <div className="text-[11px] text-ink-muted-48 flex items-center gap-1.5">
+                          {r.level && <span>{r.level}</span>}
+                          {r.level && r.status && <span>·</span>}
+                          {r.status && <span>{r.status === 'published' ? '进行中' : r.status === 'closed' ? '已结束' : r.status}</span>}
+                        </div>
+                      </div>
+                      <span className="material-symbols-outlined text-[16px] text-ink-muted-48">arrow_forward</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        <button className="relative w-9 h-9 grid place-items-center rounded-full hover:bg-primary/6 active:scale-95 transition-all text-ink-muted-80 hover:text-ink">
-          <span className="material-symbols-outlined text-[20px]">notifications</span>
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full ring-2 ring-canvas-parchment" />
-        </button>
+        {/* Notification bell */}
+        <div className="relative">
+          <button
+            ref={bellRef}
+            onClick={() => setPanelOpen((v) => !v)}
+            className="relative w-9 h-9 grid place-items-center rounded-full hover:bg-primary/6 active:scale-95 transition-all text-ink-muted-80 hover:text-ink"
+          >
+            <span className="material-symbols-outlined text-[20px]">notifications</span>
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center bg-primary text-on-primary text-[10px] font-bold rounded-full ring-2 ring-canvas-parchment">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          <AnimatePresence>
+            {panelOpen && (
+              <motion.div
+                ref={panelRef}
+                initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                className="absolute right-0 top-[46px] w-[340px] max-w-[calc(100vw-2rem)] max-h-[420px] rounded-xl border border-hairline bg-canvas-parchment/95 shadow-xl backdrop-blur-xl overflow-hidden"
+              >
+                <div className="flex items-center justify-between px-4 py-3 border-b border-hairline">
+                  <span className="text-sm font-semibold text-ink">消息通知</span>
+                  {unreadCount > 0 && (
+                    <span className="text-xs text-primary font-medium">{unreadCount} 条未读</span>
+                  )}
+                </div>
+
+                <div className="overflow-y-auto max-h-[330px]">
+                  {messages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-ink-muted-48">
+                      <span className="material-symbols-outlined text-[32px] mb-2">notifications_none</span>
+                      <span className="text-xs">暂无消息</span>
+                    </div>
+                  ) : (
+                    <ul>
+                      {messages.map((msg) => (
+                        <li
+                          key={msg.id}
+                          onClick={() => msg.isRead === 0 && handleMarkRead(msg.id)}
+                          className={`flex gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-hairline/50 last:border-b-0 hover:bg-primary/4 ${
+                            msg.isRead === 0 ? 'bg-primary/3' : ''
+                          }`}
+                        >
+                          <div className="flex-shrink-0 mt-0.5">
+                            {msg.isRead === 0 ? (
+                              <span className="block w-2 h-2 rounded-full bg-primary" />
+                            ) : (
+                              <span className="block w-2 h-2 rounded-full bg-ink-muted-20" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className={`text-[13px] truncate ${msg.isRead === 0 ? 'font-semibold text-ink' : 'text-ink-muted-80'}`}>
+                                {msg.title}
+                              </span>
+                              <span className="flex-shrink-0 text-[11px] text-ink-muted-48">{formatTime(msg.createTime)}</span>
+                            </div>
+                            <p className="text-[12px] text-ink-muted-48 mt-0.5 line-clamp-2 leading-relaxed">
+                              {msg.content}
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="border-t border-hairline px-4 py-2.5 text-center">
+                  <span
+                    className="text-xs text-primary font-medium cursor-pointer hover:underline"
+                    onClick={() => setPanelOpen(false)}
+                  >
+                    查看全部
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         <div className="flex items-center gap-2 cursor-pointer group">
           <div className="w-8 h-8 rounded-full bg-primary text-on-primary grid place-items-center text-[12px] font-semibold transition-transform group-active:scale-95">

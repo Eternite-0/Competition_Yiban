@@ -13,6 +13,8 @@ const studentNav: NavItem[] = [
   { icon: 'group_add', label: '招募大厅', path: '/student/teams' },
   { icon: 'assignment_ind', label: '我的参赛', path: '/student/registrations' },
   { icon: 'trending_up', label: '能力雷达', path: '/student/growth' },
+  { icon: 'workspace_premium', label: '光荣榜', path: '/student/works' },
+  { icon: 'calendar_month', label: '赛事日历', path: '/student/calendar' },
   { icon: 'upload_file', label: '上传成果', path: '/student/achievements/upload' },
 ];
 
@@ -31,6 +33,7 @@ const adminNav: NavItem[] = [
   { icon: 'add_circle', label: '赛事发布', path: '/admin/publish' },
   { icon: 'auto_awesome', label: '作品库', path: '/admin/works' },
   { icon: 'fact_check', label: '系统审核', path: '/admin/audit' },
+  { icon: 'manage_accounts', label: '用户管理', path: '/admin/users' },
 ];
 
 const navMap = { student: studentNav, teacher: teacherNav, admin: adminNav };

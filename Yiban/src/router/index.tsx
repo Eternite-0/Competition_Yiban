@@ -14,6 +14,8 @@ import RegistrationWorkbench from '../pages/student/RegistrationWorkbench';
 import SubmissionUpload from '../pages/student/SubmissionUpload';
 import StudentGrowth from '../pages/student/StudentGrowth';
 import AchievementUpload from '../pages/student/AchievementUpload';
+import CompetitionCalendar from '../pages/student/CompetitionCalendar';
+import StudentExcellentWorks from '../pages/student/ExcellentWorks';
 
 // Teacher pages
 import TeacherHome from '../pages/teacher/TeacherHome';
@@ -28,6 +30,7 @@ import StudentCompare from '../pages/teacher/StudentCompare';
 import AdminHome from '../pages/admin/AdminHome';
 import CompetitionPublish from '../pages/admin/CompetitionPublish';
 import ExcellentWorks from '../pages/admin/ExcellentWorks';
+import UserManagement from '../pages/admin/UserManagement';
 
 function RequireAuth({ role, children }: { role?: string; children: ReactNode }) {
   const currentUser = useStore((s) => s.currentUser);
@@ -54,6 +57,8 @@ export const router = createBrowserRouter([
       { path: 'upload/:registrationId', element: <SubmissionUpload /> },
       { path: 'growth', element: <StudentGrowth /> },
       { path: 'achievements/upload', element: <AchievementUpload /> },
+      { path: 'calendar', element: <CompetitionCalendar /> },
+      { path: 'works', element: <StudentExcellentWorks /> },
     ],
   },
   {
@@ -80,6 +85,7 @@ export const router = createBrowserRouter([
       { path: 'publish/:id', element: <CompetitionPublish /> },
       { path: 'works', element: <ExcellentWorks /> },
       { path: 'audit', element: <SubmissionAudit /> },
+      { path: 'users', element: <UserManagement /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

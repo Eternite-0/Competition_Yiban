@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -146,5 +147,54 @@ public class TeacherController {
     @GetMapping("/student-detail")
     public Result<Map<String, Object>> studentDetail(@RequestParam Long studentId) {
         return Result.success(teacherService.getStudentDetail(studentId));
+    }
+
+    // ---- trend ----
+
+    @Operation(summary = "参赛趋势数据")
+    @GetMapping("/trend")
+    public Result<Map<String, Object>> trend(
+            @RequestParam(required = false) String college,
+            @RequestParam(required = false) String grade,
+            @RequestParam(required = false) String major) {
+        return Result.success(teacherService.getTrend(college, grade, major));
+    }
+
+    // ---- student export ----
+
+    @Operation(summary = "导出学生个人报告")
+    @GetMapping("/export/student-detail")
+    public void exportStudentDetail(@RequestParam Long studentId, HttpServletResponse response) throws IOException {
+        Map<String, Object> detail = teacherService.getStudentExportData(studentId);
+        Map<String, Object> student = (Map<String, Object>) detail.get("student");
+
+        String name = student != null ? (String) student.get("realName") : "学生";
+        String filename = URLEncoder.encode(name + "_个人报告.xlsx", StandardCharsets.UTF_8.toString());
+
+        // Simple export: create a basic Excel with student info and stats
+        List<StudentComprehensiveVO> list = new ArrayList<>();
+        if (student != null) {
+            list.add(new StudentComprehensiveVO(
+                    (String) student.get("realName"),
+                    (String) student.get("username"),
+                    (String) student.get("college"),
+                    (String) student.get("major"),
+                    (String) student.get("className"),
+                    (Integer) detail.get("totalCompetitions"),
+                    ((Number) detail.get("totalAwards")).doubleValue()
+            ));
+        }
+
+        Workbook workbook = ExcelUtil.export(
+                list,
+                "学生个人报告",
+                new String[]{"学生姓名", "学号", "学院", "专业", "班级", "参赛次数", "获奖数"}
+        );
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"; filename*=UTF-8''" + filename);
+        response.setHeader("Cache-Control", "no-cache");
+        workbook.write(response.getOutputStream());
+        workbook.close();
     }
 }

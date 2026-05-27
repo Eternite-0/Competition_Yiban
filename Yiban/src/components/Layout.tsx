@@ -2,23 +2,34 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function Layout() {
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
+
   return (
     <div className="relative min-h-screen bg-canvas-parchment text-ink antialiased selection:bg-primary/20 selection:text-primary">
       <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 
-      {mobileNavOpen && (
-        <button
-          onClick={() => setMobileNavOpen(false)}
-          className="fixed inset-0 z-40 bg-primary/12 md:hidden"
-          aria-label="关闭侧边导航"
-        />
-      )}
+      <AnimatePresence>
+        {mobileNavOpen && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setMobileNavOpen(false)}
+            className="fixed inset-0 z-40 bg-primary/12 md:hidden"
+            aria-label="关闭侧边导航"
+          />
+        )}
+      </AnimatePresence>
 
       <div className="relative flex min-h-screen flex-col md:ml-[260px]">
         <Header

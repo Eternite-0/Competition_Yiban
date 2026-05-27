@@ -32,23 +32,12 @@ interface PageResponse<T> {
   size: number;
 }
 
-const pendingTasks: Array<{ title: string; description: string; tone: 'primary' | 'error' }> = [
-  {
-    title: '待审核报名信息',
-    description: '"2024 创新创业大赛" 有 12 份新提交的团队报名表单需要人工核验资格。',
-    tone: 'primary' as const,
-  },
-  {
-    title: '待补充附件模板',
-    description: '"校级电子设计竞赛" 缺少官方统一格式的论文模板附件，请尽快上传。',
-    tone: 'primary' as const,
-  },
-  {
-    title: '即将截止赛事',
-    description: '"物理实验竞赛" 报名阶段即将结束，目前仍有 5 支队伍状态异常。',
-    tone: 'primary' as const,
-  },
-];
+interface PendingTask {
+  title: string;
+  description: string;
+  tone: 'primary' | 'error';
+  link?: string;
+}
 
 // Map backend English status values to the Chinese display labels used in the UI.
 const statusLabel = (s?: string): string => {
@@ -79,6 +68,36 @@ export default function AdminHome() {
   const [records, setRecords] = useState<CompetitionRecord[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [pendingRegCount, setPendingRegCount] = useState<number | null>(null);
+  const [pendingSubCount, setPendingSubCount] = useState<number | null>(null);
+  const [totalSubCount, setTotalSubCount] = useState<number | null>(null);
+
+  // Fetch registration and submission counts
+  useEffect(() => {
+    let cancelled = false;
+    const fetchCounts = async () => {
+      try {
+        const regData = await apiClient.get('/registration/pending', { params: { current: 1, size: 1 } });
+        if (!cancelled && regData && typeof regData.total === 'number') {
+          setPendingRegCount(regData.total);
+        }
+      } catch { if (!cancelled) setPendingRegCount(0); }
+      try {
+        const subData = await apiClient.get('/submission/list', { params: { current: 1, size: 1, status: '待审核' } });
+        if (!cancelled && subData && typeof subData.total === 'number') {
+          setPendingSubCount(subData.total);
+        }
+      } catch { if (!cancelled) setPendingSubCount(0); }
+      try {
+        const allSub = await apiClient.get('/submission/list', { params: { current: 1, size: 1 } });
+        if (!cancelled && allSub && typeof allSub.total === 'number') {
+          setTotalSubCount(allSub.total);
+        }
+      } catch { if (!cancelled) setTotalSubCount(0); }
+    };
+    fetchCounts();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -142,8 +161,8 @@ export default function AdminHome() {
   const metrics = [
     { label: '赛事总数', value: total, suffix: '场', icon: 'event' },
     { label: '进行中', value: counts.published, suffix: '场', icon: 'play_circle' },
-    { label: '已结束', value: counts.closed, suffix: '场', icon: 'flag', tone: 'warning' as const },
-    { label: '草稿', value: counts.draft, suffix: '场', icon: 'edit_note' },
+    { label: '待审核', value: (pendingRegCount ?? 0) + (pendingSubCount ?? 0), suffix: '项', icon: 'pending_actions', tone: 'warning' as const, loaded: pendingRegCount !== null && pendingSubCount !== null },
+    { label: '作品总数', value: totalSubCount ?? 0, suffix: '份', icon: 'description', loaded: totalSubCount !== null },
   ];
 
   // Level distribution computed from records; falls back to even spread if empty.
@@ -169,6 +188,58 @@ export default function AdminHome() {
     }));
   }, [records]);
 
+  // Compute real pending tasks from API data
+  const pendingTasks = useMemo<PendingTask[]>(() => {
+    const tasks: PendingTask[] = [];
+
+    if (pendingRegCount > 0) {
+      tasks.push({
+        title: '待审核报名',
+        description: `当前有 ${pendingRegCount} 份报名信息等待审核，请及时处理。`,
+        tone: 'primary',
+        link: '/admin/audit',
+      });
+    }
+
+    if (pendingSubCount > 0) {
+      tasks.push({
+        title: '待审核作品',
+        description: `当前有 ${pendingSubCount} 份提交作品等待审核。`,
+        tone: 'primary',
+        link: '/admin/audit',
+      });
+    }
+
+    // Check for competitions with deadlines in the next 3 days
+    const now = Date.now();
+    const threeDays = 3 * 24 * 60 * 60 * 1000;
+    const approaching = records.filter((r) => {
+      if (r.status !== 'published') return false;
+      const deadline = r.endTime || r.deadline;
+      if (!deadline) return false;
+      const t = new Date(deadline).getTime();
+      return t > now && t - now < threeDays;
+    });
+    if (approaching.length > 0) {
+      tasks.push({
+        title: '即将截止赛事',
+        description: `${approaching.map((r) => r.name || r.title).join('、')} 报名即将截止，请关注。`,
+        tone: 'error',
+        link: '/admin/competitions',
+      });
+    }
+
+    if (tasks.length === 0) {
+      tasks.push({
+        title: '暂无待办',
+        description: '当前没有需要处理的事项。',
+        tone: 'primary',
+      });
+    }
+
+    return tasks;
+  }, [pendingRegCount, pendingSubCount, records]);
+
   const greetingName = currentUser?.name?.trim() || '管理员';
 
   const handleDelete = async (id: string | number | undefined) => {
@@ -178,6 +249,7 @@ export default function AdminHome() {
       await apiClient.delete(`/competition/admin/delete/${id}`);
       toast.success('已删除');
       setRecords((prev) => prev.filter((r) => r.id !== id));
+      setTotal((t) => Math.max(0, t - 1));
     } catch {
       toast.error('删除失败');
     }
@@ -226,7 +298,7 @@ export default function AdminHome() {
               }`}>{m.icon}</span>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="font-display font-semibold text-[34px] leading-none tabular-nums text-ink">{loading ? '—' : m.value}</span>
+              <span className="font-display font-semibold text-[34px] leading-none tabular-nums text-ink">{loading || (m as any).loaded === false ? '—' : m.value}</span>
               <span className="text-[12px] text-ink-muted-48">{m.suffix}</span>
             </div>
           </motion.div>
@@ -410,7 +482,7 @@ export default function AdminHome() {
         >
           <div className="flex items-center justify-between">
             <h3 className="text-[15px] font-semibold tracking-tight text-ink">待处理事项</h3>
-            <span className="chip">{pendingTasks.length} 项</span>
+            <span className="chip">{pendingTasks.filter((t) => t.link).length || pendingTasks.length} 项</span>
           </div>
           <div className="flex flex-col">
             {pendingTasks.map((task, i) => (
@@ -420,6 +492,7 @@ export default function AdminHome() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.35 + i * 0.06, duration: 0.4 }}
                 className="py-3 border-b border-hairline last:border-0 group cursor-pointer"
+                onClick={() => task.link && navigate(task.link)}
               >
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`w-1.5 h-1.5 rounded-full ${

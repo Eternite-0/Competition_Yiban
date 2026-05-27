@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -118,6 +118,30 @@ export default function StudentDetail() {
 
   const [data, setData] = useState<DetailData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    if (!studentId) return;
+    setExporting(true);
+    try {
+      const res = await fetch(`/api/teacher/export/student-detail?studentId=${studentId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` },
+      });
+      if (!res.ok) throw new Error('导出失败');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data?.student ? `${data.student.realName}_个人报告.xlsx` : '学生报告.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('导出成功');
+    } catch {
+      toast.error('导出失败');
+    } finally {
+      setExporting(false);
+    }
+  }, [studentId, data]);
 
   useEffect(() => {
     if (!studentId) return;
@@ -171,10 +195,16 @@ export default function StudentDetail() {
         title="学生详情"
         description={data?.student ? `${data.student.realName} · ${data.student.college}` : '加载中...'}
         actions={(
-          <button onClick={() => navigate(-1)} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px]">
-            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-            返回
-          </button>
+          <>
+            <button onClick={handleExport} disabled={exporting} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px] disabled:opacity-60">
+              <span className="material-symbols-outlined text-[16px]">{exporting ? 'hourglass_top' : 'download'}</span>
+              {exporting ? '导出中…' : '导出报告'}
+            </button>
+            <button onClick={() => navigate(-1)} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px]">
+              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              返回
+            </button>
+          </>
         )}
       />
 

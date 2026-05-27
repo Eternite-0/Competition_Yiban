@@ -450,4 +450,49 @@ public class TeacherServiceImpl implements TeacherService {
 
         return result;
     }
+
+    // ---- trend ----
+
+    @Override
+    public Map<String, Object> getTrend(String college, String grade, String major) {
+        Map<String, Object> result = new HashMap<>();
+
+        List<User> students = userService.list(studentQuery(college, grade, major, null));
+        if (CollUtil.isEmpty(students)) {
+            result.put("monthly", new ArrayList<>());
+            return result;
+        }
+
+        List<Long> sIds = studentIds(students);
+        List<Registration> regs = registrationService.list(new LambdaQueryWrapper<Registration>()
+                .in(Registration::getStudentId, sIds));
+
+        // Group by month (yyyy-MM)
+        Map<String, Long> monthly = regs.stream()
+                .filter(r -> r.getSubmitDate() != null)
+                .collect(Collectors.groupingBy(
+                        r -> String.format("%d-%02d", r.getSubmitDate().getYear() + 1900, r.getSubmitDate().getMonthValue()),
+                        Collectors.counting()
+                ));
+
+        List<Map<String, Object>> monthlyList = monthly.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(e -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("month", e.getKey());
+                    m.put("count", e.getValue());
+                    return m;
+                })
+                .collect(Collectors.toList());
+
+        result.put("monthly", monthlyList);
+        return result;
+    }
+
+    // ---- student export data ----
+
+    @Override
+    public Map<String, Object> getStudentExportData(Long studentId) {
+        return getStudentDetail(studentId);
+    }
 }
