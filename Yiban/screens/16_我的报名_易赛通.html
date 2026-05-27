@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Yi Sai Tong - Academic Growth Platform</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#faf9ff",
+                        "secondary-fixed": "#e0e3e6",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#e0e3e6",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#001a43",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f2f3ff",
+                        "tertiary-fixed": "#e2e2e2",
+                        "surface": "#faf9ff",
+                        "surface-container-highest": "#e0e2ed",
+                        "surface-bright": "#faf9ff",
+                        "primary": "#0057c2",
+                        "on-primary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#fcfcfc",
+                        "inverse-primary": "#afc6ff",
+                        "on-surface-variant": "#414755",
+                        "on-secondary-fixed-variant": "#44474a",
+                        "inverse-surface": "#2d3039",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e6e7f3",
+                        "outline-variant": "#c1c6d7",
+                        "secondary-fixed-dim": "#c4c7ca",
+                        "surface-container": "#ecedf9",
+                        "outline": "#727786",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "on-background": "#181b23",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "primary-container": "#006ef2",
+                        "primary-fixed": "#d9e2ff",
+                        "on-secondary-fixed": "#191c1e",
+                        "inverse-on-surface": "#eff0fc",
+                        "secondary": "#5b5f61",
+                        "primary-fixed-dim": "#afc6ff",
+                        "error": "#ba1a1a",
+                        "tertiary": "#5a5c5c",
+                        "on-primary-container": "#fefcff",
+                        "on-secondary-container": "#616567",
+                        "on-primary-fixed-variant": "#004398",
+                        "tertiary-container": "#737575",
+                        "surface-tint": "#0059c7",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "surface-variant": "#e0e2ed",
+                        "surface-dim": "#d8d9e5",
+                        "on-surface": "#181b23",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sidebar-width": "220px",
+                        "stack-gap-lg": "24px",
+                        "header-height": "64px",
+                        "gutter": "16px",
+                        "stack-gap-md": "16px",
+                        "stack-gap-sm": "8px",
+                        "card-padding": "20px",
+                        "container-margin": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-sm": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-sm": ["12px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "18px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["30px", { "lineHeight": "38px", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Base styles to ensure font family applies if not explicitly set by tokens in some rare cases, though Tailwind handles most */
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col md:flex-row">
+<!-- Shared Component: SideNavBar -->
+<nav class="hidden md:block w-[220px] h-full fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant z-50 flex flex-col h-screen py-gutter px-4">
+<!-- Brand Header -->
+<div class="mb-8 mt-4 flex flex-col gap-1">
+<h1 class="font-headline-md text-headline-md text-primary truncate">Yi Sai Tong</h1>
+<p class="font-body-sm text-body-sm text-secondary truncate">Academic Growth Platform</p>
+</div>
+<!-- Navigation Links -->
+<ul class="flex flex-col gap-2 flex-grow">
+<li>
+<a class="flex items-center gap-3 text-secondary hover:bg-surface-container-high px-4 py-2 rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">home</span>
+<span>Home</span>
+</a>
+</li>
+<!-- Active Tab: Competition -->
+<li>
+<a class="flex items-center gap-3 bg-primary-fixed text-on-primary-fixed rounded-lg px-4 py-2 border-l-4 border-primary transition-all duration-200 ease-in-out active:scale-95 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">emoji_events</span>
+<span>Competition</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-secondary hover:bg-surface-container-high px-4 py-2 rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span>Team</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-secondary hover:bg-surface-container-high px-4 py-2 rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">auto_graph</span>
+<span>Growth</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-secondary hover:bg-surface-container-high px-4 py-2 rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">admin_panel_settings</span>
+<span>Management</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 text-secondary hover:bg-surface-container-high px-4 py-2 rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+</li>
+</ul>
+</nav>
+<!-- Shared Component: TopNavBar -->
+<header class="h-header-height w-full fixed top-0 z-40 bg-surface border-b border-outline-variant shadow-sm flex justify-between items-center px-container-margin md:ml-[220px] md:w-[calc(100%-220px)]">
+<!-- Search Area (on_left) -->
+<div class="flex-1 flex items-center">
+<div class="relative w-64 hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="w-full pl-9 pr-4 py-1.5 bg-surface-container-low border border-outline-variant rounded-full font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="Search..." type="text"/>
+</div>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-2">
+<button class="text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full p-2 transition-all duration-150 flex items-center justify-center">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full p-2 transition-all duration-150 flex items-center justify-center">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-full p-2 transition-all duration-150 flex items-center justify-center">
+<span class="material-symbols-outlined">language</span>
+</button>
+<div class="ml-4 w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-label-md text-label-md border border-outline-variant overflow-hidden">
+<!-- Placeholder for Avatar -->
+<span class="material-symbols-outlined">person</span>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 pt-header-height md:ml-[220px] p-container-margin w-full box-border">
+<!-- Page Header -->
+<div class="mb-stack-gap-lg">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">我的报名</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">管理并查看您参与的所有赛事及活动进度。</p>
+</div>
+<!-- Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-stack-gap-lg">
+<!-- Left Column: Main List (Spans 8 cols) -->
+<div class="lg:col-span-8 flex flex-col gap-stack-gap-md">
+<!-- Tabs -->
+<div class="flex gap-6 border-b border-outline-variant w-full overflow-x-auto no-scrollbar">
+<button class="font-label-md text-label-md text-primary font-bold border-b-2 border-primary pb-2 whitespace-nowrap">全部</button>
+<button class="font-label-md text-label-md text-on-surface-variant hover:text-primary pb-2 whitespace-nowrap transition-colors">待完善</button>
+<button class="font-label-md text-label-md text-on-surface-variant hover:text-primary pb-2 whitespace-nowrap transition-colors">已提交</button>
+<button class="font-label-md text-label-md text-on-surface-variant hover:text-primary pb-2 whitespace-nowrap transition-colors">审核中</button>
+<button class="font-label-md text-label-md text-on-surface-variant hover:text-primary pb-2 whitespace-nowrap transition-colors">已通过</button>
+<button class="font-label-md text-label-md text-on-surface-variant hover:text-primary pb-2 whitespace-nowrap transition-colors">已结束</button>
+</div>
+<!-- Registration List (Cards instead of standard table) -->
+<div class="flex flex-col gap-stack-gap-md mt-4">
+<!-- Card 1: 审核中 (Under Review) -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding border border-surface-container-highest shadow-sm hover:shadow-md transition-shadow duration-200">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">2023年全国大学生数学建模竞赛</h3>
+<p class="font-body-sm text-body-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 报名时间: 2023-09-01 10:00
+                                </p>
+</div>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-surface-container-high text-on-surface-variant border border-outline-variant">
+                                审核中
+                            </span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-background rounded-lg p-3 border border-surface-container-highest">
+<div>
+<p class="font-label-sm text-label-sm text-secondary mb-1">团队状态</p>
+<p class="font-body-md text-body-md text-on-surface flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span> 已组队 (3/3)
+                                </p>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-secondary mb-1">材料状态</p>
+<p class="font-body-md text-body-md text-on-surface flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-green-600" style="font-variation-settings: 'FILL' 1;">check_circle</span> 已齐备
+                                </p>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-secondary mb-1">截止时间</p>
+<p class="font-body-md text-body-md text-on-surface flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-error">event</span> 2023-09-15
+                                </p>
+</div>
+</div>
+<div class="flex justify-end gap-3 border-t border-surface-container-highest pt-4">
+<button class="font-label-md text-label-md text-secondary hover:text-primary transition-colors px-4 py-2">撤回报名</button>
+<button class="font-label-md text-label-md bg-surface-container-low text-primary border border-outline-variant hover:bg-surface-container-high transition-colors px-4 py-2 rounded">查看详情</button>
+</div>
+</div>
+<!-- Card 2: 待完善 (Pending Completion) -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding border border-surface-container-highest shadow-sm hover:shadow-md transition-shadow duration-200">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">第十五届"挑战杯"大学生课外学术科技作品竞赛</h3>
+<p class="font-body-sm text-body-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 报名时间: 2023-10-05 14:30
+                                </p>
+</div>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-error-container text-on-error-container border border-error-container">
+                                待完善
+                            </span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 bg-background rounded-lg p-3 border border-surface-container-highest">
+<div>
+<p class="font-label-sm text-label-sm text-secondary mb-1">团队状态</p>
+<p class="font-body-md text-body-md text-on-surface flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-yellow-600">group_add</span> 招募中 (2/5)
+                                </p>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-secondary mb-1">材料状态</p>
+<p class="font-body-md text-body-md text-on-surface flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-error">warning</span> 缺少指导老师意见
+                                </p>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-secondary mb-1">截止时间</p>
+<p class="font-body-md text-body-md text-on-surface flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-error">event</span> 2023-10-20
+                                </p>
+</div>
+</div>
+<div class="flex justify-end gap-3 border-t border-surface-container-highest pt-4">
+<button class="font-label-md text-label-md text-secondary hover:text-error transition-colors px-4 py-2">取消报名</button>
+<button class="font-label-md text-label-md bg-primary text-on-primary hover:bg-on-primary-fixed-variant transition-colors px-4 py-2 rounded">去完善</button>
+</div>
+</div>
+<!-- Card 3: 已通过 (Passed) -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding border border-surface-container-highest shadow-sm hover:shadow-md transition-shadow duration-200 opacity-80">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">校级英语演讲比赛初赛</h3>
+<p class="font-body-sm text-body-sm text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span> 报名时间: 2023-08-15 09:00
+                                </p>
+</div>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full font-label-sm text-label-sm bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">
+                                已通过
+                            </span>
+</div>
+<div class="flex justify-end gap-3 border-t border-surface-container-highest pt-4 mt-2">
+<button class="font-label-md text-label-md bg-surface-container-low text-primary border border-outline-variant hover:bg-surface-container-high transition-colors px-4 py-2 rounded">查看准考证</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Sidebar content (Spans 4 cols) -->
+<div class="lg:col-span-4 flex flex-col gap-stack-gap-lg">
+<!-- To-Do Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-surface-container-highest shadow-sm p-card-padding">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">task_alt</span>
+                            我的待办事项
+                        </h3>
+<span class="bg-error text-on-error rounded-full w-5 h-5 flex items-center justify-center font-label-sm text-label-sm">2</span>
+</div>
+<ul class="flex flex-col gap-3">
+<li class="flex items-start gap-3 p-3 rounded-lg hover:bg-surface-container-low transition-colors group cursor-pointer border border-transparent hover:border-outline-variant">
+<div class="mt-0.5 w-5 h-5 rounded border border-outline flex-shrink-0 group-hover:border-primary transition-colors"></div>
+<div>
+<p class="font-label-md text-label-md text-on-surface group-hover:text-primary transition-colors">上传"挑战杯"项目计划书</p>
+<p class="font-body-sm text-body-sm text-error mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">timer</span> 剩余 2 天
+                                </p>
+</div>
+</li>
+<li class="flex items-start gap-3 p-3 rounded-lg hover:bg-surface-container-low transition-colors group cursor-pointer border border-transparent hover:border-outline-variant">
+<div class="mt-0.5 w-5 h-5 rounded border border-outline flex-shrink-0 group-hover:border-primary transition-colors"></div>
+<div>
+<p class="font-label-md text-label-md text-on-surface group-hover:text-primary transition-colors">确认数学建模竞赛队伍名单</p>
+<p class="font-body-sm text-body-sm text-secondary mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">event</span> 2023-09-10 前
+                                </p>
+</div>
+</li>
+</ul>
+<button class="w-full mt-4 font-label-md text-label-md text-primary hover:text-on-primary-fixed-variant transition-colors py-2 text-center border-t border-surface-container-highest">查看全部待办</button>
+</div>
+<!-- Recent Messages Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-surface-container-highest shadow-sm p-card-padding">
+<h3 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary">campaign</span>
+                        最近消息提醒
+                    </h3>
+<ul class="flex flex-col gap-4 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-px before:bg-surface-container-highest">
+<li class="relative pl-10">
+<div class="absolute left-1.5 top-1 w-4 h-4 rounded-full bg-primary ring-4 ring-surface-container-lowest"></div>
+<p class="font-label-md text-label-md text-on-surface mb-0.5">审核状态更新</p>
+<p class="font-body-sm text-body-sm text-secondary mb-1">您的"英语演讲比赛"报名已通过审核。</p>
+<span class="font-body-sm text-body-sm text-outline">10分钟前</span>
+</li>
+<li class="relative pl-10">
+<div class="absolute left-1.5 top-1 w-4 h-4 rounded-full bg-surface-container-high border border-outline-variant ring-4 ring-surface-container-lowest"></div>
+<p class="font-label-md text-label-md text-on-surface mb-0.5">组队邀请</p>
+<p class="font-body-sm text-body-sm text-secondary mb-1">同学张三邀请您加入"创客马拉松"队伍。</p>
+<span class="font-body-sm text-body-sm text-outline">昨天 14:20</span>
+</li>
+<li class="relative pl-10">
+<div class="absolute left-1.5 top-1 w-4 h-4 rounded-full bg-surface-container-high border border-outline-variant ring-4 ring-surface-container-lowest"></div>
+<p class="font-label-md text-label-md text-on-surface mb-0.5">系统通知</p>
+<p class="font-body-sm text-body-sm text-secondary mb-1">平台将在本周六晚进行系统维护，请合理安排时间。</p>
+<span class="font-body-sm text-body-sm text-outline">2023-09-01</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</main>
+</body></html>

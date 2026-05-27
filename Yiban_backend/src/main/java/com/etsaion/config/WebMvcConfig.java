@@ -1,0 +1,61 @@
+package com.etsaion.config;
+
+import com.etsaion.interceptor.AuthInterceptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.io.File;
+
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+
+    @Autowired
+    private AuthInterceptor authInterceptor;
+
+    @Value("${file.upload-path}")
+    private String uploadPath;
+
+    @Override
+    public void addInterceptors(org.springframework.web.servlet.config.annotation.InterceptorRegistry registry) {
+        registry.addInterceptor(authInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/api/auth/login",
+                        "/api/auth/register",
+                        "/files/**",
+                        "/swagger-ui.html",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/api-docs/**",
+                        "/swagger-resources/**",
+                        "/webjars/**"
+                );
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // Map /files/** to physical path
+        File uploadDir = new File(uploadPath);
+        String absolutePath = uploadDir.getAbsolutePath();
+        if (!absolutePath.endsWith(File.separator)) {
+            absolutePath += File.separator;
+        }
+        
+        registry.addResourceHandler("/files/**")
+                .addResourceLocations("file:" + absolutePath);
+    }
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOriginPatterns("*")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true)
+                .maxAge(3600);
+    }
+}

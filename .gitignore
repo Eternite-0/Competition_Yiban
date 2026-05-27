@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+target/
+.mvn/wrapper/maven-wrapper.jar
+
+# Build outputs
+dist/
+build/
+*.jar
+*.war
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.settings/
+.classpath
+.project
+.factorypath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
+
+# Logs
+*.log
+logs/
+
+# Environment & Secrets
+.env
+.env.*
+*.local
+
+# Uploads
+uploads/
+
+# Java
+*.class
+hs_err_pid*
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# Spring Boot
+application-local.yml
+**/application.yml

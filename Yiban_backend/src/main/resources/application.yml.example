@@ -1,0 +1,51 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: etsaion-backend
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  datasource:
+    url: jdbc:mysql://localhost:3306/etsaion?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true
+    username: your_username
+    password: your_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 50MB
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  global-config:
+    db-config:
+      id-type: auto
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+
+jwt:
+  secret: your_jwt_secret_key_at_least_32_chars
+  expire: 86400000 # 24 hours in milliseconds
+
+file:
+  upload-path: ./uploads
+
+oss:
+  qiniu:
+    access-key: your_qiniu_access_key
+    secret-key: your_qiniu_secret_key
+    bucket: your_bucket_name
+    domain: your_domain
+    upload-url: https://up-z2.qiniup.com
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui/index.html
+    tags-sorter: alpha
+    operations-sorter: alpha

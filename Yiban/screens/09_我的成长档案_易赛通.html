@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>我的成长 - 易赛通</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#faf9ff",
+                        "inverse-on-surface": "#eff0fc",
+                        "on-surface-variant": "#414755",
+                        "on-secondary-fixed": "#191c1e",
+                        "secondary": "#5b5f61",
+                        "on-primary-fixed-variant": "#004398",
+                        "on-error-container": "#93000a",
+                        "on-primary": "#ffffff",
+                        "on-background": "#181b23",
+                        "surface-container-high": "#e6e7f3",
+                        "surface-container": "#ecedf9",
+                        "secondary-fixed-dim": "#c4c7ca",
+                        "on-secondary-container": "#616567",
+                        "on-secondary-fixed-variant": "#44474a",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#006ef2",
+                        "on-error": "#ffffff",
+                        "outline": "#727786",
+                        "on-tertiary-container": "#fcfcfc",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "on-primary-container": "#fefcff",
+                        "surface-tint": "#0059c7",
+                        "surface-bright": "#faf9ff",
+                        "secondary-container": "#e0e3e6",
+                        "inverse-surface": "#2d3039",
+                        "surface-variant": "#e0e2ed",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#f2f3ff",
+                        "secondary-fixed": "#e0e3e6",
+                        "tertiary-fixed": "#e2e2e2",
+                        "tertiary-container": "#737575",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "inverse-primary": "#afc6ff",
+                        "surface-container-highest": "#e0e2ed",
+                        "on-primary-fixed": "#001a43",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "primary-fixed": "#d9e2ff",
+                        "error": "#ba1a1a",
+                        "primary": "#0057c2",
+                        "outline-variant": "#c1c6d7",
+                        "surface-dim": "#d8d9e5",
+                        "on-surface": "#181b23",
+                        "background": "#faf9ff",
+                        "tertiary": "#5a5c5c",
+                        "primary-fixed-dim": "#afc6ff",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sidebar-width": "220px",
+                        "header-height": "64px",
+                        "container-margin": "24px",
+                        "card-padding": "20px",
+                        "stack-gap-sm": "8px",
+                        "stack-gap-lg": "24px",
+                        "stack-gap-md": "16px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "body-sm": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-sm": ["12px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "18px", "fontWeight": "600" }],
+                        "headline-lg": ["30px", { "lineHeight": "38px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Custom Charts for Effort 0.25 */
+        .conic-pie {
+            background: conic-gradient(
+                #0057c2 0% 45%,
+                #d9e2ff 45% 75%,
+                #e0e2ed 75% 100%
+            );
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface h-screen overflow-hidden flex font-body-md text-body-md">
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 left-0 h-header-height z-50 flex items-center justify-between px-gutter bg-surface-container-lowest border-b border-outline-variant">
+<div class="flex items-center gap-4 w-sidebar-width">
+<span class="text-headline-md font-headline-md font-bold text-primary">易赛通</span>
+</div>
+<div class="flex-1 flex items-center justify-start pl-4">
+<div class="relative w-96 hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full py-2 pl-10 pr-4 text-body-md font-body-md focus:ring-2 focus:ring-primary focus:outline-none" placeholder="搜索赛事、证书..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-stack-gap-md">
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container-low transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container-low transition-colors text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="chat">chat</span>
+</button>
+<div class="flex items-center gap-2 pl-4 border-l border-outline-variant cursor-pointer hover:bg-surface-container-low rounded-full px-2 py-1">
+<img alt="User Avatar" class="w-8 h-8 rounded-full" data-alt="A small circular avatar placeholder showing the first letter of a user's name on a solid professional blue background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuACvO1VScMzPcFuk3OdA2W3XvhLP_m68swP7xGHdeMxUHqBl8UZh1MKj0IfsHza_11G5xusFVaCQ4KK8cqwnbeWDb39Kmr-_lpPWgzZ10fIV4GNXKoo_BBpaI33tT1Xs-qGdzh22xtXEHLwcPeAkMWILV_-wm209TzB-EevCGjIvk4tckk_mIapqUCPC7dir3_gSxCPPjjMR3yjngT0nVLlxwvnjgRh-Nb0oKVEsRPhR2jIb0jBvu9u4kUeLqp4-9Cm4oungoUgDw01"/>
+<span class="text-label-md font-label-md text-on-surface">卢同学</span>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 bottom-0 z-40 flex flex-col py-stack-gap-md bg-surface border-r border-outline-variant docked h-full w-sidebar-width pt-[calc(theme(spacing.header-height)+theme(spacing.stack-gap-md))]">
+<div class="px-gutter mb-6 hidden">
+<!-- Header handled in topnav for this layout style to avoid duplication -->
+</div>
+<ul class="flex-1 flex flex-col gap-1 px-3">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+                    首页
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="emoji_events">emoji_events</span>
+                    赛事中心
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+                    赛事日历
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="group_add">group_add</span>
+                    组队招募
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+                    优秀作品
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="assignment_ind">assignment_ind</span>
+                    我的报名
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-container/20 text-primary border-r-4 border-primary font-bold transition-all text-label-md font-label-md scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+                    我的成长
+                </a>
+</li>
+</ul>
+<div class="mt-auto px-3">
+<button class="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all text-label-md font-label-md">
+<span class="material-symbols-outlined" data-icon="menu_open">menu_open</span>
+                收起菜单
+            </button>
+</div>
+</nav>
+<!-- Main Canvas -->
+<main class="flex-1 overflow-y-auto pl-sidebar-width pt-header-height bg-surface-container-low">
+<div class="p-container-margin max-w-7xl mx-auto flex flex-col gap-stack-gap-md">
+<!-- Hidden Reference Image per requirements -->
+<img alt="Reference UI" class="hidden" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClkm6jOa4W32RU6hThKWlo1FocOd10Ns9GVN4mYk6H-oVHT5m6vsJuGTjZPoR0_jagitoF3fVk1L5hbkj3QTyfIEGj_oPxu9M3I9VqgdpHy1LQGTrku1b0FUTu-Q4XGjfI2PGHL9R9dmkx8t5Ncsd64ZuI1GJLRXi3Edst5jYwiuWq33fwknRk2o1ZDqeD6ZgCQaaae01T3zfNUI760poXGpaWJgLmb1vw26BnV4dn0qfuwikUOR22PTDXw3w_XeGsEAg4PGzmHZbO"/>
+<!-- Profile Overview Card -->
+<section class="bg-surface-container-lowest rounded-xl p-card-padding shadow-sm flex items-start gap-stack-gap-lg">
+<div class="w-24 h-24 rounded-full bg-primary-fixed flex items-center justify-center shrink-0 border-4 border-surface overflow-hidden relative">
+<img alt="Student Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a young male student with a neutral, pleasant expression, wearing a simple collared shirt. Soft, even studio lighting against a light gray background. High quality, sharp focus." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaaXoz9bkBkpa0LlpYQv3YL1hLYqsa8AJIe_wTMZFPkH2PpwbdnB0Qbbqa5uOBTAGbh7pU3qOKyCQlzEu_qLgQKkU3ECrmUtLSTg9479wacJl6bziCDTV2u2rnGg3re57zLCe26MT4Uie_9vGeV-GVPPC4TyfygVEdYBBv8s3d_cU-vOSmhVEHClvN4BY01yJXK-2jRaIYSw6gNKzOLkIzgUmIBtUTcqA0Zi10YD5otrqckuqSU1Rg6kOg9va_8zsC0cwUm51XuzRq"/>
+</div>
+<div class="flex-1 flex flex-col gap-2">
+<div class="flex items-center gap-4">
+<h1 class="text-headline-lg font-headline-lg text-on-surface">卢同学</h1>
+<span class="px-3 py-1 bg-surface-variant text-on-surface-variant rounded-full text-label-sm font-label-sm">2021级 本科生</span>
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed rounded-full text-label-sm font-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="verified">verified</span>
+                            已实名认证
+                        </span>
+</div>
+<p class="text-body-md font-body-md text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="school">school</span>
+                        计算机科学与技术学院 · 软件工程专业
+                    </p>
+<div class="flex gap-2 mt-2">
+<span class="border border-outline-variant text-on-surface-variant px-2 py-0.5 rounded text-body-sm font-body-sm">创新实践标兵</span>
+<span class="border border-outline-variant text-on-surface-variant px-2 py-0.5 rounded text-body-sm font-body-sm">算法竞赛达人</span>
+</div>
+</div>
+<div class="text-right">
+<div class="text-body-sm font-body-sm text-on-surface-variant mb-1">当前综合评价等级</div>
+<div class="text-headline-md font-headline-md text-primary font-bold">A+</div>
+</div>
+</section>
+<!-- Metrics Row -->
+<section class="grid grid-cols-4 gap-stack-gap-md">
+<div class="bg-surface-container-lowest rounded-xl p-card-padding shadow-sm flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary-fixed/50 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="format_list_numbered">format_list_numbered</span>
+</div>
+<div>
+<div class="text-body-sm font-body-sm text-on-surface-variant">累计参赛数</div>
+<div class="text-headline-sm font-headline-sm text-on-surface font-bold">12 <span class="text-body-sm font-body-sm font-normal text-on-surface-variant">次</span></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-card-padding shadow-sm flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-primary-container/20 text-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="military_tech">military_tech</span>
+</div>
+<div>
+<div class="text-body-sm font-body-sm text-on-surface-variant">累计获奖数</div>
+<div class="text-headline-sm font-headline-sm text-on-surface font-bold">8 <span class="text-body-sm font-body-sm font-normal text-on-surface-variant">项</span></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-card-padding shadow-sm flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-secondary-container/50 text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="task_alt">task_alt</span>
+</div>
+<div>
+<div class="text-body-sm font-body-sm text-on-surface-variant">通过审核成果</div>
+<div class="text-headline-sm font-headline-sm text-on-surface font-bold">5 <span class="text-body-sm font-body-sm font-normal text-on-surface-variant">件</span></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-card-padding shadow-sm flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-error-container/30 text-error flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="moving">moving</span>
+</div>
+<div>
+<div class="text-body-sm font-body-sm text-on-surface-variant">综测贡献分</div>
+<div class="text-headline-sm font-headline-sm text-on-surface font-bold">32.5 <span class="text-body-sm font-body-sm font-normal text-on-surface-variant">分</span></div>
+</div>
+</div>
+</section>
+<!-- Main Bento Grid -->
+<section class="grid grid-cols-12 gap-stack-gap-md">
+<!-- Left Column: Analytics -->
+<div class="col-span-3 flex flex-col gap-stack-gap-md">
+<!-- Progress Bars (Alternative to Radar for effort 0.25) -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding shadow-sm">
+<h3 class="text-label-md font-label-md text-on-surface mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="radar">radar</span>
+                            能力维度分析
+                        </h3>
+<div class="flex flex-col gap-3">
+<div>
+<div class="flex justify-between text-body-sm font-body-sm mb-1">
+<span class="text-on-surface-variant">算法设计</span>
+<span class="text-on-surface font-bold">92</span>
+</div>
+<div class="h-1.5 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[92%] rounded-full"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-body-sm font-body-sm mb-1">
+<span class="text-on-surface-variant">团队协作</span>
+<span class="text-on-surface font-bold">85</span>
+</div>
+<div class="h-1.5 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[85%] rounded-full opacity-80"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-body-sm font-body-sm mb-1">
+<span class="text-on-surface-variant">工程实践</span>
+<span class="text-on-surface font-bold">78</span>
+</div>
+<div class="h-1.5 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[78%] rounded-full opacity-60"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-body-sm font-body-sm mb-1">
+<span class="text-on-surface-variant">创新思维</span>
+<span class="text-on-surface font-bold">88</span>
+</div>
+<div class="h-1.5 w-full bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[88%] rounded-full opacity-90"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Pie Chart -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding shadow-sm">
+<h3 class="text-label-md font-label-md text-on-surface mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="pie_chart">pie_chart</span>
+                            获奖级别统计
+                        </h3>
+<div class="flex flex-col items-center justify-center py-4">
+<div class="w-32 h-32 rounded-full conic-pie relative mb-4">
+<div class="absolute inset-2 bg-surface-container-lowest rounded-full flex items-center justify-center">
+<span class="text-label-md font-label-md text-on-surface">8项</span>
+</div>
+</div>
+<div class="w-full flex flex-col gap-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-primary"></span>国家级 (45%)</div>
+<span class="font-bold">4</span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-primary-fixed"></span>省级 (30%)</div>
+<span class="font-bold">3</span>
+</div>
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-surface-variant"></span>校级 (25%)</div>
+<span class="font-bold">1</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Middle Column: Growth Records -->
+<div class="col-span-6 bg-surface-container-lowest rounded-xl p-card-padding shadow-sm flex flex-col">
+<!-- Tabs -->
+<div class="flex items-center border-b border-outline-variant mb-4">
+<button class="px-4 py-2 text-label-md font-label-md text-primary border-b-2 border-primary -mb-[1px]">按学年/学期</button>
+<button class="px-4 py-2 text-label-md font-label-md text-on-surface-variant hover:text-primary transition-colors">按赛事归类</button>
+</div>
+<!-- Filter Area -->
+<div class="flex items-center justify-between mb-4">
+<select class="bg-surface-container py-1.5 px-3 rounded text-body-sm font-body-sm border-none focus:ring-1 focus:ring-primary">
+<option>2023-2024学年 秋季学期</option>
+<option>2022-2023学年 春季学期</option>
+</select>
+<button class="text-primary text-body-sm font-body-sm flex items-center gap-1 hover:underline">
+<span class="material-symbols-outlined text-[16px]" data-icon="filter_list">filter_list</span> 筛选
+                        </button>
+</div>
+<!-- Record Cards List -->
+<div class="flex-1 overflow-y-auto pr-2 flex flex-col gap-4">
+<!-- Record 1 -->
+<div class="border border-outline-variant rounded-lg p-4 hover:border-primary transition-colors">
+<div class="flex justify-between items-start mb-2">
+<h4 class="text-label-md font-label-md text-on-surface">第十四届蓝桥杯全国软件和信息技术专业人才大赛</h4>
+<span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded text-body-sm font-body-sm">A类赛事</span>
+</div>
+<div class="flex items-center gap-4 text-body-sm font-body-sm text-on-surface-variant mb-3">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="group">group</span> 队长</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="emoji_events">emoji_events</span> 省级一等奖</span>
+</div>
+<div class="bg-surface py-2 px-3 rounded flex items-center justify-between">
+<span class="text-body-sm font-body-sm text-on-surface-variant">综测加分记录</span>
+<span class="text-label-md font-label-md text-primary">+3.0 分</span>
+</div>
+</div>
+<!-- Record 2 -->
+<div class="border border-outline-variant rounded-lg p-4 hover:border-primary transition-colors">
+<div class="flex justify-between items-start mb-2">
+<h4 class="text-label-md font-label-md text-on-surface">全国大学生数学建模竞赛</h4>
+<span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded text-body-sm font-body-sm">A类赛事</span>
+</div>
+<div class="flex items-center gap-4 text-body-sm font-body-sm text-on-surface-variant mb-3">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="person">person</span> 队员</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="emoji_events">emoji_events</span> 国家级二等奖</span>
+</div>
+<div class="bg-surface py-2 px-3 rounded flex items-center justify-between">
+<span class="text-body-sm font-body-sm text-on-surface-variant">综测加分记录</span>
+<span class="text-label-md font-label-md text-primary">+5.0 分</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Timeline -->
+<div class="col-span-3 bg-surface-container-lowest rounded-xl p-card-padding shadow-sm overflow-hidden flex flex-col">
+<h3 class="text-label-md font-label-md text-on-surface mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="history">history</span>
+                        成长时间轴
+                    </h3>
+<div class="relative pl-3 border-l-2 border-surface-variant flex-1 overflow-y-auto py-2">
+<!-- Timeline Item -->
+<div class="relative mb-6">
+<div class="absolute -left-[19px] top-1 w-3 h-3 bg-primary rounded-full border-2 border-surface-container-lowest"></div>
+<div class="text-body-sm font-body-sm text-on-surface-variant mb-1">2023-11-15</div>
+<div class="text-label-sm font-label-sm text-on-surface">获得 蓝桥杯省一等奖</div>
+</div>
+<div class="relative mb-6">
+<div class="absolute -left-[19px] top-1 w-3 h-3 bg-surface-variant rounded-full border-2 border-surface-container-lowest"></div>
+<div class="text-body-sm font-body-sm text-on-surface-variant mb-1">2023-09-10</div>
+<div class="text-label-sm font-label-sm text-on-surface">提交 综测加分申请审核通过</div>
+</div>
+<div class="relative mb-6">
+<div class="absolute -left-[19px] top-1 w-3 h-3 bg-surface-variant rounded-full border-2 border-surface-container-lowest"></div>
+<div class="text-body-sm font-body-sm text-on-surface-variant mb-1">2023-05-20</div>
+<div class="text-label-sm font-label-sm text-on-surface">参加 全国大学生计算机设计大赛</div>
+</div>
+<div class="relative">
+<div class="absolute -left-[19px] top-1 w-3 h-3 bg-surface-variant rounded-full border-2 border-surface-container-lowest"></div>
+<div class="text-body-sm font-body-sm text-on-surface-variant mb-1">2022-10-01</div>
+<div class="text-label-sm font-label-sm text-on-surface">首次注册易赛通平台</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom Section: Certificates / Attachments -->
+<section class="bg-surface-container-lowest rounded-xl p-card-padding shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-label-md font-label-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="folder_special">folder_special</span>
+                        证书与成果附件
+                    </h3>
+<button class="text-primary text-body-sm font-body-sm hover:underline">查看全部</button>
+</div>
+<div class="flex gap-4 overflow-x-auto pb-2 hide-scrollbar">
+<!-- Certificate Card 1 -->
+<div class="w-48 shrink-0 rounded-lg border border-outline-variant overflow-hidden group cursor-pointer">
+<div class="h-32 bg-surface-container-high relative overflow-hidden">
+<img alt="Certificate Preview" class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="A close-up view of a formal academic certificate document. It features an ornate gold foil seal, elegant serif typography, and official signatures on thick textured paper. The lighting is soft and professional, highlighting the prestige of the award." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBesz-KlafrUS1owQ4wlaYXzT0QYCe1w1pSSXbDTcAHlUGtNTD9RGvQTBjKU5U944Ys5I7dAC9CRPwAoxr8Y-E2ZQ5KUUbIzBbEjCpxXtPq-tKf4tIRpF21yK5SWjNBqEt4dJLlPYZUuy46tyh_e1b0Ux7VAcPYSkxKoQW4gde87MK1pfDP82fBGR9nrUFJgKzJeruW48us-Ru5-kvy-_47LaW3av2NaGSsPjRG9CIlCneDhhKqNt-xFzg9fuH6Uu7ywyH6-FwL9c_L"/>
+<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined text-white" data-icon="visibility">visibility</span>
+</div>
+</div>
+<div class="p-3 bg-surface">
+<div class="text-label-sm font-label-sm text-on-surface truncate">蓝桥杯省一等奖证书</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant mt-1">PDF · 1.2MB</div>
+</div>
+</div>
+<!-- Certificate Card 2 -->
+<div class="w-48 shrink-0 rounded-lg border border-outline-variant overflow-hidden group cursor-pointer">
+<div class="h-32 bg-surface-container-high relative overflow-hidden">
+<img alt="Code Project Preview" class="w-full h-full object-cover group-hover:scale-105 transition-transform" data-alt="A computer monitor displaying complex, brightly colored programming code in a dark mode IDE setting. The depth of field is shallow, blurring the edges to focus on the intricate logic and development work. The aesthetic is modern, technical, and analytical." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWShPvm9ITAlpo9nf9ZXjiBipJAYbDsqS_cL7bwo_BLoAuaOzdvAgrz_AqCiZUV0BXOq49PQ9f4d22Kq3nr6YAUgpzGRqm1m6Fu1U35C5DCVr39DLmHB_Wf50T7ssl6KFE2qaFw1oVcs_87DgL8qfZz7qncHNp5o38FIP1ZB34ipbQ0U3krEsrFm_MmgcTbaeK0JibbNy8DZxTyYmBooH_-FzYOrIqjFzzyilmfF00WtUSbnv2YU-6iuAjLX8jccKKvd6FcJ2gNNqL"/>
+<div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined text-white" data-icon="visibility">visibility</span>
+</div>
+</div>
+<div class="p-3 bg-surface">
+<div class="text-label-sm font-label-sm text-on-surface truncate">项目结题报告材料</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant mt-1">DOCX · 3.5MB</div>
+</div>
+</div>
+<!-- Add New -->
+<div class="w-48 shrink-0 rounded-lg border border-dashed border-outline-variant flex flex-col items-center justify-center text-on-surface-variant hover:text-primary hover:border-primary hover:bg-primary-fixed/10 transition-colors cursor-pointer h-[194px]">
+<span class="material-symbols-outlined text-[32px] mb-2" data-icon="add_circle">add_circle</span>
+<span class="text-label-sm font-label-sm">上传新材料</span>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>

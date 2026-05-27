@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>成果审核工作台 - 易赛通</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface": "#faf9ff",
+                        "inverse-on-surface": "#eff0fc",
+                        "on-surface-variant": "#414755",
+                        "on-secondary-fixed": "#191c1e",
+                        "secondary": "#5b5f61",
+                        "on-primary-fixed-variant": "#004398",
+                        "on-error-container": "#93000a",
+                        "on-primary": "#ffffff",
+                        "on-background": "#181b23",
+                        "surface-container-high": "#e6e7f3",
+                        "surface-container": "#ecedf9",
+                        "secondary-fixed-dim": "#c4c7ca",
+                        "on-secondary-container": "#616567",
+                        "on-secondary-fixed-variant": "#44474a",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#006ef2",
+                        "on-error": "#ffffff",
+                        "outline": "#727786",
+                        "on-tertiary-container": "#fcfcfc",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "on-primary-container": "#fefcff",
+                        "surface-tint": "#0059c7",
+                        "surface-bright": "#faf9ff",
+                        "secondary-container": "#e0e3e6",
+                        "inverse-surface": "#2d3039",
+                        "surface-variant": "#e0e2ed",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-low": "#f2f3ff",
+                        "secondary-fixed": "#e0e3e6",
+                        "tertiary-fixed": "#e2e2e2",
+                        "tertiary-container": "#737575",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "inverse-primary": "#afc6ff",
+                        "surface-container-highest": "#e0e2ed",
+                        "on-primary-fixed": "#001a43",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "primary-fixed": "#d9e2ff",
+                        "error": "#ba1a1a",
+                        "primary": "#0057c2",
+                        "outline-variant": "#c1c6d7",
+                        "surface-dim": "#d8d9e5",
+                        "on-surface": "#181b23",
+                        "background": "#faf9ff",
+                        "tertiary": "#5a5c5c",
+                        "primary-fixed-dim": "#afc6ff",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sidebar-width": "220px",
+                        "header-height": "64px",
+                        "container-margin": "24px",
+                        "card-padding": "20px",
+                        "stack-gap-sm": "8px",
+                        "stack-gap-lg": "24px",
+                        "stack-gap-md": "16px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "body-sm": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-sm": ["12px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "18px", "fontWeight": "600" }],
+                        "headline-lg": ["30px", { "lineHeight": "38px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden flex flex-col font-body-md">
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 left-0 h-header-height z-50 flex items-center justify-between px-gutter bg-surface-container-lowest dark:bg-inverse-surface border-b border-outline-variant dark:border-outline flat no shadows">
+<div class="flex items-center gap-4">
+<span class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed">易赛通</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-2">
+<button aria-label="notifications" class="p-2 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-secondary-container transition-colors rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button aria-label="chat" class="p-2 text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-secondary-container transition-colors rounded-full">
+<span class="material-symbols-outlined">chat</span>
+</button>
+</div>
+<div class="flex items-center gap-2 pl-4 border-l border-outline-variant">
+<img alt="User Avatar" class="w-8 h-8 rounded-full bg-surface-container-high" data-alt="A small, circular avatar portrait of a user. The background is a light, clean color typical of a professional environment. The avatar represents an academic user." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTbqj1tvOys5GYxF0T30s8NYfIjV24DSpWvysVginmJGHJeMuZVw0XBslUaBwYqTwoVYZeCS45WKQwEu49spv0BP6tvQIc7tST96gLd2WTn-IoZINCnwiAtSWys5FJ7rKOYeZbtDZSo0TOwp3lWNzxct6cRz6Wdi8GGYbyPzPLrRWyQDYmhJv0hxBoDoQUvPrX6ALN-JSMxLdiYyQxIDUsACnCVVxPAJhlP2-RuYnBJy3n8Z3_KFxxZMadOv5TiHBtu3_xvkkVySaL"/>
+<span class="text-label-md font-label-md text-on-surface">卢同学</span>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<div class="flex flex-1 pt-header-height h-full">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col w-sidebar-width bg-surface dark:bg-on-background border-r border-outline-variant dark:border-outline py-stack-gap-md z-40 h-full overflow-y-auto">
+<div class="px-4 mb-6 flex flex-col gap-1">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-3xl">school</span>
+<span class="text-headline-sm font-headline-sm font-bold text-primary">易赛通</span>
+</div>
+<span class="text-body-sm font-body-sm text-on-surface-variant ml-10">高校赛事管理平台</span>
+</div>
+<div class="flex flex-col gap-1 px-2 flex-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-secondary-container/50 hover:text-primary transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">home</span>
+<span>首页</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-secondary-container/50 hover:text-primary transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">emoji_events</span>
+<span>赛事中心</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-secondary-container/50 hover:text-primary transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span>赛事日历</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-secondary-container/50 hover:text-primary transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">group_add</span>
+<span>组队招募</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-secondary-container/50 hover:text-primary transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">auto_awesome</span>
+<span>优秀作品</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary-container/20 text-primary border-r-4 border-primary font-bold dark:bg-primary-fixed/10 dark:text-primary-fixed text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">assignment_ind</span>
+<span>我的报名</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-high dark:hover:bg-secondary-container/50 hover:text-primary transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+<span>我的成长</span>
+</a>
+</div>
+<div class="mt-auto px-2 border-t border-outline-variant pt-4">
+<button class="flex items-center gap-3 px-3 py-2 w-full rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all text-label-md font-label-md">
+<span class="material-symbols-outlined">menu_open</span>
+<span>收起菜单</span>
+</button>
+</div>
+</nav>
+<!-- Workbench Canvas -->
+<main class="flex-1 flex overflow-hidden bg-surface-container-low p-container-margin gap-stack-gap-md">
+<!-- Left Column: Pending List -->
+<section class="w-80 bg-surface rounded-xl shadow-sm border border-outline-variant flex flex-col overflow-hidden shrink-0">
+<div class="p-4 border-b border-outline-variant">
+<h2 class="text-headline-sm font-headline-sm text-on-surface mb-4">待审核列表</h2>
+<div class="relative mb-3">
+<span class="material-symbols-outlined absolute left-3 top-2 text-outline">search</span>
+<input class="w-full pl-10 pr-3 py-2 rounded-lg border border-outline-variant bg-surface-container text-body-md font-body-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary" placeholder="搜索学生姓名、学号、赛事" type="text"/>
+</div>
+<div class="flex gap-2 text-body-sm font-body-sm">
+<button class="px-3 py-1 rounded-full bg-primary-container text-on-primary-container font-medium border border-primary/20">全部</button>
+<button class="px-3 py-1 rounded-full bg-surface-container text-on-surface-variant border border-outline-variant/50 hover:bg-surface-container-high transition-colors">待院系审核</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto">
+<!-- List Item 1 -->
+<div class="p-4 border-b border-outline-variant bg-primary-container/5 cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex justify-between items-start mb-2">
+<span class="text-label-md font-label-md text-on-surface">张三 <span class="text-body-sm font-body-sm text-on-surface-variant font-normal">20210001</span></span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary-container text-on-secondary-container">待审核</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant line-clamp-2">第十四届全国大学生数学竞赛（非数学专业组）</p>
+<p class="text-body-sm font-body-sm text-outline mt-1">一等奖 | 2023-10-15</p>
+</div>
+<!-- List Item 2 -->
+<div class="p-4 border-b border-outline-variant cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex justify-between items-start mb-2">
+<span class="text-label-md font-label-md text-on-surface">李四 <span class="text-body-sm font-body-sm text-on-surface-variant font-normal">20210002</span></span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary-container text-on-secondary-container">待审核</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant line-clamp-2">2023年全国大学生电子设计竞赛</p>
+<p class="text-body-sm font-body-sm text-outline mt-1">二等奖 | 2023-09-20</p>
+</div>
+<!-- List Item 3 -->
+<div class="p-4 border-b border-outline-variant cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex justify-between items-start mb-2">
+<span class="text-label-md font-label-md text-on-surface">王五 <span class="text-body-sm font-body-sm text-on-surface-variant font-normal">20210003</span></span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary-container text-on-secondary-container">待审核</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant line-clamp-2">“挑战杯”全国大学生课外学术科技作品竞赛</p>
+<p class="text-body-sm font-body-sm text-outline mt-1">特等奖 | 2023-11-05</p>
+</div>
+</div>
+</section>
+<!-- Middle Column: Details & Actions -->
+<section class="flex-1 flex flex-col min-w-[400px] gap-stack-gap-md overflow-y-auto pr-2">
+<!-- Applicant Details Card -->
+<div class="bg-surface rounded-xl shadow-sm border border-outline-variant p-card-padding">
+<h3 class="text-headline-sm font-headline-sm text-on-surface border-b border-outline-variant pb-3 mb-4">申报详情</h3>
+<div class="grid grid-cols-2 gap-y-4 gap-x-6 text-body-md font-body-md">
+<div><span class="text-outline w-20 inline-block">学生姓名：</span> <span class="text-on-surface font-medium">张三</span></div>
+<div><span class="text-outline w-20 inline-block">学号：</span> <span class="text-on-surface font-medium">20210001</span></div>
+<div><span class="text-outline w-20 inline-block">所属学院：</span> <span class="text-on-surface">计算机科学与技术学院</span></div>
+<div><span class="text-outline w-20 inline-block">专业年级：</span> <span class="text-on-surface">软件工程 2021级</span></div>
+</div>
+<div class="mt-6 border-t border-outline-variant/50 pt-4 grid grid-cols-1 gap-y-4 text-body-md font-body-md">
+<div><span class="text-outline w-20 inline-block">赛事名称：</span> <span class="text-on-surface font-medium">第十四届全国大学生数学竞赛（非数学专业组）</span></div>
+<div><span class="text-outline w-20 inline-block">赛事级别：</span> <span class="px-2 py-1 bg-surface-container-high rounded text-on-surface-variant text-body-sm font-body-sm">国家级</span></div>
+<div><span class="text-outline w-20 inline-block">获奖等级：</span> <span class="text-on-surface font-bold text-primary">一等奖</span></div>
+<div><span class="text-outline w-20 inline-block">获奖时间：</span> <span class="text-on-surface">2023-10-15</span></div>
+<div><span class="text-outline w-20 inline-block align-top">备注说明：</span> <span class="text-on-surface inline-block max-w-[80%]">已提交获奖证书扫描件及指导老师签名确认函。</span></div>
+</div>
+</div>
+<!-- Approval Flow Card -->
+<div class="bg-surface rounded-xl shadow-sm border border-outline-variant p-card-padding">
+<h3 class="text-label-md font-label-md text-on-surface border-b border-outline-variant pb-3 mb-4">流转记录</h3>
+<div class="relative pl-4 border-l-2 border-surface-container-high ml-2 space-y-4 text-body-sm font-body-sm">
+<div class="relative">
+<span class="absolute w-3 h-3 bg-primary rounded-full -left-[23px] top-1"></span>
+<p class="text-on-surface font-medium">学生提交申报 <span class="text-outline font-normal ml-2">2023-10-20 09:30</span></p>
+</div>
+<div class="relative">
+<span class="absolute w-3 h-3 bg-secondary-container border-2 border-surface rounded-full -left-[23px] top-1"></span>
+<p class="text-on-surface-variant font-medium">院系审核 <span class="text-outline font-normal ml-2">待处理</span></p>
+</div>
+</div>
+</div>
+<!-- Action Form -->
+<div class="bg-surface rounded-xl shadow-sm border border-outline-variant p-card-padding mt-auto">
+<label class="block text-label-md font-label-md text-on-surface mb-2">审核意见</label>
+<textarea class="w-full h-24 p-3 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md font-body-md focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary resize-none mb-3" placeholder="请输入审核意见（通过时选填，驳回时必填）"></textarea>
+<div class="flex items-center justify-between">
+<label class="flex items-center gap-2 cursor-pointer">
+<input checked="" class="rounded border-outline-variant text-primary focus:ring-primary" type="checkbox"/>
+<span class="text-body-sm font-body-sm text-on-surface-variant">同步发送站内消息</span>
+</label>
+<div class="flex gap-3">
+<button class="px-4 py-2 rounded text-label-md font-label-md bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors border border-outline-variant">退回补充</button>
+<button class="px-4 py-2 rounded text-label-md font-label-md bg-error-container text-on-error-container hover:bg-error/20 transition-colors border border-error/30">驳回</button>
+<button class="px-6 py-2 rounded text-label-md font-label-md bg-primary text-on-primary hover:bg-primary/90 transition-colors shadow-sm">审核通过</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Column: Attachment Preview -->
+<section class="w-[500px] bg-surface rounded-xl shadow-sm border border-outline-variant flex flex-col overflow-hidden shrink-0">
+<div class="p-3 border-b border-outline-variant bg-surface-container-lowest flex items-center justify-between">
+<h3 class="text-label-md font-label-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-outline">attachment</span>
+                        附件预览 (1/2)
+                    </h3>
+<div class="flex gap-2">
+<button class="p-1.5 rounded hover:bg-surface-container-high text-on-surface-variant transition-colors" title="下载">
+<span class="material-symbols-outlined text-sm">download</span>
+</button>
+<button class="p-1.5 rounded hover:bg-surface-container-high text-on-surface-variant transition-colors" title="全屏">
+<span class="material-symbols-outlined text-sm">fullscreen</span>
+</button>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-low p-4 flex items-center justify-center relative group">
+<!-- Image Preview Area referencing provided image -->
+<div class="w-full h-full bg-contain bg-center bg-no-repeat rounded border border-outline-variant/30 shadow-sm" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA81zDcguUSMq_nBi8jp387su_5mkBhaNbBLdvTK8lYkzXjgmnHgcfGwkBr0NenGHofFA4Fr2HY2Ksvz9rKTVFBMu50dltsegIq808P08ShQvZodwgk2BRxb2-M9varzDFIfxLn_bD712ON_MPdcjevk93oW2MjjXCnHT3oytsjH6txPl44hL4Lkv-JiEcsAsZzcdA8Gwokc_XlL5401xCyWq4UApqzC8TmXMPjgtxwJvcfYaRM-i_IUE4paJvr2Xd_z4I2DkFrcxmR');"></div>
+<!-- Navigation Overlays -->
+<button class="absolute left-6 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-surface/80 shadow flex items-center justify-center text-on-surface hover:bg-surface opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="absolute right-6 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-surface/80 shadow flex items-center justify-center text-on-surface hover:bg-surface opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<!-- Attachment Thumbnails -->
+<div class="p-3 border-t border-outline-variant bg-surface flex gap-3 overflow-x-auto">
+<div class="w-16 h-16 rounded border-2 border-primary bg-surface-container-high flex items-center justify-center cursor-pointer shrink-0 relative overflow-hidden">
+<img alt="Thumbnail 1" class="w-full h-full object-cover opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA81zDcguUSMq_nBi8jp387su_5mkBhaNbBLdvTK8lYkzXjgmnHgcfGwkBr0NenGHofFA4Fr2HY2Ksvz9rKTVFBMu50dltsegIq808P08ShQvZodwgk2BRxb2-M9varzDFIfxLn_bD712ON_MPdcjevk93oW2MjjXCnHT3oytsjH6txPl44hL4Lkv-JiEcsAsZzcdA8Gwokc_XlL5401xCyWq4UApqzC8TmXMPjgtxwJvcfYaRM-i_IUE4paJvr2Xd_z4I2DkFrcxmR"/>
+<span class="absolute bottom-0 right-0 bg-primary text-on-primary text-[10px] px-1 rounded-tl">PDF</span>
+</div>
+<div class="w-16 h-16 rounded border border-outline-variant bg-surface-container-high flex items-center justify-center cursor-pointer shrink-0 hover:border-primary/50 transition-colors">
+<span class="material-symbols-outlined text-outline">image</span>
+</div>
+</div>
+</section>
+</main>
+</div>
+</body></html>

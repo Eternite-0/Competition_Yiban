@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>赛事详情 - 易赛通</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#faf9ff",
+                        "secondary-fixed": "#e0e3e6",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#e0e3e6",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#001a43",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f2f3ff",
+                        "tertiary-fixed": "#e2e2e2",
+                        "surface": "#faf9ff",
+                        "surface-container-highest": "#e0e2ed",
+                        "surface-bright": "#faf9ff",
+                        "primary": "#0057c2",
+                        "on-primary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#fcfcfc",
+                        "inverse-primary": "#afc6ff",
+                        "on-surface-variant": "#414755",
+                        "on-secondary-fixed-variant": "#44474a",
+                        "inverse-surface": "#2d3039",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e6e7f3",
+                        "outline-variant": "#c1c6d7",
+                        "secondary-fixed-dim": "#c4c7ca",
+                        "surface-container": "#ecedf9",
+                        "outline": "#727786",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "on-background": "#181b23",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "primary-container": "#006ef2",
+                        "primary-fixed": "#d9e2ff",
+                        "on-secondary-fixed": "#191c1e",
+                        "inverse-on-surface": "#eff0fc",
+                        "secondary": "#5b5f61",
+                        "primary-fixed-dim": "#afc6ff",
+                        "error": "#ba1a1a",
+                        "tertiary": "#5a5c5c",
+                        "on-primary-container": "#fefcff",
+                        "on-secondary-container": "#616567",
+                        "on-primary-fixed-variant": "#004398",
+                        "tertiary-container": "#737575",
+                        "surface-tint": "#0059c7",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "surface-variant": "#e0e2ed",
+                        "surface-dim": "#d8d9e5",
+                        "on-surface": "#181b23",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sidebar-width": "220px",
+                        "stack-gap-lg": "24px",
+                        "header-height": "64px",
+                        "gutter": "16px",
+                        "stack-gap-md": "16px",
+                        "stack-gap-sm": "8px",
+                        "card-padding": "20px",
+                        "container-margin": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-sm": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-sm": ["12px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "18px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["30px", { "lineHeight": "38px", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- TopNavBar -->
+<header class="h-header-height w-full fixed top-0 z-40 bg-surface border-b border-outline-variant shadow-sm flex justify-between items-center px-container-margin ml-[220px]" style="width: calc(100% - 220px);">
+<!-- Search omitted as per 'on_left' but typically placed here -->
+<div class="flex items-center gap-4">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Yi Sai Tong</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="hover:bg-surface-container-low rounded-full p-2 transition-all duration-150 text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:bg-surface-container-low rounded-full p-2 transition-all duration-150 text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<button class="hover:bg-surface-container-low rounded-full p-2 transition-all duration-150 text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined" data-icon="language">language</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden ml-2 cursor-pointer border border-outline-variant">
+<img alt="User profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYB9np8c_-kXUcICrpPaZ5LvaJamiCgrh6xD6y_ybeRkMuB6CyEPRraJpCUwLfsNTj8K0C_thUcsS9YRHJLfDjqQm1r0RjdjEPb1S0aNr1LLiGcyGmSSnTrGpAj9XS3T0xcdJkJWpEQwNu_O72HQz3Zoy4Qcjz_osGA_4b8rqYY9SXFnWQeZOKNzzLl1E294WCS2rHrZ14ue04nVQKwTHPyduq6mn9iWkSRvPVqdQx1Agg3D-HO6-_FNyvekRlH8Fso4DCQcyWnAbg"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="w-[220px] h-full fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col py-gutter px-4 z-50">
+<div class="mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-lg">
+                Y
+            </div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Yi Sai Tong</h1>
+<p class="font-body-sm text-body-sm text-secondary">Academic Growth Platform</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 flex-grow">
+<a class="flex items-center gap-3 text-secondary hover:bg-surface-container-high px-4 py-2 rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+                Home
+            </a>
+<a class="flex items-center gap-3 bg-primary-fixed text-on-primary-fixed rounded-lg px-4 py-2 border-l-4 border-primary transition-all duration-200 ease-in-out active:scale-95 font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="emoji_events">emoji_events</span>
+                Competition
+            </a>
+<a class="flex items-center gap-3 text-secondary hover:bg-surface-container-high px-4 py-2 rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+                Team
+            </a>
+<a class="flex items-center gap-3 text-secondary hover:bg-surface-container-high px-4 py-2 rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="auto_graph">auto_graph</span>
+                Growth
+            </a>
+<a class="flex items-center gap-3 text-secondary hover:bg-surface-container-high px-4 py-2 rounded-lg transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="admin_panel_settings">admin_panel_settings</span>
+                Management
+            </a>
+<a class="flex items-center gap-3 text-secondary hover:bg-surface-container-high px-4 py-2 rounded-lg transition-colors font-label-md text-label-md mt-auto" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                Settings
+            </a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-[220px] mt-[64px] p-container-margin min-h-[calc(100vh-64px)]">
+<!-- Hero Section -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding shadow-sm mb-stack-gap-lg flex flex-col md:flex-row gap-6 relative overflow-hidden border border-outline-variant/30">
+<!-- Decorative background element -->
+<div class="absolute -right-20 -top-20 w-64 h-64 bg-primary-container/20 rounded-full blur-3xl"></div>
+<div class="w-full md:w-1/3 h-48 rounded-lg overflow-hidden flex-shrink-0 relative">
+<img class="w-full h-full object-cover" data-alt="A modern, high-tech university campus environment showing students collaborating over laptops and digital displays. Bright, optimistic daytime lighting with a cool blue tint reflecting a professional, academic growth platform aesthetic. Clean lines, corporate modern style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjK8igcn7qEt3SZD5CtMiC38g__HGrA4sLZ5qsbyQjt17xXv6A5HTMr2GJrSniHsrOa4qzcm7xMBPJUe9j9NrFyosI5WcrsqeGzwx7j5mU6cEXIwc-myxLqGzl6j7UeGBXJz63v7qIQiAuJoyvOatoDN170d7PyrbNBYSZyA67z90iSK4KQeqefu21A6I3o-8xRLIGIREzy_VlOV3t-H4q6fIG1twk0m9a2iHwBMPba_m_tM3M4j9PRjEa7VQVj9z96PLU_C7t1N4R"/>
+<div class="absolute top-3 left-3 bg-error-container text-on-error-container px-3 py-1 rounded-full font-label-sm text-label-sm flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">local_fire_department</span>
+                    报名中
+                </div>
+</div>
+<div class="flex-grow flex flex-col justify-between z-10">
+<div>
+<div class="flex gap-2 mb-2">
+<span class="bg-surface-container-high text-on-surface px-2 py-0.5 rounded font-label-sm text-label-sm border border-outline-variant">国家级 A 类</span>
+<span class="bg-primary-fixed text-on-primary-fixed px-2 py-0.5 rounded font-label-sm text-label-sm border border-primary-fixed-dim">软件开发</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">第十五届全国大学生“蓝桥杯”软件和信息技术专业人才大赛</h1>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 mb-4">
+                        蓝桥杯全国软件和信息技术专业人才大赛是由工业和信息化部人才交流中心主办的全国性高校IT类专业赛事。大赛旨在加快高等院校计算机、软件及电子信息专业教学创新与改革，提高学生自主创新意识和工程实践能力。
+                    </p>
+</div>
+<div class="flex flex-wrap gap-6 text-on-surface-variant font-body-sm text-body-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">apartment</span>
+<span>主办方：工业和信息化部人才交流中心</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+<span>报名截止：2024-03-15</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">group</span>
+<span>已报名：3,421 人</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex flex-col lg:flex-row gap-stack-gap-lg">
+<!-- Left Column (Main Content) -->
+<div class="lg:w-2/3 flex flex-col gap-stack-gap-lg">
+<!-- Track Info -->
+<section class="bg-surface-container-lowest rounded-xl p-card-padding shadow-sm border border-outline-variant/30">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-stack-gap-md flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">category</span>
+                        赛道说明
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Card 1 -->
+<div class="border border-outline-variant rounded-lg p-4 hover:border-primary hover:shadow-md transition-all duration-200 bg-surface group cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary mb-3 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">code</span>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface mb-1">软件开发赛道</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">包含C/C++、Java、Python、Web应用开发等方向，考核算法与编程基础。</p>
+</div>
+<!-- Card 2 -->
+<div class="border border-outline-variant rounded-lg p-4 hover:border-primary hover:shadow-md transition-all duration-200 bg-surface group cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary mb-3 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">smart_toy</span>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface mb-1">AI 大模型赛道</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">基于开源大模型进行应用创新，解决实际行业痛点，重点考察AI工程化能力。</p>
+</div>
+<!-- Card 3 -->
+<div class="border border-outline-variant rounded-lg p-4 hover:border-primary hover:shadow-md transition-all duration-200 bg-surface group cursor-pointer">
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center text-primary mb-3 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined">movie_edit</span>
+</div>
+<h3 class="font-label-md text-label-md text-on-surface mb-1">数字媒体赛道</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">动画制作、微视频、UI/UX设计，注重创意表达与用户体验设计。</p>
+</div>
+</div>
+</section>
+<!-- Timeline -->
+<section class="bg-surface-container-lowest rounded-xl p-card-padding shadow-sm border border-outline-variant/30">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-stack-gap-md flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">schedule</span>
+                        时间节点
+                    </h2>
+<div class="relative border-l-2 border-outline-variant ml-4 mt-6">
+<!-- Point 1 -->
+<div class="mb-8 ml-6 relative">
+<div class="absolute -left-[31px] bg-primary w-4 h-4 rounded-full border-4 border-surface-container-lowest"></div>
+<div class="bg-primary-fixed/50 rounded-lg p-3 border border-primary-fixed-dim">
+<span class="font-label-md text-label-md text-primary block mb-1">报名阶段</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block mb-1">2023.11.01 - 2024.03.15</span>
+<p class="font-body-sm text-body-sm text-on-surface">各高校组织报名，学生在平台提交个人信息及参赛意向表。</p>
+</div>
+</div>
+<!-- Point 2 -->
+<div class="mb-8 ml-6 relative">
+<div class="absolute -left-[31px] bg-outline-variant w-4 h-4 rounded-full border-4 border-surface-container-lowest"></div>
+<div class="rounded-lg p-3 border border-outline-variant">
+<span class="font-label-md text-label-md text-on-surface block mb-1">省赛阶段</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block mb-1">2024.04.20 - 2024.04.21</span>
+<p class="font-body-sm text-body-sm text-on-surface">线上/线下机考，具体安排以省赛组委会通知为准。</p>
+</div>
+</div>
+<!-- Point 3 -->
+<div class="ml-6 relative">
+<div class="absolute -left-[31px] bg-outline-variant w-4 h-4 rounded-full border-4 border-surface-container-lowest"></div>
+<div class="rounded-lg p-3 border border-outline-variant">
+<span class="font-label-md text-label-md text-on-surface block mb-1">全国总决赛</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block mb-1">2024.06 (具体待定)</span>
+<p class="font-body-sm text-body-sm text-on-surface">省赛一等奖获得者晋级全国总决赛。</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Description -->
+<section class="bg-surface-container-lowest rounded-xl p-card-padding shadow-sm border border-outline-variant/30">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-stack-gap-md flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">description</span>
+                        参赛说明
+                    </h2>
+<div class="prose prose-sm max-w-none text-on-surface-variant font-body-md text-body-md">
+<p class="mb-2">1. 参赛对象：全日制普通高等院校在校学生（含研究生、本科生、高职高专生）。</p>
+<p class="mb-2">2. 报名费用：本次大赛收取报名费300元/人，由学校统一代收或个人在线支付。</p>
+<p class="mb-2">3. 组队要求：软件开发类为单人赛；部分设计类赛道允许最多3人组队参加。</p>
+<p>4. 硬件要求：参赛选手需自备电脑，安装指定版本的开发工具，考场提供网络环境及基础电力支持。</p>
+</div>
+</section>
+</div>
+<!-- Right Column (Sidebar) -->
+<div class="lg:w-1/3 flex flex-col gap-stack-gap-lg">
+<!-- Registration Action -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding shadow-md border-t-4 border-t-primary">
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-4">报名概览</h3>
+<div class="flex justify-between items-center mb-2 font-body-sm text-body-sm">
+<span class="text-on-surface-variant">个人报名状态</span>
+<span class="bg-surface-container-high text-on-surface px-2 py-0.5 rounded-full border border-outline-variant">未报名</span>
+</div>
+<div class="w-full bg-surface-container-high rounded-full h-1.5 mb-4">
+<div class="bg-primary h-1.5 rounded-full" style="width: 75%"></div>
+</div>
+<div class="text-right font-body-sm text-body-sm text-secondary mb-6">
+                        距离报名截止还剩 <span class="text-error font-bold">12</span> 天
+                    </div>
+<button class="w-full bg-primary text-on-primary hover:bg-primary-container transition-colors py-2 px-4 rounded font-label-md text-label-md flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">how_to_reg</span>
+                        立即报名
+                    </button>
+<button class="w-full mt-2 bg-surface text-primary border border-primary hover:bg-primary-fixed transition-colors py-2 px-4 rounded font-label-md text-label-md">
+                        查看本校政策
+                    </button>
+</div>
+<!-- Attachments -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding shadow-sm border border-outline-variant/30">
+<h3 class="font-label-md text-label-md text-on-surface mb-3 flex items-center gap-2 border-b border-outline-variant/50 pb-2">
+<span class="material-symbols-outlined text-[18px]">attach_file</span>
+                        附件下载
+                    </h3>
+<ul class="flex flex-col gap-2">
+<li class="flex items-center justify-between p-2 hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer group">
+<div class="flex items-center gap-2 overflow-hidden">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary text-[20px]">picture_as_pdf</span>
+<span class="font-body-sm text-body-sm text-on-surface truncate">第十五届蓝桥杯竞赛大纲.pdf</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[18px]">download</span>
+</li>
+<li class="flex items-center justify-between p-2 hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer group">
+<div class="flex items-center gap-2 overflow-hidden">
+<span class="material-symbols-outlined text-secondary group-hover:text-primary text-[20px]">description</span>
+<span class="font-body-sm text-body-sm text-on-surface truncate">学校报名指导手册.docx</span>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:text-primary text-[18px]">download</span>
+</li>
+</ul>
+</div>
+<!-- Teammates -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding shadow-sm border border-outline-variant/30">
+<div class="flex justify-between items-center mb-3 border-b border-outline-variant/50 pb-2">
+<h3 class="font-label-md text-label-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">group_add</span>
+                            组队招募
+                        </h3>
+<a class="font-label-sm text-label-sm text-primary hover:underline" href="#">查看全部</a>
+</div>
+<div class="flex flex-col gap-3">
+<div class="flex items-start gap-3 bg-surface p-3 rounded-lg border border-outline-variant/50">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden flex-shrink-0">
+<img alt="Student avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDC-xW_O3LTO5CBuCyZN7cj6UBJ4ROrYMxGpHMPSIkTPLsPyeS18_To2x2chzFMcArCQOSyXc1YOEaVO012vaYlwc2lzhyVN_rtRt3akrV9iYZ36SdWDpsZZ79H5J8Ovi-crvDLAPoAu-3DwH8Gp0B-IQQF1t9ki6v29DnoQJJ_yC0amNPbf4CWD6s_mdoyQBDvqurW5_KEf3l-cUrUavgB7byhFkxdyGP6JICm6C6sXcwgkZdJWnJykF0NrHKHZeWWTCq-bJ50TTWL"/>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="font-label-sm text-label-sm text-on-surface">李同学</span>
+<span class="bg-surface-container-high text-secondary px-1.5 py-[1px] rounded text-[10px]">计科21级</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-2">寻一名前端，打AI大模型赛道，目前已有后台算法各一名。</p>
+<button class="text-primary font-label-sm text-label-sm hover:underline">联系Ta</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

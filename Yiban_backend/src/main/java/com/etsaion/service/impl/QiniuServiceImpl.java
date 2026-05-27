@@ -1,0 +1,48 @@
+package com.etsaion.service.impl;
+
+import com.etsaion.config.QiniuConfig;
+import com.etsaion.service.QiniuService;
+import com.qiniu.util.Auth;
+import com.qiniu.util.StringMap;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class QiniuServiceImpl implements QiniuService {
+
+    @Autowired
+    private QiniuConfig qiniuConfig;
+
+    @Override
+    public String generateUploadToken() {
+        return generateUploadToken(null);
+    }
+
+    @Override
+    public String generateUploadToken(String keyPrefix) {
+        Auth auth = Auth.create(qiniuConfig.getAccessKey(), qiniuConfig.getSecretKey());
+        StringMap putPolicy = new StringMap();
+        putPolicy.put("returnBody",
+                "{\"key\":\"$(key)\",\"hash\":\"$(etag)\",\"bucket\":\"$(bucket)\",\"fsize\":$(fsize)}");
+        if (keyPrefix != null) {
+            putPolicy.put("isPrefixalScope", 1);
+            return auth.uploadToken(qiniuConfig.getBucket(), keyPrefix, 3600, putPolicy);
+        }
+        return auth.uploadToken(qiniuConfig.getBucket(), null, 3600, putPolicy);
+    }
+
+    @Override
+    public String getFileUrl(String key) {
+        String domain = qiniuConfig.getDomain();
+        if (domain.endsWith("/")) {
+            return domain + key;
+        }
+        return domain + "/" + key;
+    }
+
+    @Override
+    public String getSignedUrl(String fileUrl) {
+        Auth auth = Auth.create(qiniuConfig.getAccessKey(), qiniuConfig.getSecretKey());
+        return auth.privateDownloadUrl(fileUrl, 3600);
+    }
+}

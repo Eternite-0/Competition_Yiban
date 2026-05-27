@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>易赛通 - 教师端首页</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#faf9ff",
+                        "secondary-fixed": "#e0e3e6",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#e0e3e6",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#001a43",
+                        "on-secondary": "#ffffff",
+                        "surface-container-low": "#f2f3ff",
+                        "tertiary-fixed": "#e2e2e2",
+                        "surface": "#faf9ff",
+                        "surface-container-highest": "#e0e2ed",
+                        "surface-bright": "#faf9ff",
+                        "primary": "#0057c2",
+                        "on-primary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#fcfcfc",
+                        "inverse-primary": "#afc6ff",
+                        "on-surface-variant": "#414755",
+                        "on-secondary-fixed-variant": "#44474a",
+                        "inverse-surface": "#2d3039",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e6e7f3",
+                        "outline-variant": "#c1c6d7",
+                        "secondary-fixed-dim": "#c4c7ca",
+                        "surface-container": "#ecedf9",
+                        "outline": "#727786",
+                        "tertiary-fixed-dim": "#c6c6c7",
+                        "on-background": "#181b23",
+                        "on-tertiary-fixed-variant": "#454747",
+                        "primary-container": "#006ef2",
+                        "primary-fixed": "#d9e2ff",
+                        "on-secondary-fixed": "#191c1e",
+                        "inverse-on-surface": "#eff0fc",
+                        "secondary": "#5b5f61",
+                        "primary-fixed-dim": "#afc6ff",
+                        "error": "#ba1a1a",
+                        "tertiary": "#5a5c5c",
+                        "on-primary-container": "#fefcff",
+                        "on-secondary-container": "#616567",
+                        "on-primary-fixed-variant": "#004398",
+                        "tertiary-container": "#737575",
+                        "surface-tint": "#0059c7",
+                        "on-tertiary-fixed": "#1a1c1c",
+                        "surface-variant": "#e0e2ed",
+                        "surface-dim": "#d8d9e5",
+                        "on-surface": "#181b23",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sidebar-width": "220px",
+                        "stack-gap-lg": "24px",
+                        "header-height": "64px",
+                        "gutter": "16px",
+                        "stack-gap-md": "16px",
+                        "stack-gap-sm": "8px",
+                        "card-padding": "20px",
+                        "container-margin": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-sm": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "label-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-sm": ["12px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "18px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["30px", { "lineHeight": "38px", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined[data-weight="fill"] { font-variation-settings: 'FILL' 1; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Subtle card shadow */
+        .card-shadow {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen antialiased flex">
+<!-- SideNavBar -->
+<nav class="hidden md:flex bg-surface dark:bg-on-background text-primary dark:text-primary-fixed fixed left-0 top-0 bottom-0 z-40 flex flex-col py-stack-gap-md docked left-0 h-full w-sidebar-width border-r border-outline-variant dark:border-outline flat no shadows">
+<div class="px-6 mb-8 flex flex-col gap-1">
+<h1 class="text-headline-md font-headline-md font-black text-primary dark:text-primary-fixed">易赛通</h1>
+<p class="text-label-sm font-label-sm text-on-surface-variant">高校赛事管理平台</p>
+</div>
+<ul class="flex-1 flex flex-col gap-2 px-3 overflow-y-auto hide-scrollbar">
+<li>
+<a class="flex items-center gap-3 px-3 py-3 rounded-DEFAULT bg-primary-container/20 text-primary border-r-4 border-primary font-bold dark:bg-primary-fixed/10 dark:text-primary-fixed text-label-md font-label-md transition-all" href="#">
+<span class="material-symbols-outlined" data-weight="fill">home</span>
+                    首页
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-3 rounded-DEFAULT text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-container-high dark:hover:bg-secondary-container/50 transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">emoji_events</span>
+                    赛事中心
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-3 rounded-DEFAULT text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-container-high dark:hover:bg-secondary-container/50 transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+                    赛事日历
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-3 rounded-DEFAULT text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-container-high dark:hover:bg-secondary-container/50 transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">group_add</span>
+                    组队招募
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-3 rounded-DEFAULT text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-container-high dark:hover:bg-secondary-container/50 transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">auto_awesome</span>
+                    优秀作品
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-3 rounded-DEFAULT text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-container-high dark:hover:bg-secondary-container/50 transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">assignment_ind</span>
+                    我的报名
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-3 py-3 rounded-DEFAULT text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-container-high dark:hover:bg-secondary-container/50 transition-all text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+                    我的成长
+                </a>
+</li>
+</ul>
+<div class="px-3 mt-auto pt-4 border-t border-outline-variant/30">
+<button class="flex items-center gap-3 w-full px-3 py-3 rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high transition-all text-label-md font-label-md">
+<span class="material-symbols-outlined">menu_open</span>
+                收起菜单
+            </button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col md:ml-[220px] min-h-screen overflow-x-hidden">
+<!-- TopNavBar -->
+<header class="bg-surface-container-lowest dark:bg-inverse-surface fixed top-0 right-0 left-0 h-header-height z-50 flex items-center justify-between px-gutter docked full-width top-0 border-b border-outline-variant dark:border-outline flat no shadows md:left-[220px]">
+<div class="flex items-center gap-4">
+<div class="md:hidden">
+<button class="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+<!-- Search on left -->
+<div class="hidden sm:flex items-center bg-surface-container-low rounded-full px-4 py-2 w-64 border border-outline-variant/50 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+<span class="material-symbols-outlined text-on-surface-variant mr-2 text-[20px]">search</span>
+<input class="bg-transparent border-none outline-none text-body-md font-body-md text-on-surface w-full placeholder:text-outline p-0 focus:ring-0" placeholder="搜索赛事、学生..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined">chat</span>
+</button>
+<div class="h-6 w-px bg-outline-variant mx-2"></div>
+<div class="flex items-center gap-3 cursor-pointer hover:bg-surface-container-low p-1.5 rounded-lg transition-colors">
+<img alt="User Avatar" class="w-8 h-8 rounded-full object-cover border border-outline-variant" data-alt="A professional headshot of a male teacher in a modern, brightly lit office environment. Soft, natural lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSRa02t-zigG6yD58SDpK8paIyaxeprbLtBLifNgBnfdn5hekL8wHdxdyyRn-vvRumoZ1ApDXitLW5io4Uh38n6nH4BpTO9876diWB7b5Ex-rAZg-FGFYl-Y7cCVLqIW5fLbKWEjl9vY6nrUbbqS89ZrflHpnJzvSrjNrvSTNRK7OnmhDSc9mZN3-QzvTrRIKYkGcdHp6UAYOBAGt_Nw_-d5fJ__dHurb-oXtF2KP1mtMud249rSu_j7vFcSJ0vqqBpXMcOVgCcdEh"/>
+<span class="text-label-md font-label-md text-on-surface">卢同学</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">arrow_drop_down</span>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 p-gutter md:p-container-margin mt-header-height bg-background">
+<!-- Page Header -->
+<div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-stack-gap-lg gap-4">
+<div>
+<h2 class="text-headline-lg font-headline-lg text-on-surface">2023级 年级总览</h2>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1">计算机科学与技术学院</p>
+</div>
+<div class="flex gap-3">
+<select class="bg-surface border border-outline-variant text-label-md font-label-md text-on-surface rounded-DEFAULT px-4 py-2 focus:border-primary focus:ring-1 focus:ring-primary outline-none">
+<option>本学期</option>
+<option>上学期</option>
+<option>全学年</option>
+</select>
+<button class="bg-primary text-on-primary text-label-md font-label-md px-4 py-2 rounded-DEFAULT flex items-center gap-2 hover:bg-surface-tint transition-colors">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                        导出报告
+                    </button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-stack-gap-md md:gap-stack-gap-lg mb-stack-gap-lg">
+<!-- Metrics (Top Row, 12 cols, grid of 4) -->
+<div class="col-span-1 md:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-stack-gap-md">
+<!-- Metric 1 -->
+<div class="bg-surface rounded-xl p-card-padding card-shadow border border-outline-variant/30 flex flex-col justify-between relative overflow-hidden group hover:border-primary/50 transition-colors">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary-container/20 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+<div class="flex items-center gap-2 text-on-surface-variant mb-4 relative z-10">
+<span class="material-symbols-outlined text-primary text-[20px]">group</span>
+<span class="text-label-md font-label-md">参赛学生数</span>
+</div>
+<div class="relative z-10 flex items-baseline gap-2">
+<span class="text-headline-lg font-headline-lg text-on-surface">428</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">/ 500人</span>
+</div>
+<div class="mt-2 flex items-center gap-1 text-label-sm font-label-sm text-surface-tint relative z-10">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>较上月 +12%</span>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="bg-surface rounded-xl p-card-padding card-shadow border border-outline-variant/30 flex flex-col justify-between relative overflow-hidden group hover:border-primary/50 transition-colors">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary-container/20 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+<div class="flex items-center gap-2 text-on-surface-variant mb-4 relative z-10">
+<span class="material-symbols-outlined text-primary text-[20px]">local_fire_department</span>
+<span class="text-label-md font-label-md">赛事参与总人次</span>
+</div>
+<div class="relative z-10 flex items-baseline gap-2">
+<span class="text-headline-lg font-headline-lg text-on-surface">1,245</span>
+</div>
+<div class="mt-2 flex items-center gap-1 text-label-sm font-label-sm text-surface-tint relative z-10">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>较上月 +8%</span>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="bg-surface rounded-xl p-card-padding card-shadow border border-outline-variant/30 flex flex-col justify-between relative overflow-hidden group hover:border-primary/50 transition-colors">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary-container/20 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+<div class="flex items-center gap-2 text-on-surface-variant mb-4 relative z-10">
+<span class="material-symbols-outlined text-primary text-[20px]">workspace_premium</span>
+<span class="text-label-md font-label-md">获奖学生数</span>
+</div>
+<div class="relative z-10 flex items-baseline gap-2">
+<span class="text-headline-lg font-headline-lg text-on-surface">156</span>
+</div>
+<div class="mt-2 flex items-center gap-1 text-label-sm font-label-sm text-surface-tint relative z-10">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>新增国家级奖项 3 项</span>
+</div>
+</div>
+<!-- Metric 4 -->
+<div class="bg-surface rounded-xl p-card-padding card-shadow border border-outline-variant/30 flex flex-col justify-between relative overflow-hidden group hover:border-primary/50 transition-colors">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary-container/20 rounded-bl-full -mr-8 -mt-8 transition-transform group-hover:scale-110"></div>
+<div class="flex items-center gap-2 text-on-surface-variant mb-4 relative z-10">
+<span class="material-symbols-outlined text-primary text-[20px]">folder_supervised</span>
+<span class="text-label-md font-label-md">成长档案完善率</span>
+</div>
+<div class="relative z-10 flex items-baseline gap-2">
+<span class="text-headline-lg font-headline-lg text-on-surface">85.6%</span>
+</div>
+<!-- Progress bar -->
+<div class="w-full bg-surface-container-highest rounded-full h-1.5 mt-3 relative z-10">
+<div class="bg-primary h-1.5 rounded-full" style="width: 85.6%"></div>
+</div>
+</div>
+</div>
+<!-- Main Charts Area -->
+<div class="col-span-1 md:col-span-8 flex flex-col gap-stack-gap-md md:gap-stack-gap-lg">
+<!-- Bar & Line Chart Combination -->
+<div class="bg-surface rounded-xl p-card-padding card-shadow border border-outline-variant/30 h-[380px] flex flex-col">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-headline-sm font-headline-sm text-on-surface">各班级赛事参与及月度趋势</h3>
+<button class="text-label-sm font-label-sm text-primary hover:underline">查看详情</button>
+</div>
+<div class="flex-1 relative w-full">
+<canvas id="mainComboChart"></canvas>
+</div>
+</div>
+<!-- Bottom charts split -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-gap-md md:gap-stack-gap-lg">
+<!-- Donut Chart -->
+<div class="bg-surface rounded-xl p-card-padding card-shadow border border-outline-variant/30 h-[300px] flex flex-col">
+<h3 class="text-label-md font-label-md text-on-surface mb-2">赛事分类分布</h3>
+<div class="flex-1 relative w-full flex justify-center items-center">
+<canvas id="donutChart"></canvas>
+</div>
+</div>
+<!-- Horizontal Bar Chart -->
+<div class="bg-surface rounded-xl p-card-padding card-shadow border border-outline-variant/30 h-[300px] flex flex-col">
+<h3 class="text-label-md font-label-md text-on-surface mb-2">各专业参与度</h3>
+<div class="flex-1 relative w-full">
+<canvas id="horizBarChart"></canvas>
+</div>
+</div>
+</div>
+</div>
+<!-- Sidebar / Feed Area -->
+<div class="col-span-1 md:col-span-4 flex flex-col gap-stack-gap-md md:gap-stack-gap-lg">
+<!-- Active Students -->
+<div class="bg-surface rounded-xl p-card-padding card-shadow border border-outline-variant/30 flex-shrink-0">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-headline-sm font-headline-sm text-on-surface">活跃学生排行</h3>
+<span class="text-label-sm font-label-sm text-on-surface-variant bg-surface-container px-2 py-1 rounded-DEFAULT">TOP 5</span>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Item 1 -->
+<div class="flex items-center gap-3 p-2 hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer group">
+<div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-label-md">1</div>
+<img alt="Student" class="w-10 h-10 rounded-full object-cover" data-alt="A portrait of a young male student in a bright classroom setting, soft lighting, modern style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAohdMnbXxPEY8scEQFqpxw1qIlYpp5jOov6iuFiMPcGryfHxAuctJ4ireoqKUcBwYh3sdN1cr1SYr8Nnd7P2-m4kJAsMi_TIXhMiFNnrLzhHfnTPeONeX8Q9LWrc-EjLshuZAFRxc-Pp47dAM0-FbCvNtoe5dyevQl5cCNtV5WwZ5OJp61h0gUCP7pCLfx76BzKEfQZ5nVe9jWxyzRTOsi8cTOtQCZbps28la1w_6T2_h5nxDrYIuslWRExR7-P9LtuQv3xG6oQzRb"/>
+<div class="flex-1 min-w-0">
+<p class="text-label-md font-label-md text-on-surface truncate">张三疯</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate">计科 2301班</p>
+</div>
+<div class="text-right">
+<p class="text-label-md font-label-md text-primary">12场</p>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex items-center gap-3 p-2 hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer group">
+<div class="w-8 h-8 rounded-full bg-secondary-container text-on-surface-variant flex items-center justify-center font-bold text-label-md">2</div>
+<img alt="Student" class="w-10 h-10 rounded-full object-cover" data-alt="A portrait of a young female student smiling gently, bright natural light, contemporary academic setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXTUB9E47X5d3IQOtR6RwNppBsDiucJmrUhVN6MzRFtwZSYgzZDXoO55KJtnZwLOv-UJ9EUwgh5AJYwvwYMx1C9-NBzNX7QgOgTp4Zm8zCwA4rl5LCxV4TaSdenHPx1D4mC_20VtOKqxmXWPSpQfwH-mBwQvVZjuxwQOVS9VOimTlNg_lZrfzntPLVQ2AkxVWlyYozICU1bRKnk5uGHVgSfp5vigBC_xGntmxUeRv2bx6n3VswpQdtiVQP9rwEgES211I74E9hfyHp"/>
+<div class="flex-1 min-w-0">
+<p class="text-label-md font-label-md text-on-surface truncate">李四水</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate">软工 2302班</p>
+</div>
+<div class="text-right">
+<p class="text-label-md font-label-md text-primary">10场</p>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="flex items-center gap-3 p-2 hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer group">
+<div class="w-8 h-8 rounded-full bg-tertiary-container text-on-tertiary-container flex items-center justify-center font-bold text-label-md">3</div>
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant font-bold">王</div>
+<div class="flex-1 min-w-0">
+<p class="text-label-md font-label-md text-on-surface truncate">王五山</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant truncate">计科 2303班</p>
+</div>
+<div class="text-right">
+<p class="text-label-md font-label-md text-primary">9场</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Dynamics / Activity Feed -->
+<div class="bg-surface rounded-xl p-card-padding card-shadow border border-outline-variant/30 flex-1 flex flex-col min-h-[300px]">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-headline-sm font-headline-sm text-on-surface">近期动态</h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">more_horiz</span></button>
+</div>
+<div class="flex-1 overflow-y-auto pr-2 hide-scrollbar flex flex-col gap-4">
+<!-- Timeline item -->
+<div class="relative pl-6 pb-2 border-l-2 border-outline-variant/30 last:border-0 last:pb-0">
+<div class="absolute w-3 h-3 bg-primary rounded-full -left-[7px] top-1 border-2 border-surface"></div>
+<p class="text-label-sm font-label-sm text-on-surface-variant mb-1">10分钟前</p>
+<p class="text-body-md font-body-md text-on-surface"><span class="font-bold">赵六</span> 报名了 <span class="text-primary cursor-pointer hover:underline">全国大学生蓝桥杯</span></p>
+</div>
+<div class="relative pl-6 pb-2 border-l-2 border-outline-variant/30 last:border-0 last:pb-0">
+<div class="absolute w-3 h-3 bg-surface-variant rounded-full -left-[7px] top-1 border-2 border-surface"></div>
+<p class="text-label-sm font-label-sm text-on-surface-variant mb-1">2小时前</p>
+<p class="text-body-md font-body-md text-on-surface"><span class="font-bold">软工2301班</span> 提交了3份赛事总结报告</p>
+</div>
+<div class="relative pl-6 pb-2 border-l-2 border-outline-variant/30 last:border-0 last:pb-0">
+<div class="absolute w-3 h-3 bg-error rounded-full -left-[7px] top-1 border-2 border-surface"></div>
+<p class="text-label-sm font-label-sm text-on-surface-variant mb-1">昨天 15:30</p>
+<p class="text-body-md font-body-md text-on-surface">系统提醒：<span class="font-bold text-error">孙七</span> 档案完善度低于30%</p>
+</div>
+<div class="relative pl-6 pb-2 border-l-2 border-outline-variant/30 last:border-0 last:pb-0">
+<div class="absolute w-3 h-3 bg-surface-variant rounded-full -left-[7px] top-1 border-2 border-surface"></div>
+<p class="text-label-sm font-label-sm text-on-surface-variant mb-1">11-12 09:00</p>
+<p class="text-body-md font-body-md text-on-surface"><span class="font-bold">数学建模大赛</span> 校内选拔赛成绩已公布</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Focus Students Table -->
+<div class="bg-surface rounded-xl p-card-padding card-shadow border border-outline-variant/30">
+<div class="flex justify-between items-center mb-6">
+<div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface">重点关注学生</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">参赛频次极低或档案缺失率高的学生</p>
+</div>
+<button class="border border-primary text-primary bg-on-primary text-label-md font-label-md px-4 py-2 rounded-DEFAULT hover:bg-primary-container/10 transition-colors">
+                        一键提醒
+                    </button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant/30">
+<th class="pb-3 text-label-md font-label-md text-on-surface-variant font-normal">姓名/学号</th>
+<th class="pb-3 text-label-md font-label-md text-on-surface-variant font-normal">班级</th>
+<th class="pb-3 text-label-md font-label-md text-on-surface-variant font-normal">本期参赛</th>
+<th class="pb-3 text-label-md font-label-md text-on-surface-variant font-normal">档案完善度</th>
+<th class="pb-3 text-label-md font-label-md text-on-surface-variant font-normal">预警原因</th>
+<th class="pb-3 text-label-md font-label-md text-on-surface-variant font-normal text-right">操作</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant text-label-sm">周</div>
+<div>
+<p class="text-label-md font-label-md text-on-surface">周八</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant">20230012</p>
+</div>
+</div>
+</td>
+<td class="py-4 text-body-md font-body-md text-on-surface">计科 2302班</td>
+<td class="py-4 text-body-md font-body-md text-on-surface">0 场</td>
+<td class="py-4">
+<div class="flex items-center gap-2">
+<div class="w-24 bg-surface-container-highest rounded-full h-1.5">
+<div class="bg-error h-1.5 rounded-full" style="width: 20%"></div>
+</div>
+<span class="text-body-sm font-body-sm text-error">20%</span>
+</div>
+</td>
+<td class="py-4">
+<span class="bg-error-container text-on-error-container px-2 py-1 rounded-full text-label-sm font-label-sm">持续未参赛</span>
+</td>
+<td class="py-4 text-right">
+<button class="text-primary hover:text-surface-tint text-label-md font-label-md">查看档案</button>
+</td>
+</tr>
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-low/50 transition-colors">
+<td class="py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center text-on-surface-variant text-label-sm">吴</div>
+<div>
+<p class="text-label-md font-label-md text-on-surface">吴九</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant">20230045</p>
+</div>
+</div>
+</td>
+<td class="py-4 text-body-md font-body-md text-on-surface">软工 2301班</td>
+<td class="py-4 text-body-md font-body-md text-on-surface">1 场</td>
+<td class="py-4">
+<div class="flex items-center gap-2">
+<div class="w-24 bg-surface-container-highest rounded-full h-1.5">
+<div class="bg-secondary h-1.5 rounded-full" style="width: 45%"></div>
+</div>
+<span class="text-body-sm font-body-sm text-secondary">45%</span>
+</div>
+</td>
+<td class="py-4">
+<span class="bg-surface-container-highest text-on-surface-variant px-2 py-1 rounded-full text-label-sm font-label-sm">档案缺失</span>
+</td>
+<td class="py-4 text-right">
+<button class="text-primary hover:text-surface-tint text-label-md font-label-md">查看档案</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+</div>
+<!-- Chart Scripts -->
+<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Global Chart Defaults
+            Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+            Chart.defaults.color = '#727786';
+            
+            const primaryColor = '#0057c2';
+            const primaryLight = '#d9e2ff';
+            const secondaryColor = '#414755';
+            
+            // 1. Combo Chart (Bar + Line)
+            const comboCtx = document.getElementById('mainComboChart').getContext('2d');
+            new Chart(comboCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['计科1班', '计科2班', '计科3班', '软工1班', '软工2班', '网络1班'],
+                    datasets: [{
+                        type: 'line',
+                        label: '月度趋势 (总人次)',
+                        data: [65, 80, 55, 90, 75, 45],
+                        borderColor: '#ba1a1a', // Error color for contrast
+                        backgroundColor: '#ba1a1a',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }, {
+                        type: 'bar',
+                        label: '参赛人数',
+                        data: [42, 55, 38, 60, 48, 30],
+                        backgroundColor: primaryColor,
+                        borderRadius: 4,
+                        yAxisID: 'y'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } }
+                    },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { 
+                            type: 'linear', display: true, position: 'left',
+                            grid: { borderDash: [4, 4], color: '#e0e3e6' }
+                        },
+                        y1: {
+                            type: 'linear', display: true, position: 'right',
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+
+            // 2. Donut Chart
+            const donutCtx = document.getElementById('donutChart').getContext('2d');
+            new Chart(donutCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['程序设计', '创新创业', '数学建模', '其他'],
+                    datasets: [{
+                        data: [45, 25, 20, 10],
+                        backgroundColor: [
+                            primaryColor,
+                            '#006ef2', // primary-container
+                            '#afc6ff', // inverse-primary
+                            '#e0e2ed'  // surface-variant
+                        ],
+                        borderWidth: 0,
+                        cutout: '70%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, padding: 20 } }
+                    }
+                }
+            });
+
+            // 3. Horizontal Bar Chart
+            const horizBarCtx = document.getElementById('horizBarChart').getContext('2d');
+            new Chart(horizBarCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['计算机科学', '软件工程', '网络工程', '数据科学'],
+                    datasets: [{
+                        label: '参与率 (%)',
+                        data: [85, 92, 65, 78],
+                        backgroundColor: primaryLight,
+                        hoverBackgroundColor: primaryColor,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { 
+                            grid: { borderDash: [4, 4], color: '#e0e3e6' },
+                            max: 100
+                        },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        });
+    </script>
+</body></html>
