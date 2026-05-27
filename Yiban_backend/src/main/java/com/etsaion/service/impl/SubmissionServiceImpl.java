@@ -19,6 +19,7 @@ import com.etsaion.service.CompetitionService;
 import com.etsaion.service.GrowthRecordService;
 import com.etsaion.service.MessageService;
 import com.etsaion.service.RegistrationService;
+import com.etsaion.service.ReviewTaskService;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.SubmissionStudentService;
 import com.etsaion.service.UserService;
@@ -57,6 +58,10 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     @Autowired
     private SubmissionStudentService submissionStudentService;
 
+    @Autowired
+    @Lazy
+    private ReviewTaskService reviewTaskService;
+
     @Override
     @Transactional
     public Submission submitSubmission(Long studentId, Long registrationId, String fileName, String fileUrl, Long fileSize) {
@@ -91,6 +96,17 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         ss.setSubmissionId(sub.getId());
         ss.setStudentId(studentId);
         submissionStudentService.save(ss);
+
+        Competition comp = competitionService.getById(reg.getCompetitionId());
+        String compName = comp != null ? comp.getName() : "未知赛事";
+        reviewTaskService.createPending("competition", reg.getCompetitionId(), "submission",
+                sub.getId(), studentId, "成果审核：" + compName,
+                comp != null ? comp.getCompetitionEnd() : null,
+                JSONUtil.toJsonStr(Map.of(
+                        "competitionName", compName,
+                        "fileName", fileName,
+                        "registrationId", registrationId
+                )));
 
         return sub;
     }
@@ -130,6 +146,14 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         }).collect(Collectors.toList());
         submissionStudentService.saveBatch(links);
 
+        reviewTaskService.createPending("competition", competitionId, "submission",
+                sub.getId(), submitterId, "团队成果审核：" + comp.getName(), comp.getCompetitionEnd(),
+                JSONUtil.toJsonStr(Map.of(
+                        "competitionName", comp.getName(),
+                        "fileName", fileName,
+                        "studentIds", studentIds
+                )));
+
         List<Submission> result = new ArrayList<>();
         result.add(sub);
         return result;
@@ -159,6 +183,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         sub.setReviewNote(reviewNote);
         sub.setApproved(Boolean.TRUE.equals(approve));
         this.updateById(sub);
+        reviewTaskService.resolveTarget("submission", submissionId, teacherId, reviewNote);
 
         // Update registration status if linked
         if (sub.getRegistrationId() != null) {

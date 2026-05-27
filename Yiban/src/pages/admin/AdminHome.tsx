@@ -86,6 +86,7 @@ export default function AdminHome() {
   const [pendingRegCount, setPendingRegCount] = useState<number | null>(null);
   const [pendingSubCount, setPendingSubCount] = useState<number | null>(null);
   const [totalSubCount, setTotalSubCount] = useState<number | null>(null);
+  const [workbenchStats, setWorkbenchStats] = useState<{ pending?: number; overdue?: number } | null>(null);
   const [currentCompPage, setCurrentCompPage] = useState(1);
 
   // Fetch registration and submission counts
@@ -93,19 +94,25 @@ export default function AdminHome() {
     let cancelled = false;
     const fetchCounts = async () => {
       try {
-        const regData = await apiClient.get('/registration/pending', { params: { current: 1, size: 1 } });
+        const taskStats: any = await apiClient.get('/admin/workbench/stats');
+        if (!cancelled && taskStats) {
+          setWorkbenchStats(taskStats as { pending?: number; overdue?: number });
+        }
+      } catch { if (!cancelled) setWorkbenchStats(null); }
+      try {
+        const regData: any = await apiClient.get('/registration/pending', { params: { current: 1, size: 1 } });
         if (!cancelled && regData && typeof regData.total === 'number') {
           setPendingRegCount(regData.total);
         }
       } catch { if (!cancelled) setPendingRegCount(0); }
       try {
-        const subData = await apiClient.get('/submission/list', { params: { current: 1, size: 1, status: '待审核' } });
+        const subData: any = await apiClient.get('/submission/list', { params: { current: 1, size: 1, status: '待审核' } });
         if (!cancelled && subData && typeof subData.total === 'number') {
           setPendingSubCount(subData.total);
         }
       } catch { if (!cancelled) setPendingSubCount(0); }
       try {
-        const allSub = await apiClient.get('/submission/list', { params: { current: 1, size: 1 } });
+        const allSub: any = await apiClient.get('/submission/list', { params: { current: 1, size: 1 } });
         if (!cancelled && allSub && typeof allSub.total === 'number') {
           setTotalSubCount(allSub.total);
         }
@@ -180,7 +187,7 @@ export default function AdminHome() {
   const metrics = [
     { label: '赛事总数', value: total, suffix: '场', icon: 'event' },
     { label: '进行中', value: counts.published, suffix: '场', icon: 'play_circle' },
-    { label: '待审核', value: (pendingRegCount ?? 0) + (pendingSubCount ?? 0), suffix: '项', icon: 'pending_actions', tone: 'warning' as const, loaded: pendingRegCount !== null && pendingSubCount !== null },
+    { label: '待审核', value: workbenchStats?.pending ?? ((pendingRegCount ?? 0) + (pendingSubCount ?? 0)), suffix: '项', icon: 'pending_actions', tone: 'warning' as const, loaded: workbenchStats !== null || (pendingRegCount !== null && pendingSubCount !== null) },
     { label: '作品总数', value: totalSubCount ?? 0, suffix: '份', icon: 'description', loaded: totalSubCount !== null },
   ];
 
@@ -229,6 +236,15 @@ export default function AdminHome() {
       });
     }
 
+    if ((workbenchStats?.overdue ?? 0) > 0) {
+      tasks.push({
+        title: '超期待办',
+        description: `当前有 ${workbenchStats?.overdue} 项统一待办已超过截止时间，请优先处理。`,
+        tone: 'error',
+        link: '/admin/audit',
+      });
+    }
+
     // Check for competitions with deadlines in the next 3 days
     const now = Date.now();
     const threeDays = 3 * 24 * 60 * 60 * 1000;
@@ -257,7 +273,7 @@ export default function AdminHome() {
     }
 
     return tasks;
-  }, [pendingRegCount, pendingSubCount, records]);
+  }, [pendingRegCount, pendingSubCount, records, workbenchStats]);
 
   const greetingName = currentUser?.name?.trim() || '管理员';
 

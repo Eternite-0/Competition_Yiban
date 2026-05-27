@@ -12,6 +12,7 @@ type Registration = {
   competitionCategory?: string;
   studentId: number | string;
   teamName?: string;
+  track?: string;
   status: string;
   submitDate?: string;
   reviewNote?: string;
@@ -152,6 +153,12 @@ export default function MyRegistrations() {
                         icon="groups"
                         tone="primary"
                         value={reg.teamName ? `已组队 · ${reg.teamName}` : '单人报名'}
+                      />
+                      <Field
+                        label="参赛赛道"
+                        icon="flag"
+                        tone="primary"
+                        value={reg.track || '未选择'}
                       />
                       <Field
                         label="材料状态"

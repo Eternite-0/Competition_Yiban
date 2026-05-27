@@ -33,6 +33,10 @@ public class GrowthController {
         if (targetStudentId == null) {
             return Result.error(401, "请先登录或传入目标学生ID");
         }
+        if ("student".equalsIgnoreCase(UserContext.getUserRole())
+                && !targetStudentId.equals(UserContext.getUserId())) {
+            return Result.error(403, "学生只能查看自己的成长档案");
+        }
 
         StudentGrowthVO growth = growthRecordService.getStudentGrowth(targetStudentId);
         return Result.success(growth);
@@ -48,6 +52,10 @@ public class GrowthController {
         }
         if (targetStudentId == null) {
             return Result.error(401, "请先登录或传入目标学生ID");
+        }
+        if ("student".equalsIgnoreCase(UserContext.getUserRole())
+                && !targetStudentId.equals(UserContext.getUserId())) {
+            return Result.error(403, "学生只能查看自己的成长档案");
         }
         return Result.success(growthRecordService.getTimeline(targetStudentId));
     }

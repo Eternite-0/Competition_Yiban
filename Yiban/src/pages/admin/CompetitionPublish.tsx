@@ -9,6 +9,7 @@ interface PublishFormState {
   title: string;
   level: CompetitionLevel | '';
   category: CompetitionCategory | '';
+  status: 'draft' | 'published' | 'closed' | '';
   organizer: string;
   regStart: string;
   regEnd: string;
@@ -28,7 +29,7 @@ interface UploadResponse {
   fileSize: number;
 }
 
-const toPublishPayload = (form: PublishFormState, status: 'draft' | 'published') => ({
+const toPublishPayload = (form: PublishFormState, status: 'draft' | 'published' | 'closed') => ({
   name: form.title,
   level: form.level || '校级',
   category: form.category || 'A',
@@ -62,6 +63,7 @@ const defaultForm: PublishFormState = {
   title: '',
   level: '',
   category: '',
+  status: '',
   organizer: '',
   regStart: '',
   regEnd: '',
@@ -112,6 +114,7 @@ export default function CompetitionPublish() {
           title: data.name || '',
           level: data.level || '',
           category: data.category || '',
+          status: data.status || 'draft',
           organizer: data.organizer || '',
           regStart: formatDateForInput(data.startTime),
           regEnd: formatDateForInput(data.endTime),
@@ -171,9 +174,12 @@ export default function CompetitionPublish() {
     if (status === 'published' && !validate()) return;
     setLoading(true);
     try {
+      const payloadStatus = isEdit
+        ? (status === 'draft' ? 'draft' : form.status || 'published')
+        : status;
       const payload = toPublishPayload(
         status === 'draft' ? { ...form, title: form.title || '未命名赛事', level: form.level || '校级', category: form.category || 'A' } : form,
-        status
+        payloadStatus as 'draft' | 'published' | 'closed'
       );
       if (isEdit) {
         await apiClient.put(`/competition/admin/update/${id}`, payload);

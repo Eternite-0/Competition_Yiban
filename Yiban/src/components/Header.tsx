@@ -71,8 +71,8 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
   const [activeIndex, setActiveIndex] = useState(-1);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
-  const abortRef = useRef<AbortController>();
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Debounced search with AbortController to prevent race conditions
   useEffect(() => {
@@ -88,7 +88,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
       abortRef.current?.abort();
       abortRef.current = new AbortController();
       try {
-        const data = await apiClient.get('/competition/list', {
+        const data: any = await apiClient.get('/competition/list', {
           params: { current: 1, size: 5, keyword: searchQuery.trim() },
           signal: abortRef.current.signal,
         });

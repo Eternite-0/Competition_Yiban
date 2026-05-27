@@ -87,12 +87,16 @@ export default function RegistrationWorkbench() {
       toast.error('请填写队伍名称');
       return;
     }
+    const memberStudentIds = members
+      .map((m) => Number(m.trim()))
+      .filter((id) => Number.isFinite(id) && id > 0);
     try {
       setSubmitting(true);
       await apiClient.post('/registration/submit', {
         competitionId: Number(comp.id),
         teamName: teamName.trim(),
         track: selectedTrack || undefined,
+        memberStudentIds,
       });
       toast.success('报名成功');
       navigate('/student/registrations');
@@ -275,7 +279,7 @@ export default function RegistrationWorkbench() {
               <div className="rounded-md border border-hairline overflow-hidden">
                 <div className="grid grid-cols-[60px_1fr_60px] text-[11px] uppercase tracking-wider text-ink-muted-48 bg-canvas-parchment/60 px-3 py-2">
                   <span className="text-center">序号</span>
-                  <span>姓名</span>
+                  <span>学生ID</span>
                   <span className="text-center">操作</span>
                 </div>
                 {members.map((member, idx) => (
@@ -283,7 +287,7 @@ export default function RegistrationWorkbench() {
                     <span className="text-center text-[13px] text-ink-muted-48 tabular-nums">{idx + 1}</span>
                     <input
                       className="h-8 px-2 rounded-sm border border-hairline bg-canvas/60 text-[13px] text-ink focus:border-primary-focus focus:outline-none transition"
-                      placeholder={idx === 0 ? currentUser?.name || '输入成员姓名' : '输入成员姓名'}
+                      placeholder={idx === 0 ? currentUser?.studentId || '输入成员学生ID' : '输入成员学生ID'}
                       value={member}
                       onChange={(e) => updateMember(idx, e.target.value)}
                     />

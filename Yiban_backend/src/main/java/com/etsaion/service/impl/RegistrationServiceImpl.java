@@ -1,6 +1,7 @@
 package com.etsaion.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -17,10 +18,12 @@ import com.etsaion.service.CompetitionService;
 import com.etsaion.service.GrowthRecordService;
 import com.etsaion.service.MessageService;
 import com.etsaion.service.RegistrationService;
+import com.etsaion.service.ReviewTaskService;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.UserService;
 import com.etsaion.vo.RegistrationVO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,8 +31,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,6 +55,10 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
     @Autowired
     private SubmissionService submissionService;
 
+    @Autowired
+    @Lazy
+    private ReviewTaskService reviewTaskService;
+
     @Override
     @Transactional
     public Registration submitRegistration(Long studentId, RegistrationSubmitDTO dto) {
@@ -64,6 +73,18 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
             throw new BusinessException("赛事报名已截止");
         }
 
+        Set<Long> memberIds = new LinkedHashSet<>();
+        if (dto.getMemberStudentIds() != null) {
+            dto.getMemberStudentIds().stream()
+                    .filter(id -> id != null && !id.equals(studentId))
+                    .forEach(memberIds::add);
+        }
+        int participantCount = memberIds.size() + 1;
+        if (comp.getMaxTeamSize() != null && comp.getMaxTeamSize() > 0
+                && participantCount > comp.getMaxTeamSize()) {
+            throw new BusinessException("团队人数超过赛事限制");
+        }
+
         long count = this.count(new LambdaQueryWrapper<Registration>()
                 .eq(Registration::getStudentId, studentId)
                 .eq(Registration::getCompetitionId, dto.getCompetitionId())
@@ -76,10 +97,21 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         reg.setCompetitionId(dto.getCompetitionId());
         reg.setStudentId(studentId);
         reg.setTeamName(dto.getTeamName());
+        reg.setTrack(dto.getTrack());
+        reg.setMemberStudentIds(JSONUtil.toJsonStr(new ArrayList<>(memberIds)));
         reg.setStatus("已提交");
         reg.setSubmitDate(LocalDateTime.now());
 
         this.save(reg);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("competitionName", comp.getName());
+        payload.put("teamName", reg.getTeamName());
+        payload.put("track", reg.getTrack());
+        payload.put("memberStudentIds", new ArrayList<>(memberIds));
+        reviewTaskService.createPending("competition", comp.getId(), "registration", reg.getId(),
+                studentId, "赛事报名审核：" + comp.getName(), comp.getEndTime(), JSONUtil.toJsonStr(payload));
+
         return reg;
     }
 
@@ -152,6 +184,8 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
             messageService.save(msg);
         }
 
+        reviewTaskService.resolveTarget("registration", id, teacherId, reviewNote);
+
         // Sync linked submission status so it doesn't stay "待审核" forever
         List<Submission> linkedSubs = submissionService.list(
                 new LambdaQueryWrapper<Submission>().eq(Submission::getRegistrationId, id));
@@ -201,6 +235,12 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
             vo.setCompetitionId(r.getCompetitionId());
             vo.setStudentId(r.getStudentId());
             vo.setTeamName(r.getTeamName());
+            vo.setTrack(r.getTrack());
+            if (r.getMemberStudentIds() != null && JSONUtil.isTypeJSON(r.getMemberStudentIds())) {
+                vo.setMemberStudentIds(JSONUtil.toList(r.getMemberStudentIds(), Long.class));
+            } else {
+                vo.setMemberStudentIds(new ArrayList<>());
+            }
             vo.setStatus(r.getStatus());
             vo.setSubmitDate(r.getSubmitDate());
 

@@ -14,7 +14,9 @@ interface Submission {
   uploadDate: string;
   status: string;
   reviewNote?: string;
-  source: 'registration' | 'submission'; // to pick the right audit API
+  source: 'registration' | 'submission' | 'task'; // to pick the right audit API
+  targetType?: string;
+  targetId?: number | string;
   teamMembers?: { studentId: number; studentName: string; studentNo: string }[];
 }
 
@@ -176,19 +178,43 @@ export default function SubmissionAudit() {
     setLoading(true);
     try {
       // Fetch both sources in parallel
-      const [regData, subData] = await Promise.all([
+      const [taskData, regData, subData] = await Promise.all([
+        apiClient.get('/admin/workbench/tasks', { params: { current: 1, size: 100, status: 'pending' } }).catch(() => null),
         apiClient.get('/registration/pending', { params: { current: 1, size: 50 } }).catch(() => null),
         apiClient.get('/submission/list', { params: { status: '待审核', current: 1, size: 50 } }).catch(() => null),
       ]);
 
+      const taskRecords: any[] = Array.isArray(taskData) ? taskData : taskData?.records ?? [];
       const regRecords: any[] = Array.isArray(regData) ? regData : regData?.records ?? [];
       const subRecords: any[] = Array.isArray(subData) ? subData : subData?.records ?? [];
+
+      const taskTargets = new Set(taskRecords.map((item: any) => `${item.targetType}-${item.targetId}`));
+
+      const fromTasks: Submission[] = taskRecords.map((item: any) => {
+        const payload = item.payload || {};
+        return {
+          id: `task-${item.id}`,
+          targetType: item.targetType,
+          targetId: item.targetId,
+          studentName: item.submitterName ?? (item.submitterNo ? `学号 ${item.submitterNo}` : '未知学生'),
+          competitionTitle: payload.competitionName ?? payload.activityTitle ?? item.title ?? '待审核事项',
+          fileName: payload.fileName ?? payload.teamName ?? payload.track ?? item.title ?? '—',
+          fileUrl: payload.fileUrl ?? '',
+          uploadDate: item.createTime ?? '',
+          status: '待审核',
+          reviewNote: item.reviewNote,
+          source: 'task' as const,
+        };
+      });
 
       // Map registrations — only those with uploaded files (status 审核中)
       const fromRegs: Submission[] = regRecords
         .filter((item: any) => item.status === '审核中')
+        .filter((item: any) => !taskTargets.has(`registration-${item.id ?? item.registrationId}`))
         .map((item: any) => ({
           id: `reg-${item.id ?? item.registrationId}`,
+          targetType: 'registration',
+          targetId: item.id ?? item.registrationId,
           studentName: item.studentName ?? (item.studentId != null ? `学号 ${item.studentId}` : '未知学生'),
           competitionTitle: item.competitionName ?? item.competitionTitle ?? (item.competitionId != null ? `赛事 #${item.competitionId}` : '未知赛事'),
           fileName: item.fileName ?? (item.teamName ? `团队：${item.teamName}` : '—'),
@@ -202,8 +228,11 @@ export default function SubmissionAudit() {
       // Map standalone submissions (only those without registration)
       const fromSubs: Submission[] = subRecords
         .filter((item: any) => !item.registrationId)
+        .filter((item: any) => !taskTargets.has(`submission-${item.id}`))
         .map((item: any) => ({
           id: `sub-${item.id}`,
+          targetType: 'submission',
+          targetId: item.id,
           studentName: item.studentName ?? (item.studentId != null ? `学号 ${item.studentId}` : '未知学生'),
           competitionTitle: item.competitionName ?? (item.competitionId != null ? `赛事 #${item.competitionId}` : '未知赛事'),
           fileName: item.fileName ?? '—',
@@ -215,7 +244,7 @@ export default function SubmissionAudit() {
           teamMembers: item.teamMembers,
         }));
 
-      setPendingSubmissions([...fromRegs, ...fromSubs]);
+      setPendingSubmissions([...fromTasks, ...fromRegs, ...fromSubs]);
     } catch (error: any) {
       console.error('Failed to fetch pending submissions:', error);
       toast.error(error?.message || '加载待审核列表失败');
@@ -257,11 +286,19 @@ export default function SubmissionAudit() {
           { params: { registrationId: realId } }
         );
       } else {
+      if (selected.source === 'task') {
+        const realId = selected.id.replace(/^task-/, '');
+        await apiClient.post(`/admin/workbench/tasks/${realId}/action`, {
+          action: approve ? 'approve' : (reviewNote.startsWith('【退回补充】') ? 'return' : 'reject'),
+          reviewNote: reviewNote.replace('【退回补充】', ''),
+        });
+      } else {
         // Standalone submission: use submission/review
         const realId = selected.id.replace(/^sub-/, '');
         await apiClient.post('/submission/review', null, {
           params: { submissionId: realId, approve, reviewNote },
         });
+      }
       }
       const processedItem = { ...selected, status: approve ? '审核通过' : '审核驳回', reviewNote };
       setProcessedSubmissions(prev => [processedItem, ...prev]);

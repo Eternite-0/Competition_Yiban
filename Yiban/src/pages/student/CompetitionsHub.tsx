@@ -80,16 +80,22 @@ export default function CompetitionsHub() {
   const navigate = useNavigate();
   const currentUser = useStore((s) => s.currentUser);
   const isAdmin = currentUser?.role === 'admin';
+  const defaultStatus = isAdmin ? '' : 'published';
   const [competitions, setCompetitions] = useState<BackendCompetition[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedLevel, setSelectedLevel] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState(defaultStatus);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const pageSize = 9;
+
+  useEffect(() => {
+    setSelectedStatus(isAdmin ? '' : 'published');
+    setPage(1);
+  }, [isAdmin]);
 
   useEffect(() => {
     const fetchCompetitions = async () => {
@@ -101,6 +107,7 @@ export default function CompetitionsHub() {
         if (selectedLevel) params.level = selectedLevel;
         if (selectedCategory) params.category = selectedCategory;
         if (selectedStatus) params.status = selectedStatus;
+        else if (!isAdmin) params.status = 'published';
         const data: any = await apiClient.get('/competition/list', { params });
         const records: BackendCompetition[] = Array.isArray(data?.records) ? data.records : Array.isArray(data) ? data : [];
         setCompetitions(records);
@@ -114,7 +121,7 @@ export default function CompetitionsHub() {
       }
     };
     fetchCompetitions();
-  }, [page, selectedLevel, selectedCategory, selectedStatus, searchQuery]);
+  }, [page, selectedLevel, selectedCategory, selectedStatus, searchQuery, isAdmin]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 

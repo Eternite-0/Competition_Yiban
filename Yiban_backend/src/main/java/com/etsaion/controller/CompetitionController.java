@@ -8,6 +8,7 @@ import com.etsaion.dto.Result;
 import com.etsaion.entity.Competition;
 import com.etsaion.interceptor.RequireRole;
 import com.etsaion.service.CompetitionService;
+import com.etsaion.utils.UserContext;
 import com.etsaion.vo.CompetitionVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -36,6 +37,9 @@ public class CompetitionController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String status) {
 
+        if ((status == null || status.isBlank()) && !"admin".equalsIgnoreCase(UserContext.getUserRole())) {
+            status = "published";
+        }
         Page<Competition> page = competitionService.getCompetitionsPage(current, size, keyword, level, category, status);
         return Result.success(competitionService.toVOPage(page));
     }

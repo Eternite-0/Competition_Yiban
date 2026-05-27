@@ -2,6 +2,7 @@ package com.etsaion.vo;
 
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class RegistrationVO {
@@ -17,6 +18,8 @@ public class RegistrationVO {
     private String major;
     private String className;
     private String teamName;
+    private String track;
+    private List<Long> memberStudentIds;
     private String status;
     private LocalDateTime submitDate;
 

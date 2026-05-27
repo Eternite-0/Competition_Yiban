@@ -9,9 +9,9 @@ spring:
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
   datasource:
-    url: jdbc:mysql://localhost:3306/etsaion?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true
-    username: your_username
-    password: your_password
+    url: ${DB_URL:jdbc:mysql://localhost:3306/etsaion?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:your_username}
+    password: ${DB_PASSWORD:your_password}
     driver-class-name: com.mysql.cj.jdbc.Driver
   servlet:
     multipart:
@@ -28,19 +28,19 @@ mybatis-plus:
     map-underscore-to-camel-case: true
 
 jwt:
-  secret: your_jwt_secret_key_at_least_32_chars
-  expire: 86400000 # 24 hours in milliseconds
+  secret: ${JWT_SECRET:your_jwt_secret_key_at_least_32_chars}
+  expire: ${JWT_EXPIRE:86400000} # 24 hours in milliseconds
 
 file:
   upload-path: ./uploads
 
 oss:
   qiniu:
-    access-key: your_qiniu_access_key
-    secret-key: your_qiniu_secret_key
-    bucket: your_bucket_name
-    domain: your_domain
-    upload-url: https://up-z2.qiniup.com
+    access-key: ${QINIU_ACCESS_KEY:your_qiniu_access_key}
+    secret-key: ${QINIU_SECRET_KEY:your_qiniu_secret_key}
+    bucket: ${QINIU_BUCKET:your_bucket_name}
+    domain: ${QINIU_DOMAIN:your_domain}
+    upload-url: ${QINIU_UPLOAD_URL:https://up-z2.qiniup.com}
 
 springdoc:
   api-docs:

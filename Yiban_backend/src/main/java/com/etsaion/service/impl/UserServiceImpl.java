@@ -49,6 +49,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         User user = new User();
         BeanUtils.copyProperties(dto, user);
+        user.setRole("student");
 
         // Hash password using BCrypt
         String hashedPw = BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt());

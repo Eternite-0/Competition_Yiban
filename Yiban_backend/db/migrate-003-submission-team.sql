@@ -1,9 +1,31 @@
 USE `etsaion`;
 
--- 1. submission 表新增字段
-ALTER TABLE `submission`
-  ADD COLUMN `competition_id` bigint DEFAULT NULL COMMENT '关联赛事ID（独立提交时使用）' AFTER `registration_id`,
-  ADD COLUMN `submitter_id` bigint DEFAULT NULL COMMENT '实际上传者的学生ID' AFTER `competition_id`;
+-- 1. submission 表新增字段（幂等）
+SET @db_name := DATABASE();
+
+SET @exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = @db_name AND TABLE_NAME = 'submission' AND COLUMN_NAME = 'competition_id'
+);
+SET @sql := IF(@exists = 0,
+  'ALTER TABLE `submission` ADD COLUMN `competition_id` bigint DEFAULT NULL COMMENT ''关联赛事ID（独立提交时使用）'' AFTER `registration_id`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @exists := (
+  SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = @db_name AND TABLE_NAME = 'submission' AND COLUMN_NAME = 'submitter_id'
+);
+SET @sql := IF(@exists = 0,
+  'ALTER TABLE `submission` ADD COLUMN `submitter_id` bigint DEFAULT NULL COMMENT ''实际上传者的学生ID'' AFTER `competition_id`',
+  'SELECT 1'
+);
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- 2. 成果-学生关联表（支持队长代传）
 CREATE TABLE IF NOT EXISTS `submission_student` (

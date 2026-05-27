@@ -471,7 +471,7 @@ public class TeacherServiceImpl implements TeacherService {
         Map<String, Long> monthly = regs.stream()
                 .filter(r -> r.getSubmitDate() != null)
                 .collect(Collectors.groupingBy(
-                        r -> String.format("%d-%02d", r.getSubmitDate().getYear() + 1900, r.getSubmitDate().getMonthValue()),
+                        r -> String.format("%d-%02d", r.getSubmitDate().getYear(), r.getSubmitDate().getMonthValue()),
                         Collectors.counting()
                 ));
 

@@ -4,18 +4,23 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Data
-@TableName("registration")
-public class Registration {
+@TableName("participation")
+public class Participation {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private Long competitionId;
+    private Long activityId;
     private Long studentId;
-    private String teamName; // Name of their team, null for individual signup
+    private String teamName;
     private String track;
-    private String memberStudentIds; // JSON array of student ids
-    private String status; // 待完善, 已提交, 审核中, 审核通过, 审核驳回
+    private String memberStudentIds; // JSON array
+    private String metadataJson;
+    private String status; // submitted, in_review, approved, rejected, returned, cancelled
     private LocalDateTime submitDate;
+    private String reviewNote;
+    private Long reviewerId;
+    private LocalDateTime reviewTime;
 }

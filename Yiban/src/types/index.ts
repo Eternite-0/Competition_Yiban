@@ -1,4 +1,8 @@
 export type UserRole = 'student' | 'teacher' | 'admin';
+export type ActivityType = 'competition' | 'volunteer';
+export type ActivityStatus = 'draft' | 'published' | 'closed' | 'archived';
+export type ParticipationStatus = 'submitted' | 'in_review' | 'approved' | 'rejected' | 'returned' | 'cancelled';
+export type ReviewTaskStatus = 'pending' | 'processing' | 'resolved';
 
 export interface User {
   id: string;
@@ -77,4 +81,42 @@ export interface TeamPost {
   content: string;
   rolesNeeded: string;
   date: string;
+}
+
+export interface Activity {
+  id: string;
+  type: ActivityType;
+  title: string;
+  status: ActivityStatus;
+  startTime?: string;
+  endTime?: string;
+  activityStart?: string;
+  activityEnd?: string;
+  tracks?: string[];
+  tags?: string[];
+  location?: string;
+  serviceHours?: number;
+}
+
+export interface Participation {
+  id: string;
+  activityId: string;
+  activityTitle: string;
+  activityType: ActivityType;
+  status: ParticipationStatus;
+  teamName?: string;
+  track?: string;
+  submitDate?: string;
+  reviewNote?: string;
+}
+
+export interface ReviewTask {
+  id: string;
+  activityType: ActivityType;
+  targetType: 'registration' | 'submission' | 'participation';
+  targetId: string;
+  title: string;
+  status: ReviewTaskStatus;
+  submitterName?: string;
+  deadline?: string;
 }

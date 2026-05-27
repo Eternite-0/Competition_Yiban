@@ -14,9 +14,6 @@ public class RegisterDTO {
     @NotBlank(message = "真实姓名不能为空")
     private String realName;
 
-    @NotBlank(message = "角色不能为空")
-    private String role; // admin, student, teacher
-
     private String college;
     private String major;
     private String className;
