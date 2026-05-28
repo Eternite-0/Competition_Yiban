@@ -20,6 +20,7 @@ import com.etsaion.service.GrowthRecordService;
 import com.etsaion.service.MessageService;
 import com.etsaion.service.RegistrationService;
 import com.etsaion.service.ReviewTaskService;
+import com.etsaion.service.StudentStageProgressService;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.UserService;
 import com.etsaion.vo.RegistrationVO;
@@ -60,6 +61,9 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
     @Lazy
     private ReviewTaskService reviewTaskService;
 
+    @Autowired
+    private StudentStageProgressService studentStageProgressService;
+
     @Override
     @Transactional
     public Registration submitRegistration(Long studentId, RegistrationSubmitDTO dto) {
@@ -69,6 +73,9 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         }
         if (!"published".equalsIgnoreCase(comp.getStatus())) {
             throw new BusinessException("该赛事当前未开放报名");
+        }
+        if (comp.getStartTime() != null && LocalDateTime.now().isBefore(comp.getStartTime())) {
+            throw new BusinessException("赛事报名尚未开始");
         }
         if (LocalDateTime.now().isAfter(comp.getEndTime())) {
             throw new BusinessException("赛事报名已截止");
@@ -84,6 +91,23 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         if (comp.getMaxTeamSize() != null && comp.getMaxTeamSize() > 0
                 && participantCount > comp.getMaxTeamSize()) {
             throw new BusinessException("团队人数超过赛事限制");
+        }
+
+        // Validate member student IDs exist
+        if (!memberIds.isEmpty()) {
+            List<User> members = userService.listByIds(new ArrayList<>(memberIds));
+            if (members.size() != memberIds.size()) {
+                throw new BusinessException("部分成员学号不存在，请核实");
+            }
+        }
+
+        // Validate track against competition's allowed tracks
+        if (dto.getTrack() != null && !dto.getTrack().isEmpty()
+                && comp.getTracks() != null && !comp.getTracks().isEmpty()) {
+            List<String> allowedTracks = JSONUtil.toList(comp.getTracks(), String.class);
+            if (!allowedTracks.contains(dto.getTrack())) {
+                throw new BusinessException("所选赛道不在赛事允许范围内");
+            }
         }
 
         long count = this.count(new LambdaQueryWrapper<Registration>()
@@ -113,6 +137,13 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         payload.put("memberStudentIds", new ArrayList<>(memberIds));
         reviewTaskService.createPending("competition", comp.getId(), "registration", reg.getId(),
                 studentId, "赛事报名审核：" + comp.getName(), comp.getEndTime(), JSONUtil.toJsonStr(payload));
+
+        // Initialize first stage progress for this student
+        try {
+            studentStageProgressService.initProgressForRegistration(studentId, comp.getId(), reg.getId());
+        } catch (Exception ignored) {
+            // No stages configured for this competition - that's fine
+        }
 
         return reg;
     }

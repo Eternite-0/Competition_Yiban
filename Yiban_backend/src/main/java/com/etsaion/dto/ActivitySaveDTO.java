@@ -1,5 +1,8 @@
 package com.etsaion.dto;
 
+import com.etsaion.config.FlexibleLocalDateTimeDeserializer;
+import com.etsaion.config.FlexibleStringListDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
@@ -18,15 +21,22 @@ public class ActivitySaveDTO {
     private String level;
     private String category;
     private String organizer;
+    @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
     private LocalDateTime startTime;
+    @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
     private LocalDateTime endTime;
+    @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
     private LocalDateTime activityStart;
+    @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
     private LocalDateTime activityEnd;
     private Integer maxTeamSize;
     private Integer maxParticipants;
     private String coverUrl;
     private String content;
+    @JsonDeserialize(using = FlexibleStringListDeserializer.class)
     private List<String> tags;
+
+    @JsonDeserialize(using = FlexibleStringListDeserializer.class)
     private List<String> tracks;
     private String location;
     private BigDecimal serviceHours;

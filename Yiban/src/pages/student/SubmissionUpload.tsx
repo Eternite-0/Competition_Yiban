@@ -182,9 +182,9 @@ export default function SubmissionUpload() {
         <div className="lg:col-span-8 flex flex-col gap-lg">
           {/* Basic Info */}
           <section className="glass p-xl">
-            {registration.status === '审核驳回' && registration.reviewNote && (() => {
+            {(registration.status === '审核驳回' || registration.status === '退回补充') && registration.reviewNote && (() => {
               const note = registration.reviewNote;
-              const isReturn = note.startsWith('【退回补充】');
+              const isReturn = registration.status === '退回补充' || note.startsWith('【退回补充】');
               const displayNote = isReturn ? note.replace('【退回补充】', '') : note;
               return (
                 <div className={`rounded-md p-3 mb-md ${isReturn ? 'bg-warning/5 border border-warning/15' : 'bg-error/5 border border-error/15'}`}>

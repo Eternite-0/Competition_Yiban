@@ -163,7 +163,6 @@ export default function TeacherStudentGrowth() {
   const currentUser = useStore((s) => s.currentUser);
   const [searchParams, setSearchParams] = useSearchParams();
   const initialId = searchParams.get('studentId') ?? '';
-  const isCounselor = currentUser?.role === 'counselor';
   const basePath = '/teacher';
   const scopeCollege = currentUser?.department || (currentUser as any)?.college || '';
 
@@ -202,7 +201,7 @@ export default function TeacherStudentGrowth() {
       setLoadingList(true);
       try {
         const params: Record<string, any> = { current: 1, size: 200 };
-        if (filters.college || (isCounselor && scopeCollege)) params.college = filters.college || scopeCollege;
+        if (filters.college || scopeCollege) params.college = filters.college || scopeCollege;
         if (filters.grade) params.grade = filters.grade;
         if (filters.major) params.major = filters.major;
         if (filters.className) params.className = filters.className;
@@ -235,7 +234,7 @@ export default function TeacherStudentGrowth() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, isCounselor, scopeCollege]);
+  }, [filters, scopeCollege]);
 
   // Load growth for selected student
   useEffect(() => {
@@ -330,13 +329,13 @@ export default function TeacherStudentGrowth() {
                 对比 ({compareIds.size})
               </button>
             )}
-            <ExportButton filters={filters} fixedCollege={isCounselor ? scopeCollege : undefined} />
+            <ExportButton filters={filters} fixedCollege={scopeCollege || undefined} />
           </>
         )}
       />
 
       {/* Filters */}
-      <CascadeFilter onChange={handleFilterChange} fixedCollege={isCounselor ? scopeCollege : undefined} showCollege={!isCounselor} />
+      <CascadeFilter onChange={handleFilterChange} fixedCollege={scopeCollege || undefined} showCollege={!scopeCollege} />
 
       {/* KPIs */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">

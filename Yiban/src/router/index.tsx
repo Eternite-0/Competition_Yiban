@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import Layout from '../components/Layout';
 import LoginPage from '../pages/LoginPage';
@@ -16,6 +16,7 @@ import StudentGrowth from '../pages/student/StudentGrowth';
 import AchievementUpload from '../pages/student/AchievementUpload';
 import CompetitionCalendar from '../pages/student/CompetitionCalendar';
 import StudentExcellentWorks from '../pages/student/ExcellentWorks';
+import MyProgress from '../pages/student/MyProgress';
 
 // Teacher pages
 import TeacherHome from '../pages/teacher/TeacherHome';
@@ -31,23 +32,16 @@ import AdminHome from '../pages/admin/AdminHome';
 import CompetitionPublish from '../pages/admin/CompetitionPublish';
 import ExcellentWorks from '../pages/admin/ExcellentWorks';
 import UserManagement from '../pages/admin/UserManagement';
+import AnnouncementManagement from '../pages/admin/AnnouncementManagement';
 
-function RequireAuth({ role, children }: { role?: string | string[]; children: ReactNode }) {
+function RequireAuth({ role, children }: { role?: string; children: ReactNode }) {
   const currentUser = useStore((s) => s.currentUser);
   const token = localStorage.getItem('token');
   if (!token) return <Navigate to="/" replace />;
-  const allowedRoles = Array.isArray(role) ? role : role ? [role] : [];
-  if (allowedRoles.length > 0 && currentUser && !allowedRoles.includes(currentUser.role)) {
-    const target = currentUser.role === 'counselor' ? '/teacher' : `/${currentUser.role}`;
-    return <Navigate to={target} replace />;
+  if (role && currentUser && currentUser.role !== role) {
+    return <Navigate to={`/${currentUser.role}`} replace />;
   }
   return <>{children}</>;
-}
-
-function CounselorRedirect() {
-  const location = useLocation();
-  const target = `${location.pathname.replace(/^\/counselor/, '/teacher')}${location.search}${location.hash}`;
-  return <Navigate to={target} replace />;
 }
 
 export const router = createBrowserRouter([
@@ -67,11 +61,12 @@ export const router = createBrowserRouter([
       { path: 'achievements/upload', element: <AchievementUpload /> },
       { path: 'calendar', element: <CompetitionCalendar /> },
       { path: 'works', element: <StudentExcellentWorks /> },
+      { path: 'progress', element: <MyProgress /> },
     ],
   },
   {
     path: '/teacher',
-    element: <RequireAuth role={['teacher', 'counselor']}><Layout /></RequireAuth>,
+    element: <RequireAuth role="teacher"><Layout /></RequireAuth>,
     children: [
       { index: true, element: <TeacherHome /> },
       { path: 'college-overview', element: <CollegeOverview /> },
@@ -84,10 +79,6 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: '/counselor/*',
-    element: <CounselorRedirect />,
-  },
-  {
     path: '/admin',
     element: <RequireAuth role="admin"><Layout /></RequireAuth>,
     children: [
@@ -98,6 +89,7 @@ export const router = createBrowserRouter([
       { path: 'works', element: <ExcellentWorks /> },
       { path: 'audit', element: <SubmissionAudit /> },
       { path: 'users', element: <UserManagement /> },
+      { path: 'announcements', element: <AnnouncementManagement /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

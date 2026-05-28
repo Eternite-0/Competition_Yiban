@@ -2,6 +2,7 @@ package com.etsaion.dto;
 
 import lombok.Data;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 
 @Data
 public class RegisterDTO {
@@ -9,6 +10,7 @@ public class RegisterDTO {
     private String username;
 
     @NotBlank(message = "密码不能为空")
+    @Size(min = 6, message = "密码长度不能少于6位")
     private String password;
 
     @NotBlank(message = "真实姓名不能为空")

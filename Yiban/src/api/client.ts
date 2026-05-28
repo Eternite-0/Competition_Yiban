@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useStore } from '../store/useStore';
 
 // Create Axios instance
 export const apiClient = axios.create({
@@ -44,9 +45,10 @@ apiClient.interceptors.response.use(
     if (res.code !== 200 && res.code !== 0 && res.code !== undefined) {
       const message = res.message || res.msg || 'Error';
       console.error('API Error:', message);
-      // If unauthorized, clear stale token so the user is forced to re-login
+      // If unauthorized, clear stale token and Zustand state so the user is forced to re-login
       if (res.code === 401) {
         localStorage.removeItem('token');
+        useStore.getState().logout();
       }
       return Promise.reject(new Error(message));
     }

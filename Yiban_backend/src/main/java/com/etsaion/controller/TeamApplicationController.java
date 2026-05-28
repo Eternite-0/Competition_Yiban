@@ -3,6 +3,7 @@ package com.etsaion.controller;
 import com.etsaion.dto.Result;
 import com.etsaion.dto.TeamApplyDTO;
 import com.etsaion.entity.TeamApplication;
+import com.etsaion.interceptor.RequireRole;
 import com.etsaion.service.TeamApplicationService;
 import com.etsaion.utils.UserContext;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +17,7 @@ import java.util.Map;
 @Tag(name = "组队申请")
 @RestController
 @RequestMapping("/api/team")
+@RequireRole("student")
 public class TeamApplicationController {
 
     @Autowired

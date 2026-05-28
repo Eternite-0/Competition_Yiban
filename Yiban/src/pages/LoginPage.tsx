@@ -56,8 +56,7 @@ export default function LoginPage() {
       setLoading(true);
       const { default: apiClient } = await import('../api/client');
       const res: any = await apiClient.post('/auth/login', { username: account, password });
-      // counselor can log in through teacher tab
-      const roleMatch = res.user.role === activeRole || (activeRole === 'teacher' && res.user.role === 'counselor');
+      const roleMatch = res.user.role === activeRole;
       if (!roleMatch) {
         toast.error('账号角色与当前选择的入口不符');
         setLoading(false);
@@ -69,7 +68,7 @@ export default function LoginPage() {
         name: res.user.realName || res.user.username || '用户',
       };
       setAuth(normalizedUser, res.token);
-      navigate(res.user.role === 'counselor' ? '/teacher' : `/${res.user.role}`);
+      navigate(`/${res.user.role}`);
     } catch (err: any) {
       toast.error(err.message || '登录失败，请检查账号密码');
     } finally {
@@ -226,7 +225,7 @@ export default function LoginPage() {
                 </span>
                 <input
                   className="input-glass h-[48px] pl-12 text-[15px]"
-                  placeholder={activeRole === 'student' ? '学号' : (activeRole === 'teacher' || activeRole === 'counselor') ? '工号' : '管理员账号'}
+                  placeholder={activeRole === 'student' ? '学号' : activeRole === 'teacher' ? '工号' : '管理员账号'}
                   type="text"
                   value={account}
                   onChange={(e) => setAccount(e.target.value)}

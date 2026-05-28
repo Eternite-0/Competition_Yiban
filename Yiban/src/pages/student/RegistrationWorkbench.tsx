@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
-import { useStore as useAuthStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
 
 type BackendCompetition = {
@@ -32,7 +31,6 @@ function formatDate(value?: string) {
 export default function RegistrationWorkbench() {
   const { competitionId } = useParams<{ competitionId: string }>();
   const navigate = useNavigate();
-  const currentUser = useAuthStore((s) => s.currentUser);
 
   const [comp, setComp] = useState<BackendCompetition | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,8 +56,9 @@ export default function RegistrationWorkbench() {
       }
       try {
         const regs: any = await apiClient.get('/registration/my');
-        const list: Array<{ competitionId: number | string }> = Array.isArray(regs) ? regs : [];
-        if (list.some((r) => String(r.competitionId) === String(competitionId))) {
+        const list: Array<{ competitionId: number | string; status: string }> = Array.isArray(regs) ? regs : [];
+        const activeStatuses = ['待完善', '已提交', '审核中', '审核通过'];
+        if (list.some((r) => String(r.competitionId) === String(competitionId) && activeStatuses.includes(r.status))) {
           setAlreadyRegistered(true);
         }
       } catch {
@@ -287,7 +286,7 @@ export default function RegistrationWorkbench() {
                     <span className="text-center text-[13px] text-ink-muted-48 tabular-nums">{idx + 1}</span>
                     <input
                       className="h-8 px-2 rounded-sm border border-hairline bg-canvas/60 text-[13px] text-ink focus:border-primary-focus focus:outline-none transition"
-                      placeholder={idx === 0 ? currentUser?.studentId || '输入成员学生ID' : '输入成员学生ID'}
+                      placeholder="输入队友学号"
                       value={member}
                       onChange={(e) => updateMember(idx, e.target.value)}
                     />

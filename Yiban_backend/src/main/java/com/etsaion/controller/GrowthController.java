@@ -23,7 +23,7 @@ public class GrowthController {
 
     @Operation(summary = "根据学生ID获取能力画像雷达图数据与参赛汇总 (TS 格式对齐)")
     @GetMapping("/radar")
-    @RequireRole({"student", "teacher", "admin", "counselor"})
+    @RequireRole({"student", "teacher", "admin"})
     public Result<StudentGrowthVO> getRadarData(@RequestParam(required = false) Long studentId) {
         Long targetStudentId = studentId;
         if (targetStudentId == null) {
@@ -44,7 +44,7 @@ public class GrowthController {
 
     @Operation(summary = "获取学生成长时间轴")
     @GetMapping("/timeline")
-    @RequireRole({"student", "teacher", "admin", "counselor"})
+    @RequireRole({"student", "teacher", "admin"})
     public Result<List<GrowthRecord>> getTimeline(@RequestParam(required = false) Long studentId) {
         Long targetStudentId = studentId;
         if (targetStudentId == null) {

@@ -1,6 +1,7 @@
 package com.etsaion.dto;
 
 import com.etsaion.config.FlexibleLocalDateTimeDeserializer;
+import com.etsaion.config.FlexibleStringListDeserializer;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 import javax.validation.constraints.Min;
@@ -41,7 +42,10 @@ public class EventPublishDTO {
 
     private String coverUrl;
     private String content;
+    @JsonDeserialize(using = FlexibleStringListDeserializer.class)
     private List<String> tags;
+
+    @JsonDeserialize(using = FlexibleStringListDeserializer.class)
     private List<String> tracks;
     private String status; // draft / published, optional - defaults to published
 }

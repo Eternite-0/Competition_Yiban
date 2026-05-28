@@ -117,26 +117,35 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
         wrapper.eq(StrUtil.isNotBlank(status), ReviewTask::getStatus, status)
                 .eq(StrUtil.isNotBlank(activityType), ReviewTask::getActivityType, activityType)
                 .eq(StrUtil.isNotBlank(targetType), ReviewTask::getTargetType, targetType)
-                .like(StrUtil.isNotBlank(keyword), ReviewTask::getTitle, keyword)
-                .orderByAsc(ReviewTask::getDeadline)
+                .like(StrUtil.isNotBlank(keyword), ReviewTask::getTitle, keyword);
+
+        // Apply college filter at query level for teachers
+        String scopedCollege = currentReviewerCollege();
+        if (StrUtil.isNotBlank(scopedCollege)) {
+            List<User> collegeStudents = userService.list(new LambdaQueryWrapper<User>()
+                    .eq(User::getRole, "student")
+                    .eq(User::getCollege, scopedCollege)
+                    .select(User::getId));
+            List<Long> collegeStudentIds = collegeStudents.stream().map(User::getId).collect(Collectors.toList());
+            if (collegeStudentIds.isEmpty()) {
+                Page<ReviewTaskVO> emptyPage = new Page<>(current, size, 0);
+                emptyPage.setRecords(new ArrayList<>());
+                return emptyPage;
+            }
+            wrapper.in(ReviewTask::getSubmitterId, collegeStudentIds);
+        }
+
+        wrapper.orderByAsc(ReviewTask::getDeadline)
                 .orderByDesc(ReviewTask::getCreateTime);
         Page<ReviewTask> raw = this.page(page, wrapper);
         Page<ReviewTaskVO> voPage = new Page<>(raw.getCurrent(), raw.getSize(), raw.getTotal());
-        List<ReviewTaskVO> records = toVOList(raw.getRecords());
-        String scopedCollege = currentReviewerCollege();
-        if (StrUtil.isNotBlank(scopedCollege)) {
-            records = records.stream()
-                    .filter(vo -> scopedCollege.equals(vo.getCollege()))
-                    .collect(Collectors.toList());
-            voPage.setTotal(records.size());
-        }
-        voPage.setRecords(records);
+        voPage.setRecords(toVOList(raw.getRecords()));
         return voPage;
     }
 
     private String currentReviewerCollege() {
         String role = UserContext.getUserRole();
-        if (!"teacher".equalsIgnoreCase(role) && !"counselor".equalsIgnoreCase(role)) {
+        if (!"teacher".equalsIgnoreCase(role)) {
             return null;
         }
         Long userId = UserContext.getUserId();

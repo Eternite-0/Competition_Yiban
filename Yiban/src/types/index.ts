@@ -1,4 +1,4 @@
-export type UserRole = 'student' | 'teacher' | 'admin' | 'counselor';
+export type UserRole = 'student' | 'teacher' | 'admin';
 export type ActivityType = 'competition' | 'volunteer';
 export type ActivityStatus = 'draft' | 'published' | 'closed' | 'archived';
 export type ParticipationStatus = 'submitted' | 'in_review' | 'approved' | 'rejected' | 'returned' | 'cancelled';
@@ -119,4 +119,60 @@ export interface ReviewTask {
   status: ReviewTaskStatus;
   submitterName?: string;
   deadline?: string;
+}
+
+// === Stage System ===
+
+export interface CompetitionStage {
+  id: number;
+  competitionId: number;
+  name: string;
+  stageOrder: number;
+  startTime?: string;
+  endTime?: string;
+  description?: string;
+  status: 'upcoming' | 'active' | 'closed';
+}
+
+export type StageProgressStatus = 'not_started' | 'in_progress' | 'submitted' | 'passed' | 'failed';
+
+export interface StudentStageProgress {
+  progressId: number;
+  stageId: number;
+  stageName: string;
+  stageOrder: number;
+  startTime?: string;
+  endTime?: string;
+  description?: string;
+  status: StageProgressStatus;
+  submitTime?: string;
+  reviewTime?: string;
+  reviewNote?: string;
+}
+
+export interface CompetitionProgress {
+  competitionId: number;
+  competitionName: string;
+  competitionLevel: string;
+  currentStage?: string;
+  stages: StudentStageProgress[];
+}
+
+// === Announcement ===
+
+export type AnnouncementType = 'system' | 'competition' | 'stage';
+
+export interface Announcement {
+  id: number;
+  competitionId?: number;
+  stageId?: number;
+  title: string;
+  content: string;
+  authorId: number;
+  authorName?: string;
+  type: AnnouncementType;
+  isPinned: boolean;
+  status: 'draft' | 'published';
+  createTime: string;
+  competitionName?: string;
 }

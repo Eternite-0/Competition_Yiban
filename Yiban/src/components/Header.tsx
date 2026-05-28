@@ -23,6 +23,7 @@ const titleMap: Record<string, string> = {
   '/student/registrations': '我的参赛',
   '/student/growth': '能力雷达',
   '/student/achievements/upload': '上传成果',
+  '/student/progress': '我的进度',
   '/teacher': '工作台',
   '/teacher/college-overview': '学院总览',
   '/teacher/competitions': '赛事大厅',
@@ -34,6 +35,7 @@ const titleMap: Record<string, string> = {
   '/admin/publish': '赛事发布',
   '/admin/works': '作品库',
   '/admin/audit': '系统审核',
+  '/admin/announcements': '公告管理',
 };
 
 function resolveTitle(path: string): string {

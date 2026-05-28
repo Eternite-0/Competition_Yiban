@@ -451,6 +451,18 @@ export default function CompetitionPublish() {
               </div>
             )}
           </section>
+
+          {/* Stages Management (edit mode only) */}
+          {isEdit && (
+            <section className="glass p-xl">
+              <h3 className="text-[17px] font-semibold tracking-tight text-ink mb-1 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[20px] text-primary">route</span>
+                赛事阶段管理
+              </h3>
+              <p className="text-[13px] text-ink-muted-48 mb-4">按需添加赛事阶段，如院赛、校赛、省赛等。不添加阶段则使用默认报名流程。</p>
+              <StageManager competitionId={Number(id)} />
+            </section>
+          )}
         </div>
 
         {/* Right: Preview */}
@@ -524,6 +536,103 @@ export default function CompetitionPublish() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function StageManager({ competitionId }: { competitionId: number }) {
+  const [stages, setStages] = useState<any[]>([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newStage, setNewStage] = useState({ name: '', startTime: '', endTime: '', description: '' });
+
+  useEffect(() => {
+    apiClient.get(`/competition/${competitionId}/stages`).then((data: any) => {
+      setStages(Array.isArray(data) ? data : []);
+    }).catch(() => {});
+  }, [competitionId]);
+
+  const handleAdd = async () => {
+    if (!newStage.name.trim()) { toast.error('请输入阶段名称'); return; }
+    try {
+      const payload: any = {
+        name: newStage.name,
+        stageOrder: stages.length + 1,
+        startTime: newStage.startTime || null,
+        endTime: newStage.endTime || null,
+        description: newStage.description || null,
+        status: 'upcoming',
+      };
+      const created: any = await apiClient.post(`/competition/${competitionId}/stages`, payload);
+      setStages(prev => [...prev, created]);
+      setNewStage({ name: '', startTime: '', endTime: '', description: '' });
+      setShowAdd(false);
+      toast.success('阶段已添加');
+    } catch (err: any) { toast.error(err.message || '添加失败'); }
+  };
+
+  const handleDelete = async (stageId: number) => {
+    if (!confirm('确定删除此阶段？')) return;
+    try {
+      await apiClient.delete(`/competition/${competitionId}/stages/${stageId}`);
+      setStages(prev => prev.filter(s => s.id !== stageId));
+      toast.success('已删除');
+    } catch (err: any) { toast.error(err.message || '删除失败'); }
+  };
+
+  const handleStatusChange = async (stageId: number, status: string) => {
+    try {
+      const updated: any = await apiClient.put(`/competition/${competitionId}/stages/${stageId}`, { status });
+      setStages(prev => prev.map(s => s.id === stageId ? { ...s, status: updated.status } : s));
+    } catch (err: any) { toast.error(err.message || '更新失败'); }
+  };
+
+  return (
+    <div className="flex flex-col gap-3">
+      {stages.map((stage) => (
+        <div key={stage.id} className="flex items-center gap-3 p-3 rounded-lg border border-hairline bg-canvas">
+          <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[12px] font-semibold grid place-items-center">{stage.stageOrder}</span>
+          <div className="flex-1 min-w-0">
+            <span className="text-[14px] font-medium text-ink">{stage.name}</span>
+            {stage.startTime && (
+              <span className="text-[12px] text-ink-muted-48 ml-2">
+                {new Date(stage.startTime).toLocaleDateString('zh-CN')} — {stage.endTime ? new Date(stage.endTime).toLocaleDateString('zh-CN') : ''}
+              </span>
+            )}
+          </div>
+          <select
+            value={stage.status}
+            onChange={(e) => handleStatusChange(stage.id, e.target.value)}
+            className="input-glass !w-auto !h-8 !text-[12px] !px-2"
+          >
+            <option value="upcoming">未开始</option>
+            <option value="active">进行中</option>
+            <option value="closed">已结束</option>
+          </select>
+          <button onClick={() => handleDelete(stage.id)} className="p-1 rounded-md text-ink-muted-48 hover:text-error hover:bg-error/8 transition">
+            <span className="material-symbols-outlined text-[18px]">delete</span>
+          </button>
+        </div>
+      ))}
+
+      {showAdd ? (
+        <div className="p-3 rounded-lg border border-primary/30 bg-primary/5 flex flex-col gap-2">
+          <input className="input-glass !h-9" placeholder="阶段名称，如：院赛报名、校赛评审" value={newStage.name} onChange={e => setNewStage(s => ({ ...s, name: e.target.value }))} />
+          <div className="grid grid-cols-2 gap-2">
+            <input type="date" className="input-glass !h-9" value={newStage.startTime} onChange={e => setNewStage(s => ({ ...s, startTime: e.target.value }))} />
+            <input type="date" className="input-glass !h-9" value={newStage.endTime} onChange={e => setNewStage(s => ({ ...s, endTime: e.target.value }))} />
+          </div>
+          <input className="input-glass !h-9" placeholder="阶段说明（选填）" value={newStage.description} onChange={e => setNewStage(s => ({ ...s, description: e.target.value }))} />
+          <div className="flex gap-2 justify-end">
+            <button type="button" className="btn-secondary !py-1.5 !text-[12px]" onClick={() => setShowAdd(false)}>取消</button>
+            <button type="button" className="btn-primary !py-1.5 !text-[12px]" onClick={handleAdd}>添加</button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setShowAdd(true)} className="flex items-center gap-2 text-[13px] text-primary hover:text-primary-focus font-medium">
+          <span className="material-symbols-outlined text-[18px]">add_circle</span>
+          添加阶段
+        </button>
+      )}
     </div>
   );
 }

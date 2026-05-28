@@ -11,7 +11,7 @@ CREATE TABLE `user` (
   `username` varchar(50) NOT NULL COMMENT '学号/工号',
   `password` varchar(255) NOT NULL,
   `real_name` varchar(50) DEFAULT NULL,
-  `role` varchar(20) DEFAULT 'student' COMMENT 'admin/student/teacher/counselor',
+  `role` varchar(20) DEFAULT 'student' COMMENT 'admin/student/teacher',
   `college` varchar(100) DEFAULT NULL,
   `major` varchar(100) DEFAULT NULL,
   `class_name` varchar(50) DEFAULT NULL,

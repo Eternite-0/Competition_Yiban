@@ -22,10 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@Tag(name = "教师与辅导员端接口", description = "提供班级概况、学生参赛监控以及综测数据导出等功能")
+@Tag(name = "教师端接口", description = "提供班级概况、学生参赛监控以及综测数据导出等功能")
 @RestController
 @RequestMapping("/api/teacher")
-@RequireRole({"teacher", "counselor"})
+@RequireRole("teacher")
 public class TeacherController {
 
     @Autowired
@@ -33,7 +33,7 @@ public class TeacherController {
 
     // ---- existing (updated) ----
 
-    @Operation(summary = "获取辅导员仪表盘概览统计")
+    @Operation(summary = "获取教师仪表盘概览统计")
     @GetMapping("/dashboard")
     public Result<Map<String, Object>> getDashboard(
             @RequestParam(required = false) String college,
@@ -86,7 +86,7 @@ public class TeacherController {
         Workbook workbook = ExcelUtil.export(
                 list,
                 "综合素质测评数据",
-                new String[]{"学生姓名", "学号/工号", "班级专业信息", "参赛次数", "累计综测加分"}
+                new String[]{"学生姓名", "学号/工号", "学院", "专业", "班级", "参赛次数", "累计综测加分"}
         );
 
         String filename = URLEncoder.encode("综测数据_" + academicYear + ".xlsx", StandardCharsets.UTF_8.toString());
@@ -174,14 +174,17 @@ public class TeacherController {
         // Simple export: create a basic Excel with student info and stats
         List<StudentComprehensiveVO> list = new ArrayList<>();
         if (student != null) {
+            int totalComps = (Integer) detail.get("totalCompetitions");
+            int totalAwards = (Integer) detail.get("totalAwards");
+            double weightedScore = totalComps * 2.0 + totalAwards * 15.0;
             list.add(new StudentComprehensiveVO(
                     (String) student.get("realName"),
                     (String) student.get("username"),
                     (String) student.get("college"),
                     (String) student.get("major"),
                     (String) student.get("className"),
-                    (Integer) detail.get("totalCompetitions"),
-                    ((Number) detail.get("totalAwards")).doubleValue()
+                    totalComps,
+                    weightedScore
             ));
         }
 

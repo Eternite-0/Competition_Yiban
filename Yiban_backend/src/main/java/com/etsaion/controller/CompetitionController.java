@@ -2,12 +2,16 @@ package com.etsaion.controller;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etsaion.dto.EventPublishDTO;
 import com.etsaion.dto.Result;
 import com.etsaion.entity.Competition;
+import com.etsaion.entity.Registration;
 import com.etsaion.interceptor.RequireRole;
 import com.etsaion.service.CompetitionService;
+import com.etsaion.service.CompetitionStageService;
+import com.etsaion.service.RegistrationService;
 import com.etsaion.utils.UserContext;
 import com.etsaion.vo.CompetitionVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,6 +22,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Tag(name = "赛事/竞赛管理接口", description = "提供赛事列表查询、详情获取，以及管理员维护赛事接口")
 @RestController
@@ -26,6 +31,12 @@ public class CompetitionController {
 
     @Autowired
     private CompetitionService competitionService;
+
+    @Autowired
+    private RegistrationService registrationService;
+
+    @Autowired
+    private CompetitionStageService competitionStageService;
 
     @Operation(summary = "查询赛事分页列表 (公开)")
     @GetMapping("/list")
@@ -37,7 +48,8 @@ public class CompetitionController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String status) {
 
-        if ((status == null || status.isBlank()) && !"admin".equalsIgnoreCase(UserContext.getUserRole())) {
+        // Non-admins can only see published competitions
+        if (!"admin".equalsIgnoreCase(UserContext.getUserRole())) {
             status = "published";
         }
         Page<Competition> page = competitionService.getCompetitionsPage(current, size, keyword, level, category, status);
@@ -46,12 +58,30 @@ public class CompetitionController {
 
     @Operation(summary = "获取单个赛事详情 (公开)")
     @GetMapping("/detail/{id}")
-    public Result<CompetitionVO> getCompetitionDetail(@PathVariable Long id) {
+    public Result<Map<String, Object>> getCompetitionDetail(@PathVariable Long id) {
         Competition comp = competitionService.getById(id);
         if (comp == null) {
             return Result.error("赛事不存在");
         }
-        return Result.success(competitionService.toVO(comp));
+        CompetitionVO vo = competitionService.toVO(comp);
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("id", vo.getId());
+        result.put("name", vo.getName());
+        result.put("level", vo.getLevel());
+        result.put("category", vo.getCategory());
+        result.put("organizer", vo.getOrganizer());
+        result.put("startTime", vo.getStartTime());
+        result.put("endTime", vo.getEndTime());
+        result.put("competitionStart", vo.getCompetitionStart());
+        result.put("competitionEnd", vo.getCompetitionEnd());
+        result.put("maxTeamSize", vo.getMaxTeamSize());
+        result.put("coverUrl", vo.getCoverUrl());
+        result.put("content", vo.getContent());
+        result.put("tags", vo.getTags());
+        result.put("tracks", vo.getTracks());
+        result.put("status", vo.getStatus());
+        result.put("stages", competitionStageService.listByCompetition(id));
+        return Result.success(result);
     }
 
     @Operation(summary = "管理员发布赛事")
@@ -92,7 +122,18 @@ public class CompetitionController {
         if (comp == null) {
             return Result.error("赛事不存在");
         }
-        BeanUtils.copyProperties(dto, comp, "tags", "tracks", "createTime");
+        // Copy only non-null fields to avoid overwriting with nulls
+        if (dto.getName() != null) comp.setName(dto.getName());
+        if (dto.getLevel() != null) comp.setLevel(dto.getLevel());
+        if (dto.getCategory() != null) comp.setCategory(dto.getCategory());
+        if (dto.getOrganizer() != null) comp.setOrganizer(dto.getOrganizer());
+        if (dto.getStartTime() != null) comp.setStartTime(dto.getStartTime());
+        if (dto.getEndTime() != null) comp.setEndTime(dto.getEndTime());
+        if (dto.getCompetitionStart() != null) comp.setCompetitionStart(dto.getCompetitionStart());
+        if (dto.getCompetitionEnd() != null) comp.setCompetitionEnd(dto.getCompetitionEnd());
+        if (dto.getMaxTeamSize() != null) comp.setMaxTeamSize(dto.getMaxTeamSize());
+        if (dto.getCoverUrl() != null) comp.setCoverUrl(dto.getCoverUrl());
+        if (dto.getContent() != null) comp.setContent(dto.getContent());
         if (CollUtil.isNotEmpty(dto.getTags())) {
             comp.setTags(JSONUtil.toJsonStr(dto.getTags()));
         }
@@ -114,6 +155,13 @@ public class CompetitionController {
         Competition comp = competitionService.getById(id);
         if (comp == null) {
             return Result.error("赛事不存在");
+        }
+
+        // Check for existing registrations before deletion
+        long regCount = registrationService.count(new LambdaQueryWrapper<Registration>()
+                .eq(Registration::getCompetitionId, id));
+        if (regCount > 0) {
+            return Result.error("该赛事已有 " + regCount + " 条报名记录，无法删除");
         }
 
         competitionService.removeById(id);

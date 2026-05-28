@@ -60,7 +60,7 @@ public class GrowthRecordServiceImpl extends ServiceImpl<GrowthRecordMapper, Gro
                     .eq(Submission::getStatus, "已审核")
                     .eq(Submission::getApproved, true))
                     .stream()
-                    .filter(sub -> Boolean.TRUE.equals(sub.getApproved()))
+                    .filter(s -> "已审核".equals(s.getStatus()) && Boolean.TRUE.equals(s.getApproved()))
                     .collect(Collectors.toList());
         }
         int awards = approvedSubmissions.size();
@@ -99,12 +99,14 @@ public class GrowthRecordServiceImpl extends ServiceImpl<GrowthRecordMapper, Gro
                 if ("A".equalsIgnoreCase(category)) {
                     innovation += boost;
                     programming += 6;
+                    engineering += 4;
                 } else if ("B".equalsIgnoreCase(category)) {
                     innovation += boost;
                     writing += 5;
                 } else if ("C".equalsIgnoreCase(category)) {
                     writing += boost;
                     teamwork += 5;
+                    engineering += 4;
                 } else {
                     innovation += 6;
                     engineering += 6;

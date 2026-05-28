@@ -19,8 +19,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Tag(name = "成果文件上传与审核", description = "学生成果附件上传提交、教师审批成果接口")
 @RestController
@@ -35,9 +37,25 @@ public class SubmissionController {
 
     @Operation(summary = "模拟文件/成果上传接口")
     @PostMapping("/upload")
+    @RequireRole({"student", "admin", "teacher"})
     public Result<Map<String, Object>> uploadFile(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
             return Result.error("文件不能为空");
+        }
+
+        // Validate file size (50MB max)
+        if (file.getSize() > 50 * 1024 * 1024) {
+            return Result.error("文件大小不能超过50MB");
+        }
+
+        // Validate file type
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename != null) {
+            String ext = originalFilename.contains(".") ? originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase() : "";
+            Set<String> allowedExts = Set.of(".pdf", ".doc", ".docx", ".zip", ".jpg", ".jpeg", ".png", ".gif", ".webp");
+            if (!ext.isEmpty() && !allowedExts.contains(ext)) {
+                return Result.error("不支持的文件类型，允许: " + String.join(", ", allowedExts));
+            }
         }
 
         try {
@@ -48,7 +66,6 @@ public class SubmissionController {
             }
 
             // Create a unique file name
-            String originalFilename = file.getOriginalFilename();
             String ext = "";
             if (originalFilename != null && originalFilename.contains(".")) {
                 ext = originalFilename.substring(originalFilename.lastIndexOf("."));

@@ -92,7 +92,6 @@ function normalizeTrend(points: TrendPoint[], minMonths = 6) {
 export default function TeacherHome() {
   const navigate = useNavigate();
   const currentUser = useStore((s) => s.currentUser);
-  const isCounselor = currentUser?.role === 'counselor';
   const basePath = '/teacher';
   const scopeCollege = currentUser?.department || (currentUser as any)?.college || '';
 
@@ -103,7 +102,7 @@ export default function TeacherHome() {
   const [trend, setTrend] = useState<TrendPoint[]>([]);
   const [monitorRows, setMonitorRows] = useState<MonitorRow[]>([]);
   const [overview, setOverview] = useState<OverviewData>({});
-  const scopeLabel = isCounselor ? scopeCollege || '辅导员' : filters.college || scopeCollege || '学院';
+  const scopeLabel = filters.college || scopeCollege || '学院';
 
   const handleFilterChange = useCallback((f: FilterValues) => {
     setFilters(f);
@@ -115,7 +114,7 @@ export default function TeacherHome() {
       setLoading(true);
       try {
         const filterParams: Record<string, any> = {};
-        if (filters.college || (isCounselor && scopeCollege)) filterParams.college = filters.college || scopeCollege;
+        if (filters.college || scopeCollege) filterParams.college = filters.college || scopeCollege;
         if (filters.grade) filterParams.grade = filters.grade;
         if (filters.major) filterParams.major = filters.major;
         if (filters.className) filterParams.className = filters.className;
@@ -125,12 +124,10 @@ export default function TeacherHome() {
             console.error('dashboard failed', e);
             return {} as DashboardStats;
           }),
-          isCounselor
-            ? Promise.resolve({ records: [] })
-            : apiClient.get('/registration/pending', { params: { current: 1, size: 5, ...filterParams } }).catch((e) => {
-                console.error('pending failed', e);
-                return { records: [] } as any;
-              }),
+          apiClient.get('/registration/pending', { params: { current: 1, size: 5, ...filterParams } }).catch((e) => {
+            console.error('pending failed', e);
+            return { records: [] } as any;
+          }),
           apiClient.get('/teacher/trend', { params: filterParams }).catch(() => ({ monthly: [] })),
           apiClient.get('/teacher/monitor/registrations', {
             params: { current: 1, size: 200, ...filterParams },
@@ -178,7 +175,7 @@ export default function TeacherHome() {
     return () => {
       cancelled = true;
     };
-  }, [filters, isCounselor, scopeCollege]);
+  }, [filters, scopeCollege]);
 
   const statusGroups = useMemo(() => {
     const base = [
@@ -222,7 +219,6 @@ export default function TeacherHome() {
   const totalRegistrations = stats.totalRegistrations ?? 0;
   const totalStudents = stats.totalStudents ?? 0;
   const pendingReviews = stats.pendingReviews ?? overview.totalPending ?? 0;
-  const participationRate = Math.round((overview.participationRate ?? 0) * 100);
   const approvedCount = overview.totalApproved ?? statusGroups.find((item) => item.key === '审核通过')?.count ?? 0;
   const completionRate = totalRegistrations > 0 ? Math.round((approvedCount / totalRegistrations) * 100) : 0;
   const strongestMajor = (overview.majorDistribution ?? [])
@@ -232,7 +228,7 @@ export default function TeacherHome() {
   const cockpitMetrics = [
     { label: '参赛学生', value: totalStudents, suffix: '人', icon: 'groups', accent: 'text-primary' },
     { label: '参与人次', value: totalRegistrations, suffix: '次', icon: 'event_available', accent: 'text-primary' },
-    { label: isCounselor ? '参赛覆盖' : '待审压力', value: isCounselor ? participationRate : pendingReviews, suffix: isCounselor ? '%' : '项', icon: isCounselor ? 'donut_large' : 'pending_actions', accent: 'text-primary' },
+    { label: '待审压力', value: pendingReviews, suffix: '项', icon: 'pending_actions', accent: 'text-primary' },
     { label: '通过率', value: completionRate, suffix: '%', icon: 'verified', accent: 'text-primary' },
   ];
 
@@ -348,9 +344,9 @@ export default function TeacherHome() {
       <section className="glass-tint flex flex-col gap-3 px-md py-3 lg:flex-row lg:items-center">
         <div className="flex items-center gap-2 text-[13px] font-medium text-ink">
           <span className="material-symbols-outlined text-[18px] text-primary">tune</span>
-          {isCounselor ? '辅导员授权范围' : '数据范围'}
+          教师授权范围
         </div>
-        <CascadeFilter onChange={handleFilterChange} fixedCollege={isCounselor ? scopeCollege : undefined} showCollege={!isCounselor} />
+        <CascadeFilter onChange={handleFilterChange} fixedCollege={scopeCollege || undefined} showCollege={!scopeCollege} />
       </section>
 
       <section className="grid grid-cols-1 gap-lg xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,0.6fr)]">
@@ -557,8 +553,7 @@ export default function TeacherHome() {
         </motion.div>
       </section>
 
-      {!isCounselor && (
-        <section className="glass overflow-hidden">
+      <section className="glass overflow-hidden">
           <div className="flex items-center justify-between border-b border-hairline p-lg">
             <div>
               <h2 className="text-[18px] font-semibold tracking-tight text-ink">待审核报名</h2>
@@ -594,8 +589,7 @@ export default function TeacherHome() {
               </div>
             )}
           </div>
-        </section>
-      )}
+      </section>
     </div>
   );
 }

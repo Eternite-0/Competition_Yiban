@@ -73,6 +73,11 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
             throw new BusinessException("您无权为此报名表提交成果附件");
         }
 
+        // Only allow submission when registration is submitted or approved
+        if (!"已提交".equalsIgnoreCase(reg.getStatus()) && !"审核通过".equalsIgnoreCase(reg.getStatus())) {
+            throw new BusinessException("当前报名状态不允许提交成果，请确认报名已提交或已审核通过");
+        }
+
         reg.setStatus("审核中");
         registrationService.updateById(reg);
 
@@ -120,6 +125,12 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         }
         if (CollUtil.isEmpty(studentIds)) {
             throw new BusinessException("至少选择一名关联学生");
+        }
+
+        // Ensure submitter is always in the student list
+        if (!studentIds.contains(submitterId)) {
+            studentIds = new ArrayList<>(studentIds);
+            studentIds.add(submitterId);
         }
 
         Submission sub = new Submission();
@@ -232,13 +243,20 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
             messageService.save(msg);
 
             if (Boolean.TRUE.equals(approve)) {
-                GrowthRecord record = new GrowthRecord();
-                record.setStudentId(sid);
-                record.setCompetitionId(compId);
-                record.setRecordType("award");
-                record.setTitle(String.format("完成了在“%s”中的成果提交并审核通过", compName));
-                record.setHappenTime(LocalDateTime.now());
-                growthRecordService.save(record);
+                // Prevent duplicate growth records for same student+competition+type
+                long existing = growthRecordService.count(new LambdaQueryWrapper<GrowthRecord>()
+                        .eq(GrowthRecord::getStudentId, sid)
+                        .eq(GrowthRecord::getCompetitionId, compId)
+                        .eq(GrowthRecord::getRecordType, "award"));
+                if (existing == 0) {
+                    GrowthRecord record = new GrowthRecord();
+                    record.setStudentId(sid);
+                    record.setCompetitionId(compId);
+                    record.setRecordType("award");
+                    record.setTitle(String.format("完成了在“%s”中的成果提交并审核通过", compName));
+                    record.setHappenTime(LocalDateTime.now());
+                    growthRecordService.save(record);
+                }
             }
         }
     }

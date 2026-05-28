@@ -10,6 +10,7 @@ interface NavItem {
 const studentNav: NavItem[] = [
   { icon: 'space_dashboard', label: '工作台', path: '/student' },
   { icon: 'emoji_events', label: '赛事大厅', path: '/student/competitions' },
+  { icon: 'timeline', label: '我的进度', path: '/student/progress' },
   { icon: 'group_add', label: '招募大厅', path: '/student/teams' },
   { icon: 'assignment_ind', label: '我的参赛', path: '/student/registrations' },
   { icon: 'trending_up', label: '能力雷达', path: '/student/growth' },
@@ -31,18 +32,18 @@ const adminNav: NavItem[] = [
   { icon: 'space_dashboard', label: '工作台', path: '/admin' },
   { icon: 'emoji_events', label: '赛事管理', path: '/admin/competitions' },
   { icon: 'add_circle', label: '赛事发布', path: '/admin/publish' },
+  { icon: 'campaign', label: '公告管理', path: '/admin/announcements' },
   { icon: 'auto_awesome', label: '作品库', path: '/admin/works' },
   { icon: 'fact_check', label: '系统审核', path: '/admin/audit' },
   { icon: 'manage_accounts', label: '用户管理', path: '/admin/users' },
 ];
 
-const navMap: Record<string, NavItem[]> = { student: studentNav, teacher: teacherNav, admin: adminNav, counselor: teacherNav };
+const navMap: Record<string, NavItem[]> = { student: studentNav, teacher: teacherNav, admin: adminNav };
 
 const roleLabel: Record<string, string> = {
   student: '学生',
   teacher: '教师',
   admin: '管理员',
-  counselor: '辅导员',
 };
 
 interface SidebarProps {

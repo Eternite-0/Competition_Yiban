@@ -27,6 +27,7 @@ type BackendCompetition = {
   maxTeamSize?: number;
   coverUrl?: string;
   content?: string;
+  stages?: any[];
 };
 
 type Registration = {
@@ -249,6 +250,43 @@ export default function CompetitionDetail() {
             </ol>
           </Section>
 
+          {/* Stages */}
+          {Array.isArray(comp.stages) && comp.stages.length > 0 && (
+            <Section icon="route" title="赛事阶段">
+              <div className="relative pl-7">
+                <span className="absolute left-2 top-2 bottom-2 w-px bg-hairline" />
+                <div className="flex flex-col gap-4">
+                  {comp.stages.map((stage: any) => {
+                    const isActive = stage.status === 'active';
+                    const isClosed = stage.status === 'closed';
+                    return (
+                      <div key={stage.id} className="relative pl-md">
+                        <span className={`absolute -left-[2px] top-1.5 w-[10px] h-[10px] rounded-full ${
+                          isClosed ? 'bg-primary' : isActive ? 'bg-canvas border-2 border-primary ring-4 ring-primary/20' : 'bg-canvas border border-primary/20'
+                        }`} />
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <span className={`text-[15px] font-semibold ${!isClosed && !isActive ? 'text-ink-muted-48' : 'text-ink'}`}>
+                            {stage.name}
+                          </span>
+                          <span className="text-[12px] text-ink-muted-48 tabular-nums">
+                            {stage.startTime ? new Date(stage.startTime).toLocaleDateString('zh-CN') : ''}
+                            {stage.startTime && stage.endTime ? ' — ' : ''}
+                            {stage.endTime ? new Date(stage.endTime).toLocaleDateString('zh-CN') : ''}
+                          </span>
+                          {isActive && <span className="chip chip-primary !text-[10px]">进行中</span>}
+                          {isClosed && <span className="chip chip-success !text-[10px]">已结束</span>}
+                        </div>
+                        {stage.description && (
+                          <p className="text-[14px] text-ink-muted-80 mt-1">{stage.description}</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Section>
+          )}
+
           <Section icon="rule" title="参赛说明">
             <ul className="space-y-2 text-[15px] text-ink-muted-80">
               <li><b className="text-ink">参赛对象：</b>全日制普通高等院校在校学生。</li>
@@ -276,6 +314,13 @@ export default function CompetitionDetail() {
                 >
                   <span className="material-symbols-outlined text-[18px]">assignment</span>
                   查看我的报名
+                </button>
+                <button
+                  onClick={() => navigate('/student/progress')}
+                  className="btn-secondary w-full !py-3 !text-[15px] mt-2"
+                >
+                  <span className="material-symbols-outlined text-[18px]">timeline</span>
+                  查看我的进度
                 </button>
                 <button
                   onClick={() => navigate('/student/teams')}

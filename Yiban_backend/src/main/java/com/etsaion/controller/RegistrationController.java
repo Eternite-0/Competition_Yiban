@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "赛事报名管理", description = "学生赛事报名及教师/辅导员审核接口")
+@Tag(name = "赛事报名管理", description = "学生赛事报名及教师审核接口")
 @RestController
 @RequestMapping("/api/registration")
 public class RegistrationController {

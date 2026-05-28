@@ -43,7 +43,7 @@ public class TeacherServiceImpl implements TeacherService {
 
     private boolean isTeacherScopedRole() {
         String role = UserContext.getUserRole();
-        return "teacher".equalsIgnoreCase(role) || "counselor".equalsIgnoreCase(role);
+        return "teacher".equalsIgnoreCase(role);
     }
 
     private String currentTeacherCollege() {
@@ -71,7 +71,15 @@ public class TeacherServiceImpl implements TeacherService {
 
     private boolean canAccessStudent(User student) {
         String ownCollege = currentTeacherCollege();
-        return StrUtil.isBlank(ownCollege) || (student != null && ownCollege.equals(student.getCollege()));
+        if (StrUtil.isBlank(ownCollege)) {
+            // Teacher with no college set: deny access rather than allow all
+            String role = UserContext.getUserRole();
+            if ("teacher".equalsIgnoreCase(role)) {
+                return false;
+            }
+            return true; // admin can access all
+        }
+        return student != null && ownCollege.equals(student.getCollege());
     }
 
     private LambdaQueryWrapper<User> studentQuery(String college, String grade, String major, String className) {
@@ -116,13 +124,9 @@ public class TeacherServiceImpl implements TeacherService {
         double activeCoeff = Math.round(((double) totalRegistrations / totalStudents) * 100.0) / 100.0;
         stats.put("activeCoefficient", activeCoeff);
 
-        List<Long> regIds = regs.stream().map(Registration::getId).collect(Collectors.toList());
-        long pendingReviews = 0;
-        if (CollUtil.isNotEmpty(regIds)) {
-            pendingReviews = submissionService.count(new LambdaQueryWrapper<Submission>()
-                    .in(Submission::getRegistrationId, regIds)
-                    .eq(Submission::getStatus, "待审核"));
-        }
+        long pendingReviews = regs.stream()
+                .filter(r -> "已提交".equals(r.getStatus()) || "审核中".equals(r.getStatus()))
+                .count();
         stats.put("pendingReviews", pendingReviews);
 
         List<Map<String, Object>> activities = new ArrayList<>();
@@ -218,24 +222,55 @@ public class TeacherServiceImpl implements TeacherService {
             return new ArrayList<>();
         }
 
-        List<StudentComprehensiveVO> result = new ArrayList<>();
-        for (User student : students) {
-            List<Registration> regs = registrationService.list(new LambdaQueryWrapper<Registration>()
-                    .eq(Registration::getStudentId, student.getId()));
-            int participationCount = regs.size();
+        // Batch-fetch all registrations for these students
+        List<Long> studentIds = studentIds(students);
+        LambdaQueryWrapper<Registration> regWrapper = new LambdaQueryWrapper<Registration>()
+                .in(Registration::getStudentId, studentIds);
 
-            double score = participationCount * 2.0;
-            List<Long> regIds = regs.stream().map(Registration::getId).collect(Collectors.toList());
-            if (CollUtil.isNotEmpty(regIds)) {
-                List<Submission> approvedSubs = submissionService.list(new LambdaQueryWrapper<Submission>()
-                        .in(Submission::getRegistrationId, regIds)
+        // Apply academic year filter if provided (e.g., "2025-2026" -> Sep 1 2025 to Aug 31 2026)
+        if (StrUtil.isNotBlank(academicYear) && academicYear.contains("-")) {
+            String[] parts = academicYear.split("-");
+            try {
+                int startYear = Integer.parseInt(parts[0].trim());
+                java.time.LocalDateTime startDate = java.time.LocalDateTime.of(startYear, 9, 1, 0, 0);
+                java.time.LocalDateTime endDate = java.time.LocalDateTime.of(startYear + 1, 8, 31, 23, 59, 59);
+                regWrapper.ge(Registration::getSubmitDate, startDate)
+                           .le(Registration::getSubmitDate, endDate);
+            } catch (NumberFormatException ignored) {
+                // invalid academicYear format, skip filter
+            }
+        }
+
+        List<Registration> allRegs = registrationService.list(regWrapper);
+
+        // Batch-fetch all approved submissions
+        List<Long> allRegIds = allRegs.stream().map(Registration::getId).distinct().collect(Collectors.toList());
+        Map<Long, List<Submission>> approvedSubsByRegId = CollUtil.isNotEmpty(allRegIds)
+                ? submissionService.list(new LambdaQueryWrapper<Submission>()
+                        .in(Submission::getRegistrationId, allRegIds)
                         .eq(Submission::getStatus, "已审核")
                         .eq(Submission::getApproved, true))
                         .stream()
-                        .filter(sub -> Boolean.TRUE.equals(sub.getApproved()))
-                        .collect(Collectors.toList());
-                score += approvedSubs.size() * 15.0;
+                        .filter(s -> "已审核".equals(s.getStatus()) && Boolean.TRUE.equals(s.getApproved()))
+                        .collect(Collectors.groupingBy(Submission::getRegistrationId))
+                : Collections.emptyMap();
+
+        // Group registrations by student
+        Map<Long, List<Registration>> regsByStudent = allRegs.stream()
+                .collect(Collectors.groupingBy(Registration::getStudentId));
+
+        List<StudentComprehensiveVO> result = new ArrayList<>();
+        for (User student : students) {
+            List<Registration> studentRegs = regsByStudent.getOrDefault(student.getId(), Collections.emptyList());
+            int participationCount = studentRegs.size();
+
+            double score = participationCount * 2.0;
+            int approvedCount = 0;
+            for (Registration reg : studentRegs) {
+                List<Submission> subs = approvedSubsByRegId.getOrDefault(reg.getId(), Collections.emptyList());
+                approvedCount += subs.size();
             }
+            score += approvedCount * 15.0;
 
             result.add(new StudentComprehensiveVO(
                     student.getRealName(),
@@ -370,12 +405,15 @@ public class TeacherServiceImpl implements TeacherService {
         }
         result.put("majorDistribution", majorStats);
 
-        // Category distribution
+        // Category distribution (count registrations per category, not competitions)
         List<Long> compIds = allRegs.stream().map(Registration::getCompetitionId).distinct().collect(Collectors.toList());
         Map<String, Long> categoryDist = new HashMap<>();
         if (CollUtil.isNotEmpty(compIds)) {
-            List<Competition> comps = competitionService.listByIds(compIds);
-            categoryDist = comps.stream()
+            Map<Long, Competition> compMap = competitionService.listByIds(compIds).stream()
+                    .collect(Collectors.toMap(Competition::getId, c -> c, (a, b) -> a));
+            categoryDist = allRegs.stream()
+                    .map(r -> compMap.get(r.getCompetitionId()))
+                    .filter(Objects::nonNull)
                     .filter(c -> c.getCategory() != null)
                     .collect(Collectors.groupingBy(Competition::getCategory, Collectors.counting()));
         }
@@ -428,7 +466,7 @@ public class TeacherServiceImpl implements TeacherService {
         List<Submission> approvedSubs = CollUtil.isNotEmpty(regIds)
                 ? submissionService.list(new LambdaQueryWrapper<Submission>()
                         .in(Submission::getRegistrationId, regIds)
-                        .eq(Submission::getApproved, 1))
+                        .eq(Submission::getApproved, true))
                 : new ArrayList<>();
         int totalAwards = approvedSubs.size();
 
@@ -467,7 +505,7 @@ public class TeacherServiceImpl implements TeacherService {
             result.put("radar", null);
         }
 
-        // Ranking within same major
+        // Ranking within same major (batch fetch to avoid N+1)
         if (student.getMajor() != null) {
             String ownCollege = currentTeacherCollege();
             LambdaQueryWrapper<User> peerWrapper = new LambdaQueryWrapper<User>()
@@ -478,19 +516,34 @@ public class TeacherServiceImpl implements TeacherService {
             }
             List<User> peers = userService.list(peerWrapper);
 
+            // Batch-fetch all registrations for all peers
+            List<Long> peerIds = peers.stream().map(User::getId).collect(Collectors.toList());
+            List<Registration> peerAllRegs = registrationService.list(new LambdaQueryWrapper<Registration>()
+                    .in(Registration::getStudentId, peerIds));
+            Map<Long, List<Registration>> regsByPeer = peerAllRegs.stream()
+                    .collect(Collectors.groupingBy(Registration::getStudentId));
+
+            // Batch-fetch all approved submissions for these registrations
+            List<Long> peerRegIds = peerAllRegs.stream().map(Registration::getId).distinct().collect(Collectors.toList());
+            Map<Long, Long> awardsByStudent = new HashMap<>();
+            if (CollUtil.isNotEmpty(peerRegIds)) {
+                List<Submission> peerApprovedSubs = submissionService.list(new LambdaQueryWrapper<Submission>()
+                        .in(Submission::getRegistrationId, peerRegIds)
+                        .eq(Submission::getApproved, true));
+                // Map registrationId -> studentId, then count awards per student
+                Map<Long, Long> regIdToStudentId = peerAllRegs.stream()
+                        .collect(Collectors.toMap(Registration::getId, Registration::getStudentId, (a, b) -> a));
+                awardsByStudent = peerApprovedSubs.stream()
+                        .map(sub -> regIdToStudentId.get(sub.getRegistrationId()))
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.groupingBy(id -> id, Collectors.counting()));
+            }
+
             List<Map<String, Object>> rankings = new ArrayList<>();
             for (User peer : peers) {
-                long peerRegs = registrationService.count(new LambdaQueryWrapper<Registration>()
-                        .eq(Registration::getStudentId, peer.getId()));
-                List<Long> peerRegIds = registrationService.list(new LambdaQueryWrapper<Registration>()
-                        .eq(Registration::getStudentId, peer.getId()))
-                        .stream().map(Registration::getId).collect(Collectors.toList());
-                long peerAwards = CollUtil.isNotEmpty(peerRegIds)
-                        ? submissionService.count(new LambdaQueryWrapper<Submission>()
-                                .in(Submission::getRegistrationId, peerRegIds)
-                                .eq(Submission::getApproved, 1))
-                        : 0;
-                double score = peerRegs * 2.0 + peerAwards * 15.0;
+                long peerRegCount = regsByPeer.getOrDefault(peer.getId(), Collections.emptyList()).size();
+                long peerAwards = awardsByStudent.getOrDefault(peer.getId(), 0L);
+                double score = peerRegCount * 2.0 + peerAwards * 15.0;
                 Map<String, Object> r = new HashMap<>();
                 r.put("studentId", peer.getId());
                 r.put("realName", peer.getRealName());

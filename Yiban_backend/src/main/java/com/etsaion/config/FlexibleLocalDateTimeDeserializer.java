@@ -7,8 +7,19 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
 
 public class FlexibleLocalDateTimeDeserializer extends JsonDeserializer<LocalDateTime> {
+    private static final List<DateTimeFormatter> FORMATTERS = List.of(
+            DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"),
+            DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm")
+    );
+
     @Override
     public LocalDateTime deserialize(JsonParser parser, DeserializationContext context) throws IOException {
         String value = parser.getValueAsString();
@@ -20,6 +31,13 @@ public class FlexibleLocalDateTimeDeserializer extends JsonDeserializer<LocalDat
         if (trimmed.length() == 10) {
             return LocalDate.parse(trimmed).atStartOfDay();
         }
-        return LocalDateTime.parse(trimmed);
+        for (DateTimeFormatter formatter : FORMATTERS) {
+            try {
+                return LocalDateTime.parse(trimmed, formatter);
+            } catch (DateTimeParseException ignored) {
+                // Try the next accepted browser/Swagger date-time format.
+            }
+        }
+        throw new IOException("不支持的日期时间格式: " + trimmed);
     }
 }

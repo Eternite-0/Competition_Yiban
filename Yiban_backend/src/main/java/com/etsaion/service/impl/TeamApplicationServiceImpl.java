@@ -50,13 +50,13 @@ public class TeamApplicationServiceImpl extends ServiceImpl<TeamApplicationMappe
             throw new BusinessException("您是该帖子的发布者，无需申请");
         }
 
-        // Validate if already applied (pending)
-        long pendingCount = this.count(new LambdaQueryWrapper<TeamApplication>()
+        // Validate if already applied (pending or approved)
+        long existingCount = this.count(new LambdaQueryWrapper<TeamApplication>()
                 .eq(TeamApplication::getTeamId, dto.getTeamId())
                 .eq(TeamApplication::getApplicantId, studentId)
-                .eq(TeamApplication::getStatus, "pending"));
-        if (pendingCount > 0) {
-            throw new BusinessException("您的申请已在审核中，请勿重复申请");
+                .ne(TeamApplication::getStatus, "rejected"));
+        if (existingCount > 0) {
+            throw new BusinessException("您已有该队伍的申请，请勿重复申请");
         }
 
         TeamApplication app = new TeamApplication();
@@ -68,6 +68,17 @@ public class TeamApplicationServiceImpl extends ServiceImpl<TeamApplicationMappe
         app.setCreateTime(LocalDateTime.now());
 
         this.save(app);
+
+        // Notify the captain
+        Message msg = new Message();
+        msg.setFromUser(0L);
+        msg.setToUser(post.getAuthorId());
+        msg.setTitle("收到新的入队申请");
+        msg.setContent(String.format("有同学申请加入您的招募帖，申请角色：%s。请及时处理。", app.getRole()));
+        msg.setIsRead(0);
+        msg.setCreateTime(LocalDateTime.now());
+        messageService.save(msg);
+
         return app;
     }
 
