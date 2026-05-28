@@ -24,6 +24,7 @@ const titleMap: Record<string, string> = {
   '/student/growth': '能力雷达',
   '/student/achievements/upload': '上传成果',
   '/teacher': '工作台',
+  '/teacher/college-overview': '学院总览',
   '/teacher/competitions': '赛事大厅',
   '/teacher/audit': '成果审批',
   '/teacher/student-competitions': '学生看板',

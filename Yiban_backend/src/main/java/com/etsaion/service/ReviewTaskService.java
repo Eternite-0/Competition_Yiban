@@ -20,4 +20,5 @@ public interface ReviewTaskService extends IService<ReviewTask> {
     void handleTask(Long taskId, Long reviewerId, ReviewTaskActionDTO dto);
     void handleTasks(Long reviewerId, ReviewTaskBatchActionDTO dto);
     void resolveTarget(String targetType, Long targetId, Long reviewerId, String reviewNote);
+    int backfillHistorical();
 }

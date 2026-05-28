@@ -42,7 +42,21 @@ public class QiniuServiceImpl implements QiniuService {
 
     @Override
     public String getSignedUrl(String fileUrl) {
+        if (fileUrl == null || fileUrl.isEmpty()) {
+            return fileUrl;
+        }
+        // Accept either a full URL or a bare key/path — prepend the configured domain if missing
+        String fullUrl = fileUrl;
+        if (!fileUrl.startsWith("http://") && !fileUrl.startsWith("https://")) {
+            String domain = qiniuConfig.getDomain();
+            if (domain == null || domain.isEmpty()) {
+                return fileUrl;
+            }
+            String prefix = domain.endsWith("/") ? domain.substring(0, domain.length() - 1) : domain;
+            String suffix = fileUrl.startsWith("/") ? fileUrl : "/" + fileUrl;
+            fullUrl = prefix + suffix;
+        }
         Auth auth = Auth.create(qiniuConfig.getAccessKey(), qiniuConfig.getSecretKey());
-        return auth.privateDownloadUrl(fileUrl, 3600);
+        return auth.privateDownloadUrl(fullUrl, 3600);
     }
 }

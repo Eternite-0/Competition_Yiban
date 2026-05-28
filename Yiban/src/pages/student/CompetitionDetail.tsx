@@ -4,6 +4,16 @@ import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 
+/** Strip dangerous HTML tags while keeping safe formatting */
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/on\w+="[^"]*"/gi, '')
+    .replace(/on\w+='[^']*'/gi, '')
+    .replace(/javascript:/gi, '');
+}
+
 type BackendCompetition = {
   id: number | string;
   name: string;
@@ -160,13 +170,21 @@ export default function CompetitionDetail() {
       {/* Hero */}
       <div className="glass overflow-hidden">
         <div className="h-[280px] md:h-[320px] relative">
-          {comp.coverUrl ? (
-            <img className="w-full h-full object-cover" src={comp.coverUrl} alt={comp.name} />
-          ) : (
-            <div className="w-full h-full bg-canvas-parchment grid place-items-center">
-              <span className="material-symbols-outlined text-[120px] text-primary/50 icon-fill">emoji_events</span>
-            </div>
+          {comp.coverUrl && (
+            <img
+              className="w-full h-full object-cover"
+              src={comp.coverUrl}
+              alt={comp.name}
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                if (fallback) fallback.style.display = 'grid';
+              }}
+            />
           )}
+          <div className="w-full h-full bg-canvas-parchment grid place-items-center" style={comp.coverUrl ? { display: 'none' } : undefined}>
+            <span className="material-symbols-outlined text-[120px] text-primary/50 icon-fill">emoji_events</span>
+          </div>
             <div className="absolute bottom-0 left-0 right-0 p-xl bg-canvas border-t border-hairline">
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <span className="chip">{comp.level} · {comp.category}类</span>
@@ -186,9 +204,14 @@ export default function CompetitionDetail() {
         {/* Main */}
         <div className="lg:col-span-2 flex flex-col gap-lg">
           <Section icon="description" title="赛事简介">
-            <p className="text-[17px] leading-[1.6] text-ink-muted-80 whitespace-pre-wrap">
-              {comp.content || '本赛事旨在选拔信息技术领域优秀人才，鼓励学生在算法、软件开发、人工智能等方向开展创新实践。'}
-            </p>
+            <div
+              className="text-[17px] leading-[1.6] text-ink-muted-80 prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{
+                __html: comp.content
+                  ? sanitizeHtml(comp.content)
+                  : '<p>本赛事旨在选拔信息技术领域优秀人才，鼓励学生在算法、软件开发、人工智能等方向开展创新实践。</p>'
+              }}
+            />
           </Section>
 
           <Section icon="schedule" title="时间节点">

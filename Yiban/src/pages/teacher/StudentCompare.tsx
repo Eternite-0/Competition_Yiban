@@ -93,6 +93,7 @@ function CompareRadarChart({ students }: { students: StudentData[] }) {
 export default function StudentCompare() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const basePath = '/teacher';
   const ids = searchParams.get('ids')?.split(',').filter(Boolean) ?? [];
 
   const [students, setStudents] = useState<StudentData[]>([]);
@@ -136,7 +137,7 @@ export default function StudentCompare() {
         <div className="py-20 grid place-items-center text-ink-muted-48 gap-2">
           <span className="material-symbols-outlined text-[48px] opacity-40">compare</span>
           <p className="text-[14px]">未选择学生</p>
-          <button onClick={() => navigate('/teacher/student-growth')} className="btn-primary mt-2 text-[13px]">返回学情分析</button>
+          <button onClick={() => navigate(`${basePath}/student-growth`)} className="btn-primary mt-2 text-[13px]">返回学情分析</button>
         </div>
       </div>
     );

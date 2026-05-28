@@ -179,9 +179,10 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         Competition comp = compId != null ? competitionService.getById(compId) : null;
         String compName = comp != null ? comp.getName() : "未知赛事";
 
+        boolean isReturn = reviewNote != null && reviewNote.startsWith("【退回补充】");
         sub.setStatus("已审核");
         sub.setReviewNote(reviewNote);
-        sub.setApproved(Boolean.TRUE.equals(approve));
+        sub.setApproved(Boolean.TRUE.equals(approve) ? true : (isReturn ? null : false));
         this.updateById(sub);
         reviewTaskService.resolveTarget("submission", submissionId, teacherId, reviewNote);
 
@@ -189,8 +190,15 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         if (sub.getRegistrationId() != null) {
             Registration reg = registrationService.getById(sub.getRegistrationId());
             if (reg != null) {
-                reg.setStatus(Boolean.TRUE.equals(approve) ? "审核通过" : "审核驳回");
+                if (Boolean.TRUE.equals(approve)) {
+                    reg.setStatus("审核通过");
+                } else if (isReturn) {
+                    reg.setStatus("退回补充");
+                } else {
+                    reg.setStatus("审核驳回");
+                }
                 registrationService.updateById(reg);
+                reviewTaskService.resolveTarget("registration", reg.getId(), teacherId, reviewNote);
             }
         }
 
@@ -199,11 +207,17 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
                 new LambdaQueryWrapper<SubmissionStudent>().eq(SubmissionStudent::getSubmissionId, submissionId));
         List<Long> notifyStudentIds = links.stream().map(SubmissionStudent::getStudentId).collect(Collectors.toList());
 
-        String title = Boolean.TRUE.equals(approve) ? "您的成果附件已审核通过" : "您的成果附件已被驳回";
+        String title;
         String content;
         if (Boolean.TRUE.equals(approve)) {
+            title = "您的成果附件已审核通过";
             content = String.format("恭喜！您在“%s”中提交的成果文件“%s”已审核通过。评语：%s", compName, sub.getFileName(), reviewNote);
+        } else if (isReturn) {
+            title = "您的成果附件需要补充材料";
+            content = String.format("您在“%s”中提交的成果文件“%s”已被退回补充。请补充以下内容：%s",
+                    compName, sub.getFileName(), reviewNote.replace("【退回补充】", ""));
         } else {
+            title = "您的成果附件已被驳回";
             content = String.format("很遗憾，您在“%s”中提交的成果文件“%s”未通过审核。驳回理由：%s", compName, sub.getFileName(), reviewNote);
         }
 

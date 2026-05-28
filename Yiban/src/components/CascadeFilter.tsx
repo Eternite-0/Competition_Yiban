@@ -3,6 +3,7 @@ import apiClient from '../api/client';
 
 interface CascadeFilterProps {
   onChange: (filters: FilterValues) => void;
+  fixedCollege?: string;
   showCollege?: boolean;
   showGrade?: boolean;
   showMajor?: boolean;
@@ -18,6 +19,7 @@ export interface FilterValues {
 
 export default function CascadeFilter({
   onChange,
+  fixedCollege,
   showCollege = true,
   showGrade = true,
   showMajor = true,
@@ -28,10 +30,17 @@ export default function CascadeFilter({
   const [grades, setGrades] = useState<string[]>([]);
   const [classes, setClasses] = useState<string[]>([]);
 
-  const [college, setCollege] = useState('');
+  const [college, setCollege] = useState(fixedCollege || '');
   const [grade, setGrade] = useState('');
   const [major, setMajor] = useState('');
   const [className, setClassName] = useState('');
+
+  useEffect(() => {
+    setCollege(fixedCollege || '');
+    setMajor('');
+    setGrade('');
+    setClassName('');
+  }, [fixedCollege]);
 
   // Load colleges on mount
   useEffect(() => {

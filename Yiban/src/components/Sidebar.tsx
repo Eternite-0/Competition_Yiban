@@ -36,12 +36,13 @@ const adminNav: NavItem[] = [
   { icon: 'manage_accounts', label: '用户管理', path: '/admin/users' },
 ];
 
-const navMap = { student: studentNav, teacher: teacherNav, admin: adminNav };
+const navMap: Record<string, NavItem[]> = { student: studentNav, teacher: teacherNav, admin: adminNav, counselor: teacherNav };
 
 const roleLabel: Record<string, string> = {
   student: '学生',
   teacher: '教师',
   admin: '管理员',
+  counselor: '辅导员',
 };
 
 interface SidebarProps {

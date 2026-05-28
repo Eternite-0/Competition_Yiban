@@ -25,7 +25,7 @@ import java.util.Map;
 @Tag(name = "教师与辅导员端接口", description = "提供班级概况、学生参赛监控以及综测数据导出等功能")
 @RestController
 @RequestMapping("/api/teacher")
-@RequireRole("teacher")
+@RequireRole({"teacher", "counselor"})
 public class TeacherController {
 
     @Autowired

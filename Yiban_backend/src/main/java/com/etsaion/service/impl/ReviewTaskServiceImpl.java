@@ -24,7 +24,14 @@ import com.etsaion.service.RegistrationService;
 import com.etsaion.service.ReviewTaskService;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.UserService;
+import com.etsaion.utils.UserContext;
 import com.etsaion.vo.ReviewTaskVO;
+import com.etsaion.entity.Competition;
+import com.etsaion.entity.Registration;
+import com.etsaion.entity.Submission;
+import com.etsaion.service.CompetitionService;
+import com.etsaion.mapper.RegistrationMapper;
+import com.etsaion.mapper.SubmissionMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -63,6 +70,15 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
     @Autowired
     @Lazy
     private SubmissionService submissionService;
+
+    @Autowired
+    private CompetitionService competitionService;
+
+    @Autowired
+    private RegistrationMapper registrationMapper;
+
+    @Autowired
+    private SubmissionMapper submissionMapper;
 
     @Override
     @Transactional
@@ -106,8 +122,29 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
                 .orderByDesc(ReviewTask::getCreateTime);
         Page<ReviewTask> raw = this.page(page, wrapper);
         Page<ReviewTaskVO> voPage = new Page<>(raw.getCurrent(), raw.getSize(), raw.getTotal());
-        voPage.setRecords(toVOList(raw.getRecords()));
+        List<ReviewTaskVO> records = toVOList(raw.getRecords());
+        String scopedCollege = currentReviewerCollege();
+        if (StrUtil.isNotBlank(scopedCollege)) {
+            records = records.stream()
+                    .filter(vo -> scopedCollege.equals(vo.getCollege()))
+                    .collect(Collectors.toList());
+            voPage.setTotal(records.size());
+        }
+        voPage.setRecords(records);
         return voPage;
+    }
+
+    private String currentReviewerCollege() {
+        String role = UserContext.getUserRole();
+        if (!"teacher".equalsIgnoreCase(role) && !"counselor".equalsIgnoreCase(role)) {
+            return null;
+        }
+        Long userId = UserContext.getUserId();
+        if (userId == null) {
+            return null;
+        }
+        User reviewer = userService.getById(userId);
+        return reviewer != null ? reviewer.getCollege() : null;
     }
 
     @Override
@@ -142,8 +179,17 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
         }
 
         if ("registration".equalsIgnoreCase(task.getTargetType())) {
-            registrationService.audit(task.getTargetId(), reviewerId, "approve".equals(action),
-                    "return".equals(action) ? "【退回补充】" + note : note);
+            try {
+                registrationService.audit(task.getTargetId(), reviewerId, "approve".equals(action),
+                        "return".equals(action) ? "【退回补充】" + note : note);
+            } catch (BusinessException e) {
+                if (e.getMessage() != null && e.getMessage().contains("已处理完毕")) {
+                    // Registration already resolved via submission path — clean up orphaned task
+                    resolveTarget(task.getTargetType(), task.getTargetId(), reviewerId, note);
+                    return;
+                }
+                throw e;
+            }
         } else if ("submission".equalsIgnoreCase(task.getTargetType())) {
             submissionService.reviewSubmission(reviewerId, task.getTargetId(), "approve".equals(action),
                     "return".equals(action) ? "【退回补充】" + note : note);
@@ -221,6 +267,117 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
         }
     }
 
+    @Override
+    @Transactional
+    public int backfillHistorical() {
+        int created = 0;
+
+        // Backfill registrations
+        java.util.List<Registration> allRegs = registrationMapper.selectList(null);
+        for (Registration reg : allRegs) {
+            Competition comp = competitionService.getById(reg.getCompetitionId());
+            String compName = comp != null ? comp.getName() : "未知赛事";
+            LocalDateTime deadline = comp != null ? comp.getEndTime() : null;
+            String payload = JSONUtil.toJsonStr(java.util.Map.of(
+                    "competitionName", compName,
+                    "teamName", StrUtil.nullToEmpty(reg.getTeamName()),
+                    "track", StrUtil.nullToEmpty(reg.getTrack())
+            ));
+            String title = "赛事报名审核：" + compName;
+
+            if ("已提交".equals(reg.getStatus()) || "审核中".equals(reg.getStatus())) {
+                ReviewTask existing = this.getOne(new LambdaQueryWrapper<ReviewTask>()
+                        .eq(ReviewTask::getTargetType, "registration")
+                        .eq(ReviewTask::getTargetId, reg.getId())
+                        .in(ReviewTask::getStatus, "pending", "processing")
+                        .last("LIMIT 1"));
+                if (existing == null) {
+                    createPending("competition", reg.getCompetitionId(), "registration",
+                            reg.getId(), reg.getStudentId(), title, deadline, payload);
+                    created++;
+                }
+            } else if ("审核通过".equals(reg.getStatus()) || "审核驳回".equals(reg.getStatus()) || "退回补充".equals(reg.getStatus())) {
+                ReviewTask existing = this.getOne(new LambdaQueryWrapper<ReviewTask>()
+                        .eq(ReviewTask::getTargetType, "registration")
+                        .eq(ReviewTask::getTargetId, reg.getId())
+                        .eq(ReviewTask::getStatus, "resolved")
+                        .last("LIMIT 1"));
+                if (existing == null) {
+                    ReviewTask task = new ReviewTask();
+                    task.setActivityType("competition");
+                    task.setActivityId(reg.getCompetitionId());
+                    task.setTargetType("registration");
+                    task.setTargetId(reg.getId());
+                    task.setSubmitterId(reg.getStudentId());
+                    task.setTitle(title);
+                    task.setStatus("resolved");
+                    task.setDeadline(deadline);
+                    task.setPayloadJson(payload);
+                    task.setCreateTime(reg.getSubmitDate());
+                    task.setUpdateTime(reg.getSubmitDate());
+                    this.save(task);
+                    created++;
+                }
+            }
+        }
+
+        // Backfill submissions
+        java.util.List<Submission> allSubs = submissionMapper.selectList(null);
+        for (Submission sub : allSubs) {
+            Long compId = sub.getCompetitionId();
+            if (compId == null && sub.getRegistrationId() != null) {
+                Registration reg = registrationMapper.selectById(sub.getRegistrationId());
+                if (reg != null) compId = reg.getCompetitionId();
+            }
+            Competition comp = compId != null ? competitionService.getById(compId) : null;
+            String compName = comp != null ? comp.getName() : "未知赛事";
+            LocalDateTime deadline = comp != null ? comp.getCompetitionEnd() : null;
+            java.util.Map<String, Object> subPayload = new java.util.HashMap<>();
+            subPayload.put("competitionName", compName);
+            subPayload.put("fileName", StrUtil.nullToEmpty(sub.getFileName()));
+            subPayload.put("registrationId", sub.getRegistrationId());
+            String payload = JSONUtil.toJsonStr(subPayload);
+            String title = "成果审核：" + compName;
+
+            if ("待审核".equals(sub.getStatus())) {
+                ReviewTask existing = this.getOne(new LambdaQueryWrapper<ReviewTask>()
+                        .eq(ReviewTask::getTargetType, "submission")
+                        .eq(ReviewTask::getTargetId, sub.getId())
+                        .in(ReviewTask::getStatus, "pending", "processing")
+                        .last("LIMIT 1"));
+                if (existing == null) {
+                    createPending("competition", compId, "submission",
+                            sub.getId(), sub.getSubmitterId(), title, deadline, payload);
+                    created++;
+                }
+            } else if ("已审核".equals(sub.getStatus())) {
+                ReviewTask existing = this.getOne(new LambdaQueryWrapper<ReviewTask>()
+                        .eq(ReviewTask::getTargetType, "submission")
+                        .eq(ReviewTask::getTargetId, sub.getId())
+                        .eq(ReviewTask::getStatus, "resolved")
+                        .last("LIMIT 1"));
+                if (existing == null) {
+                    ReviewTask task = new ReviewTask();
+                    task.setActivityType("competition");
+                    task.setActivityId(compId);
+                    task.setTargetType("submission");
+                    task.setTargetId(sub.getId());
+                    task.setSubmitterId(sub.getSubmitterId());
+                    task.setTitle(title);
+                    task.setStatus("resolved");
+                    task.setDeadline(deadline);
+                    task.setPayloadJson(payload);
+                    task.setCreateTime(sub.getUploadDate());
+                    task.setUpdateTime(sub.getUploadDate());
+                    this.save(task);
+                    created++;
+                }
+            }
+        }
+
+        return created;
+    }
+
     private List<ReviewTaskVO> toVOList(List<ReviewTask> tasks) {
         if (CollUtil.isEmpty(tasks)) return new ArrayList<>();
         List<Long> userIds = tasks.stream().map(ReviewTask::getSubmitterId)
@@ -228,10 +385,35 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
         Map<Long, User> userMap = CollUtil.isEmpty(userIds) ? new HashMap<>()
                 : userService.listByIds(userIds).stream().collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
 
+        // Batch-load submissions for 'submission' targets
+        List<Long> subTargetIds = tasks.stream()
+                .filter(t -> "submission".equalsIgnoreCase(t.getTargetType()))
+                .map(ReviewTask::getTargetId).filter(java.util.Objects::nonNull)
+                .distinct().collect(Collectors.toList());
+        Map<Long, Submission> subMap = CollUtil.isEmpty(subTargetIds) ? new HashMap<>()
+                : submissionMapper.selectBatchIds(subTargetIds).stream()
+                    .collect(Collectors.toMap(Submission::getId, s -> s, (a, b) -> a));
+
+        // For 'registration' targets, find the latest linked submission to get fileUrl/fileName
+        List<Long> regTargetIds = tasks.stream()
+                .filter(t -> "registration".equalsIgnoreCase(t.getTargetType()))
+                .map(ReviewTask::getTargetId).filter(java.util.Objects::nonNull)
+                .distinct().collect(Collectors.toList());
+        Map<Long, Submission> regSubMap = new HashMap<>();
+        if (!CollUtil.isEmpty(regTargetIds)) {
+            List<Submission> regSubs = submissionMapper.selectList(
+                    new LambdaQueryWrapper<Submission>()
+                            .in(Submission::getRegistrationId, regTargetIds)
+                            .orderByDesc(Submission::getUploadDate));
+            for (Submission s : regSubs) {
+                regSubMap.putIfAbsent(s.getRegistrationId(), s);
+            }
+        }
+
         return tasks.stream().map(task -> {
             ReviewTaskVO vo = new ReviewTaskVO();
             BeanUtils.copyProperties(task, vo);
-            vo.setPayload(parsePayload(task.getPayloadJson()));
+            Map<String, Object> payload = parsePayload(task.getPayloadJson());
             User user = userMap.get(task.getSubmitterId());
             if (user != null) {
                 vo.setSubmitterName(user.getRealName());
@@ -240,6 +422,19 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
                 vo.setMajor(user.getMajor());
                 vo.setClassName(user.getClassName());
             }
+
+            Submission sub = null;
+            if ("submission".equalsIgnoreCase(task.getTargetType())) {
+                sub = subMap.get(task.getTargetId());
+            } else if ("registration".equalsIgnoreCase(task.getTargetType())) {
+                sub = regSubMap.get(task.getTargetId());
+            }
+            if (sub != null) {
+                if (StrUtil.isNotBlank(sub.getFileUrl())) payload.putIfAbsent("fileUrl", sub.getFileUrl());
+                if (StrUtil.isNotBlank(sub.getFileName())) payload.putIfAbsent("fileName", sub.getFileName());
+                if (sub.getFileSize() != null) payload.putIfAbsent("fileSize", sub.getFileSize());
+            }
+            vo.setPayload(payload);
             return vo;
         }).collect(Collectors.toList());
     }

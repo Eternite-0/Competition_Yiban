@@ -41,8 +41,8 @@ public class SubmissionController {
         }
 
         try {
-            // Ensure target directory exists
-            File dir = new File(uploadPath);
+            // Resolve to absolute path so storage is consistent regardless of JVM cwd
+            File dir = new File(uploadPath).getAbsoluteFile();
             if (!dir.exists()) {
                 dir.mkdirs();
             }

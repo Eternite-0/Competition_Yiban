@@ -1,5 +1,6 @@
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
@@ -509,7 +510,7 @@ export default function TeamRecruitment() {
       </div>
 
       {/* Create Modal */}
-      {showCreateModal && (
+      {showCreateModal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/12 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="创建招募">
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
@@ -573,23 +574,36 @@ export default function TeamRecruitment() {
               </button>
             </div>
           </motion.div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Contact TA Modal */}
-      {contactTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,102,204,0.12)', backdropFilter: 'blur(4px)' }} role="dialog" aria-modal="true" aria-label="联系 TA">
+      {contactTarget && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-primary/12 backdrop-blur-sm"
+          style={{ padding: '16px' }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="联系 TA"
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="glass-strong w-full max-w-md"
-            style={{ padding: '32px' }}
+            className="glass-strong"
+            style={{
+              width: 'min(calc(100vw - 32px), 520px)',
+              padding: '32px',
+              maxHeight: 'calc(100vh - 32px)',
+              overflowY: 'auto',
+              boxSizing: 'border-box',
+            }}
           >
             <div className="flex items-center justify-between" style={{ marginBottom: '17px' }}>
-              <h3 className="text-[20px] font-semibold tracking-tight text-ink">联系 TA</h3>
+              <h3 className="text-[22px] font-semibold tracking-tight text-ink">联系 TA</h3>
               <button onClick={() => setContactTarget(null)} className="text-ink-muted-48 hover:text-ink" aria-label="关闭">
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <span className="material-symbols-outlined text-[22px]">close</span>
               </button>
             </div>
             <p className="text-[13px] text-ink-muted-48" style={{ marginBottom: '17px' }}>
@@ -608,8 +622,9 @@ export default function TeamRecruitment() {
               <div className="flex flex-col" style={{ gap: '6px' }}>
                 <label className="text-[13px] font-medium text-ink-muted-80">内容</label>
                 <textarea
-                  className="input-glass !h-auto py-2.5 resize-none"
-                  rows={4}
+                  className="input-glass !h-auto resize-none"
+                  style={{ padding: '12px 20px' }}
+                  rows={5}
                   placeholder="介绍一下自己，表达合作意向…"
                   value={contactForm.content}
                   onChange={(e) => setContactForm({ ...contactForm, content: e.target.value })}
@@ -628,23 +643,36 @@ export default function TeamRecruitment() {
               </button>
             </div>
           </motion.div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Apply to Join Modal */}
-      {applyTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,102,204,0.12)', backdropFilter: 'blur(4px)' }} role="dialog" aria-modal="true" aria-label="申请加入">
+      {applyTarget && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-primary/12 backdrop-blur-sm"
+          style={{ padding: '16px' }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="申请加入"
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="glass-strong w-full max-w-md"
-            style={{ padding: '32px' }}
+            className="glass-strong"
+            style={{
+              width: 'min(calc(100vw - 32px), 520px)',
+              padding: '32px',
+              maxHeight: 'calc(100vh - 32px)',
+              overflowY: 'auto',
+              boxSizing: 'border-box',
+            }}
           >
             <div className="flex items-center justify-between" style={{ marginBottom: '17px' }}>
-              <h3 className="text-[20px] font-semibold tracking-tight text-ink">申请加入</h3>
+              <h3 className="text-[22px] font-semibold tracking-tight text-ink">申请加入</h3>
               <button onClick={() => setApplyTarget(null)} className="text-ink-muted-48 hover:text-ink" aria-label="关闭">
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <span className="material-symbols-outlined text-[22px]">close</span>
               </button>
             </div>
             <p className="text-[13px] text-ink-muted-48" style={{ marginBottom: '17px' }}>
@@ -654,25 +682,28 @@ export default function TeamRecruitment() {
               <div className="flex flex-col" style={{ gap: '6px' }}>
                 <label className="text-[13px] font-medium text-ink-muted-80">申请角色</label>
                 {applyTarget.rolesNeeded && applyTarget.rolesNeeded.length > 0 ? (
-                  <div className="flex flex-wrap" style={{ gap: '8px' }}>
-                    {applyTarget.rolesNeeded.map((role) => (
-                      <button
-                        key={role}
-                        type="button"
-                        onClick={() => setApplyForm({ ...applyForm, role })}
-                        className={`chip cursor-pointer ${applyForm.role === role ? 'chip-primary' : ''}`}
-                        style={applyForm.role !== role ? { background: 'var(--color-canvas)', borderColor: 'var(--color-hairline)', color: 'var(--color-ink-muted-80)' } : {}}
-                      >
-                        {role}
-                      </button>
-                    ))}
+                  <>
+                    <div className="flex flex-wrap" style={{ gap: '8px' }}>
+                      {applyTarget.rolesNeeded.map((role) => (
+                        <button
+                          key={role}
+                          type="button"
+                          onClick={() => setApplyForm({ ...applyForm, role })}
+                          className={`chip cursor-pointer ${applyForm.role === role ? 'chip-primary' : ''}`}
+                          style={applyForm.role !== role ? { background: 'var(--color-canvas)', borderColor: 'var(--color-hairline)', color: 'var(--color-ink-muted-80)' } : {}}
+                        >
+                          {role}
+                        </button>
+                      ))}
+                    </div>
                     <input
-                      className="input-glass !h-8 !text-[13px] flex-1 min-w-[120px]"
-                      placeholder="自定义角色"
+                      className="input-glass !text-[13px]"
+                      style={{ height: '40px', marginTop: '4px' }}
+                      placeholder="或输入自定义角色"
                       value={applyTarget.rolesNeeded.includes(applyForm.role) ? '' : applyForm.role}
                       onChange={(e) => setApplyForm({ ...applyForm, role: e.target.value })}
                     />
-                  </div>
+                  </>
                 ) : (
                   <input
                     className="input-glass"
@@ -685,8 +716,9 @@ export default function TeamRecruitment() {
               <div className="flex flex-col" style={{ gap: '6px' }}>
                 <label className="text-[13px] font-medium text-ink-muted-80">申请理由（选填）</label>
                 <textarea
-                  className="input-glass !h-auto py-2.5 resize-none"
-                  rows={3}
+                  className="input-glass !h-auto resize-none"
+                  style={{ padding: '12px 20px' }}
+                  rows={4}
                   placeholder="简单介绍自己的技能和经验…"
                   value={applyForm.reason}
                   onChange={(e) => setApplyForm({ ...applyForm, reason: e.target.value })}
@@ -705,11 +737,12 @@ export default function TeamRecruitment() {
               </button>
             </div>
           </motion.div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Applications Management Modal (Captain) */}
-      {applicationsTarget && (
+      {applicationsTarget && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,102,204,0.12)', backdropFilter: 'blur(4px)' }} role="dialog" aria-modal="true" aria-label="申请管理">
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
@@ -801,7 +834,8 @@ export default function TeamRecruitment() {
               <button onClick={() => { setApplicationsTarget(null); setTeamApplications([]); }} className="btn-secondary">关闭</button>
             </div>
           </motion.div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

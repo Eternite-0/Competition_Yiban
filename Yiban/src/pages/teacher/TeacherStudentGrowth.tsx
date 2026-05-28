@@ -5,13 +5,25 @@ import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 import CascadeFilter, { type FilterValues } from '../../components/CascadeFilter';
+import { useStore } from '../../store/useStore';
 
-function ExportButton() {
+function currentAcademicYear() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const startYear = now.getMonth() >= 8 ? year : year - 1;
+  return `${startYear}-${startYear + 1}`;
+}
+
+function ExportButton({ filters, fixedCollege }: { filters: FilterValues; fixedCollege?: string }) {
   const [exporting, setExporting] = useState(false);
   const handleExport = async () => {
     setExporting(true);
     try {
-      const res = await fetch('/api/teacher/export/comprehensive', {
+      const academicYear = currentAcademicYear();
+      const params = new URLSearchParams({ academicYear });
+      if (filters.college || fixedCollege) params.set('college', filters.college || fixedCollege || '');
+      if (filters.major) params.set('major', filters.major);
+      const res = await fetch(`/api/teacher/export/comprehensive?${params.toString()}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token') ?? ''}` },
       });
       if (!res.ok) throw new Error('导出失败');
@@ -19,7 +31,7 @@ function ExportButton() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = '学生综测报告.xlsx';
+      a.download = `学生综测报告_${academicYear}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success('导出成功');
@@ -148,8 +160,12 @@ function mapRadar(raw: any): RadarDim[] {
 
 export default function TeacherStudentGrowth() {
   const navigate = useNavigate();
+  const currentUser = useStore((s) => s.currentUser);
   const [searchParams, setSearchParams] = useSearchParams();
   const initialId = searchParams.get('studentId') ?? '';
+  const isCounselor = currentUser?.role === 'counselor';
+  const basePath = '/teacher';
+  const scopeCollege = currentUser?.department || (currentUser as any)?.college || '';
 
   const [selectedId, setSelectedId] = useState<string>(initialId);
   const [supervised, setSupervised] = useState<SupervisedStudent[]>([]);
@@ -186,7 +202,7 @@ export default function TeacherStudentGrowth() {
       setLoadingList(true);
       try {
         const params: Record<string, any> = { current: 1, size: 200 };
-        if (filters.college) params.college = filters.college;
+        if (filters.college || (isCounselor && scopeCollege)) params.college = filters.college || scopeCollege;
         if (filters.grade) params.grade = filters.grade;
         if (filters.major) params.major = filters.major;
         if (filters.className) params.className = filters.className;
@@ -205,7 +221,7 @@ export default function TeacherStudentGrowth() {
         });
         const list = Array.from(map.values());
         setSupervised(list);
-        if (!selectedId && list.length > 0) {
+        if ((!selectedId || !map.has(selectedId)) && list.length > 0) {
           setSelectedId(list[0].studentId);
         }
       } catch (e: any) {
@@ -219,7 +235,7 @@ export default function TeacherStudentGrowth() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
+  }, [filters, isCounselor, scopeCollege]);
 
   // Load growth for selected student
   useEffect(() => {
@@ -298,7 +314,7 @@ export default function TeacherStudentGrowth() {
             </div>
             {selectedId && (
               <button
-                onClick={() => navigate(`/teacher/student-detail?studentId=${selectedId}`)}
+                onClick={() => navigate(`${basePath}/student-detail?studentId=${selectedId}`)}
                 className="btn-secondary h-9 flex items-center gap-1.5 text-[13px]"
               >
                 <span className="material-symbols-outlined text-[16px]">person</span>
@@ -307,20 +323,20 @@ export default function TeacherStudentGrowth() {
             )}
             {compareIds.size >= 2 && (
               <button
-                onClick={() => navigate(`/teacher/student-compare?ids=${Array.from(compareIds).join(',')}`)}
+                onClick={() => navigate(`${basePath}/student-compare?ids=${Array.from(compareIds).join(',')}`)}
                 className="btn-primary h-9 flex items-center gap-1.5 text-[13px]"
               >
                 <span className="material-symbols-outlined text-[16px]">compare</span>
                 对比 ({compareIds.size})
               </button>
             )}
-            <ExportButton />
+            <ExportButton filters={filters} fixedCollege={isCounselor ? scopeCollege : undefined} />
           </>
         )}
       />
 
       {/* Filters */}
-      <CascadeFilter onChange={handleFilterChange} />
+      <CascadeFilter onChange={handleFilterChange} fixedCollege={isCounselor ? scopeCollege : undefined} showCollege={!isCounselor} />
 
       {/* KPIs */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">

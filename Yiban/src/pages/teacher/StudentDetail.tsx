@@ -114,6 +114,7 @@ function RadarChart({ data }: { data: RadarDim[] }) {
 export default function StudentDetail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const basePath = '/teacher';
   const studentId = searchParams.get('studentId');
 
   const [data, setData] = useState<DetailData | null>(null);
@@ -169,7 +170,7 @@ export default function StudentDetail() {
         <div className="py-20 grid place-items-center text-ink-muted-48 gap-2">
           <span className="material-symbols-outlined text-[48px] opacity-40">person_search</span>
           <p className="text-[14px]">未指定学生</p>
-          <button onClick={() => navigate('/teacher/student-competitions')} className="btn-primary mt-2 text-[13px]">返回学生看板</button>
+          <button onClick={() => navigate(`${basePath}/student-competitions`)} className="btn-primary mt-2 text-[13px]">返回学生看板</button>
         </div>
       </div>
     );

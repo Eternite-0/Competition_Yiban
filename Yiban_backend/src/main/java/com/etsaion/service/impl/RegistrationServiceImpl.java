@@ -10,6 +10,7 @@ import com.etsaion.entity.Competition;
 import com.etsaion.entity.GrowthRecord;
 import com.etsaion.entity.Message;
 import com.etsaion.entity.Registration;
+import com.etsaion.entity.ReviewTask;
 import com.etsaion.entity.Submission;
 import com.etsaion.entity.User;
 import com.etsaion.exception.BusinessException;
@@ -88,7 +89,8 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         long count = this.count(new LambdaQueryWrapper<Registration>()
                 .eq(Registration::getStudentId, studentId)
                 .eq(Registration::getCompetitionId, dto.getCompetitionId())
-                .ne(Registration::getStatus, "审核驳回"));
+                .ne(Registration::getStatus, "审核驳回")
+                .ne(Registration::getStatus, "退回补充"));
         if (count > 0) {
             throw new BusinessException("您已报名参加该赛事，请勿重复申请");
         }
@@ -171,14 +173,21 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
             growthRecordService.save(record);
 
         } else {
-            reg.setStatus("审核驳回");
+            boolean isReturn = reviewNote != null && reviewNote.startsWith("【退回补充】");
+            reg.setStatus(isReturn ? "退回补充" : "审核驳回");
             this.updateById(reg);
 
             Message msg = new Message();
             msg.setFromUser(teacherId);
             msg.setToUser(reg.getStudentId());
-            msg.setTitle("您的赛事报名审核已被驳回");
-            msg.setContent(String.format("很遗憾，您在“%s”中的参赛报名申请未通过审核。理由：%s", compName, reviewNote));
+            if (isReturn) {
+                msg.setTitle("您的赛事报名需要补充材料");
+                msg.setContent(String.format("您在“%s”中的参赛报名申请已被退回补充。请补充以下内容：%s",
+                        compName, reviewNote.replace("【退回补充】", "")));
+            } else {
+                msg.setTitle("您的赛事报名审核已被驳回");
+                msg.setContent(String.format("很遗憾，您在“%s”中的参赛报名申请未通过审核。理由：%s", compName, reviewNote));
+            }
             msg.setIsRead(0);
             msg.setCreateTime(LocalDateTime.now());
             messageService.save(msg);
@@ -228,7 +237,25 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
                     .collect(Collectors.toMap(Submission::getRegistrationId, s -> s, (a, b) -> a));
         }
 
+        Map<Long, String> reviewNoteMap = Collections.emptyMap();
+        if (!CollUtil.isEmpty(regIds)) {
+            List<ReviewTask> tasks = reviewTaskService.list(
+                    new LambdaQueryWrapper<ReviewTask>()
+                            .eq(ReviewTask::getTargetType, "registration")
+                            .in(ReviewTask::getTargetId, regIds)
+                            .isNotNull(ReviewTask::getReviewNote)
+                            .orderByDesc(ReviewTask::getUpdateTime)
+                            .orderByDesc(ReviewTask::getCreateTime));
+            reviewNoteMap = new HashMap<>();
+            for (ReviewTask task : tasks) {
+                if (task.getTargetId() != null && task.getReviewNote() != null) {
+                    reviewNoteMap.putIfAbsent(task.getTargetId(), task.getReviewNote());
+                }
+            }
+        }
+
         final Map<Long, Submission> finalSubMap = submissionMap;
+        final Map<Long, String> finalReviewNoteMap = reviewNoteMap;
         return regs.stream().map(r -> {
             RegistrationVO vo = new RegistrationVO();
             vo.setId(r.getId());
@@ -265,6 +292,10 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
                 vo.setFileSize(sub.getFileSize());
                 vo.setReviewNote(sub.getReviewNote());
                 vo.setApproved(sub.getApproved());
+            }
+            if ((vo.getReviewNote() == null || vo.getReviewNote().isEmpty())
+                    && finalReviewNoteMap.containsKey(r.getId())) {
+                vo.setReviewNote(finalReviewNoteMap.get(r.getId()));
             }
             return vo;
         }).collect(Collectors.toList());

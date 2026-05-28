@@ -1,5 +1,7 @@
 package com.etsaion.dto;
 
+import com.etsaion.config.FlexibleLocalDateTimeDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Data;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
@@ -21,12 +23,16 @@ public class EventPublishDTO {
     private String organizer;
 
     @NotNull(message = "报名开始时间不能为空")
+    @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
     private LocalDateTime startTime;
 
     @NotNull(message = "报名截止时间不能为空")
+    @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
     private LocalDateTime endTime;
 
+    @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
     private LocalDateTime competitionStart;
+    @JsonDeserialize(using = FlexibleLocalDateTimeDeserializer.class)
     private LocalDateTime competitionEnd;
 
     @NotNull(message = "最大团队人数不能为空")

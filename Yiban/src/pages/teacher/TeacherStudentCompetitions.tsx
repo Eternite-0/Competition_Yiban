@@ -62,7 +62,7 @@ export default function TeacherStudentCompetitions() {
             id: String(r.id ?? r.registrationId),
             studentId: String(r.studentId ?? ''),
             studentName: r.studentName ?? (r.studentId != null ? `学号 ${r.studentId}` : '未知学生'),
-            competitionTitle: r.competitionTitle ?? (r.competitionId != null ? `赛事 #${r.competitionId}` : '未知赛事'),
+            competitionTitle: r.competitionName ?? r.competitionTitle ?? (r.competitionId != null ? `赛事 #${r.competitionId}` : '未知赛事'),
             teamName: r.teamName,
             status: r.status ?? '—',
             submitDate: r.submitDate,

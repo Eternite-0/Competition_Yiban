@@ -38,13 +38,16 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Map /files/** to physical path
-        File uploadDir = new File(uploadPath);
+        // Map /files/** to physical path (always absolute, regardless of JVM cwd)
+        File uploadDir = new File(uploadPath).getAbsoluteFile();
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+        }
         String absolutePath = uploadDir.getAbsolutePath();
         if (!absolutePath.endsWith(File.separator)) {
             absolutePath += File.separator;
         }
-        
+
         registry.addResourceHandler("/files/**")
                 .addResourceLocations("file:" + absolutePath);
     }

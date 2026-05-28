@@ -19,22 +19,24 @@ type Registration = {
   approved?: boolean;
 };
 
-// Backend statuses: 待完善 / 已提交 / 审核中 / 审核通过 / 审核驳回
-type TabFilter = '全部' | '待完善' | '已提交' | '审核中' | '已通过' | '已驳回';
+// Backend statuses: 待完善 / 已提交 / 审核中 / 审核通过 / 退回补充 / 审核驳回
+type TabFilter = '全部' | '待完善' | '已提交' | '审核中' | '已通过' | '退回补充' | '已驳回';
 
 const STATUS_CHIP: Record<string, { label: string; chip: string }> = {
   '待完善': { label: '待完善', chip: 'chip chip-warning' },
   '已提交': { label: '已提交', chip: 'chip' },
   '审核中': { label: '审核中', chip: 'chip chip-warning' },
   '审核通过': { label: '已通过', chip: 'chip chip-success' },
+  '退回补充': { label: '需补充', chip: 'chip chip-warning' },
   '审核驳回': { label: '已驳回', chip: 'chip chip-error' },
 };
 
-const TABS: TabFilter[] = ['全部', '待完善', '已提交', '审核中', '已通过', '已驳回'];
+const TABS: TabFilter[] = ['全部', '待完善', '已提交', '审核中', '已通过', '退回补充', '已驳回'];
 
 function tabMatches(tab: TabFilter, status: string): boolean {
   if (tab === '全部') return true;
   if (tab === '已通过') return status === '审核通过';
+  if (tab === '退回补充') return status === '退回补充';
   if (tab === '已驳回') return status === '审核驳回';
   return tab === status;
 }
@@ -121,10 +123,7 @@ export default function MyRegistrations() {
               </div>
             ) : (
               filtered.map((reg, i) => {
-                const isReturnForSupplement = reg.status === '审核驳回' && reg.reviewNote?.startsWith('【退回补充】');
-                const statusInfo = isReturnForSupplement
-                  ? { label: '需补充', chip: 'chip chip-warning' }
-                  : STATUS_CHIP[reg.status] || { label: reg.status || '未知', chip: 'chip' };
+                const statusInfo = STATUS_CHIP[reg.status] || { label: reg.status || '未知', chip: 'chip' };
                 const isPendingCompletion = reg.status === '待完善';
                 const compName = reg.competitionName || `赛事 #${reg.competitionId}`;
 
@@ -174,9 +173,9 @@ export default function MyRegistrations() {
                       />
                     </div>
 
-                    {reg.status === '审核驳回' && reg.reviewNote && (() => {
-                      const isReturn = reg.reviewNote.startsWith('【退回补充】');
-                      const displayNote = isReturn ? reg.reviewNote.replace('【退回补充】', '') : reg.reviewNote;
+                    {(reg.status === '审核驳回' || reg.status === '退回补充') && reg.reviewNote && (() => {
+                      const isReturn = reg.status === '退回补充' || reg.reviewNote.startsWith('【退回补充】');
+                      const displayNote = reg.reviewNote.replace('【退回补充】', '');
                       return (
                         <div className={`rounded-md p-3 mb-md ${isReturn ? 'bg-warning/5 border border-warning/15' : 'bg-error/5 border border-error/15'}`}>
                           <div className="flex items-start gap-2">
@@ -209,15 +208,21 @@ export default function MyRegistrations() {
                           <span className="material-symbols-outlined text-[16px]">upload_file</span>
                           上传成果
                         </button>
+                      ) : reg.status === '退回补充' ? (
+                        <button
+                          className="btn-primary !py-2 !text-[13px]"
+                          onClick={() => navigate(`/student/upload/${reg.id}`)}
+                        >
+                          <span className="material-symbols-outlined text-[16px]">assignment_return</span>
+                          补充材料
+                        </button>
                       ) : reg.status === '审核驳回' ? (
                         <button
                           className="btn-primary !py-2 !text-[13px]"
                           onClick={() => navigate(`/student/upload/${reg.id}`)}
                         >
-                          <span className="material-symbols-outlined text-[16px]">
-                            {reg.reviewNote?.startsWith('【退回补充】') ? 'assignment_return' : 'refresh'}
-                          </span>
-                          {reg.reviewNote?.startsWith('【退回补充】') ? '补充材料' : '重新提交'}
+                          <span className="material-symbols-outlined text-[16px]">refresh</span>
+                          重新提交
                         </button>
                       ) : (
                         <button
@@ -285,6 +290,7 @@ export default function MyRegistrations() {
               <StatBlock label="累计报名" value={registrations.length} tone="primary" />
               <StatBlock label="待完善" value={pendingCount} tone="warning" />
               <StatBlock label="审核中" value={registrations.filter((r) => r.status === '审核中' || r.status === '已提交').length} tone="warning" />
+              <StatBlock label="退回补充" value={registrations.filter((r) => r.status === '退回补充').length} tone="warning" />
               <StatBlock label="已通过" value={registrations.filter((r) => r.status === '审核通过').length} tone="success" />
             </div>
           </div>

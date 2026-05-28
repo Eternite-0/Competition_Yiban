@@ -1,4 +1,4 @@
-export type UserRole = 'student' | 'teacher' | 'admin';
+export type UserRole = 'student' | 'teacher' | 'admin' | 'counselor';
 export type ActivityType = 'competition' | 'volunteer';
 export type ActivityStatus = 'draft' | 'published' | 'closed' | 'archived';
 export type ParticipationStatus = 'submitted' | 'in_review' | 'approved' | 'rejected' | 'returned' | 'cancelled';

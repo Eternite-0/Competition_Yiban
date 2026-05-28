@@ -57,7 +57,11 @@ public class GrowthRecordServiceImpl extends ServiceImpl<GrowthRecordMapper, Gro
         if (CollUtil.isNotEmpty(registrationIds)) {
             approvedSubmissions = submissionService.list(new LambdaQueryWrapper<Submission>()
                     .in(Submission::getRegistrationId, registrationIds)
-                    .eq(Submission::getStatus, "已审核"));
+                    .eq(Submission::getStatus, "已审核")
+                    .eq(Submission::getApproved, true))
+                    .stream()
+                    .filter(sub -> Boolean.TRUE.equals(sub.getApproved()))
+                    .collect(Collectors.toList());
         }
         int awards = approvedSubmissions.size();
 

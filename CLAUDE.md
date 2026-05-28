@@ -1,0 +1,201 @@
+# CLAUDE.md - 易赛通高校赛事报名平台
+
+## 项目概览
+
+高校赛事报名管理系统，支持赛事发布、学生报名、成果审核、成长档案、志愿活动等全链路功能。
+
+- **前端**: React 18 + TypeScript + Vite + Tailwind CSS + Zustand
+- **后端**: Spring Boot 2.7 + MyBatis-Plus 3.5 + MySQL 8 + JWT
+- **目录**: `Yiban/` (前端), `Yiban_backend/` (后端)
+
+## 环境说明
+
+- **OS**: Windows 11, Shell 为 PowerShell
+- **Java**: 17 (Maven wrapper 或全局 mvn)
+- **Node**: LTS (npm)
+- **MySQL**: 8.x, 本地 `localhost:3306`
+- **路径分隔符**: PowerShell 用 `\` 或 `/` 均可，Bash 工具内用 `/`
+
+## 快速启动
+
+### 后端 (端口 8080)
+
+```powershell
+cd D:\Project\Competition\Yiban_backend
+mvn clean install -DskipTests   # 首次或依赖变更
+mvn spring-boot:run             # 日常启动
+mvn compile                     # 仅编译检查
+mvn test                        # 运行测试
+mvn test -q                     # 静默测试（只看结果）
+```
+
+数据库: MySQL `localhost:3306/etsaion`, 用户名/密码在 `application.yml`。种子密码均为 `123456`。
+
+停止后端: `Stop-Process -Name java -Force`
+
+### 前端 (端口 5173)
+
+```powershell
+cd D:\Project\Competition\Yiban
+npm install                     # 首次安装依赖
+npm run dev                     # 开发服务器，自动代理 /api -> localhost:8080
+npm run build                   # 生产构建 + TypeScript 类型检查
+```
+
+## 测试账号
+
+| 角色 | 用户名 | 密码 |
+|------|--------|------|
+| 管理员 | admin | 123456 |
+| 教师 | teacher1 | 123456 |
+| 学生 | 20230101 (张三) | 123456 |
+| 学生 | 20230102 (李四) | 123456 |
+
+## 后端 API 约定
+
+- 响应格式: `{ code: 200, message: "success", data: ... }`
+- 认证: `Authorization: Bearer <JWT token>`
+- 登录: `POST /api/auth/login` -> `{ token, user }`
+- 角色拦截: `@RequireRole("admin")` 注解
+
+### 关键端点
+
+| 模块 | 端点 | 说明 |
+|------|------|------|
+| 赛事 | `GET /api/competition/list` | 分页赛事列表，params: current, size, status, level, category |
+| 赛事 | `GET /api/competition/detail/{id}` | 赛事详情 |
+| 报名 | `POST /api/registration/submit` | 学生报名 |
+| 报名 | `GET /api/registration/my` | 我的报名 |
+| 报名 | `POST /api/registration/audit` | 审核报名 (teacher/admin) |
+| 成果 | `POST /api/submission/submit` | 上传成果 |
+| 成果 | `POST /api/submission/review` | 审核成果 |
+| 工作台 | `GET /api/admin/workbench/tasks` | 统一待办列表 |
+| 工作台 | `POST /api/admin/workbench/tasks/{id}/action` | 处理待办 (approve/reject/return) |
+| 工作台 | `POST /api/admin/workbench/tasks/backfill` | 幂等补齐历史待办 |
+| 工作台 | `GET /api/admin/workbench/stats` | 待办统计 |
+| 成长 | `GET /api/growth/radar?studentId=` | 成长雷达 (学生只能查自己) |
+| 活动 | `GET /api/activities` | 活动列表 |
+| 参与 | `GET /api/me/participations` | 我的参与 |
+
+## 数据库迁移
+
+迁移脚本在 `Yiban_backend/db/`:
+
+```bash
+# 按顺序执行（幂等，可重复运行）
+mysql -u root etsaion < db/schema.sql      # 全量建表
+mysql -u root etsaion < db/data.sql        # 种子数据
+mysql -u root etsaion < db/migrate-006-backfill-review-task.sql  # 历史待办补齐
+```
+
+或启动后调用 API: `POST /api/admin/workbench/tasks/backfill`
+
+## 核心数据模型
+
+### 报名状态 (Registration)
+`待完善` -> `已提交` -> `审核中` -> `审核通过` / `退回补充` / `审核驳回`
+
+### 成果状态 (Submission)
+`待审核` -> `已审核` (通过/驳回/退回补充由 approved + reviewNote 区分)
+
+### 活动参与状态 (Participation)
+`submitted` -> `in_review` -> `approved` / `returned` / `rejected` / `cancelled`
+
+### 统一待办 (ReviewTask)
+`pending` / `processing` / `resolved`
+targetType: `registration` / `submission` / `participation`
+
+## 前端路由结构
+
+```
+/student/competitions          # 赛事大厅
+/student/competitions/:id      # 赛事详情
+/student/registrations         # 我的报名
+/student/registrations/workbench/:id  # 报名工作台
+/student/upload/:id            # 成果上传
+/student/growth                # 成长档案
+/admin/publish                 # 发布赛事
+/admin/publish/:id             # 编辑赛事
+/admin/users                   # 用户管理
+/teacher/audit                 # 成果审核
+/teacher/students              # 学生赛事
+```
+
+## 代码规范
+
+- 中文 UI 文案，代码注释可中文
+- 后端不使用 Lombok @Data（已有项目约定）
+- 前端 API 调用统一走 `src/api/client.ts` (axios)，不要直接 fetch
+- 前端状态管理用 Zustand (`src/store/useStore.ts`)
+- 赛事内容字段 `content` 存储 HTML，前端用 `dangerouslySetInnerHTML` + sanitize 渲染
+- 封面图 `coverUrl` 可能为 null 或不可访问，前端需 onError fallback
+- "退回补充" 是独立状态，不是 "审核驳回" 的子状态
+
+## PowerShell 命令规范
+
+本项目运行在 Windows 环境，优先使用 PowerShell 原生语法，避免 Bash/Unix 命令。
+
+### 常用对照表
+
+| 操作 | PowerShell (正确) | Bash (不要用) |
+|------|-------------------|---------------|
+| 列目录 | `Get-ChildItem` 或 `ls` | `find`, `ls -la` |
+| 读文件 | `Get-Content` 或 `cat` | `cat`, `head`, `tail` |
+| 搜索文本 | `Select-String` 或 Grep 工具 | `grep` |
+| 杀进程 | `Stop-Process -Name java -Force` | `kill`, `pkill` |
+| 查端口占用 | `Get-NetTCPConnection -LocalPort 8080` | `lsof -i :8080`, `netstat` |
+| 环境变量 | `$env:VAR_NAME` | `$VAR_NAME` |
+| 路径拼接 | `Join-Path $a $b` 或直接 `\` | `/` |
+| 当前目录 | `Get-Location` 或 `pwd` | `pwd` |
+| 创建目录 | `New-Item -ItemType Directory -Force path` | `mkdir -p` |
+| 删除目录 | `Remove-Item -Recurse -Force path` | `rm -rf` |
+| 后台运行 | `Start-Process -NoNewWindow` 或 `&` | `&`, `nohup` |
+| 管道链 | `cmd1; cmd2` 或 `cmd1 && cmd2` (PS7+) | `cmd1 && cmd2` |
+| 退出码 | `$LASTEXITCODE` | `$?` |
+
+### 注意事项
+
+- PowerShell 用反引号 `` ` `` 做续行，不是 `\`
+- 字符串插值: `"Hello $var"` 或 `"Hello $($obj.Prop)"`
+- 单引号字符串不插值: `'Hello $var'` 字面量
+- 调用外部 exe 用 `&` 操作符: `& "C:\path\to\app.exe" arg1`
+- `curl` 在 PowerShell 是 `Invoke-WebRequest` 的别名，行为不同；API 测试用 `curl.exe` 或 Bash 工具
+- `$null` 不是 `/dev/null`，重定向用 `2>$null`
+
+### 进程管理（后端开发常用）
+
+```powershell
+# 查看 8080 端口占用
+Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue
+
+# 杀掉占用 8080 的进程
+Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue |
+  ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+
+# 一键杀所有 Java 进程
+Stop-Process -Name java -Force -ErrorAction SilentlyContinue
+
+# 后台启动后端（不阻塞终端）
+Start-Process -NoNewWindow -FilePath "mvn" -ArgumentList "spring-boot:run" -WorkingDirectory "D:\Project\Competition\Yiban_backend"
+```
+
+### 文件操作
+
+```powershell
+# 查找文件
+Get-ChildItem -Recurse -Filter "*.java" -Path src/
+
+# 搜索文件内容
+Get-ChildItem -Recurse -Filter "*.java" | Select-String "pattern"
+
+# 比较文件差异
+Compare-Object (Get-Content file1) (Get-Content file2)
+```
+
+## 常见问题
+
+- **端口占用**: `Stop-Process -Name java -Force` 杀掉所有 Java 进程
+- **编译报非法字符**: 检查 Java 文件是否有 Unicode 弯引号 (U+201C/U+201D)，用 Python 脚本替换
+- **前端 build 报 unused variable**: 删除未使用的变量声明
+- **coverUrl 显示破图**: 已有 onError fallback，检查 img 标签的 nextElementSibling 逻辑
+- **Bash 工具内路径**: Claude 的 Bash 工具在 Windows 上实际跑在 Git Bash/MSYS2 中，路径用 `/d/Project/...` 格式；PowerShell 工具用 `D:\Project\...` 格式

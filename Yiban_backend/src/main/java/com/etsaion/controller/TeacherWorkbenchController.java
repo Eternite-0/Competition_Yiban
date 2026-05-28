@@ -22,16 +22,16 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
-@Tag(name = "管理员统一工作台", description = "统一处理赛事、志愿活动等审核待办")
+@Tag(name = "教师审核工作台", description = "教师端统一处理赛事报名与成果审核待办")
 @RestController
-@RequestMapping("/api/admin/workbench")
-@RequireRole("admin")
-public class AdminWorkbenchController {
+@RequestMapping("/api/teacher/workbench")
+@RequireRole("teacher")
+public class TeacherWorkbenchController {
 
     @Autowired
     private ReviewTaskService reviewTaskService;
 
-    @Operation(summary = "待办任务列表")
+    @Operation(summary = "教师待办任务列表")
     @GetMapping("/tasks")
     public Result<Page<ReviewTaskVO>> listTasks(
             @RequestParam(defaultValue = "1") int current,
@@ -43,30 +43,23 @@ public class AdminWorkbenchController {
         return Result.success(reviewTaskService.listTasks(current, size, status, activityType, targetType, keyword));
     }
 
-    @Operation(summary = "待办统计")
+    @Operation(summary = "教师待办统计")
     @GetMapping("/stats")
     public Result<Map<String, Object>> stats() {
         return Result.success(reviewTaskService.getStats());
     }
 
-    @Operation(summary = "处理单个待办")
+    @Operation(summary = "教师处理单个待办")
     @PostMapping("/tasks/{id}/action")
     public Result<Void> handleTask(@PathVariable Long id, @Validated @RequestBody ReviewTaskActionDTO dto) {
         reviewTaskService.handleTask(id, UserContext.getUserId(), dto);
         return Result.success();
     }
 
-    @Operation(summary = "批量处理待办")
+    @Operation(summary = "教师批量处理待办")
     @PostMapping("/tasks/batch-action")
     public Result<Void> handleTasks(@Validated @RequestBody ReviewTaskBatchActionDTO dto) {
         reviewTaskService.handleTasks(UserContext.getUserId(), dto);
         return Result.success();
-    }
-
-    @Operation(summary = "补齐历史待办（幂等）")
-    @PostMapping("/tasks/backfill")
-    public Result<Map<String, Object>> backfill() {
-        int created = reviewTaskService.backfillHistorical();
-        return Result.success(Map.of("created", created));
     }
 }

@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import apiClient from '../../api/client';
 import { getSignedDownloadUrl } from '../../api/qiniu';
 import PageHero from '../../components/PageHero';
+import { useStore } from '../../store/useStore';
 
 interface Submission {
   id: string;
@@ -164,6 +165,8 @@ function PreviewModal({
 }
 
 export default function SubmissionAudit() {
+  const currentUser = useStore((s) => s.currentUser);
+  const workbenchBase = currentUser?.role === 'admin' ? '/admin/workbench' : '/teacher/workbench';
   const [pendingSubmissions, setPendingSubmissions] = useState<Submission[]>([]);
   const [processedSubmissions, setProcessedSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(false);
@@ -179,7 +182,7 @@ export default function SubmissionAudit() {
     try {
       // Fetch both sources in parallel
       const [taskData, regData, subData] = await Promise.all([
-        apiClient.get('/admin/workbench/tasks', { params: { current: 1, size: 100, status: 'pending' } }).catch(() => null),
+        apiClient.get(`${workbenchBase}/tasks`, { params: { current: 1, size: 100, status: 'pending' } }).catch(() => null),
         apiClient.get('/registration/pending', { params: { current: 1, size: 50 } }).catch(() => null),
         apiClient.get('/submission/list', { params: { status: '待审核', current: 1, size: 50 } }).catch(() => null),
       ]);
@@ -200,6 +203,7 @@ export default function SubmissionAudit() {
           competitionTitle: payload.competitionName ?? payload.activityTitle ?? item.title ?? '待审核事项',
           fileName: payload.fileName ?? payload.teamName ?? payload.track ?? item.title ?? '—',
           fileUrl: payload.fileUrl ?? '',
+          fileSize: payload.fileSize,
           uploadDate: item.createTime ?? '',
           status: '待审核',
           reviewNote: item.reviewNote,
@@ -288,7 +292,7 @@ export default function SubmissionAudit() {
       } else {
       if (selected.source === 'task') {
         const realId = selected.id.replace(/^task-/, '');
-        await apiClient.post(`/admin/workbench/tasks/${realId}/action`, {
+        await apiClient.post(`${workbenchBase}/tasks/${realId}/action`, {
           action: approve ? 'approve' : (reviewNote.startsWith('【退回补充】') ? 'return' : 'reject'),
           reviewNote: reviewNote.replace('【退回补充】', ''),
         });
@@ -300,7 +304,8 @@ export default function SubmissionAudit() {
         });
       }
       }
-      const processedItem = { ...selected, status: approve ? '审核通过' : '审核驳回', reviewNote };
+      const isReturn = !approve && reviewNote.startsWith('【退回补充】');
+      const processedItem = { ...selected, status: approve ? '审核通过' : (isReturn ? '退回补充' : '审核驳回'), reviewNote };
       setProcessedSubmissions(prev => [processedItem, ...prev]);
       setPendingSubmissions(prev => prev.filter(s => s.id !== selected.id));
       setSelectedId(null);
@@ -560,7 +565,7 @@ export default function SubmissionAudit() {
                 <div key={`${s.id}-${index}`} className="p-md border-b border-hairline hover:bg-primary/6 transition">
                   <div className="flex justify-between items-start mb-1">
                     <span className="text-[13px] font-semibold text-ink">{s.studentName || '未知'}</span>
-                    <span className={s.status === '审核通过' ? 'chip chip-success' : 'chip chip-error'}>
+                    <span className={s.status === '审核通过' ? 'chip chip-success' : s.status === '退回补充' ? 'chip chip-warning' : 'chip chip-error'}>
                       {s.status}
                     </span>
                   </div>

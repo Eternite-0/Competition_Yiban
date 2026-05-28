@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import Layout from '../components/Layout';
 import LoginPage from '../pages/LoginPage';
@@ -32,14 +32,22 @@ import CompetitionPublish from '../pages/admin/CompetitionPublish';
 import ExcellentWorks from '../pages/admin/ExcellentWorks';
 import UserManagement from '../pages/admin/UserManagement';
 
-function RequireAuth({ role, children }: { role?: string; children: ReactNode }) {
+function RequireAuth({ role, children }: { role?: string | string[]; children: ReactNode }) {
   const currentUser = useStore((s) => s.currentUser);
   const token = localStorage.getItem('token');
   if (!token) return <Navigate to="/" replace />;
-  if (role && currentUser && currentUser.role !== role) {
-    return <Navigate to={`/${currentUser.role}`} replace />;
+  const allowedRoles = Array.isArray(role) ? role : role ? [role] : [];
+  if (allowedRoles.length > 0 && currentUser && !allowedRoles.includes(currentUser.role)) {
+    const target = currentUser.role === 'counselor' ? '/teacher' : `/${currentUser.role}`;
+    return <Navigate to={target} replace />;
   }
   return <>{children}</>;
+}
+
+function CounselorRedirect() {
+  const location = useLocation();
+  const target = `${location.pathname.replace(/^\/counselor/, '/teacher')}${location.search}${location.hash}`;
+  return <Navigate to={target} replace />;
 }
 
 export const router = createBrowserRouter([
@@ -63,7 +71,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/teacher',
-    element: <RequireAuth role="teacher"><Layout /></RequireAuth>,
+    element: <RequireAuth role={['teacher', 'counselor']}><Layout /></RequireAuth>,
     children: [
       { index: true, element: <TeacherHome /> },
       { path: 'college-overview', element: <CollegeOverview /> },
@@ -74,6 +82,10 @@ export const router = createBrowserRouter([
       { path: 'student-detail', element: <StudentDetail /> },
       { path: 'student-compare', element: <StudentCompare /> },
     ],
+  },
+  {
+    path: '/counselor/*',
+    element: <CounselorRedirect />,
   },
   {
     path: '/admin',

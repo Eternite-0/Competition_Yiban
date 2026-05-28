@@ -2,6 +2,7 @@ import { toast } from 'sonner';
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import apiClient from '../../api/client';
+import { uploadToQiniu, getSignedDownloadUrl } from '../../api/qiniu';
 import type { CompetitionLevel, CompetitionCategory } from '../../types';
 import PageHero from '../../components/PageHero';
 
@@ -21,12 +22,6 @@ interface PublishFormState {
   coverUrl: string;
   maxTeamSize: number;
   tracks: string[];
-}
-
-interface UploadResponse {
-  fileName: string;
-  fileUrl: string;
-  fileSize: number;
 }
 
 const toPublishPayload = (form: PublishFormState, status: 'draft' | 'published' | 'closed') => ({
@@ -96,7 +91,27 @@ export default function CompetitionPublish() {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [pageLoading, setPageLoading] = useState(isEdit);
+  const [coverDisplayUrl, setCoverDisplayUrl] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Resolve cover URL for display — try direct first, fall back to signed URL on error
+  useEffect(() => {
+    if (!form.coverUrl) {
+      setCoverDisplayUrl('');
+      return;
+    }
+    setCoverDisplayUrl(form.coverUrl);
+  }, [form.coverUrl]);
+
+  const handleCoverLoadError = async () => {
+    if (!form.coverUrl || coverDisplayUrl !== form.coverUrl) return;
+    try {
+      const signed = await getSignedDownloadUrl(form.coverUrl);
+      if (signed) setCoverDisplayUrl(signed);
+    } catch {
+      setCoverDisplayUrl('');
+    }
+  };
 
   // Load existing competition data when editing
   useEffect(() => {
@@ -206,22 +221,18 @@ export default function CompetitionPublish() {
       toast.error('图片大小不能超过 5MB');
       return;
     }
-    const fd = new FormData();
-    fd.append('file', file);
     setUploading(true);
     try {
-      const res: UploadResponse = await apiClient.post('/file/upload', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      if (res?.fileUrl) {
-        updateField('coverUrl', res.fileUrl);
+      const result = await uploadToQiniu(file);
+      if (result?.url) {
+        updateField('coverUrl', result.url);
         toast.success('封面上传成功');
       } else {
         toast.error('上传失败，未收到文件地址');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Cover upload error:', err);
-      toast.error('封面上传失败');
+      toast.error(err?.message || '封面上传失败');
     } finally {
       setUploading(false);
     }
@@ -317,7 +328,12 @@ export default function CompetitionPublish() {
                 >
                   {form.coverUrl ? (
                     <>
-                      <img src={form.coverUrl} alt="封面预览" className="absolute inset-0 w-full h-full object-cover" />
+                      <img
+                        src={coverDisplayUrl || form.coverUrl}
+                        alt="封面预览"
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={handleCoverLoadError}
+                      />
                       <div className="relative z-10 bg-canvas/90 border border-hairline px-3 py-1.5 rounded-pill text-ink text-[12px]">点击或拖拽以替换封面</div>
                     </>
                   ) : (
@@ -447,13 +463,22 @@ export default function CompetitionPublish() {
             <div className="glass-strong overflow-hidden rounded-lg">
               <div className="aspect-video bg-canvas-parchment relative overflow-hidden">
                 {form.coverUrl ? (
-                  <img src={form.coverUrl} alt="封面预览" className="absolute inset-0 w-full h-full object-cover" />
-                ) : (
-                  <div className="absolute inset-0 grid place-items-center text-ink-muted-48 flex-col gap-2">
-                    <span className="material-symbols-outlined text-[40px] opacity-30">image</span>
-                    <span className="text-[11px]">封面预览</span>
-                  </div>
-                )}
+                  <img
+                    src={coverDisplayUrl || form.coverUrl}
+                    alt="封面预览"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => {
+                      handleCoverLoadError();
+                      e.currentTarget.style.display = 'none';
+                      const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                      if (fallback) fallback.style.display = 'grid';
+                    }}
+                  />
+                ) : null}
+                <div className="absolute inset-0 grid place-items-center text-ink-muted-48 flex-col gap-2" style={form.coverUrl ? { display: 'none' } : undefined}>
+                  <span className="material-symbols-outlined text-[40px] opacity-30">image</span>
+                  <span className="text-[11px]">封面预览</span>
+                </div>
                 <div className="absolute top-3 left-3 glass-tint px-2.5 py-1 rounded-pill flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
                   <span className="text-[10px] font-medium text-ink">报名中</span>

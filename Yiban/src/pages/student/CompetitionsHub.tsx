@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
@@ -18,6 +18,8 @@ type BackendCompetition = {
   maxTeamSize?: number;
   coverUrl?: string;
   content?: string;
+  tags?: string[];
+  tracks?: string[];
 };
 
 const LEVELS: { label: string; value: string }[] = [
@@ -35,6 +37,7 @@ const CATEGORIES: { label: string; value: string }[] = [
 ];
 
 const CATEGORY_LABEL: Record<string, string> = { A: '科技创新', B: '商业创业', C: '文化艺术' };
+const CATEGORY_ICON: Record<string, string> = { A: 'psychology', B: 'business_center', C: 'palette' };
 
 const STATUSES: { label: string; value: string }[] = [
   { label: '全部', value: '' },
@@ -74,6 +77,16 @@ function formatDate(value?: string) {
   const d = new Date(value);
   if (isNaN(d.getTime())) return value;
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function daysUntil(value?: string) {
+  if (!value) return null;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
+  return Math.ceil((d.getTime() - today.getTime()) / 86400000);
 }
 
 export default function CompetitionsHub() {
@@ -124,55 +137,80 @@ export default function CompetitionsHub() {
   }, [page, selectedLevel, selectedCategory, selectedStatus, searchQuery, isAdmin]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { '': total };
+    competitions.forEach((comp) => {
+      counts[comp.category] = (counts[comp.category] || 0) + 1;
+    });
+    return counts;
+  }, [competitions, total]);
+  const publishedCount = competitions.filter((c) => c.status === 'published').length;
 
   return (
     <div className="py-lg flex flex-col gap-lg">
       <PageHero
-        eyebrow="Discover"
+        eyebrow="Competitions"
         title="赛事大厅"
-        description="国家级、省级、校级三级赛事汇总，按方向与时段精细筛选。"
-        contentClassName="max-w-2xl"
+        description="按级别、分类和报名状态筛选校内外赛事，快速找到适合报名或维护的项目。"
+        className="!rounded-lg !border-0 shadow-sm"
+        contentClassName="max-w-3xl"
+        actions={
+          <div className="hidden sm:grid grid-cols-2 gap-2 min-w-[220px]">
+            <SummaryMetric label="当前结果" value={total} />
+            <SummaryMetric label="报名中" value={publishedCount} />
+          </div>
+        }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-lg">
+      <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-lg items-start">
         {/* Category rail */}
-        <aside className="glass-tint p-md h-fit lg:sticky lg:top-[68px]">
-          <p className="px-sm pb-sm text-[10px] font-semibold tracking-[0.18em] uppercase text-ink-muted-48">
-            分类筛选
-          </p>
-          <div className="flex flex-col gap-0.5">
+        <aside className="bg-canvas border border-black/5 rounded-lg p-sm h-fit lg:sticky lg:top-[68px] shadow-sm">
+          <div className="px-sm py-sm border-b border-hairline mb-1">
+            <p className="text-[11px] font-semibold tracking-[0.12em] uppercase text-ink-muted-48">分类筛选</p>
+            <p className="text-[12px] text-ink-muted-48 mt-1">按赛事方向收拢列表</p>
+          </div>
+          <div className="flex flex-row lg:flex-col gap-1 overflow-x-auto no-scrollbar">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.label}
                 onClick={() => { setSelectedCategory(cat.value); setPage(1); }}
-                className={`flex justify-between items-center px-sm py-2 rounded-md text-[14px] transition-all ${
+                className={`min-w-fit lg:min-w-0 flex items-center justify-between gap-3 px-sm py-2.5 rounded-md text-[13px] transition-all ${
                   selectedCategory === cat.value
-                    ? 'bg-primary/8 text-primary font-semibold'
-                    : 'text-ink-muted-80 hover:bg-primary/6 hover:text-ink'
+                    ? 'bg-[#eef6ff] text-primary font-semibold'
+                    : 'text-ink-muted-80 hover:bg-canvas-parchment hover:text-ink'
                 }`}
               >
-                <span>{cat.label}</span>
+                <span className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[17px]">
+                    {cat.value ? CATEGORY_ICON[cat.value] : 'apps'}
+                  </span>
+                  {cat.label}
+                </span>
+                <span className="text-[11px] tabular-nums text-ink-muted-48">
+                  {cat.value ? categoryCounts[cat.value] || 0 : total}
+                </span>
               </button>
             ))}
           </div>
         </aside>
 
         {/* Main */}
-        <div className="flex flex-col gap-lg">
+        <main className="flex flex-col gap-md min-w-0">
           {/* Filter bar */}
-          <div className="glass-tint flex flex-wrap items-center gap-sm px-md py-3">
-            <Segmented
-              options={LEVELS}
-              value={selectedLevel}
-              onChange={(v) => { setSelectedLevel(v); setPage(1); }}
-            />
-            <span className="w-px h-5 bg-primary/12" />
-            <Segmented
-              options={STATUSES}
-              value={selectedStatus}
-              onChange={(v) => { setSelectedStatus(v); setPage(1); }}
-            />
-            <div className="flex-1" />
+          <div className="bg-canvas border border-black/5 rounded-lg px-md py-3 shadow-sm flex flex-col xl:flex-row xl:items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <Segmented
+                options={LEVELS}
+                value={selectedLevel}
+                onChange={(v) => { setSelectedLevel(v); setPage(1); }}
+              />
+              <Segmented
+                options={STATUSES}
+                value={selectedStatus}
+                onChange={(v) => { setSelectedStatus(v); setPage(1); }}
+              />
+            </div>
+            <div className="flex-1 hidden xl:block" />
             <div className="relative w-full md:w-[280px]">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">
                 search
@@ -210,6 +248,7 @@ export default function CompetitionsHub() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03, duration: 0.35 }}
+                  className="h-full"
                 >
                   <CompetitionCard comp={comp} navigate={navigate} isAdmin={isAdmin} />
                 </motion.div>
@@ -248,8 +287,17 @@ export default function CompetitionsHub() {
               </button>
             </div>
           )}
-        </div>
+        </main>
       </div>
+    </div>
+  );
+}
+
+function SummaryMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg bg-canvas-parchment/70 border border-black/5 px-4 py-3">
+      <div className="text-[22px] font-semibold leading-none tabular-nums text-ink">{value}</div>
+      <div className="mt-1 text-[11px] text-ink-muted-48">{label}</div>
     </div>
   );
 }
@@ -264,12 +312,12 @@ function Segmented({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="inline-flex items-center p-0.5 bg-primary/6 rounded-pill">
+    <div className="inline-flex items-center p-1 bg-canvas-parchment rounded-full border border-black/5">
       {options.map((o) => (
         <button
           key={o.label}
           onClick={() => onChange(o.value)}
-          className={`px-3 py-1.5 rounded-pill text-[13px] transition-all ${
+          className={`px-3 py-1.5 rounded-full text-[13px] whitespace-nowrap transition-all ${
             value === o.value
               ? 'bg-canvas text-ink font-semibold shadow-sm'
               : 'text-ink-muted-80 hover:text-ink'
@@ -283,48 +331,84 @@ function Segmented({
 }
 
 function CompetitionCard({ comp, navigate, isAdmin }: { comp: BackendCompetition; navigate: ReturnType<typeof useNavigate>; isAdmin: boolean }) {
+  const remainingDays = daysUntil(comp.endTime);
+  const isClosingSoon = remainingDays !== null && remainingDays >= 0 && remainingDays <= 7;
+  const tagList = [
+    comp.level,
+    statusLabel(comp.status),
+    ...(Array.isArray(comp.tracks) ? comp.tracks.slice(0, 1) : []),
+  ].filter(Boolean);
+
   return (
-    <div className="glass overflow-hidden flex flex-col h-full transition-all hover:border-primary/25">
+    <article className="group bg-canvas border border-black/6 rounded-lg overflow-hidden flex flex-col h-full shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/20">
       {/* Cover */}
-      <div className="h-40 relative overflow-hidden">
-        {comp.coverUrl ? (
-          <img className="w-full h-full object-cover" src={comp.coverUrl} alt={comp.name} />
-        ) : (
-          <div className="w-full h-full bg-canvas-parchment grid place-items-center">
-            <span className="material-symbols-outlined text-[64px] text-primary/70">emoji_events</span>
-          </div>
+      <div className="aspect-[16/9] relative overflow-hidden bg-[#edf2f7]">
+        {comp.coverUrl && (
+          <img
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            src={comp.coverUrl}
+            alt={comp.name}
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+              if (fallback) fallback.style.display = 'grid';
+            }}
+          />
         )}
-        <div className="absolute top-3 left-3 flex gap-1.5">
-          <span className={levelChip(comp.level)}>{comp.level}</span>
-          <span className={statusChip(comp.status)}>{statusLabel(comp.status)}</span>
+        <div className="w-full h-full bg-[#f2f5f8] grid place-items-center" style={comp.coverUrl ? { display: 'none' } : undefined}>
+          <div className="w-14 h-14 rounded-full bg-canvas grid place-items-center shadow-sm">
+            <span className="material-symbols-outlined text-[30px] text-primary">emoji_events</span>
+          </div>
         </div>
+        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/28 to-transparent pointer-events-none" />
       </div>
 
       {/* Body */}
       <div className="p-lg flex flex-col flex-1">
-        <h4 className="text-[17px] font-semibold leading-snug tracking-tight text-ink line-clamp-2 mb-3">
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {tagList.map((tag) => (
+            <span
+              key={tag}
+              className={
+                tag === comp.level
+                  ? levelChip(comp.level)
+                  : tag === statusLabel(comp.status)
+                    ? statusChip(comp.status)
+                    : 'chip'
+              }
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+
+        <h4 className="text-[17px] font-semibold leading-snug text-ink line-clamp-2 min-h-[46px] mb-3">
           {comp.name}
         </h4>
-        <div className="flex flex-col gap-1.5 text-[13px] text-ink-muted-80 mb-md">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[16px] text-ink-muted-48">calendar_today</span>
-            <span>截止 {formatDate(comp.endTime)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[16px] text-ink-muted-48">category</span>
-            <span className="truncate">{CATEGORY_LABEL[comp.category] ?? comp.category} 类 · 最多 {comp.maxTeamSize ?? '—'} 人</span>
+
+        <div className="grid grid-cols-2 gap-2 mb-md">
+          <InfoPill icon="calendar_today" label="报名截止" value={formatDate(comp.endTime)} tone={isClosingSoon ? 'warn' : 'default'} />
+          <InfoPill icon="groups" label="团队人数" value={`最多 ${comp.maxTeamSize ?? '—'} 人`} />
+        </div>
+
+        <div className="rounded-md bg-canvas-parchment/70 border border-black/5 p-3 mb-md">
+          <div className="flex items-start gap-2 text-[13px] text-ink-muted-80">
+            <span className="material-symbols-outlined text-[16px] text-ink-muted-48 mt-0.5">
+              {CATEGORY_ICON[comp.category] || 'category'}
+            </span>
+            <div className="min-w-0">
+              <div className="text-ink font-medium truncate">{CATEGORY_LABEL[comp.category] ?? (comp.category || '未分类')}</div>
+              <div className="mt-1 text-[12px] text-ink-muted-48 line-clamp-1">
+                {comp.content ? comp.content.replace(/<[^>]+>/g, '') : '查看赛事详情、报名时间与参赛要求'}
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center justify-between text-[12px] text-ink-muted-48 mb-md pt-3 border-t border-hairline">
-          <span className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-[14px]">event</span>
-            {formatDate(comp.startTime)}
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-[14px]">flag</span>
-            {formatDate(comp.competitionStart)}
-          </span>
+          <TimelinePoint icon="event" value={formatDate(comp.startTime)} />
+          <span className="h-px flex-1 mx-3 bg-hairline" />
+          <TimelinePoint icon="flag" value={formatDate(comp.competitionStart)} />
         </div>
 
         <div className="flex gap-2 mt-auto">
@@ -344,6 +428,27 @@ function CompetitionCard({ comp, navigate, isAdmin }: { comp: BackendCompetition
           )}
         </div>
       </div>
+    </article>
+  );
+}
+
+function InfoPill({ icon, label, value, tone = 'default' }: { icon: string; label: string; value: string; tone?: 'default' | 'warn' }) {
+  return (
+    <div className={`rounded-md border px-3 py-2 ${tone === 'warn' ? 'bg-[#fff7ed] border-[#fed7aa]' : 'bg-canvas border-black/5'}`}>
+      <div className="flex items-center gap-1.5 text-[11px] text-ink-muted-48">
+        <span className="material-symbols-outlined text-[14px]">{icon}</span>
+        {label}
+      </div>
+      <div className="mt-1 text-[12px] font-medium text-ink truncate">{value}</div>
     </div>
+  );
+}
+
+function TimelinePoint({ icon, value }: { icon: string; value: string }) {
+  return (
+    <span className="flex items-center gap-1 whitespace-nowrap">
+      <span className="material-symbols-outlined text-[14px]">{icon}</span>
+      {value}
+    </span>
   );
 }

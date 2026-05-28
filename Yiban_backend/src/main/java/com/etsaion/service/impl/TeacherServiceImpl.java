@@ -12,6 +12,7 @@ import com.etsaion.entity.Competition;
 import com.etsaion.entity.GrowthRecord;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.service.*;
+import com.etsaion.utils.UserContext;
 import com.etsaion.vo.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,9 +41,43 @@ public class TeacherServiceImpl implements TeacherService {
 
     // ---- helpers ----
 
+    private boolean isTeacherScopedRole() {
+        String role = UserContext.getUserRole();
+        return "teacher".equalsIgnoreCase(role) || "counselor".equalsIgnoreCase(role);
+    }
+
+    private String currentTeacherCollege() {
+        if (!isTeacherScopedRole() || UserContext.getUserId() == null) {
+            return null;
+        }
+        User teacher = userService.getById(UserContext.getUserId());
+        return teacher != null ? teacher.getCollege() : null;
+    }
+
+    private String scopedCollege(String requestedCollege) {
+        String ownCollege = currentTeacherCollege();
+        if (StrUtil.isBlank(ownCollege)) {
+            return requestedCollege;
+        }
+        if (StrUtil.isBlank(requestedCollege)) {
+            return ownCollege;
+        }
+        return ownCollege.equals(requestedCollege) ? requestedCollege : "__NO_ACCESS__";
+    }
+
+    private boolean deniedCollege(String college) {
+        return "__NO_ACCESS__".equals(college);
+    }
+
+    private boolean canAccessStudent(User student) {
+        String ownCollege = currentTeacherCollege();
+        return StrUtil.isBlank(ownCollege) || (student != null && ownCollege.equals(student.getCollege()));
+    }
+
     private LambdaQueryWrapper<User> studentQuery(String college, String grade, String major, String className) {
+        String effectiveCollege = scopedCollege(college);
         LambdaQueryWrapper<User> w = new LambdaQueryWrapper<User>().eq(User::getRole, "student");
-        if (StrUtil.isNotBlank(college))    w.eq(User::getCollege, college);
+        if (StrUtil.isNotBlank(effectiveCollege)) w.eq(User::getCollege, effectiveCollege);
         if (StrUtil.isNotBlank(grade))      w.eq(User::getGrade, grade);
         if (StrUtil.isNotBlank(major))      w.eq(User::getMajor, major);
         if (StrUtil.isNotBlank(className))  w.eq(User::getClassName, className);
@@ -116,9 +151,10 @@ public class TeacherServiceImpl implements TeacherService {
     public Page<RegistrationVO> monitorStudentEvents(int current, int size, String studentName, String status, String className, String college, String grade, String major) {
         Page<Registration> page = new Page<>(current, size);
         LambdaQueryWrapper<Registration> wrapper = new LambdaQueryWrapper<>();
+        String effectiveCollege = scopedCollege(college);
 
         boolean needStudentFilter = StrUtil.isNotBlank(studentName) || StrUtil.isNotBlank(className)
-                || StrUtil.isNotBlank(college) || StrUtil.isNotBlank(grade) || StrUtil.isNotBlank(major);
+                || StrUtil.isNotBlank(effectiveCollege) || StrUtil.isNotBlank(grade) || StrUtil.isNotBlank(major);
 
         List<Long> studentIds = null;
         if (needStudentFilter) {
@@ -126,7 +162,7 @@ public class TeacherServiceImpl implements TeacherService {
                     .eq(User::getRole, "student")
                     .like(StrUtil.isNotBlank(studentName), User::getRealName, studentName)
                     .eq(StrUtil.isNotBlank(className), User::getClassName, className)
-                    .eq(StrUtil.isNotBlank(college), User::getCollege, college)
+                    .eq(StrUtil.isNotBlank(effectiveCollege), User::getCollege, effectiveCollege)
                     .eq(StrUtil.isNotBlank(grade), User::getGrade, grade)
                     .eq(StrUtil.isNotBlank(major), User::getMajor, major);
 
@@ -147,9 +183,10 @@ public class TeacherServiceImpl implements TeacherService {
 
     @Override
     public List<UserVO> listStudents(String keyword, String college, String className, String grade, String major) {
+        String effectiveCollege = scopedCollege(college);
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
                 .eq(User::getRole, "student")
-                .eq(StrUtil.isNotBlank(college), User::getCollege, college)
+                .eq(StrUtil.isNotBlank(effectiveCollege), User::getCollege, effectiveCollege)
                 .eq(StrUtil.isNotBlank(className), User::getClassName, className)
                 .eq(StrUtil.isNotBlank(grade), User::getGrade, grade)
                 .eq(StrUtil.isNotBlank(major), User::getMajor, major);
@@ -170,8 +207,10 @@ public class TeacherServiceImpl implements TeacherService {
 
     @Override
     public List<StudentComprehensiveVO> getComprehensiveData(String academicYear, String major) {
+        String effectiveCollege = scopedCollege(null);
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
                 .eq(User::getRole, "student")
+                .eq(StrUtil.isNotBlank(effectiveCollege), User::getCollege, effectiveCollege)
                 .eq(StrUtil.isNotBlank(major), User::getMajor, major);
 
         List<User> students = userService.list(wrapper);
@@ -190,7 +229,11 @@ public class TeacherServiceImpl implements TeacherService {
             if (CollUtil.isNotEmpty(regIds)) {
                 List<Submission> approvedSubs = submissionService.list(new LambdaQueryWrapper<Submission>()
                         .in(Submission::getRegistrationId, regIds)
-                        .eq(Submission::getStatus, "已审核"));
+                        .eq(Submission::getStatus, "已审核")
+                        .eq(Submission::getApproved, true))
+                        .stream()
+                        .filter(sub -> Boolean.TRUE.equals(sub.getApproved()))
+                        .collect(Collectors.toList());
                 score += approvedSubs.size() * 15.0;
             }
 
@@ -212,6 +255,10 @@ public class TeacherServiceImpl implements TeacherService {
 
     @Override
     public List<String> listColleges() {
+        String ownCollege = currentTeacherCollege();
+        if (StrUtil.isNotBlank(ownCollege)) {
+            return List.of(ownCollege);
+        }
         return userService.list(new LambdaQueryWrapper<User>()
                 .eq(User::getRole, "student")
                 .select(User::getCollege)
@@ -221,32 +268,38 @@ public class TeacherServiceImpl implements TeacherService {
 
     @Override
     public List<String> listMajors(String college) {
+        String effectiveCollege = scopedCollege(college);
+        if (deniedCollege(effectiveCollege)) return new ArrayList<>();
         LambdaQueryWrapper<User> w = new LambdaQueryWrapper<User>()
                 .eq(User::getRole, "student")
                 .select(User::getMajor)
                 .groupBy(User::getMajor);
-        if (StrUtil.isNotBlank(college)) w.eq(User::getCollege, college);
+        if (StrUtil.isNotBlank(effectiveCollege)) w.eq(User::getCollege, effectiveCollege);
         return userService.list(w).stream().map(User::getMajor).filter(Objects::nonNull).sorted().collect(Collectors.toList());
     }
 
     @Override
     public List<String> listGrades(String college, String major) {
+        String effectiveCollege = scopedCollege(college);
+        if (deniedCollege(effectiveCollege)) return new ArrayList<>();
         LambdaQueryWrapper<User> w = new LambdaQueryWrapper<User>()
                 .eq(User::getRole, "student")
                 .select(User::getGrade)
                 .groupBy(User::getGrade);
-        if (StrUtil.isNotBlank(college)) w.eq(User::getCollege, college);
+        if (StrUtil.isNotBlank(effectiveCollege)) w.eq(User::getCollege, effectiveCollege);
         if (StrUtil.isNotBlank(major))   w.eq(User::getMajor, major);
         return userService.list(w).stream().map(User::getGrade).filter(Objects::nonNull).sorted(Comparator.reverseOrder()).collect(Collectors.toList());
     }
 
     @Override
     public List<String> listClasses(String college, String major, String grade) {
+        String effectiveCollege = scopedCollege(college);
+        if (deniedCollege(effectiveCollege)) return new ArrayList<>();
         LambdaQueryWrapper<User> w = new LambdaQueryWrapper<User>()
                 .eq(User::getRole, "student")
                 .select(User::getClassName)
                 .groupBy(User::getClassName);
-        if (StrUtil.isNotBlank(college)) w.eq(User::getCollege, college);
+        if (StrUtil.isNotBlank(effectiveCollege)) w.eq(User::getCollege, effectiveCollege);
         if (StrUtil.isNotBlank(major))   w.eq(User::getMajor, major);
         if (StrUtil.isNotBlank(grade))   w.eq(User::getGrade, grade);
         return userService.list(w).stream().map(User::getClassName).filter(Objects::nonNull).sorted().collect(Collectors.toList());
@@ -349,6 +402,9 @@ public class TeacherServiceImpl implements TeacherService {
         if (student == null || !"student".equals(student.getRole())) {
             throw new BusinessException("学生不存在");
         }
+        if (!canAccessStudent(student)) {
+            throw new BusinessException(403, "无权查看该学生");
+        }
 
         // Basic info
         Map<String, Object> info = new HashMap<>();
@@ -413,9 +469,14 @@ public class TeacherServiceImpl implements TeacherService {
 
         // Ranking within same major
         if (student.getMajor() != null) {
-            List<User> peers = userService.list(new LambdaQueryWrapper<User>()
+            String ownCollege = currentTeacherCollege();
+            LambdaQueryWrapper<User> peerWrapper = new LambdaQueryWrapper<User>()
                     .eq(User::getRole, "student")
-                    .eq(User::getMajor, student.getMajor()));
+                    .eq(User::getMajor, student.getMajor());
+            if (StrUtil.isNotBlank(ownCollege)) {
+                peerWrapper.eq(User::getCollege, ownCollege);
+            }
+            List<User> peers = userService.list(peerWrapper);
 
             List<Map<String, Object>> rankings = new ArrayList<>();
             for (User peer : peers) {
