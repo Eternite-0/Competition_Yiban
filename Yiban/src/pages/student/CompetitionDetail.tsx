@@ -89,10 +89,15 @@ export default function CompetitionDetail() {
       try {
         const regs: any = await apiClient.get('/registration/my');
         const list: Registration[] = Array.isArray(regs) ? regs : [];
-        const found = list.find((r) => String(r.competitionId) === String(id));
+        // 只有有效状态的报名才算"已报名"，审核驳回和退回补充允许重新报名
+        const activeStatuses = ['待完善', '已提交', '审核中', '审核通过'];
+        const found = list.find((r) => String(r.competitionId) === String(id) && activeStatuses.includes(r.status));
         setRegistration(found || null);
-      } catch (err) {
-        // currentUser may not be logged in as student, ignore
+      } catch (err: any) {
+        // If 403/401, user is not student — that's fine
+        if (err?.response?.status !== 403 && err?.response?.status !== 401) {
+          console.error('Failed to load registrations:', err);
+        }
       }
       try {
         const teamPage: any = await apiClient.get('/team/list', {
