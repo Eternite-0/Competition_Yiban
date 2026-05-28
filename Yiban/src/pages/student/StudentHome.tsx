@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import { useStore as useAuthStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
@@ -47,22 +48,22 @@ export default function StudentHome() {
           params: { current: 1, size: 5, status: 'published' },
         });
         setCompetitions(Array.isArray(compPage?.records) ? compPage.records : []);
-      } catch (err) {
-        console.error('Failed to load competitions', err);
+      } catch (err: any) {
+        toast.error(err.message || '加载赛事列表失败');
       }
       try {
         const regs: any = await apiClient.get('/registration/my');
         setRegistrations(Array.isArray(regs) ? regs : []);
-      } catch (err) {
-        console.error('Failed to load registrations', err);
+      } catch (err: any) {
+        toast.error(err.message || '加载报名信息失败');
       }
       try {
         const annPage: any = await apiClient.get('/announcement/list', {
           params: { current: 1, size: 3 },
         });
         setAnnouncements(Array.isArray(annPage?.records) ? annPage.records : []);
-      } catch (err) {
-        console.error('Failed to load announcements', err);
+      } catch {
+        // announcement list may not exist yet, silent fail
       }
     };
     load();

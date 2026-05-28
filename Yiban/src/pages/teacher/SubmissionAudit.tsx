@@ -289,8 +289,7 @@ export default function SubmissionAudit() {
           { approve, reviewNote },
           { params: { registrationId: realId } }
         );
-      } else {
-      if (selected.source === 'task') {
+      } else if (selected.source === 'task') {
         const realId = selected.id.replace(/^task-/, '');
         await apiClient.post(`${workbenchBase}/tasks/${realId}/action`, {
           action: approve ? 'approve' : (reviewNote.startsWith('【退回补充】') ? 'return' : 'reject'),
@@ -302,7 +301,6 @@ export default function SubmissionAudit() {
         await apiClient.post('/submission/review', null, {
           params: { submissionId: realId, approve, reviewNote },
         });
-      }
       }
       const isReturn = !approve && reviewNote.startsWith('【退回补充】');
       const processedItem = { ...selected, status: approve ? '审核通过' : (isReturn ? '退回补充' : '审核驳回'), reviewNote };

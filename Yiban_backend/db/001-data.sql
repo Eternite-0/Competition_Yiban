@@ -2,15 +2,21 @@ USE `etsaion`;
 
 -- 清理旧数据，保证重新导入时的干净状态
 SET FOREIGN_KEY_CHECKS = 0;
-TRUNCATE TABLE `user`;
-TRUNCATE TABLE `competition`;
-TRUNCATE TABLE `registration`;
-TRUNCATE TABLE `submission`;
-TRUNCATE TABLE `submission_student`;
-TRUNCATE TABLE `team_post`;
-TRUNCATE TABLE `team_application`;
-TRUNCATE TABLE `growth_record`;
+TRUNCATE TABLE `student_stage_progress`;
+TRUNCATE TABLE `announcement`;
+TRUNCATE TABLE `competition_stage`;
+TRUNCATE TABLE `review_task`;
+TRUNCATE TABLE `participation`;
+TRUNCATE TABLE `activity`;
 TRUNCATE TABLE `message`;
+TRUNCATE TABLE `growth_record`;
+TRUNCATE TABLE `submission_student`;
+TRUNCATE TABLE `submission`;
+TRUNCATE TABLE `team_application`;
+TRUNCATE TABLE `team_post`;
+TRUNCATE TABLE `registration`;
+TRUNCATE TABLE `competition`;
+TRUNCATE TABLE `user`;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ----------------------------
@@ -187,3 +193,42 @@ INSERT INTO `message` (`id`, `from_user`, `to_user`, `title`, `content`, `is_rea
 -- 陈七的收件箱
 (12, 0, 8, '收到新的组队入队申请', '学生“刘八”申请加入您的电赛队伍，担当角色【嵌入式硬件】，请前往队长端处理。', 1, '2026-06-02 12:00:00'),
 (13, 0, 8, '电赛成果物理原理图通过评审', '王老师及徐教授已审核通过您的原理图设计成果附件，并给予高度评价。', 0, '2026-06-03 14:00:00');
+
+-- ----------------------------
+-- 9. 系统公告数据 (Announcement)
+-- ----------------------------
+INSERT INTO `announcement` (`competition_id`, `title`, `content`, `author_id`, `type`, `is_pinned`, `status`) VALUES
+(NULL, '2026春季学期赛事安排', '本学期共有6项赛事开放报名，请关注赛事大厅。', 1, 'system', 1, 'published'),
+(NULL, '综测加分政策', '每次报名+2分，获奖+15分。详情咨询辅导员。', 1, 'system', 0, 'published');
+
+-- ----------------------------
+-- 10. 审核待办回填 (ReviewTask backfill)
+--    从 registration 和 submission 数据生成统一待办，幂等安全
+-- ----------------------------
+INSERT IGNORE INTO `review_task`
+  (`activity_type`, `activity_id`, `target_type`, `target_id`, `submitter_id`,
+   `title`, `status`, `deadline`, `payload_json`, `create_time`, `update_time`)
+SELECT
+  'competition', r.competition_id, 'registration', r.id, r.student_id,
+  CONCAT('赛事报名审核：', IFNULL(c.name, '未知赛事')),
+  IF(r.status IN ('已提交', '审核中'), 'pending', 'resolved'),
+  c.end_time,
+  JSON_OBJECT('competitionName', IFNULL(c.name, ''), 'teamName', IFNULL(r.team_name, ''), 'track', IFNULL(r.track, '')),
+  IFNULL(r.submit_date, NOW()), IFNULL(r.submit_date, NOW())
+FROM `registration` r
+LEFT JOIN `competition` c ON c.id = r.competition_id;
+
+INSERT IGNORE INTO `review_task`
+  (`activity_type`, `activity_id`, `target_type`, `target_id`, `submitter_id`,
+   `title`, `status`, `deadline`, `payload_json`, `create_time`, `update_time`)
+SELECT
+  'competition', COALESCE(s.competition_id, r.competition_id),
+  'submission', s.id, s.submitter_id,
+  CONCAT('成果审核：', IFNULL(c.name, '未知赛事')),
+  IF(s.status = '待审核', 'pending', 'resolved'),
+  c.competition_end,
+  JSON_OBJECT('competitionName', IFNULL(c.name, ''), 'fileName', IFNULL(s.file_name, ''), 'registrationId', s.registration_id),
+  IFNULL(s.upload_date, NOW()), IFNULL(s.upload_date, NOW())
+FROM `submission` s
+LEFT JOIN `registration` r ON r.id = s.registration_id
+LEFT JOIN `competition` c ON c.id = COALESCE(s.competition_id, r.competition_id);

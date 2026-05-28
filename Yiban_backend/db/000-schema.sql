@@ -231,3 +231,65 @@ CREATE TABLE `message` (
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息表';
+
+-- ----------------------------
+-- Table structure for competition_stage
+-- ----------------------------
+DROP TABLE IF EXISTS `student_stage_progress`;
+DROP TABLE IF EXISTS `competition_stage`;
+CREATE TABLE `competition_stage` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `competition_id` bigint NOT NULL COMMENT '关联赛事ID',
+  `name` varchar(100) NOT NULL COMMENT '阶段名称',
+  `stage_order` int NOT NULL DEFAULT 1 COMMENT '阶段排序',
+  `start_time` datetime DEFAULT NULL COMMENT '阶段开始时间',
+  `end_time` datetime DEFAULT NULL COMMENT '阶段结束时间',
+  `description` text COMMENT '阶段说明/材料要求',
+  `status` varchar(20) NOT NULL DEFAULT 'upcoming' COMMENT 'upcoming/active/closed',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_competition` (`competition_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='赛事阶段表';
+
+-- ----------------------------
+-- Table structure for student_stage_progress
+-- ----------------------------
+CREATE TABLE `student_stage_progress` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `student_id` bigint NOT NULL COMMENT '学生ID',
+  `competition_id` bigint NOT NULL COMMENT '赛事ID',
+  `stage_id` bigint NOT NULL COMMENT '阶段ID',
+  `registration_id` bigint DEFAULT NULL COMMENT '关联报名ID',
+  `status` varchar(20) NOT NULL DEFAULT 'not_started' COMMENT 'not_started/in_progress/submitted/passed/failed',
+  `submit_time` datetime DEFAULT NULL COMMENT '提交时间',
+  `review_time` datetime DEFAULT NULL COMMENT '审核时间',
+  `review_note` varchar(500) DEFAULT NULL COMMENT '审核意见',
+  `reviewer_id` bigint DEFAULT NULL COMMENT '审核人ID',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_student_stage` (`student_id`, `stage_id`),
+  KEY `idx_student_comp` (`student_id`, `competition_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='学生阶段进度表';
+
+-- ----------------------------
+-- Table structure for announcement
+-- ----------------------------
+DROP TABLE IF EXISTS `announcement`;
+CREATE TABLE `announcement` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `competition_id` bigint DEFAULT NULL COMMENT '关联赛事ID，NULL表示系统公告',
+  `stage_id` bigint DEFAULT NULL COMMENT '关联阶段ID，NULL表示赛事级公告',
+  `title` varchar(200) NOT NULL COMMENT '公告标题',
+  `content` text NOT NULL COMMENT '公告内容',
+  `author_id` bigint NOT NULL COMMENT '发布者ID',
+  `type` varchar(20) NOT NULL DEFAULT 'system' COMMENT 'system/competition/stage',
+  `is_pinned` tinyint NOT NULL DEFAULT 0 COMMENT '是否置顶',
+  `status` varchar(20) NOT NULL DEFAULT 'published' COMMENT 'draft/published',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_competition` (`competition_id`),
+  KEY `idx_type_status` (`type`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告表';

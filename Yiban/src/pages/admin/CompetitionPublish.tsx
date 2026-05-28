@@ -181,6 +181,7 @@ export default function CompetitionPublish() {
     if (!form.organizer.trim()) errs.organizer = '请输入主办单位';
     if (!form.regStart || !form.regEnd) errs.regStart = '请填写报名时间';
     if (!form.compStart || !form.compEnd) errs.compStart = '请填写比赛时间';
+    if (!form.description.trim()) errs.description = '请输入赛事简介';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };

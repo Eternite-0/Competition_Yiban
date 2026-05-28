@@ -163,7 +163,8 @@ export default function ExcellentWorks() {
       }
       if (filterCompetition && w.competition !== filterCompetition) return false;
       if (filterYear && w.year !== filterYear) return false;
-      if (filterAward && w.award !== filterAward) return false;
+      if (filterAward === 'displayed' && !w.displayed) return false;
+      if (filterAward === 'hidden' && w.displayed) return false;
       return true;
     });
   }, [allWorks, search, filterCompetition, filterYear, filterAward]);
@@ -432,8 +433,9 @@ export default function ExcellentWorks() {
             setCurrentPage(1);
           }}
         >
-          <option value="">展示状态</option>
-          <option value="审核通过">审核通过</option>
+          <option value="">全部展示状态</option>
+          <option value="displayed">已展示</option>
+          <option value="hidden">未展示</option>
         </select>
         <div className="flex-1" />
         <button

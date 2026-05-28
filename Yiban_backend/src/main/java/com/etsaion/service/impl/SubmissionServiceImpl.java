@@ -73,9 +73,19 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
             throw new BusinessException("您无权为此报名表提交成果附件");
         }
 
-        // Only allow submission when registration is submitted or approved
-        if (!"已提交".equalsIgnoreCase(reg.getStatus()) && !"审核通过".equalsIgnoreCase(reg.getStatus())) {
-            throw new BusinessException("当前报名状态不允许提交成果，请确认报名已提交或已审核通过");
+        // Allow submission when registration is submitted, approved, or returned for supplementation
+        if (!"已提交".equalsIgnoreCase(reg.getStatus())
+                && !"审核通过".equalsIgnoreCase(reg.getStatus())
+                && !"退回补充".equalsIgnoreCase(reg.getStatus())) {
+            throw new BusinessException("当前报名状态不允许提交成果，请确认报名已提交、已审核通过或被退回补充");
+        }
+
+        // Check for existing pending submission on this registration
+        long pendingCount = this.count(new LambdaQueryWrapper<Submission>()
+                .eq(Submission::getRegistrationId, registrationId)
+                .eq(Submission::getStatus, "待审核"));
+        if (pendingCount > 0) {
+            throw new BusinessException("该报名已有一个待审核的成果，请等待审核完成后再提交");
         }
 
         reg.setStatus("审核中");
@@ -122,6 +132,9 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         Competition comp = competitionService.getById(competitionId);
         if (comp == null) {
             throw new BusinessException("赛事不存在");
+        }
+        if ("draft".equalsIgnoreCase(comp.getStatus())) {
+            throw new BusinessException("该赛事尚未发布");
         }
         if (CollUtil.isEmpty(studentIds)) {
             throw new BusinessException("至少选择一名关联学生");

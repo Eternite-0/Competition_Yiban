@@ -193,7 +193,19 @@ export default function AchievementUpload() {
   // File handling
   const addFiles = (newFiles: FileList | File[]) => {
     const arr = Array.from(newFiles);
-    const newSelected: SelectedFile[] = arr.map(f => ({
+    const maxSize = 50 * 1024 * 1024;
+    const skipped: string[] = [];
+    const valid = arr.filter(f => {
+      if (f.size > maxSize) {
+        skipped.push(`${f.name} (${(f.size / (1024 * 1024)).toFixed(1)}MB)`);
+        return false;
+      }
+      return true;
+    });
+    if (skipped.length > 0) {
+      toast.error(`以下文件超过50MB限制，已跳过: ${skipped.join(', ')}`);
+    }
+    const newSelected: SelectedFile[] = valid.map(f => ({
       file: f,
       id: `${f.name}-${f.size}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     }));

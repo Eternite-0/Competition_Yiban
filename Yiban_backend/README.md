@@ -24,8 +24,9 @@
 ```text
 d:\Project\Yiban_backend
 ├── db/                         # 数据库初始化脚本
-│   ├── schema.sql              # 表结构定义 (含 team_application)
-│   └── data.sql                # 丰富初始测试数据 (管理员/教师/学生账号)
+│   ├── 000-schema.sql          # 全量表结构定义 (15张表，含赛事阶段/公告)
+│   ├── 001-data.sql            # 种子测试数据 + review_task 回填 (管理员/教师/学生账号)
+│   └── migrate-*.sql           # 历史迁移脚本 (均已合并进 schema，可忽略)
 ├── docker-compose.yml          # 开箱即用 MySQL/Redis 容器编排
 ├── pom.xml                     # Maven 依赖与构建配置
 ├── README.md                   # 本说明文件
@@ -64,9 +65,9 @@ d:\Project\Yiban_backend
 ```powershell
 docker-compose up -d
 ```
-> **提示**：`docker-compose.yml` 已经配置了自动挂载 `./db` 目录。容器首次启动时，MySQL 会自动执行 `db/schema.sql` 和 `db/data.sql` 以创建全部表并插入丰富的测试数据！
+> **提示**：`docker-compose.yml` 已经配置了自动挂载 `./db` 目录。容器首次启动时，MySQL 会按字母序自动执行 `db/000-schema.sql`（建表）和 `db/001-data.sql`（种子数据）以创建全部表并插入丰富的测试数据！
 
-如果您选择使用本地已有的 MySQL 和 Redis 实例，请先执行 `db/schema.sql` 和 `db/data.sql` 脚本，并修改 `src/main/resources/application.yml` 中的数据库及 Redis 连接参数。
+如果您选择使用本地已有的 MySQL 和 Redis 实例，请先执行 `db/000-schema.sql` 和 `db/001-data.sql` 脚本，并修改 `src/main/resources/application.yml` 中的数据库及 Redis 连接参数。
 
 ### 3. 第二步：编译与运行 Spring Boot
 在项目根目录运行 Maven 编译打包命令：

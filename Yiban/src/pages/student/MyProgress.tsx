@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 import type { CompetitionProgress, StudentStageProgress, StageProgressStatus } from '../../types';
@@ -72,14 +73,18 @@ export default function MyProgress() {
   const navigate = useNavigate();
   const [progressList, setProgressList] = useState<CompetitionProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const data: any = await apiClient.get('/student/progress/my');
         setProgressList(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error('Failed to load progress', err);
+      } catch (err: any) {
+        setError(err.message || '获取赛事进度失败');
+        toast.error(err.message || '获取赛事进度失败');
       } finally {
         setLoading(false);
       }
@@ -92,6 +97,16 @@ export default function MyProgress() {
       <div className="py-section text-center text-ink-muted-48">
         <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
         <p className="mt-2 text-[14px]">加载中…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-section text-center text-primary">
+        <span className="material-symbols-outlined text-[32px]">error_outline</span>
+        <p className="mt-2 text-[14px]">{error}</p>
+        <button onClick={() => window.location.reload()} className="btn-primary mt-4 !text-[13px]">重试</button>
       </div>
     );
   }

@@ -82,13 +82,13 @@ npm run build                   # 生产构建 + TypeScript 类型检查
 迁移脚本在 `Yiban_backend/db/`:
 
 ```bash
-# 按顺序执行（幂等，可重复运行）
-mysql -u root etsaion < db/schema.sql      # 全量建表
-mysql -u root etsaion < db/data.sql        # 种子数据
-mysql -u root etsaion < db/migrate-006-backfill-review-task.sql  # 历史待办补齐
-```
+# 两步即可完成全新初始化（幂等，可重复运行）
+mysql -u root etsaion < db/000-schema.sql   # 全量建表 (15张表)
+mysql -u root etsaion < db/001-data.sql    # 种子数据 + review_task 回填
 
-或启动后调用 API: `POST /api/admin/workbench/tasks/backfill`
+# Docker 启动自动执行，无需手动操作
+# migrate-*.sql 已全部合并进 schema，仅保留用于已有数据库升级
+```
 
 ## 核心数据模型
 

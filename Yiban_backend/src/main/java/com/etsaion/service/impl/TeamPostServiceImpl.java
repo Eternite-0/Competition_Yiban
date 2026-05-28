@@ -39,6 +39,18 @@ public class TeamPostServiceImpl extends ServiceImpl<TeamPostMapper, TeamPost> i
         if (comp == null) {
             throw new BusinessException("关联的赛事不存在");
         }
+        if (!"published".equalsIgnoreCase(comp.getStatus())) {
+            throw new BusinessException("该赛事当前未开放，无法发布组队招募");
+        }
+
+        // Check for existing active post by same student for same competition
+        long existingCount = this.count(new LambdaQueryWrapper<TeamPost>()
+                .eq(TeamPost::getAuthorId, studentId)
+                .eq(TeamPost::getCompetitionId, dto.getCompetitionId())
+                .eq(TeamPost::getStatus, "招募中"));
+        if (existingCount > 0) {
+            throw new BusinessException("您已为该赛事发布过招募帖，请勿重复发布");
+        }
 
         TeamPost post = new TeamPost();
         post.setAuthorId(studentId);

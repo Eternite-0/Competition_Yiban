@@ -87,7 +87,7 @@ public class SubmissionController {
 
             return Result.success(data);
         } catch (IOException e) {
-            return Result.error("文件上传磁盘错误：" + e.getMessage());
+            return Result.error(500, "文件上传磁盘错误：" + e.getMessage());
         }
     }
 

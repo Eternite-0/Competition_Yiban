@@ -56,8 +56,8 @@ export default function SubmissionUpload() {
             // ignore
           }
         }
-      } catch (err) {
-        console.error('Failed to fetch registration', err);
+      } catch (err: any) {
+        toast.error(err.message || '加载报名信息失败');
       } finally {
         setLoading(false);
       }
@@ -68,6 +68,10 @@ export default function SubmissionUpload() {
   }, [registrationId]);
 
   const handleFileSelect = (selectedFile: File) => {
+    if (selectedFile.size > 50 * 1024 * 1024) {
+      toast.error(`文件大小不能超过50MB（当前: ${(selectedFile.size / (1024 * 1024)).toFixed(1)}MB）`);
+      return;
+    }
     setFile(selectedFile);
     setFileName(selectedFile.name);
     setFileSize(selectedFile.size);

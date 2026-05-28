@@ -3,6 +3,7 @@ package com.etsaion.controller;
 import cn.hutool.core.map.MapUtil;
 import com.etsaion.config.QiniuConfig;
 import com.etsaion.dto.Result;
+import com.etsaion.interceptor.RequireRole;
 import com.etsaion.service.QiniuService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +18,7 @@ import java.util.Map;
 @Tag(name = "文件上传", description = "七牛云文件上传凭证接口")
 @RestController
 @RequestMapping("/api/upload")
+@RequireRole({"student", "teacher", "admin"})
 public class UploadController {
 
     @Autowired

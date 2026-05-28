@@ -34,6 +34,7 @@ export default function AnnouncementManagement() {
       setAnnouncements(Array.isArray(data?.records) ? data.records : []);
     } catch (err) {
       console.error('Failed to load announcements', err);
+      toast.error('加载公告列表失败');
     } finally {
       setLoading(false);
     }

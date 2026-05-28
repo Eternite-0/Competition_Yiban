@@ -23,10 +23,15 @@ export async function getUploadToken(prefix?: string): Promise<UploadTokenRespon
   return apiClient.get('/upload/token', { params });
 }
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
 export async function uploadToQiniu(
   file: File,
   onProgress?: (percent: number) => void
 ): Promise<QiniuUploadResult> {
+  if (file.size > MAX_FILE_SIZE) {
+    throw new Error(`文件大小不能超过50MB（当前: ${(file.size / (1024 * 1024)).toFixed(1)}MB）`);
+  }
   const tokenData = await getUploadToken();
   const { token, domain } = tokenData;
   const uploadUrl = tokenData.uploadUrl || FALLBACK_UPLOAD_URL;

@@ -48,8 +48,8 @@ export default function RegistrationWorkbench() {
         setLoading(true);
         const data: any = await apiClient.get(`/competition/detail/${competitionId}`);
         setComp(data);
-      } catch (err) {
-        console.error('Failed to load competition', err);
+      } catch (err: any) {
+        toast.error(err.message || '加载赛事信息失败');
         setComp(null);
       } finally {
         setLoading(false);

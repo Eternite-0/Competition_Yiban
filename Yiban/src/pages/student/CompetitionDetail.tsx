@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 
@@ -79,8 +80,8 @@ export default function CompetitionDetail() {
         setLoading(true);
         const data: any = await apiClient.get(`/competition/detail/${id}`);
         setComp(data);
-      } catch (err) {
-        console.error('Failed to load competition', err);
+      } catch (err: any) {
+        toast.error(err.message || '加载赛事详情失败');
         setComp(null);
       } finally {
         setLoading(false);

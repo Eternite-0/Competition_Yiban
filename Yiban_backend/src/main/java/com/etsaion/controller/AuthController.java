@@ -59,6 +59,7 @@ public class AuthController {
 
     @Operation(summary = "获取当前登录用户信息")
     @GetMapping("/me")
+    @RequireRole({"student", "teacher", "admin"})
     public Result<UserVO> getCurrentUser() {
         Long userId = UserContext.getUserId();
         if (userId == null) {

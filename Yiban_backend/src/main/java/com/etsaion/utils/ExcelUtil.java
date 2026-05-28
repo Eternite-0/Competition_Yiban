@@ -64,16 +64,24 @@ public class ExcelUtil {
             cell1.setCellStyle(contentStyle);
 
             Cell cell2 = row.createCell(2);
-            cell2.setCellValue(vo.getCollege() + " - " + vo.getMajor() + " (" + vo.getClassName() + ")");
+            cell2.setCellValue(vo.getCollege() != null ? vo.getCollege() : "");
             cell2.setCellStyle(contentStyle);
 
             Cell cell3 = row.createCell(3);
-            cell3.setCellValue(vo.getParticipationCount());
+            cell3.setCellValue(vo.getMajor() != null ? vo.getMajor() : "");
             cell3.setCellStyle(contentStyle);
 
             Cell cell4 = row.createCell(4);
-            cell4.setCellValue(vo.getComprehensiveScore());
+            cell4.setCellValue(vo.getClassName() != null ? vo.getClassName() : "");
             cell4.setCellStyle(contentStyle);
+
+            Cell cell5 = row.createCell(5);
+            cell5.setCellValue(vo.getParticipationCount() != null ? vo.getParticipationCount() : 0);
+            cell5.setCellStyle(contentStyle);
+
+            Cell cell6 = row.createCell(6);
+            cell6.setCellValue(vo.getComprehensiveScore() != null ? vo.getComprehensiveScore() : 0.0);
+            cell6.setCellStyle(contentStyle);
         }
 
         // Auto-fit columns
