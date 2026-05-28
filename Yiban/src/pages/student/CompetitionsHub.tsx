@@ -93,6 +93,7 @@ export default function CompetitionsHub() {
   const navigate = useNavigate();
   const currentUser = useStore((s) => s.currentUser);
   const isAdmin = currentUser?.role === 'admin';
+  const isStudent = currentUser?.role === 'student';
   const defaultStatus = isAdmin ? '' : 'published';
   const [competitions, setCompetitions] = useState<BackendCompetition[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,12 +104,34 @@ export default function CompetitionsHub() {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [registeredCompIds, setRegisteredCompIds] = useState<Set<string>>(new Set());
   const pageSize = 9;
 
   useEffect(() => {
     setSelectedStatus(isAdmin ? '' : 'published');
     setPage(1);
   }, [isAdmin]);
+
+  // 获取学生的报名列表，用于标记已报名的赛事
+  useEffect(() => {
+    if (!isStudent) return;
+    const fetchRegistrations = async () => {
+      try {
+        const regs: any = await apiClient.get('/registration/my');
+        const list = Array.isArray(regs) ? regs : [];
+        const activeStatuses = ['待完善', '已提交', '审核中', '审核通过'];
+        const ids = new Set<string>(
+          list
+            .filter((r: any) => activeStatuses.includes(r.status))
+            .map((r: any) => String(r.competitionId))
+        );
+        setRegisteredCompIds(ids);
+      } catch {
+        // ignore
+      }
+    };
+    fetchRegistrations();
+  }, [isStudent]);
 
   useEffect(() => {
     const fetchCompetitions = async () => {
@@ -250,7 +273,7 @@ export default function CompetitionsHub() {
                   transition={{ delay: i * 0.03, duration: 0.35 }}
                   className="h-full"
                 >
-                  <CompetitionCard comp={comp} navigate={navigate} isAdmin={isAdmin} />
+                  <CompetitionCard comp={comp} navigate={navigate} isAdmin={isAdmin} isRegistered={registeredCompIds.has(String(comp.id))} />
                 </motion.div>
               ))}
             </div>
@@ -330,7 +353,7 @@ function Segmented({
   );
 }
 
-function CompetitionCard({ comp, navigate, isAdmin }: { comp: BackendCompetition; navigate: ReturnType<typeof useNavigate>; isAdmin: boolean }) {
+function CompetitionCard({ comp, navigate, isAdmin, isRegistered }: { comp: BackendCompetition; navigate: ReturnType<typeof useNavigate>; isAdmin: boolean; isRegistered: boolean }) {
   const remainingDays = daysUntil(comp.endTime);
   const isClosingSoon = remainingDays !== null && remainingDays >= 0 && remainingDays <= 7;
   const tagList = [
@@ -419,12 +442,21 @@ function CompetitionCard({ comp, navigate, isAdmin }: { comp: BackendCompetition
             {isAdmin ? '编辑' : '详情'}
           </button>
           {!isAdmin && (
-            <button
-              onClick={() => navigate(`/student/registrations/workbench/${comp.id}`)}
-              className="btn-primary flex-1 !py-2 !text-[13px]"
-            >
-              立即报名
-            </button>
+            isRegistered ? (
+              <button
+                onClick={() => navigate('/student/registrations')}
+                className="btn-primary flex-1 !py-2 !text-[13px]"
+              >
+                已报名
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate(`/student/registrations/workbench/${comp.id}`)}
+                className="btn-primary flex-1 !py-2 !text-[13px]"
+              >
+                立即报名
+              </button>
+            )
           )}
         </div>
       </div>
