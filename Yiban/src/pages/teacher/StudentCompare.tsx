@@ -28,7 +28,7 @@ const RADAR_FIELDS: Array<{ key: string; label: string }> = [
   { key: 'teamwork', label: '团队协作' },
 ];
 
-const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444'];
+const COLORS = ['var(--color-primary)', 'var(--color-warning)', 'var(--color-success)', 'var(--color-error)'];
 
 function mapRadar(raw: any): RadarDim[] {
   const rd = raw?.radarData ?? null;
@@ -54,11 +54,11 @@ function CompareRadarChart({ students }: { students: StudentData[] }) {
   return (
     <svg viewBox="0 0 280 280" className="w-full h-full">
       {[0.25, 0.5, 0.75, 1.0].map((level, idx) => (
-        <polygon key={idx} points={getPolygonPoints(maxRadius * level)} fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="0.5" />
+        <polygon key={idx} points={getPolygonPoints(maxRadius * level)} fill="none" stroke="var(--color-border)" strokeWidth="1" />
       ))}
       {RADAR_FIELDS.map((_, i) => {
         const angle = angleStep * i - Math.PI / 2;
-        return <line key={i} x1={cx} y1={cy} x2={cx + maxRadius * Math.cos(angle)} y2={cy + maxRadius * Math.sin(angle)} stroke="rgba(0,0,0,0.08)" strokeWidth="0.5" />;
+        return <line key={i} x1={cx} y1={cy} x2={cx + maxRadius * Math.cos(angle)} y2={cy + maxRadius * Math.sin(angle)} stroke="var(--color-border)" strokeWidth="1" />;
       })}
       {students.map((s, si) => {
         const points = s.radar.map((d, i) => {
@@ -71,9 +71,9 @@ function CompareRadarChart({ students }: { students: StudentData[] }) {
             key={s.studentId}
             points={points}
             fill={COLORS[si % COLORS.length]}
-            fillOpacity="0.08"
+            fillOpacity="var(--radar-fill-opacity)"
             stroke={COLORS[si % COLORS.length]}
-            strokeWidth="1.5"
+            strokeWidth="2"
           />
         );
       })}

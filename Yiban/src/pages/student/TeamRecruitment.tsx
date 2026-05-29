@@ -246,7 +246,7 @@ export default function TeamRecruitment() {
   }
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <div className="flex flex-col gap-6">
       {/* Page Header */}
       <PageHero
         eyebrow="Teams"
@@ -290,9 +290,9 @@ export default function TeamRecruitment() {
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+      <div className="flex gap-6">
         {/* Left: Recruitment Cards */}
-        <div className="lg:col-span-8 flex flex-col gap-md">
+        <div className="flex-1 min-w-0 flex flex-col gap-md">
           <div className="flex justify-between items-center">
             <span className="text-[14px] text-ink-muted-80">
               共找到 <strong className="text-primary tabular-nums">{total}</strong> 个招募团队
@@ -332,7 +332,7 @@ export default function TeamRecruitment() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04, duration: 0.35 }}
-                className="glass p-lg"
+                className="bg-white border border-slate-200 rounded-xl p-5 min-h-[140px]"
               >
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
@@ -347,10 +347,10 @@ export default function TeamRecruitment() {
                   <span className="chip chip-success">{post.status || '招募中'}</span>
                 </div>
 
-                <p className="text-[14px] text-ink-muted-80 mb-md leading-relaxed line-clamp-2">{post.content}</p>
+                <p className="line-clamp-2 text-[14px] text-ink-muted-80 mb-md leading-relaxed">{post.content}</p>
 
                 {post.rolesNeeded && post.rolesNeeded.length > 0 && (
-                  <div className="flex items-center gap-2 mb-md flex-wrap">
+                  <div className="flex flex-wrap gap-2 mt-2 mb-md">
                     <span className="text-[12px] text-ink-muted-48">急缺角色</span>
                     {post.rolesNeeded.map((role) => (
                       <span key={role} className="chip chip-primary">{role}</span>
@@ -414,10 +414,10 @@ export default function TeamRecruitment() {
         </div>
 
         {/* Right: Sidebar */}
-        <aside className="lg:col-span-4 flex flex-col gap-md lg:sticky lg:top-[68px] lg:h-fit">
+        <aside className="w-[240px] shrink-0 sticky top-6 self-start bg-white border border-slate-200 rounded-xl p-4">
           {/* My Posts - Captain Application Management */}
           {currentUser && (
-            <div className="glass p-lg">
+            <div>
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2">
                   <span className="material-symbols-outlined text-[18px] text-primary">post_add</span>
@@ -459,7 +459,7 @@ export default function TeamRecruitment() {
           )}
 
           {/* My Applications */}
-          <div className="glass p-lg">
+          <div className="border-t border-slate-100 mt-3 pt-3">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px] text-primary">history_edu</span>
@@ -495,12 +495,12 @@ export default function TeamRecruitment() {
           </div>
 
           {/* Tips */}
-          <div className="glass p-lg">
-            <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2 mb-3">
+          <div className="bg-blue-50 rounded-lg p-3 mt-3 text-xs text-blue-700">
+            <h3 className="text-xs font-medium text-blue-700 flex items-center gap-2 mb-2">
               <span className="material-symbols-outlined text-[18px] text-primary">tips_and_updates</span>
               组队小贴士
             </h3>
-            <ul className="flex flex-col gap-2 text-[12px] text-ink-muted-80 leading-relaxed">
+            <ul className="flex flex-col gap-2 text-xs text-blue-700 leading-relaxed">
               <li>· 招募内容请详细描述项目方向与团队优势。</li>
               <li>· 使用 "/" 分隔多个角色，例如：前端 / UI / 算法。</li>
               <li>· 选择正确的关联赛事，便于其他同学检索到。</li>
@@ -743,7 +743,7 @@ export default function TeamRecruitment() {
 
       {/* Applications Management Modal (Captain) */}
       {applicationsTarget && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,102,204,0.12)', backdropFilter: 'blur(4px)' }} role="dialog" aria-modal="true" aria-label="申请管理">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/12 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="申请管理">
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}

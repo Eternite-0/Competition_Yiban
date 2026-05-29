@@ -37,19 +37,19 @@ const LEVELS: { label: string; value: string }[] = [
 
 function levelChipClass(level?: string) {
   switch (level) {
-    case '国家级': return 'chip chip-primary';
-    case '省级': return 'chip chip-warning';
-    case '校级': return 'chip';
+    case '国家级': return 'chip chip-national';
+    case '省级': return 'chip chip-province';
+    case '校级': return 'chip chip-school';
     default: return 'chip';
   }
 }
 
-function levelGradient(level?: string) {
+function levelAccentClass(level?: string) {
   switch (level) {
-    case '国家级': return 'linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.04))';
-    case '省级': return 'linear-gradient(135deg, rgba(59,130,246,0.12), rgba(59,130,246,0.04))';
-    case '校级': return 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04))';
-    default: return 'linear-gradient(135deg, rgba(156,163,175,0.1), rgba(156,163,175,0.03))';
+    case '国家级': return 'border-t-4 border-t-blue-500';
+    case '省级': return 'border-t-4 border-t-sky-400';
+    case '校级': return 'border-t-4 border-t-slate-300';
+    default: return 'border-t-4 border-t-slate-200';
   }
 }
 
@@ -158,15 +158,15 @@ export default function ExcellentWorks() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.35 }}
-            className="glass p-lg flex flex-col gap-2"
+            className="bg-white border border-slate-200 rounded-xl p-4"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] text-ink-muted-80">{m.label}</span>
-              <span className="material-symbols-outlined text-[18px] text-primary">{m.icon}</span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-blue-500 w-5 h-5 text-[20px]">{m.icon}</span>
+              <span className="font-display font-semibold text-[34px] leading-none tabular-nums text-ink">
+                {m.value}
+              </span>
             </div>
-            <span className="font-display font-semibold text-[34px] leading-none tabular-nums text-ink">
-              {m.value}
-            </span>
+            <span className="text-[13px] text-ink-muted-80">{m.label}</span>
           </motion.div>
         ))}
       </section>
@@ -397,16 +397,16 @@ function WorkCard({ work, onClick }: { work: SubmissionVO; onClick: () => void }
 
   return (
     <div
-      className="glass overflow-hidden flex flex-col h-full transition-all hover:border-primary/25 cursor-pointer group"
+      className={`bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col h-full transition-all hover:border-slate-300 hover:shadow-sm cursor-pointer group ${levelAccentClass(work.competitionLevel)}`}
       onClick={onClick}
       role="button"
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
       {/* Image placeholder */}
-      <div className="h-12 w-full" style={{ background: levelGradient(work.competitionLevel) }} />
+      <div className="hidden" />
       {/* Header accent */}
-      <div className="h-1.5 bg-gradient-to-r from-primary via-primary/60 to-primary/30" />
+      <div className="hidden" />
 
       {/* Body */}
       <div className="p-lg flex flex-col flex-1">

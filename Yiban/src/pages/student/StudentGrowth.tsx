@@ -57,17 +57,17 @@ function RadarChart({ data }: { data: { dimension: string; score: number; maxSco
           key={idx}
           points={getPolygonPoints(maxRadius * level)}
           fill="none"
-          stroke="rgba(0,0,0,0.08)"
-          strokeWidth="0.5"
+          stroke="var(--color-border)"
+          strokeWidth="1"
         />
       ))}
       {data.map((_, i) => {
         const angle = angleStep * i - Math.PI / 2;
         const x2 = cx + maxRadius * Math.cos(angle);
         const y2 = cy + maxRadius * Math.sin(angle);
-        return <line key={i} x1={cx} y1={cy} x2={x2} y2={y2} stroke="rgba(0,0,0,0.08)" strokeWidth="0.5" />;
+        return <line key={i} x1={cx} y1={cy} x2={x2} y2={y2} stroke="var(--color-border)" strokeWidth="1" />;
       })}
-      <polygon points={dataPoints} fill="var(--color-primary)" fillOpacity="0.15" stroke="var(--color-primary)" strokeWidth="1.5" />
+      <polygon points={dataPoints} fill="var(--color-primary)" fillOpacity="var(--radar-fill-opacity)" stroke="var(--color-primary)" strokeWidth="2" />
       {data.map((d, i) => {
         const angle = angleStep * i - Math.PI / 2;
         const r = (d.score / d.maxScore) * maxRadius;
@@ -81,7 +81,7 @@ function RadarChart({ data }: { data: { dimension: string; score: number; maxSco
         const x = cx + labelRadius * Math.cos(angle);
         const y = cy + labelRadius * Math.sin(angle);
         return (
-          <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle" className="text-[10px] font-medium" fill="var(--color-ink)">
+          <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle" className="text-[12px] font-normal" fill="var(--color-body-subtle)">
             {d.dimension}
           </text>
         );
@@ -164,7 +164,7 @@ export default function StudentGrowth() {
   ];
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <div className="flex flex-col gap-6">
       <PageHero
         eyebrow="Growth"
         title="我的成长档案"
@@ -177,16 +177,16 @@ export default function StudentGrowth() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="glass-strong p-xl flex items-start gap-lg flex-wrap"
+        className="glass p-xl flex items-start gap-lg flex-wrap"
       >
         <div className="w-24 h-24 rounded-full bg-canvas-parchment grid place-items-center shrink-0 border border-hairline">
           <span className="material-symbols-outlined text-[44px] text-primary icon-fill">person</span>
         </div>
         <div className="flex-1 min-w-[280px] flex flex-col gap-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="font-display font-semibold text-[36px] leading-tight tracking-[-0.02em] text-ink">
+            <div className="font-display text-[22px] font-medium leading-[1.4] text-ink">
               {currentUser?.name || '同学'}
-            </h1>
+            </div>
             <span className="chip">2021 级 · 本科</span>
             <span className="chip chip-primary flex items-center gap-1">
               <span className="material-symbols-outlined text-[14px]">verified</span>
@@ -203,8 +203,8 @@ export default function StudentGrowth() {
           </div>
         </div>
         <div className="text-right">
-          <div className="text-[11px] uppercase tracking-wider text-ink-muted-48 mb-1">综合等级</div>
-          <div className="font-display text-[40px] font-semibold leading-none tracking-[-0.02em] text-primary">A+</div>
+          <div className="mb-1 text-[12px] font-normal text-placeholder">综合等级</div>
+          <div className="font-display text-[22px] font-medium leading-none text-primary">A+</div>
         </div>
       </motion.section>
 
@@ -216,51 +216,54 @@ export default function StudentGrowth() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.35 }}
-            className="glass p-lg flex flex-col gap-2"
+            className="stat-tile flex flex-col gap-2 p-lg"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[13px] text-ink-muted-80">{m.label}</span>
+              <span className="text-[12px] text-body-subtle">{m.label}</span>
               <span className="material-symbols-outlined text-[18px] text-primary">{m.icon}</span>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="font-display font-semibold text-[34px] leading-none tabular-nums text-ink">{m.value}</span>
-              <span className="text-[12px] text-ink-muted-48">{m.suffix}</span>
+              <span className="font-display text-[22px] font-medium leading-none tabular-nums text-ink">{m.value}</span>
+              <span className="text-[12px] text-placeholder">{m.suffix}</span>
             </div>
           </motion.div>
         ))}
       </section>
 
       {/* Bento */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-md">
+      <section className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6">
         {/* Analytics */}
-        <div className="lg:col-span-4 flex flex-col gap-md">
-          <div className="glass p-lg">
+        <div className="flex flex-col gap-5 lg:row-span-2">
+          <div className="bg-white border border-slate-200 rounded-xl p-5">
             <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">radar</span>
               能力维度
             </h3>
-            <div className="aspect-square max-w-[240px] mx-auto">
+            <div className="min-h-[260px] h-[260px] max-w-[280px] mx-auto">
               {growth.radarData ? <RadarChart data={radarData} /> : (
                 <div className="h-full grid place-items-center text-[12px] text-ink-muted-48">暂无数据</div>
               )}
             </div>
           </div>
 
-          <div className="glass p-lg">
+          <div className="bg-white border border-slate-200 rounded-xl p-5">
             <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">bar_chart</span>
               能力详情
             </h3>
-            <div className="flex flex-col gap-3">
+            <div>
               {dimensionBars.map((d) => (
-                <div key={d.label}>
-                  <div className="flex justify-between text-[12px] mb-1">
-                    <span className="text-ink-muted-80">{d.label}</span>
-                    <span className="text-ink font-semibold tabular-nums">{d.score}</span>
+                <div key={d.label} className="flex items-center gap-3 mb-3">
+                  <span className="text-sm text-slate-600 w-[72px] shrink-0">{d.label}</span>
+                  <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${
+                        d.score < 70 ? 'bg-slate-400' : d.score < 85 ? 'bg-blue-400' : 'bg-blue-600'
+                      }`}
+                      style={{ width: `${Math.min(100, d.score)}%` }}
+                    />
                   </div>
-                  <div className="h-1 w-full rounded-full bg-primary/8 overflow-hidden">
-                    <div className="h-full bg-primary" style={{ width: `${Math.min(100, d.score)}%` }} />
-                  </div>
+                  <span className="text-sm font-medium text-slate-700 w-[28px] text-right tabular-nums">{d.score}</span>
                 </div>
               ))}
             </div>
@@ -268,7 +271,7 @@ export default function StudentGrowth() {
         </div>
 
         {/* Records */}
-        <div className="lg:col-span-5 glass p-lg flex flex-col">
+        <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col">
           <div className="flex items-center justify-between mb-md">
             <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">emoji_events</span>
@@ -302,7 +305,7 @@ export default function StudentGrowth() {
         </div>
 
         {/* Tips */}
-        <div className="lg:col-span-3 glass p-lg">
+        <div className="bg-white border border-slate-200 rounded-xl p-5">
           <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">
             <span className="material-symbols-outlined text-[18px] text-primary">tips_and_updates</span>
             成长建议

@@ -33,7 +33,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const CATEGORY_COLORS: Record<string, string> = {
   A: 'bg-primary',
-  B: 'bg-primary/[0.68]',
+  B: 'bg-info',
   C: 'bg-ink-muted-48',
 };
 
@@ -116,14 +116,14 @@ export default function CollegeOverview() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.35 }}
-                className="glass p-lg flex flex-col gap-2"
+                className="stat-tile p-lg flex flex-col gap-2"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] text-ink-muted-80">{m.label}</span>
                   <span className="material-symbols-outlined text-[18px] text-primary">{m.icon}</span>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-display font-semibold text-[34px] leading-none tabular-nums text-ink">{m.value}</span>
+                  <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{m.value}</span>
                   <span className="text-[12px] text-ink-muted-48">{m.suffix}</span>
                 </div>
               </motion.div>
@@ -215,7 +215,7 @@ export default function CollegeOverview() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-canvas-parchment text-[11px] uppercase tracking-wider text-ink-muted-48 border-b border-hairline">
+                  <tr className="bg-canvas-parchment text-[11px] text-ink-muted-48 border-b border-hairline">
                     <th className="py-3 px-md font-medium">专业</th>
                     <th className="py-3 px-md font-medium text-right">学生数</th>
                     <th className="py-3 px-md font-medium text-right">参赛人次</th>

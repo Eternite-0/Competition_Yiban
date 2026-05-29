@@ -11,8 +11,8 @@ const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日'];
 
 const toneClass = {
   primary: 'bg-primary',
-  warning: 'bg-primary/[0.55]',
-  error: 'bg-primary/[0.35]',
+  warning: 'bg-warning',
+  error: 'bg-error',
 };
 
 type Competition = {
@@ -125,11 +125,14 @@ export default function StudentHome() {
     : [];
 
   return (
-    <div className="flex flex-col gap-lg py-1">
+    <div className="flex flex-col">
       <PageHero
         eyebrow={`Today · ${todayLabel}`}
         title={`欢迎回来，${currentUser?.name ?? '同学'}`}
         description="近期赛事、报名状态和待处理材料汇总。"
+        className="mb-6 [&>div]:flex-row [&>div]:items-center [&>div]:justify-between"
+        titleClassName="text-[22px] font-medium text-slate-900"
+        descriptionClassName="mt-1 text-sm text-slate-500"
         actions={(
           <button onClick={() => navigate('/student/competitions')} className="btn-primary">
             浏览赛事大厅
@@ -170,8 +173,8 @@ export default function StudentHome() {
                         item.status === 'done'
                           ? 'bg-primary text-on-primary'
                           : item.status === 'active'
-                            ? 'border border-primary bg-white text-primary'
-                            : 'border border-hairline bg-white/[0.72] text-ink-muted-48'
+                            ? 'border-2 border-primary bg-canvas text-primary'
+                            : 'bg-surface-chip text-placeholder'
                       }`}
                     >
                       {item.status === 'done' ? (
@@ -202,28 +205,28 @@ export default function StudentHome() {
         variants={listContainer}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-2 gap-md md:grid-cols-4"
+        className="grid grid-cols-4 gap-4 mb-6"
       >
         {stats.map((s) => (
-          <motion.div key={s.label} variants={listItem} className="stat-tile flex flex-col gap-3 p-md">
+          <motion.div key={s.label} variants={listItem} className="bg-slate-50 rounded-xl p-4 min-h-[88px] flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-[13px] font-medium text-ink-muted-80">{s.label}</span>
-              <span className="material-symbols-outlined text-[20px] text-primary">{s.icon}</span>
+              <span className="text-xs text-slate-500">{s.label}</span>
+              <span className="material-symbols-outlined text-[18px] text-primary">{s.icon}</span>
             </div>
-            <div className="font-display text-[34px] font-semibold leading-none text-ink">
+            <div className="text-[26px] font-medium leading-none text-slate-900">
               {s.value}
             </div>
-            <span className="text-[12px] text-ink-muted-48">{s.hint}</span>
+            <span className="text-xs text-slate-500">{s.hint}</span>
           </motion.div>
         ))}
       </motion.div>
 
-      <section className="grid grid-cols-1 gap-md lg:grid-cols-12">
+      <section className="grid grid-cols-1 lg:grid-cols-[5fr_4fr] gap-5 mb-6">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...pageTransition, delay: 0.08 }}
-          className="app-panel p-lg lg:col-span-7"
+          className="bg-white border border-slate-200 rounded-xl p-5"
         >
           <div className="mb-lg flex items-center justify-between">
             <h2 className="text-[20px] font-semibold">赛事日历</h2>
@@ -262,7 +265,7 @@ export default function StudentHome() {
                     <span className={`mt-1 h-1.5 w-1.5 rounded-full ${toneClass[event.tone]}`} />
                   )}
                   {event && (
-                    <span className="pointer-events-none absolute -bottom-7 z-10 whitespace-nowrap rounded-xs border border-hairline bg-white px-2 py-1 text-[11px] text-ink-muted-80 opacity-0 transition group-hover:opacity-100">
+                    <span className="pointer-events-none absolute -bottom-7 z-10 whitespace-nowrap rounded-xs border border-hairline bg-canvas px-2 py-1 text-[12px] text-body-muted opacity-0 shadow-float transition group-hover:opacity-100">
                       {event.label}
                     </span>
                   )}
@@ -276,7 +279,7 @@ export default function StudentHome() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...pageTransition, delay: 0.12 }}
-          className="app-panel flex flex-col p-lg lg:col-span-5"
+          className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col"
         >
           <div className="mb-md flex items-center justify-between">
             <h2 className="text-[20px] font-semibold">热门赛事</h2>
@@ -332,18 +335,25 @@ export default function StudentHome() {
           </div>
           <div className="flex flex-col">
             {announcements.map((a: any) => (
-              <div key={a.id} className="flex items-start gap-3 border-b border-hairline/70 py-3 last:border-0">
+              <div
+                key={a.id}
+                className={`flex items-start gap-3 border-b border-b-slate-100 border-l-2 py-3 pl-3 last:border-b-0 ${
+                  a.type === 'system'
+                    ? 'border-l-blue-500'
+                    : 'border-l-slate-200'
+                }`}
+              >
                 {a.isPinned && <span className="material-symbols-outlined mt-0.5 text-[16px] text-primary">push_pin</span>}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="truncate text-[14px] font-medium text-ink">{a.title}</span>
-                    <span className={`chip !text-[10px] ${a.type === 'system' ? 'chip-primary' : 'chip-warning'}`}>
+                    <span className={`chip ${a.type === 'system' ? 'chip-warning' : 'chip-primary'}`}>
                       {a.type === 'system' ? '系统' : '赛事'}
                     </span>
                   </div>
-                  <p className="mt-0.5 line-clamp-2 text-[12px] text-ink-muted-48">{a.content}</p>
+                  <p className="mt-0.5 line-clamp-2 text-[12px] text-placeholder">{a.content}</p>
                 </div>
-                <span className="whitespace-nowrap text-[11px] text-ink-muted-48">
+                <span className="whitespace-nowrap text-[12px] text-placeholder">
                   {new Date(a.createTime).toLocaleDateString('zh-CN')}
                 </span>
               </div>

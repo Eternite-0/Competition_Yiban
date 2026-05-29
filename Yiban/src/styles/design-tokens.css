@@ -1,0 +1,90 @@
+@theme {
+  --color-primary: #2563eb;
+  --color-primary-focus: #1d4ed8;
+  --color-primary-active: #1e40af;
+  --color-primary-soft: #eff6ff;
+  --color-info: #2563eb;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+
+  --color-ink: #0f172a;
+  --color-body: #0f172a;
+  --color-body-muted: #475569;
+  --color-body-subtle: #64748b;
+  --color-body-on-dark: #ffffff;
+  --color-primary-on-dark: #2563eb;
+  --color-ink-muted-80: #475569;
+  --color-ink-muted-48: #94a3b8;
+  --color-ink-muted-20: #cbd5e1;
+  --color-placeholder: #94a3b8;
+  --color-disabled: #cbd5e1;
+  --color-on-primary: #ffffff;
+  --color-on-dark: #ffffff;
+
+  --color-canvas: #ffffff;
+  --color-canvas-parchment: #f8fafc;
+  --color-surface-pearl: #ffffff;
+  --color-surface-tile-1: #f8fafc;
+  --color-surface-tile-2: #f1f5f9;
+  --color-surface-tile-3: #e2e8f0;
+  --color-surface-black: #0f172a;
+  --color-surface-chip: #f1f5f9;
+
+  --color-border: #e2e8f0;
+  --color-border-emphasis: #cbd5e1;
+  --color-border-disabled: #f1f5f9;
+  --color-divider-soft: #f1f5f9;
+  --color-hairline: #e2e8f0;
+
+  --color-badge-national-bg: #dbeafe;
+  --color-badge-national-text: #1d4ed8;
+  --color-badge-national-border: #bfdbfe;
+  --color-badge-province-bg: #e0f2fe;
+  --color-badge-province-text: #0369a1;
+  --color-badge-school-bg: #f1f5f9;
+  --color-badge-school-text: #475569;
+  --color-badge-open-bg: #dcfce7;
+  --color-badge-open-text: #15803d;
+  --color-badge-closed-bg: #f1f5f9;
+  --color-badge-closed-text: #94a3b8;
+  --color-badge-review-bg: #fef9c3;
+  --color-badge-review-text: #a16207;
+  --color-danger-border: #fca5a5;
+  --color-danger-bg: #fef2f2;
+
+  --font-display: "PingFang SC", "Microsoft YaHei", "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
+  --font-body: "PingFang SC", "Microsoft YaHei", "SF Pro Text", "SF Pro Display", "Segoe UI", sans-serif;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 10px;
+  --radius-pill: 9999px;
+  --radius-full: 50%;
+
+  --spacing-xxs: 4px;
+  --spacing-xs: 6px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-xxl: 32px;
+  --spacing-page: 32px;
+  --spacing-section: 64px;
+
+  --shadow-card-hover: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-panel: none;
+  --shadow-product: none;
+  --shadow-float: 0 8px 24px rgba(15, 23, 42, 0.12);
+  --shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+:root {
+  --card-padding: 16px 20px;
+  --control-height: 36px;
+  --list-divider: var(--color-divider-soft);
+  --radar-fill-opacity: 0.15;
+  --scrollbar-thumb: rgba(15, 23, 42, 0.18);
+  --scrollbar-thumb-hover: rgba(15, 23, 42, 0.28);
+}

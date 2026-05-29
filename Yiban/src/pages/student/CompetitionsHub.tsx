@@ -66,9 +66,9 @@ function statusLabel(status: string) {
 
 function levelChip(level: string) {
   switch (level) {
-    case '国家级': return 'chip chip-primary';
-    case '省级': return 'chip chip-warning';
-    case '校级': return 'chip';
+    case '国家级': return 'chip chip-national';
+    case '省级': return 'chip chip-province';
+    case '校级': return 'chip chip-school';
     default: return 'chip';
   }
 }
@@ -170,7 +170,7 @@ export default function CompetitionsHub() {
   const publishedCount = competitions.filter((c) => c.status === 'published').length;
 
   return (
-    <div className="flex flex-col gap-lg py-1">
+    <div className="flex flex-col gap-6">
       <PageHero
         eyebrow="Competitions"
         title="赛事大厅"
@@ -184,39 +184,39 @@ export default function CompetitionsHub() {
         }
       />
 
-      <div className="grid grid-cols-1 items-start gap-lg lg:grid-cols-[204px_minmax(0,1fr)]">
-        <aside className="app-panel-soft h-fit p-2 lg:sticky lg:top-[68px]">
+      <div className="flex gap-0">
+        <aside className="w-[180px] shrink-0 border-r border-slate-100 pr-4 mr-6">
           <div className="px-2.5 py-2">
-            <p className="text-[11px] font-semibold uppercase text-ink-muted-48">分类筛选</p>
+            <p className="text-[11px] font-medium uppercase text-slate-400">分类筛选</p>
             <p className="mt-1 text-[12px] text-ink-muted-48">按赛事方向收拢列表</p>
           </div>
-          <div className="flex flex-row gap-1 overflow-x-auto no-scrollbar lg:flex-col">
+          <div className="flex flex-col gap-1">
             {CATEGORIES.map((cat) => {
               const active = selectedCategory === cat.value;
               return (
                 <button
                   key={cat.label}
                   onClick={() => { setSelectedCategory(cat.value); setPage(1); }}
-                  className={`relative flex min-w-fit items-center justify-between gap-3 overflow-hidden rounded-sm px-3 py-2.5 text-[13px] transition lg:min-w-0 ${
-                    active ? 'text-ink' : 'text-ink-muted-80 hover:text-ink'
+                  className={`relative flex items-center justify-between px-3 py-2 rounded-lg text-sm cursor-pointer transition-colors ${
+                    active ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600 hover:bg-slate-50'
                   }`}
                 >
                   {active ? (
                     <motion.span
                       layoutId="competition-category-active"
-                      className="absolute inset-0 rounded-sm border border-white/80 bg-white/[0.82] shadow-[0_12px_30px_-24px_rgba(15,23,42,0.45)]"
+                      className="absolute inset-0 rounded-lg bg-blue-50"
                       transition={softSpring}
                     />
                   ) : (
-                    <span className="absolute inset-0 rounded-sm opacity-0 transition hover:bg-white/[0.56] hover:opacity-100" />
+                    <span className="absolute inset-0 rounded-lg opacity-0 transition hover:bg-slate-50 hover:opacity-100" />
                   )}
                   <span className="relative z-10 flex items-center gap-2">
-                    <span className={`material-symbols-outlined text-[17px] ${active ? 'icon-fill text-primary' : 'text-ink-muted-48'}`}>
+                    <span className={`material-symbols-outlined text-[17px] ${active ? 'icon-fill text-blue-600' : 'text-slate-400'}`}>
                       {cat.value ? CATEGORY_ICON[cat.value] : 'apps'}
                     </span>
                     {cat.label}
                   </span>
-                  <span className="relative z-10 text-[11px] tabular-nums text-ink-muted-48">
+                  <span className="relative z-10 text-xs bg-slate-100 text-slate-500 px-2 rounded-full tabular-nums">
                     {cat.value ? categoryCounts[cat.value] || 0 : total}
                   </span>
                 </button>
@@ -225,7 +225,7 @@ export default function CompetitionsHub() {
           </div>
         </aside>
 
-        <main className="flex min-w-0 flex-col gap-md">
+        <main className="flex min-w-0 flex-1 flex-col gap-md">
           <div className="app-command-bar flex flex-col gap-3 px-md py-3 xl:flex-row xl:items-center">
             <div className="flex flex-wrap items-center gap-3">
               <Segmented
@@ -276,7 +276,7 @@ export default function CompetitionsHub() {
               variants={listContainer}
               initial="hidden"
               animate="visible"
-              className="grid grid-cols-1 gap-md md:grid-cols-2 xl:grid-cols-3"
+              className="grid grid-cols-1 md:grid-cols-2 gap-5"
             >
               {competitions.map((comp) => (
                 <motion.div key={comp.id} layout variants={listItem} className="h-full">
@@ -329,9 +329,9 @@ export default function CompetitionsHub() {
 
 function SummaryMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-sm border border-white/80 bg-white/[0.7] px-4 py-3">
-      <div className="text-[22px] font-semibold leading-none tabular-nums text-ink">{value}</div>
-      <div className="mt-1 text-[11px] text-ink-muted-48">{label}</div>
+    <div className="rounded-sm border border-hairline bg-canvas px-4 py-3">
+      <div className="text-[22px] font-medium leading-none tabular-nums text-ink">{value}</div>
+      <div className="mt-1 text-[12px] text-body-subtle">{label}</div>
     </div>
   );
 }
@@ -348,21 +348,21 @@ function Segmented({
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="inline-flex items-center rounded-pill border border-white/80 bg-surface-chip p-1">
+    <div className="inline-flex items-center rounded-sm border border-hairline bg-canvas-parchment p-1">
       {options.map((o) => {
         const active = value === o.value;
         return (
           <button
             key={o.label}
             onClick={() => onChange(o.value)}
-            className={`relative overflow-hidden rounded-pill px-3 py-1.5 text-[13px] transition ${
+            className={`relative overflow-hidden rounded-sm px-3 py-1.5 text-[13px] transition ${
               active ? 'text-ink' : 'text-ink-muted-80 hover:text-ink'
             }`}
           >
             {active && (
               <motion.span
                 layoutId={`segmented-${id}`}
-                className="absolute inset-0 rounded-pill bg-white shadow-[0_8px_24px_-18px_rgba(15,23,42,0.45)]"
+                className="absolute inset-0 rounded-sm bg-canvas"
                 transition={softSpring}
               />
             )}
@@ -395,11 +395,11 @@ function CompetitionCard({
   const content = comp.content ? comp.content.replace(/<[^>]+>/g, '') : '查看赛事详情、报名时间与参赛要求';
 
   return (
-    <article className="app-panel group flex h-full flex-col overflow-hidden transition duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_22px_56px_-36px_rgba(15,23,42,0.52)]">
-      <div className="relative aspect-[16/9] overflow-hidden bg-surface-tile-2">
+    <article className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-sm transition-all group flex h-full flex-col">
+      <div className="relative h-[140px] bg-slate-100 overflow-hidden">
         {comp.coverUrl && (
           <img
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]"
+            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-[1.025]"
             src={comp.coverUrl}
             alt={comp.name}
             onError={(e) => {
@@ -409,20 +409,19 @@ function CompetitionCard({
             }}
           />
         )}
-        <div className="grid h-full w-full place-items-center bg-surface-tile-1" style={comp.coverUrl ? { display: 'none' } : undefined}>
-          <div className="grid h-[52px] w-[52px] place-items-center rounded-full bg-white shadow-[0_14px_36px_-28px_rgba(15,23,42,0.6)]">
+        <div className="grid h-full w-full place-items-center bg-slate-100" style={comp.coverUrl ? { display: 'none' } : undefined}>
+          <div className="grid h-[52px] w-[52px] place-items-center rounded-full bg-canvas">
             <span className="material-symbols-outlined text-[28px] text-primary">emoji_events</span>
           </div>
         </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/[0.24] to-transparent" />
         {isClosingSoon && (
-          <span className="absolute right-3 top-3 rounded-pill bg-white/[0.88] px-2.5 py-1 text-[11px] font-semibold text-primary backdrop-blur-md">
+          <span className="absolute right-3 top-3 rounded-xs border border-hairline bg-canvas px-2.5 py-1 text-[12px] font-normal text-primary">
             {remainingDays === 0 ? '今日截止' : `${remainingDays} 天截止`}
           </span>
         )}
       </div>
 
-      <div className="flex flex-1 flex-col p-md">
+      <div className="flex flex-1 flex-col p-4">
         <div className="mb-3 flex flex-wrap gap-1.5">
           {tagList.map((tag) => (
             <span
@@ -440,21 +439,21 @@ function CompetitionCard({
           ))}
         </div>
 
-        <h4 className="mb-2 min-h-[44px] text-[16px] font-semibold leading-snug text-ink line-clamp-2">
+        <h4 className="text-[15px] font-medium text-slate-900 mb-1 line-clamp-1">
           {comp.name}
         </h4>
-        <p className="mb-md line-clamp-2 text-[12px] leading-relaxed text-ink-muted-48">
+        <p className="text-xs text-slate-400 mb-3 line-clamp-2">
           {content}
         </p>
 
-        <div className="mb-md grid grid-cols-2 gap-x-3 gap-y-2 border-y border-hairline/80 py-3 text-[12px]">
+        <div className="flex items-center gap-4 text-xs text-slate-500 mb-1 [&>*:nth-child(n+3)]:hidden">
           <MetaItem icon="calendar_today" label="报名截止" value={formatDate(comp.endTime)} strong={isClosingSoon} />
           <MetaItem icon="groups" label="团队人数" value={`最多 ${comp.maxTeamSize ?? '—'} 人`} />
           <MetaItem icon={CATEGORY_ICON[comp.category] || 'category'} label="赛事方向" value={CATEGORY_LABEL[comp.category] ?? (comp.category || '未分类')} />
           <MetaItem icon="flag" label="开赛时间" value={formatDate(comp.competitionStart)} />
         </div>
 
-        <div className="mt-auto flex gap-2">
+        <div className="flex gap-2 mt-auto pt-3 border-t border-slate-100">
           <button
             onClick={() => navigate(isAdmin ? `/admin/publish/${comp.id}` : `/student/competitions/${comp.id}`)}
             className="btn-secondary flex-1 !min-h-10 !py-2 !text-[13px]"
@@ -497,11 +496,11 @@ function MetaItem({
 }) {
   return (
     <div className="min-w-0">
-      <div className="flex items-center gap-1.5 text-[11px] text-ink-muted-48">
+      <div className="flex items-center gap-1.5 text-xs text-slate-500">
         <span className="material-symbols-outlined text-[14px]">{icon}</span>
         {label}
       </div>
-      <div className={`mt-0.5 truncate font-medium ${strong ? 'text-primary' : 'text-ink'}`}>{value}</div>
+      <div className={`mt-0.5 truncate font-medium ${strong ? 'text-blue-600' : 'text-slate-700'}`}>{value}</div>
     </div>
   );
 }

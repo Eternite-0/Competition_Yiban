@@ -60,13 +60,12 @@ function PortalDropdown({ anchorRef, open, onClose, children }: {
   return createPortal(
     <div
       ref={dropdownRef}
-      className="fixed z-[9999] bg-canvas rounded-xl border border-hairline overflow-y-auto"
+      className="fixed z-[9999] overflow-y-auto rounded-md border border-hairline bg-canvas shadow-float"
       style={{
         top: pos.top,
         left: pos.left,
         width: pos.width,
         maxHeight: 320,
-        boxShadow: '0 6px 18px rgba(0,0,0,0.08)',
       }}
       onMouseDown={(e) => e.stopPropagation()}
     >
@@ -578,7 +577,7 @@ export default function AchievementUpload() {
         </div>
 
         {/* Right: instructions */}
-        <aside className="lg:col-span-4 flex flex-col gap-md lg:sticky lg:top-[68px] lg:h-fit">
+        <aside className="lg:col-span-4 flex flex-col gap-md sticky top-6 self-start">
           <div className="glass p-lg">
             <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">tips_and_updates</span>
@@ -625,22 +624,22 @@ export default function AchievementUpload() {
           </div>
 
           {/* Summary */}
-          <div className="glass p-lg">
+          <div className="bg-white border border-slate-200 rounded-xl p-4">
             <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">checklist</span>
               提交检查
             </h3>
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-3 p-4 bg-slate-50 rounded-xl">
               {[
                 { done: !!selectedComp, label: '选择关联赛事' },
                 { done: selectedMembers.length > 0, label: `添加关联成员 (${selectedMembers.length}人)` },
                 { done: files.length > 0, label: `上传附件 (${files.length}个)` },
               ].map(it => (
-                <li key={it.label} className="flex items-center gap-2 text-[13px]">
-                  <span className={`material-symbols-outlined text-[18px] ${it.done ? 'text-primary icon-fill' : 'text-ink-muted-48'}`}>
-                    {it.done ? 'check_circle' : 'radio_button_unchecked'}
+                <li key={it.label} className={`flex items-center gap-2 text-sm ${it.done ? 'text-green-700' : 'text-slate-400'}`}>
+                  <span className={it.done ? 'text-green-500' : 'text-slate-400'}>
+                    {it.done ? '✓' : '○'}
                   </span>
-                  <span className={it.done ? 'text-ink' : 'text-ink-muted-80'}>{it.label}</span>
+                  <span>{it.label}</span>
                 </li>
               ))}
             </ul>

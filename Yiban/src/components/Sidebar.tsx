@@ -68,30 +68,30 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
   return (
     <aside
-      className={`fixed inset-y-2 left-2 z-50 flex w-[236px] flex-col overflow-hidden rounded-lg border border-white/70 bg-[#eef2f7]/80 shadow-[0_18px_48px_-34px_rgba(15,23,42,0.45)] backdrop-blur-2xl backdrop-saturate-150 transition-transform duration-300 ease-out md:translate-x-0 ${
-        mobileOpen ? 'translate-x-0' : '-translate-x-[110%]'
+      className={`fixed inset-y-0 left-0 z-50 flex w-[200px] flex-col overflow-hidden border-r border-hairline bg-canvas transition-transform duration-300 ease-out md:translate-x-0 ${
+        mobileOpen ? 'translate-x-0' : '-translate-x-[calc(100%+16px)]'
       }`}
     >
-      <div className="flex h-[58px] items-center gap-3 border-b border-white/60 px-3.5">
-        <div className="grid h-8 w-8 place-items-center rounded-sm bg-primary text-on-primary shadow-[0_10px_28px_-18px_rgba(0,102,204,0.7)]">
+      <div className="flex h-[58px] items-center gap-3 border-b border-hairline px-4">
+        <div className="grid h-8 w-8 place-items-center rounded-sm bg-primary text-on-primary">
           <span className="material-symbols-outlined icon-fill text-[18px]">workspace_premium</span>
         </div>
         <div className="min-w-0 flex flex-col leading-tight">
-          <h1 className="truncate text-[15px] font-semibold text-ink">易赛通</h1>
-          <span className="text-[10px] uppercase text-ink-muted-48">Yiban Suite</span>
+          <h1 className="truncate text-[15px] font-medium text-ink">易赛通</h1>
+          <span className="text-[11px] text-placeholder">Yiban suite</span>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="ml-auto grid h-8 w-8 place-items-center rounded-full text-ink-muted-48 transition hover:bg-white/70 hover:text-ink md:hidden"
+          className="ml-auto icon-button md:hidden"
           aria-label="关闭导航"
         >
           <span className="material-symbols-outlined text-[18px]">close</span>
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2.5 py-3.5">
-        <p className="px-2.5 pb-2 text-[10px] font-semibold uppercase text-ink-muted-48">
+      <nav className="flex-1 overflow-y-auto px-2 py-3">
+        <p className="px-3 pb-2 text-[12px] font-normal text-placeholder">
           主导航
         </p>
         <ul className="flex flex-col gap-1">
@@ -102,8 +102,8 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                 onClick={onClose}
                 end={item.path.split('/').length <= 2}
                 className={({ isActive }) =>
-                  `group relative flex h-10 items-center gap-3 overflow-hidden rounded-sm px-3 text-[13px] transition-colors ${
-                    isActive ? 'text-ink' : 'text-ink-muted-80 hover:text-ink'
+                  `group relative flex h-10 items-center gap-3 overflow-hidden rounded-sm border-l-2 px-3 text-[14px] font-normal transition-colors ${
+                    isActive ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-transparent text-body-muted hover:bg-slate-50 hover:text-ink'
                   }`
                 }
               >
@@ -112,27 +112,27 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                     {isActive ? (
                       <motion.span
                         layoutId="dock-active-item"
-                        className="absolute inset-0 rounded-sm border border-white/70 bg-white/[0.86] shadow-[0_12px_32px_-24px_rgba(15,23,42,0.5)]"
+                        className="absolute inset-0 rounded-sm bg-blue-50"
                         transition={softSpring}
                       />
                     ) : (
-                      <span className="absolute inset-0 rounded-sm opacity-0 transition group-hover:bg-white/[0.45] group-hover:opacity-100" />
+                      <span className="absolute inset-0 rounded-sm opacity-0 transition group-hover:bg-slate-50 group-hover:opacity-100" />
                     )}
                     {isActive && (
                       <motion.span
                         layoutId="dock-active-mark"
-                        className="absolute left-1.5 top-2 bottom-2 w-[3px] rounded-full bg-primary"
+                        className="absolute left-0 top-0 bottom-0 w-[2px] bg-blue-600"
                         transition={softSpring}
                       />
                     )}
                     <span
                       className={`material-symbols-outlined relative z-10 text-[19px] transition ${
-                        isActive ? 'icon-fill text-primary' : 'text-ink-muted-48 group-hover:text-ink-muted-80'
+                        isActive ? 'icon-fill text-blue-600' : 'text-placeholder group-hover:text-body-muted'
                       }`}
                     >
                       {item.icon}
                     </span>
-                    <span className={`relative z-10 truncate ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                    <span className="relative z-10 truncate">
                       {item.label}
                     </span>
                   </>
@@ -143,21 +143,21 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         </ul>
       </nav>
 
-      <div className="border-t border-white/[0.65] p-2.5">
-        <div className="flex items-center gap-2.5 rounded-sm px-2 py-2 transition hover:bg-white/[0.55]">
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-[12px] font-semibold text-on-primary">
+      <div className="border-t border-hairline p-2.5">
+        <div className="flex items-center gap-2.5 rounded-sm px-2 py-2 transition hover:bg-canvas-parchment">
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-[12px] font-medium text-on-primary">
             {user?.name?.[0] ?? 'U'}
           </div>
           <div className="min-w-0 flex-1">
-            <span className="block truncate text-[13px] font-semibold text-ink">
+            <span className="block truncate text-[13px] font-medium text-ink">
               {user?.name ?? '未登录用户'}
             </span>
-            <span className="block text-[11px] text-ink-muted-48">{roleLabel[role]}</span>
+            <span className="block text-[12px] text-placeholder">{roleLabel[role]}</span>
           </div>
           <button
             onClick={handleLogout}
             title="退出登录"
-            className="grid h-8 w-8 place-items-center rounded-full text-ink-muted-48 transition hover:bg-white/80 hover:text-primary"
+            className="icon-button !h-8 !w-8"
           >
             <span className="material-symbols-outlined text-[18px]">logout</span>
           </button>

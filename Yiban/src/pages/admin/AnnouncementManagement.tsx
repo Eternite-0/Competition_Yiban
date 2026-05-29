@@ -167,7 +167,7 @@ export default function AnnouncementManagement() {
             key={tab.value}
             onClick={() => setFilterType(tab.value as AnnouncementType | '')}
             className={`px-4 py-1.5 rounded-pill text-[13px] font-medium transition ${
-              filterType === tab.value ? 'bg-canvas text-ink shadow-sm' : 'text-ink-muted-80 hover:text-ink'
+              filterType === tab.value ? 'bg-canvas text-ink' : 'text-ink-muted-80 hover:text-ink'
             }`}
           >
             {tab.label}
@@ -190,10 +190,10 @@ export default function AnnouncementManagement() {
           <table className="w-full">
             <thead>
               <tr className="bg-canvas-parchment">
-                <th className="text-left text-[11px] uppercase tracking-wider text-ink-muted-48 font-medium px-lg py-3">标题</th>
-                <th className="text-left text-[11px] uppercase tracking-wider text-ink-muted-48 font-medium px-lg py-3">类型</th>
-                <th className="text-left text-[11px] uppercase tracking-wider text-ink-muted-48 font-medium px-lg py-3">发布时间</th>
-                <th className="text-right text-[11px] uppercase tracking-wider text-ink-muted-48 font-medium px-lg py-3">操作</th>
+                <th className="text-left text-[11px] text-ink-muted-48 font-medium px-lg py-3">标题</th>
+                <th className="text-left text-[11px] text-ink-muted-48 font-medium px-lg py-3">类型</th>
+                <th className="text-left text-[11px] text-ink-muted-48 font-medium px-lg py-3">发布时间</th>
+                <th className="text-right text-[11px] text-ink-muted-48 font-medium px-lg py-3">操作</th>
               </tr>
             </thead>
             <tbody>

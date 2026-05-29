@@ -16,7 +16,7 @@ export default function Layout() {
   }, [location.pathname]);
 
   return (
-    <div className="relative min-h-screen app-workspace text-ink antialiased selection:bg-primary/[0.18] selection:text-primary">
+    <div className="relative min-h-screen app-workspace text-ink antialiased selection:bg-primary/10 selection:text-primary">
       <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 
       <AnimatePresence>
@@ -33,14 +33,14 @@ export default function Layout() {
         )}
       </AnimatePresence>
 
-      <div className="relative flex min-h-screen flex-col md:ml-[252px]">
+      <div className="relative flex min-h-screen flex-col md:ml-[200px]">
         <Header
           mobileNavOpen={mobileNavOpen}
           onToggleMobileNav={() => setMobileNavOpen((prev) => !prev)}
         />
         <main className="flex-1 pt-[52px]">
           <div className="app-main-frame">
-            <div className="mx-auto w-full max-w-[1280px] px-md py-lg sm:px-lg sm:py-xl md:px-xl">
+            <div className="mx-auto w-full max-w-[1100px] px-6 pt-8 pb-8">
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}
@@ -86,7 +86,7 @@ class PageErrorBoundary extends Component<{ children: ReactNode }, EBState> {
           <button
             type="button"
             onClick={this.handleRetry}
-            className="px-4 py-1.5 rounded-lg bg-primary text-on-primary text-sm font-medium hover:opacity-90 transition"
+            className="btn-primary"
           >
             重试
           </button>

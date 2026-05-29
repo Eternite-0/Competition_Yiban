@@ -119,7 +119,7 @@ export default function MyProgress() {
       className="py-lg flex flex-col gap-lg"
     >
       <PageHero
-        eyebrow="My Progress"
+        eyebrow="My progress"
         title="我的赛事进度"
         description="追踪你在每项赛事中的阶段进展，了解当前状态和下一步行动。"
         actions={(

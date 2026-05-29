@@ -107,7 +107,7 @@ export default function TeacherStudentCompetitions() {
       <div className="glass-tint flex flex-wrap gap-sm items-center px-md py-3">
         <CascadeFilter onChange={handleFilterChange} />
         <select
-          className="h-9 px-3 rounded-pill bg-canvas border border-hairline text-[13px] text-ink focus:outline-none focus:border-primary-focus"
+          className="input-glass h-9 min-w-[120px] text-[13px]"
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
         >
@@ -135,13 +135,13 @@ export default function TeacherStudentCompetitions() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.35 }}
-            className="glass p-lg flex flex-col gap-2"
+            className="stat-tile p-lg flex flex-col gap-2"
           >
             <div className="flex justify-between items-center">
               <span className="text-[13px] text-ink-muted-80">{card.label}</span>
               <span className="material-symbols-outlined text-[18px] text-primary">{card.icon}</span>
             </div>
-            <span className="font-display font-semibold text-[34px] leading-none tabular-nums text-ink">{card.value}</span>
+            <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{card.value}</span>
           </motion.div>
         ))}
       </section>
@@ -155,7 +155,7 @@ export default function TeacherStudentCompetitions() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-canvas-parchment text-[11px] uppercase tracking-wider text-ink-muted-48 border-b border-hairline">
+              <tr className="bg-canvas-parchment text-[11px] text-ink-muted-48 border-b border-hairline">
                 <th className="py-3 px-md font-medium">学生</th>
                 <th className="py-3 px-md font-medium">赛事 / 团队</th>
                 <th className="py-3 px-md font-medium">提交时间</th>

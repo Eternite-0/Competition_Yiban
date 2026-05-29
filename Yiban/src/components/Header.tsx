@@ -250,7 +250,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
   }
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-30 flex h-[52px] items-center justify-between border-b border-white/70 bg-white/[0.68] px-md backdrop-blur-2xl backdrop-saturate-150 sm:px-lg md:left-[252px] md:px-xl">
+    <header className="fixed left-0 right-0 top-0 z-30 flex h-[52px] items-center justify-between border-b border-hairline bg-canvas-parchment px-lg sm:px-page md:left-[200px]">
       <div className="flex items-center gap-3 min-w-0">
         <button
           type="button"
@@ -262,17 +262,17 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
             {mobileNavOpen ? 'close' : 'menu'}
           </span>
         </button>
-        <h2 className="truncate text-[18px] font-semibold leading-none text-ink">{title}</h2>
+        <span className="sr-only">{title}</span>
       </div>
 
       <div className="flex items-center gap-3">
         <div ref={searchRef} className="relative hidden lg:block">
-          <div className="flex h-9 w-[244px] items-center rounded-pill border border-white/80 bg-white/[0.72] shadow-[0_10px_30px_-26px_rgba(15,23,42,0.45)] transition-all focus-within:border-primary/40 focus-within:bg-white" aria-expanded={searchOpen}>
-            <span className="material-symbols-outlined text-[17px] text-ink-muted-48 ml-3.5">search</span>
+          <div className="flex h-9 w-[244px] items-center rounded-sm border border-hairline bg-canvas transition-all focus-within:border-primary focus-within:shadow-focus" aria-expanded={searchOpen}>
+            <span className="material-symbols-outlined text-[17px] text-placeholder ml-3">search</span>
             <input
               ref={searchInputRef}
               name="globalSearch"
-              className="h-full flex-1 bg-transparent px-2 outline-none text-[14px] text-ink placeholder:text-ink-muted-48"
+              className="h-full flex-1 bg-transparent px-2 outline-none text-[14px] font-normal text-ink placeholder:text-placeholder"
               placeholder="搜索赛事、团队、作品"
               type="text"
               value={searchQuery}
@@ -283,9 +283,9 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
               aria-activedescendant={activeIndex >= 0 ? `search-option-${searchResults[activeIndex]?.id}` : undefined}
             />
             {searchLoading ? (
-              <span className="material-symbols-outlined text-[16px] text-ink-muted-48 mr-2 animate-spin">progress_activity</span>
+              <span className="material-symbols-outlined text-[16px] text-placeholder mr-2 animate-spin">progress_activity</span>
             ) : (
-              <kbd className="mr-2 rounded-xs bg-surface-chip px-1.5 py-0.5 font-mono text-[10px] text-ink-muted-48">Ctrl K</kbd>
+              <kbd className="mr-2 rounded-xs bg-surface-chip px-1.5 py-0.5 font-mono text-[10px] font-normal text-placeholder">Ctrl K</kbd>
             )}
           </div>
 
@@ -297,13 +297,13 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
                 animate="visible"
                 exit="exit"
                 transition={panelTransition}
-                className="absolute left-0 top-[42px] z-50 w-[340px] overflow-hidden rounded-md border border-white/80 bg-white/[0.92] shadow-[0_24px_64px_-36px_rgba(15,23,42,0.55)] backdrop-blur-2xl"
+                className="absolute left-0 top-[42px] z-50 w-[340px] overflow-hidden rounded-md border border-hairline bg-canvas shadow-float"
               >
                 <div className="border-b border-hairline/80 px-3 py-2">
-                  <span className="text-[11px] text-ink-muted-48">搜索结果</span>
+                  <span className="text-[12px] text-placeholder">搜索结果</span>
                 </div>
                 {searchResults.length === 0 ? (
-                  <div className="px-3 py-6 text-center text-[13px] text-ink-muted-48">无匹配结果</div>
+                  <div className="px-3 py-6 text-center text-[13px] text-placeholder">无匹配结果</div>
                 ) : (
                 <ul className="max-h-[260px] overflow-y-auto" role="listbox">
                   {searchResults.map((r, i) => (
@@ -315,19 +315,19 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
                       onClick={() => handleSearchSelect(r)}
                       onMouseEnter={() => setActiveIndex(i)}
                       className={`flex cursor-pointer items-center gap-3 border-b border-hairline/50 px-3 py-2.5 transition last:border-b-0 ${
-                        i === activeIndex ? 'bg-primary/[0.06]' : 'hover:bg-primary/[0.05]'
+                        i === activeIndex ? 'bg-primary-soft' : 'hover:bg-canvas-parchment'
                       }`}
                     >
                       <span className="material-symbols-outlined text-[18px] text-primary shrink-0">emoji_events</span>
                       <div className="min-w-0 flex-1">
                         <div className="text-[13px] font-medium text-ink truncate">{r.name}</div>
-                        <div className="text-[11px] text-ink-muted-48 flex items-center gap-1.5">
+                        <div className="text-[12px] text-placeholder flex items-center gap-1.5">
                           {r.level && <span>{r.level}</span>}
                           {r.level && r.status && <span>·</span>}
                           {r.status && <span>{r.status === 'published' ? '进行中' : r.status === 'closed' ? '已结束' : r.status}</span>}
                         </div>
                       </div>
-                      <span className="material-symbols-outlined text-[16px] text-ink-muted-48">arrow_forward</span>
+                      <span className="material-symbols-outlined text-[16px] text-placeholder">arrow_forward</span>
                     </li>
                   ))}
                 </ul>
@@ -347,7 +347,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
           >
             <span className="material-symbols-outlined text-[20px]">notifications</span>
             {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center bg-primary text-on-primary text-[10px] font-bold rounded-full ring-2 ring-canvas-parchment">
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-primary text-[10px] font-medium text-on-primary ring-2 ring-canvas-parchment">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
@@ -362,18 +362,18 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
                 animate="visible"
                 exit="exit"
                 transition={panelTransition}
-                className="absolute right-0 top-[46px] max-h-[420px] w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-md border border-white/80 bg-white/[0.92] shadow-[0_24px_64px_-36px_rgba(15,23,42,0.55)] backdrop-blur-2xl"
+                className="absolute right-0 top-[46px] max-h-[420px] w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-md border border-hairline bg-canvas shadow-float"
               >
                 <div className="flex items-center justify-between border-b border-hairline/80 px-4 py-3">
-                  <span className="text-sm font-semibold text-ink">消息通知</span>
+                  <span className="text-[14px] font-medium text-ink">消息通知</span>
                   {unreadCount > 0 && (
-                    <span className="text-xs text-primary font-medium">{unreadCount} 条未读</span>
+                    <span className="text-[12px] text-primary font-normal">{unreadCount} 条未读</span>
                   )}
                 </div>
 
                 <div className="overflow-y-auto max-h-[330px]">
                   {messages.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-ink-muted-48">
+                    <div className="flex flex-col items-center justify-center py-10 text-placeholder">
                       <span className="material-symbols-outlined text-[32px] mb-2">notifications_none</span>
                       <span className="text-xs">暂无消息</span>
                     </div>
@@ -397,12 +397,12 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-2">
-                              <span className={`text-[13px] truncate ${msg.isRead === 0 ? 'font-semibold text-ink' : 'text-ink-muted-80'}`}>
+                              <span className={`text-[13px] truncate ${msg.isRead === 0 ? 'font-medium text-ink' : 'text-body-muted'}`}>
                                 {msg.title}
                               </span>
-                              <span className="flex-shrink-0 text-[11px] text-ink-muted-48">{formatTime(msg.createTime)}</span>
+                              <span className="flex-shrink-0 text-[12px] text-placeholder">{formatTime(msg.createTime)}</span>
                             </div>
-                            <p className="text-[12px] text-ink-muted-48 mt-0.5 line-clamp-2 leading-relaxed">
+                            <p className="text-[12px] text-placeholder mt-0.5 line-clamp-2 leading-relaxed">
                               {msg.content}
                             </p>
                           </div>
@@ -414,7 +414,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
 
                 <div className="border-t border-hairline px-4 py-2.5 text-center">
                   <span
-                    className="text-xs text-primary font-medium cursor-pointer hover:underline"
+                    className="cursor-pointer text-[12px] font-normal text-primary hover:underline"
                     onClick={() => setPanelOpen(false)}
                   >
                     查看全部
@@ -426,7 +426,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
         </div>
 
         <div className="group flex cursor-pointer items-center gap-2">
-          <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[12px] font-semibold text-on-primary shadow-[0_10px_26px_-18px_rgba(0,102,204,0.75)] transition-transform group-active:scale-95">
+          <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[12px] font-medium text-on-primary">
             {user?.name?.[0] ?? 'U'}
           </div>
         </div>

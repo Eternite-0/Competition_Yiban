@@ -17,13 +17,13 @@ type Competition = {
 };
 
 const levelColor: Record<string, { bg: string; dot: string; text: string; chip: string }> = {
-  国家级: { bg: 'bg-primary/[0.08]', dot: 'bg-primary', text: 'text-primary', chip: 'chip-primary' },
-  省级: { bg: 'bg-primary/[0.05]', dot: 'bg-primary/[0.72]', text: 'text-primary', chip: 'chip-primary' },
-  校级: { bg: 'bg-surface-chip', dot: 'bg-ink-muted-48', text: 'text-ink-muted-80', chip: 'chip' },
+  国家级: { bg: 'bg-badge-national-bg', dot: 'bg-primary', text: 'text-primary-focus', chip: 'chip-national' },
+  省级: { bg: 'bg-badge-province-bg', dot: 'bg-badge-province-text', text: 'text-badge-province-text', chip: 'chip-province' },
+  校级: { bg: 'bg-badge-school-bg', dot: 'bg-badge-school-text', text: 'text-badge-school-text', chip: 'chip-school' },
 };
 
 function getLevelStyle(level: string) {
-  return levelColor[level] ?? { bg: 'bg-surface-chip', dot: 'bg-ink-muted-48', text: 'text-ink-muted-80', chip: 'chip' };
+  return levelColor[level] ?? { bg: 'bg-surface-chip', dot: 'bg-placeholder', text: 'text-body-muted', chip: 'chip' };
 }
 
 function toDateKey(d: Date): string {
@@ -153,7 +153,7 @@ export default function CompetitionCalendar() {
   return (
     <div className="flex flex-col gap-lg py-lg">
       <PageHero
-        eyebrow="Competition Calendar"
+        eyebrow="Competition calendar"
         title="赛事日历"
         description="一览本月赛事关键节点，点击日期查看当天的赛事安排。"
       />
@@ -390,7 +390,7 @@ export default function CompetitionCalendar() {
           });
 
           return monthComps.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
               {monthComps.map((c, i) => {
                 const s = getLevelStyle(c.level);
                 const end = parseDate(c.endTime);

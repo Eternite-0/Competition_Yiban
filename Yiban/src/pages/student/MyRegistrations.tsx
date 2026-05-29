@@ -76,7 +76,7 @@ export default function MyRegistrations() {
   const pendingCount = registrations.filter((r) => r.status === '待完善').length;
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <div className="flex flex-col gap-6">
       <PageHero
         eyebrow="Registrations"
         title="我的报名"
@@ -84,9 +84,9 @@ export default function MyRegistrations() {
         contentClassName="max-w-2xl"
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+      <div className="flex flex-col gap-4">
         {/* Main */}
-        <div className="lg:col-span-8 flex flex-col gap-md">
+        <div className="order-2 flex flex-col gap-4">
           {/* Tabs */}
           <div className="flex gap-1 p-1 bg-primary/6 rounded-pill w-fit overflow-x-auto no-scrollbar">
             {TABS.map((tab) => (
@@ -105,7 +105,7 @@ export default function MyRegistrations() {
           </div>
 
           {/* Cards */}
-          <div className="flex flex-col gap-md">
+          <div className="flex flex-col gap-4">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
                 <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
@@ -133,9 +133,9 @@ export default function MyRegistrations() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04, duration: 0.35 }}
-                    className="glass p-lg"
+                    className="bg-white border border-slate-200 rounded-xl p-5"
                   >
-                    <div className="flex justify-between items-start mb-md">
+                    <div className="flex items-center justify-between mb-3">
                       <div>
                         <h3 className="text-[19px] font-semibold tracking-tight text-ink mb-1">{compName}</h3>
                         <p className="text-[12px] text-ink-muted-48 flex items-center gap-1">
@@ -146,7 +146,7 @@ export default function MyRegistrations() {
                       <span className={statusInfo.chip}>{statusInfo.label}</span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-md bg-canvas-parchment p-3 border border-hairline mb-md">
+                    <div className="grid grid-cols-2 gap-4 text-sm rounded-md bg-canvas-parchment p-3 border border-hairline mb-md [&>*:nth-child(2)]:hidden [&>*:nth-child(4)]:hidden">
                       <Field
                         label="团队状态"
                         icon="groups"
@@ -241,9 +241,10 @@ export default function MyRegistrations() {
         </div>
 
         {/* Sidebar */}
-        <aside className="lg:col-span-4 flex flex-col gap-md lg:sticky lg:top-[68px] lg:h-fit">
+        <aside className="order-1 flex flex-col gap-4">
           {/* Todos */}
-          <div className="glass p-lg">
+          {pendingCount > 0 && (
+          <div className="order-2 bg-white border border-slate-200 rounded-xl p-5">
             <div className="flex justify-between items-center mb-3">
               <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2">
                 <span className="material-symbols-outlined text-[18px] text-primary">task_alt</span>
@@ -274,23 +275,20 @@ export default function MyRegistrations() {
                   </li>
                 );
               })}
-              {pendingCount === 0 && (
-                <li className="text-center py-4 text-ink-muted-48 text-[12px]">暂无待办事项</li>
-              )}
             </ul>
           </div>
+          )}
 
           {/* Stats */}
-          <div className="glass p-lg">
-            <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2 mb-3">
+          <div className="order-1">
+            <h3 className="sr-only">
               <span className="material-symbols-outlined text-[18px] text-primary">insights</span>
               报名统计
             </h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-4 gap-4 mb-6">
               <StatBlock label="累计报名" value={registrations.length} tone="primary" />
               <StatBlock label="待完善" value={pendingCount} tone="warning" />
               <StatBlock label="审核中" value={registrations.filter((r) => r.status === '审核中' || r.status === '已提交').length} tone="warning" />
-              <StatBlock label="退回补充" value={registrations.filter((r) => r.status === '退回补充').length} tone="warning" />
               <StatBlock label="已通过" value={registrations.filter((r) => r.status === '审核通过').length} tone="success" />
             </div>
           </div>
@@ -303,8 +301,8 @@ export default function MyRegistrations() {
 function Field({ label, icon, tone, value }: { label: string; icon: string; tone: 'primary' | 'success' | 'warning' | 'error'; value: string }) {
   const toneClass = {
     primary: 'text-primary',
-    success: 'text-primary',
-    warning: 'text-ink-muted-80',
+    success: 'text-success',
+    warning: 'text-warning',
     error: 'text-error',
   }[tone];
   return (
@@ -321,14 +319,14 @@ function Field({ label, icon, tone, value }: { label: string; icon: string; tone
 function StatBlock({ label, value, tone }: { label: string; value: number; tone: 'primary' | 'success' | 'warning' | 'error' }) {
   const toneClass = {
     primary: 'text-primary',
-    success: 'text-primary',
-    warning: 'text-ink-muted-80',
+    success: 'text-success',
+    warning: 'text-warning',
     error: 'text-error',
   }[tone];
   return (
-    <div className="rounded-md border border-hairline bg-canvas p-3">
-      <p className="text-[11px] text-ink-muted-48 mb-1">{label}</p>
-      <p className={`font-display font-semibold text-[24px] leading-none tabular-nums ${toneClass}`}>{value}</p>
+    <div className="bg-slate-50 rounded-xl p-4">
+      <p className="text-xs text-slate-500 mb-1">{label}</p>
+      <p className={`text-2xl font-medium leading-none tabular-nums ${toneClass}`}>{value}</p>
     </div>
   );
 }

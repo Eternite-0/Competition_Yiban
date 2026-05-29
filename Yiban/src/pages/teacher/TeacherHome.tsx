@@ -179,9 +179,9 @@ export default function TeacherHome() {
 
   const statusGroups = useMemo(() => {
     const base = [
-      { key: '审核通过', label: '已通过', count: 0, tone: 'bg-primary' },
-      { key: '审核中', label: '审核中', count: 0, tone: 'bg-primary/60' },
-      { key: '已提交', label: '待审核', count: 0, tone: 'bg-primary/35' },
+      { key: '审核通过', label: '已通过', count: 0, tone: 'bg-success' },
+      { key: '审核中', label: '审核中', count: 0, tone: 'bg-warning' },
+      { key: '已提交', label: '待审核', count: 0, tone: 'bg-primary' },
       { key: '退回补充', label: '需补充', count: 0, tone: 'bg-warning' },
       { key: '审核驳回', label: '已驳回', count: 0, tone: 'bg-error' },
       { key: '待完善', label: '待完善', count: 0, tone: 'bg-surface-chip' },
@@ -240,15 +240,14 @@ export default function TeacherHome() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
-        className="glass-strong relative overflow-hidden text-ink"
+        className="glass-strong text-ink"
       >
-        <div className="absolute inset-x-0 top-0 h-px bg-primary/20" />
         <div className="grid gap-lg p-lg lg:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)]">
           <div className="flex min-w-0 flex-col justify-between gap-xl">
             <div className="flex flex-wrap items-start justify-between gap-md">
               <div>
-                <p className="text-[12px] uppercase tracking-[0.22em] text-ink-muted-48">Teacher Command Center</p>
-                <h1 className="mt-2 text-[30px] font-semibold leading-tight tracking-tight sm:text-[38px]">
+                <p className="text-[12px] text-ink-muted-48">Teacher command center</p>
+                <h1 className="mt-1 mb-1 text-[22px] font-medium leading-[1.4]">
                   {scopeLabel}竞赛态势总览
                 </h1>
                 <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-ink-muted-48">
@@ -257,7 +256,7 @@ export default function TeacherHome() {
               </div>
               <div className="flex flex-wrap gap-sm">
                 <button
-                  className="btn-utility h-10"
+                  className="btn-utility"
                   onClick={() => navigate(`${basePath}/audit`)}
                   aria-label="前往审核"
                 >
@@ -265,7 +264,7 @@ export default function TeacherHome() {
                   审核中心
                 </button>
                 <button
-                  className="btn-utility h-10"
+                  className="btn-utility"
                   onClick={() => navigate(`${basePath}/student-competitions`)}
                   aria-label="学生动态"
                 >
@@ -282,14 +281,14 @@ export default function TeacherHome() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.08 + index * 0.05, duration: 0.35 }}
-                  className="rounded-md border border-hairline bg-canvas-parchment p-md"
+                  className="stat-tile p-md"
                 >
                   <div className="mb-3 flex items-center justify-between gap-2">
                     <span className="text-[12px] text-ink-muted-48">{metric.label}</span>
                     <span className={`material-symbols-outlined text-[18px] ${metric.accent}`}>{metric.icon}</span>
                   </div>
                   <div className="flex items-end gap-1">
-                    <span className="font-display text-[36px] font-semibold leading-none tracking-normal tabular-nums">
+                    <span className="font-display text-[22px] font-medium leading-none tabular-nums text-ink">
                       {loading ? '—' : metric.value}
                     </span>
                     <span className="pb-1 text-[12px] text-ink-muted-48">{metric.suffix}</span>
@@ -331,7 +330,7 @@ export default function TeacherHome() {
               ))}
             </div>
             <div className="mt-md rounded-md border border-hairline bg-canvas p-3">
-              <p className="text-[11px] uppercase tracking-[0.16em] text-ink-muted-48">重点专业</p>
+              <p className="text-[12px] text-ink-muted-48">重点专业</p>
               <p className="mt-1 text-[15px] font-semibold text-ink">{strongestMajor?.major || '暂无数据'}</p>
               <p className="mt-1 text-[12px] text-ink-muted-48">
                 {strongestMajor ? `${strongestMajor.registrationCount} 次参与，覆盖 ${strongestMajor.studentCount} 名学生` : '筛选后暂无专业参与记录'}
@@ -358,7 +357,7 @@ export default function TeacherHome() {
         >
           <div className="flex flex-wrap items-start justify-between gap-md border-b border-hairline p-lg">
             <div>
-              <h2 className="text-[20px] font-semibold tracking-tight text-ink">参赛趋势监测</h2>
+              <h2 className="text-[16px] font-medium text-ink">参赛趋势监测</h2>
               <p className="mt-1 text-[12px] text-ink-muted-48">近 {Math.max(trend.length, 1)} 个月报名活跃度，含空档月份。</p>
             </div>
             <div className="flex gap-2">
@@ -419,7 +418,7 @@ export default function TeacherHome() {
           className="glass flex flex-col overflow-hidden"
         >
           <div className="border-b border-hairline p-lg">
-            <h2 className="text-[18px] font-semibold tracking-tight text-ink">需要关注</h2>
+            <h2 className="text-[16px] font-medium text-ink">需要关注</h2>
             <p className="mt-1 text-[12px] text-ink-muted-48">退回、驳回、待完善与待审记录。</p>
           </div>
           <div className="flex-1 p-md">
@@ -465,7 +464,7 @@ export default function TeacherHome() {
         >
           <div className="flex items-center justify-between border-b border-hairline p-lg">
             <div>
-              <h2 className="text-[18px] font-semibold tracking-tight text-ink">班级活跃排行</h2>
+              <h2 className="text-[16px] font-medium text-ink">班级活跃排行</h2>
               <p className="mt-1 text-[12px] text-ink-muted-48">按当前筛选范围内参赛记录数排序。</p>
             </div>
             <button
@@ -516,7 +515,7 @@ export default function TeacherHome() {
         >
           <div className="flex items-center justify-between border-b border-hairline p-lg">
             <div>
-              <h2 className="text-[18px] font-semibold tracking-tight text-ink">近期动态流</h2>
+              <h2 className="text-[16px] font-medium text-ink">近期动态流</h2>
               <p className="mt-1 text-[12px] text-ink-muted-48">最新报名、审核和材料流转。</p>
             </div>
             <button
@@ -556,7 +555,7 @@ export default function TeacherHome() {
       <section className="glass overflow-hidden">
           <div className="flex items-center justify-between border-b border-hairline p-lg">
             <div>
-              <h2 className="text-[18px] font-semibold tracking-tight text-ink">待审核报名</h2>
+              <h2 className="text-[16px] font-medium text-ink">待审核报名</h2>
               <p className="mt-1 text-[12px] text-ink-muted-48">教师角色可直接进入审核中心处理。</p>
             </div>
             <button

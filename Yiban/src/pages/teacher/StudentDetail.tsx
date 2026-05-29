@@ -60,10 +60,10 @@ const statusChip: Record<string, string> = {
 };
 
 const LEVEL_COLORS: Record<string, string> = {
-  '国家级': 'bg-primary/[0.10] text-primary',
-  '省级': 'bg-primary/[0.07] text-primary',
-  '校级': 'bg-surface-chip text-ink-muted-80',
-  '院级': 'bg-surface-chip text-ink-muted-80',
+  '国家级': 'chip-national',
+  '省级': 'chip-province',
+  '校级': 'chip-school',
+  '院级': 'chip-school',
 };
 
 function RadarChart({ data }: { data: RadarDim[] }) {
@@ -86,13 +86,13 @@ function RadarChart({ data }: { data: RadarDim[] }) {
   return (
     <svg viewBox="0 0 240 240" className="w-full h-full">
       {[0.25, 0.5, 0.75, 1.0].map((level, idx) => (
-        <polygon key={idx} points={getPolygonPoints(maxRadius * level)} fill="none" stroke="rgba(0,0,0,0.08)" strokeWidth="0.5" />
+        <polygon key={idx} points={getPolygonPoints(maxRadius * level)} fill="none" stroke="var(--color-border)" strokeWidth="1" />
       ))}
       {data.map((_, i) => {
         const angle = angleStep * i - Math.PI / 2;
-        return <line key={i} x1={cx} y1={cy} x2={cx + maxRadius * Math.cos(angle)} y2={cy + maxRadius * Math.sin(angle)} stroke="rgba(0,0,0,0.08)" strokeWidth="0.5" />;
+        return <line key={i} x1={cx} y1={cy} x2={cx + maxRadius * Math.cos(angle)} y2={cy + maxRadius * Math.sin(angle)} stroke="var(--color-border)" strokeWidth="1" />;
       })}
-      <polygon points={dataPoints} fill="var(--color-primary)" fillOpacity="0.15" stroke="var(--color-primary)" strokeWidth="1.5" />
+      <polygon points={dataPoints} fill="var(--color-primary)" fillOpacity="var(--radar-fill-opacity)" stroke="var(--color-primary)" strokeWidth="2" />
       {data.map((d, i) => {
         const angle = angleStep * i - Math.PI / 2;
         const r = (d.score / Math.max(d.maxScore, 1)) * maxRadius;
@@ -246,14 +246,14 @@ export default function StudentDetail() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.35 }}
-                className="glass p-lg flex flex-col gap-2"
+                className="stat-tile p-lg flex flex-col gap-2"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] text-ink-muted-80">{m.label}</span>
                   <span className="material-symbols-outlined text-[18px] text-primary">{m.icon}</span>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-display font-semibold text-[28px] leading-none tabular-nums text-ink">{m.value}</span>
+                  <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{m.value}</span>
                   <span className="text-[12px] text-ink-muted-48">{m.suffix}</span>
                 </div>
               </motion.div>
@@ -338,7 +338,7 @@ export default function StudentDetail() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-canvas-parchment text-[11px] uppercase tracking-wider text-ink-muted-48 border-b border-hairline">
+                  <tr className="bg-canvas-parchment text-[11px] text-ink-muted-48 border-b border-hairline">
                     <th className="py-3 px-md font-medium">赛事</th>
                     <th className="py-3 px-md font-medium">等级</th>
                     <th className="py-3 px-md font-medium">团队</th>

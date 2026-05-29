@@ -107,17 +107,17 @@ function RadarChart({ data }: { data: RadarDim[] }) {
           key={idx}
           points={getPolygonPoints(maxRadius * level)}
           fill="none"
-          stroke="rgba(0,0,0,0.08)"
-          strokeWidth="0.5"
+          stroke="var(--color-border)"
+          strokeWidth="1"
         />
       ))}
       {data.map((_, i) => {
         const angle = angleStep * i - Math.PI / 2;
         const x2 = cx + maxRadius * Math.cos(angle);
         const y2 = cy + maxRadius * Math.sin(angle);
-        return <line key={i} x1={cx} y1={cy} x2={x2} y2={y2} stroke="rgba(0,0,0,0.08)" strokeWidth="0.5" />;
+        return <line key={i} x1={cx} y1={cy} x2={x2} y2={y2} stroke="var(--color-border)" strokeWidth="1" />;
       })}
-      <polygon points={dataPoints} fill="var(--color-primary)" fillOpacity="0.15" stroke="var(--color-primary)" strokeWidth="1.5" />
+      <polygon points={dataPoints} fill="var(--color-primary)" fillOpacity="var(--radar-fill-opacity)" stroke="var(--color-primary)" strokeWidth="2" />
       {data.map((d, i) => {
         const angle = angleStep * i - Math.PI / 2;
         const r = (d.score / Math.max(d.maxScore, 1)) * maxRadius;
@@ -345,14 +345,14 @@ export default function TeacherStudentGrowth() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.35 }}
-            className="glass p-lg"
+            className="stat-tile p-lg"
           >
             <div className="flex justify-between items-start mb-2">
               <p className="text-[13px] text-ink-muted-80">{card.label}</p>
               <span className="material-symbols-outlined text-[18px] text-primary">{card.icon}</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="font-display font-semibold text-[28px] leading-none tabular-nums text-ink">{card.value}</span>
+              <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{card.value}</span>
               <span className="text-[12px] text-ink-muted-48">{card.suffix}</span>
             </div>
           </motion.div>

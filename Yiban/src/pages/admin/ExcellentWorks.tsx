@@ -366,13 +366,13 @@ export default function ExcellentWorks() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.35 }}
-            className="glass p-lg flex flex-col gap-2"
+            className="stat-tile p-lg flex flex-col gap-2"
           >
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-ink-muted-80">{m.label}</span>
               <span className="material-symbols-outlined text-[18px] text-primary">{m.icon}</span>
             </div>
-            <span className="font-display font-semibold text-[34px] leading-none tabular-nums text-ink">
+            <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">
               {m.value}
             </span>
           </motion.div>
@@ -396,7 +396,7 @@ export default function ExcellentWorks() {
           />
         </div>
         <select
-          className="h-9 px-3 rounded-pill bg-canvas border border-hairline text-[13px] text-ink focus:outline-none focus:border-primary-focus"
+          className="input-glass h-9 min-w-[140px] text-[13px]"
           value={filterCompetition}
           onChange={(e) => {
             setFilterCompetition(e.target.value);
@@ -411,7 +411,7 @@ export default function ExcellentWorks() {
           ))}
         </select>
         <select
-          className="h-9 px-3 rounded-pill bg-canvas border border-hairline text-[13px] text-ink focus:outline-none focus:border-primary-focus"
+          className="input-glass h-9 min-w-[110px] text-[13px]"
           value={filterYear}
           onChange={(e) => {
             setFilterYear(e.target.value);
@@ -426,7 +426,7 @@ export default function ExcellentWorks() {
           ))}
         </select>
         <select
-          className="h-9 px-3 rounded-pill bg-canvas border border-hairline text-[13px] text-ink focus:outline-none focus:border-primary-focus"
+          className="input-glass h-9 min-w-[140px] text-[13px]"
           value={filterAward}
           onChange={(e) => {
             setFilterAward(e.target.value);
@@ -485,7 +485,7 @@ export default function ExcellentWorks() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-canvas-parchment text-[11px] uppercase tracking-wider text-ink-muted-48 border-b border-hairline">
+              <tr className="bg-canvas-parchment text-[11px] text-ink-muted-48 border-b border-hairline">
                 <th className="py-3 px-md font-medium w-10">
                   <input
                     type="checkbox"
@@ -674,7 +674,7 @@ export default function ExcellentWorks() {
                 )}
                 {detailWork.fileUrl && (
                   <div className="col-span-2 mt-2">
-                    <p className="text-[11px] text-ink-muted-48 uppercase tracking-wider mb-1">附件</p>
+                    <p className="text-[12px] text-ink-muted-48 mb-1">附件</p>
                     <button
                       className="text-[13px] text-primary hover:text-primary-focus inline-flex items-center gap-1.5 break-all"
                       onClick={async () => {
@@ -859,7 +859,7 @@ export default function ExcellentWorks() {
                   <DetailRow label="学年" value={editWork.year} />
                 </div>
                 <div>
-                  <label className="text-[11px] text-ink-muted-48 uppercase tracking-wider block mb-1.5">
+                  <label className="text-[14px] font-medium text-body-muted block mb-1.5">
                     评语 / 简介
                   </label>
                   <textarea
@@ -936,7 +936,7 @@ export default function ExcellentWorks() {
 
               <div className="flex flex-col gap-md">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] text-ink-muted-48 uppercase tracking-wider">关联赛事</label>
+                  <label className="text-[14px] font-medium text-body-muted">关联赛事</label>
                   <select
                     className="input-glass"
                     value={uploadCompId}
@@ -952,7 +952,7 @@ export default function ExcellentWorks() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] text-ink-muted-48 uppercase tracking-wider">文件</label>
+                  <label className="text-[14px] font-medium text-body-muted">文件</label>
                   {uploadFile ? (
                     <div className="flex items-center gap-3 rounded-md border border-hairline p-3 bg-canvas">
                       <span className="material-symbols-outlined text-primary icon-fill">description</span>
@@ -994,7 +994,7 @@ export default function ExcellentWorks() {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[11px] text-ink-muted-48 uppercase tracking-wider">评语 / 简介（选填）</label>
+                  <label className="text-[14px] font-medium text-body-muted">评语 / 简介（选填）</label>
                   <textarea
                     className="input-glass !rounded-md w-full min-h-[80px] p-3 text-[13px] resize-y"
                     placeholder="展示于优秀作品墙的评语…"
@@ -1056,7 +1056,7 @@ export default function ExcellentWorks() {
 function DetailRow({ label, value, span = 1 }: { label: string; value: string; span?: 1 | 2 }) {
   return (
     <div className={span === 2 ? 'col-span-2' : ''}>
-      <p className="text-[11px] text-ink-muted-48 uppercase tracking-wider mb-0.5">{label}</p>
+      <p className="text-[12px] text-ink-muted-48 mb-0.5">{label}</p>
       <p className="text-[13px] text-ink font-medium break-words">{value}</p>
     </div>
   );

@@ -171,13 +171,13 @@ export default function UserManagement() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.35 }}
-            className="glass p-lg flex flex-col gap-2"
+            className="stat-tile p-lg flex flex-col gap-2"
           >
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-ink-muted-80">{m.label}</span>
               <span className="material-symbols-outlined text-[18px] text-primary">{m.icon}</span>
             </div>
-            <span className="font-display font-semibold text-[34px] leading-none tabular-nums text-ink">
+            <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">
               {loading ? '—' : m.value}
             </span>
           </motion.div>
@@ -204,7 +204,7 @@ export default function UserManagement() {
         </div>
         <select
           name="userRole"
-          className="h-9 min-w-[120px] rounded-pill border border-white/80 bg-white/[0.74] px-3 text-[13px] text-ink shadow-[0_10px_30px_-26px_rgba(15,23,42,0.45)] transition focus:border-primary/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/[0.12]"
+          className="input-glass h-9 min-w-[120px] text-[14px]"
           value={filterRole}
           onChange={(e) => {
             setFilterRole(e.target.value);
@@ -218,7 +218,7 @@ export default function UserManagement() {
         </select>
         <input
           name="userCollege"
-          className="h-9 w-full rounded-pill border border-white/80 bg-white/[0.74] px-3 text-[13px] text-ink shadow-[0_10px_30px_-26px_rgba(15,23,42,0.45)] transition placeholder:text-ink-muted-48 focus:border-primary/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/[0.12] md:w-[180px]"
+          className="input-glass h-9 w-full text-[14px] md:w-[180px]"
           placeholder="学院筛选"
           value={filterCollege}
           onChange={(e) => {
@@ -240,7 +240,7 @@ export default function UserManagement() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-canvas-parchment text-[11px] uppercase tracking-wider text-ink-muted-48 border-b border-hairline">
+              <tr className="bg-canvas-parchment text-[11px] text-ink-muted-48 border-b border-hairline">
                 <th className="py-3 px-md font-medium">用户名</th>
                 <th className="py-3 px-md font-medium">姓名</th>
                 <th className="py-3 px-md font-medium">角色</th>

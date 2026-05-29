@@ -145,7 +145,6 @@ export default function CompetitionDetail() {
         eyebrow="Competition"
         title={comp.name}
         description={`${comp.level} · ${comp.category}类 · ${statusLabel(comp.status)}`}
-        titleClassName="text-[30px] sm:text-[34px]"
         prefix={(
           <nav className="flex items-center gap-1 text-[13px] text-ink-muted-48 mb-1">
             <button onClick={() => navigate('/student/competitions')} className="hover:text-ink transition">赛事大厅</button>

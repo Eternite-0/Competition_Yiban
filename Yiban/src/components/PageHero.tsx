@@ -27,9 +27,7 @@ export default function PageHero({
   density = 'compact',
   surface = 'plain',
 }: PageHeroProps) {
-  const titleSize = density === 'feature'
-    ? 'text-[30px] sm:text-[36px] leading-[1.08]'
-    : 'text-[26px] sm:text-[30px] leading-[1.12]';
+  const titleSize = 'text-[22px] leading-[1.4]';
 
   return (
     <header
@@ -41,15 +39,15 @@ export default function PageHero({
         <div className={`min-w-0 ${contentClassName}`.trim()}>
           {prefix}
           {eyebrow ? (
-            <span className="text-[11px] font-semibold uppercase text-ink-muted-48">
+            <span className="text-[12px] font-normal tracking-[0.05em] text-placeholder">
               {eyebrow}
             </span>
           ) : null}
-          <h1 className={`mt-1 font-display font-semibold text-ink ${titleSize} ${titleClassName}`.trim()}>
+          <h1 className={`mt-1 mb-1 font-display font-medium text-ink ${titleSize} ${titleClassName}`.trim()}>
             {title}
           </h1>
           {description ? (
-            <p className={`mt-1.5 max-w-3xl text-[14px] text-ink-muted-80 sm:text-[15px] ${descriptionClassName}`.trim()}>
+            <p className={`max-w-3xl text-[14px] font-normal leading-[1.6] text-body-subtle ${descriptionClassName}`.trim()}>
               {description}
             </p>
           ) : null}

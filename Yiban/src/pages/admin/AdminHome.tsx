@@ -76,6 +76,12 @@ const getCompPageWindow = (current: number, total: number): (number | '...')[] =
   return pages;
 };
 
+const levelChipClass = (level?: string) => {
+  if (level === '国家级') return 'chip chip-national';
+  if (level === '省级') return 'chip chip-province';
+  return 'chip chip-school';
+};
+
 export default function AdminHome() {
   const navigate = useNavigate();
   const currentUser = useStore((s) => s.currentUser);
@@ -320,14 +326,14 @@ export default function AdminHome() {
       <section className="grid grid-cols-2 md:grid-cols-4 gap-md">
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="glass p-lg flex flex-col gap-2 animate-pulse">
+            <div key={i} className="stat-tile p-lg flex flex-col gap-2 animate-pulse">
               <div className="flex items-center justify-between">
-                <div className="h-3 w-16 bg-gray-200 rounded" />
-                <div className="h-[18px] w-[18px] bg-gray-200 rounded" />
+                <div className="h-3 w-16 bg-surface-tile-2 rounded" />
+                <div className="h-[18px] w-[18px] bg-surface-tile-2 rounded" />
               </div>
               <div className="flex items-baseline gap-1">
-                <div className="h-8 w-20 bg-gray-200 rounded" />
-                <div className="h-3 w-6 bg-gray-200 rounded" />
+                <div className="h-8 w-20 bg-surface-tile-2 rounded" />
+                <div className="h-3 w-6 bg-surface-tile-2 rounded" />
               </div>
             </div>
           ))
@@ -337,7 +343,7 @@ export default function AdminHome() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.4 }}
-            className="glass p-lg flex flex-col gap-2"
+            className="stat-tile p-lg flex flex-col gap-2"
           >
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-ink-muted-80">{m.label}</span>
@@ -346,7 +352,7 @@ export default function AdminHome() {
               }`}>{m.icon}</span>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="font-display font-semibold text-[34px] leading-none tabular-nums text-ink">{(m as any).loaded === false ? '—' : m.value}</span>
+              <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{(m as any).loaded === false ? '—' : m.value}</span>
               <span className="text-[12px] text-ink-muted-48">{m.suffix}</span>
             </div>
           </motion.div>
@@ -454,7 +460,7 @@ export default function AdminHome() {
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-canvas-parchment text-[11px] uppercase tracking-wider text-ink-muted-48 border-b border-hairline">
+                  <tr className="bg-canvas-parchment text-[11px] text-ink-muted-48 border-b border-hairline">
                     <th className="py-3 px-md font-medium">赛事名称</th>
                     <th className="py-3 px-md font-medium">级别</th>
                     <th className="py-3 px-md font-medium">状态</th>
@@ -466,11 +472,11 @@ export default function AdminHome() {
                   {loading ? (
                     Array.from({ length: 3 }).map((_, i) => (
                       <tr key={i} className="border-b border-hairline last:border-0 animate-pulse">
-                        <td className="py-3 px-md"><div className="h-4 w-40 bg-gray-200 rounded" /></td>
-                        <td className="py-3 px-md"><div className="h-6 w-12 bg-gray-200 rounded-full" /></td>
-                        <td className="py-3 px-md"><div className="h-4 w-16 bg-gray-200 rounded" /></td>
-                        <td className="py-3 px-md text-right"><div className="h-4 w-20 bg-gray-200 rounded ml-auto" /></td>
-                        <td className="py-3 px-md text-right"><div className="h-4 w-12 bg-gray-200 rounded ml-auto" /></td>
+                        <td className="py-3 px-md"><div className="h-4 w-40 bg-surface-tile-2 rounded" /></td>
+                        <td className="py-3 px-md"><div className="h-6 w-12 bg-surface-tile-2 rounded-full" /></td>
+                        <td className="py-3 px-md"><div className="h-4 w-16 bg-surface-tile-2 rounded" /></td>
+                        <td className="py-3 px-md text-right"><div className="h-4 w-20 bg-surface-tile-2 rounded ml-auto" /></td>
+                        <td className="py-3 px-md text-right"><div className="h-4 w-12 bg-surface-tile-2 rounded ml-auto" /></td>
                       </tr>
                     ))
                   ) : pagedCompetitions.length === 0 ? (
@@ -485,7 +491,7 @@ export default function AdminHome() {
                       <tr key={comp.id ?? idx} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
                         <td className="py-3 px-md font-medium text-ink truncate max-w-[260px]">{comp.name || comp.title || '未命名赛事'}</td>
                         <td className="py-3 px-md">
-                          <span className="chip">{comp.level || '校级'}</span>
+                          <span className={levelChipClass(comp.level)}>{comp.level || '校级'}</span>
                         </td>
                         <td className="py-3 px-md">
                           <span className="flex items-center gap-2 text-ink-muted-80">

@@ -138,7 +138,7 @@ function PreviewModal({
       onClick={onClose}
     >
       <div
-        className="relative bg-canvas rounded-lg border border-hairline shadow-lg flex flex-col overflow-hidden"
+        className="relative glass-strong flex flex-col overflow-hidden"
         style={{ width: '90vw', height: '88vh', maxWidth: '1100px' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -338,7 +338,6 @@ export default function SubmissionAudit() {
         eyebrow="Review"
         title="成果审核工作台"
         description="统一处理报名材料，保持审核口径一致并快速反馈结果。"
-        titleClassName="text-[30px] sm:text-[32px]"
       />
 
       {/* Three-column */}
@@ -363,7 +362,7 @@ export default function SubmissionAudit() {
                   onClick={() => setFilterTab(tab)}
                   className={`px-3 py-1 rounded-pill text-[12px] transition-all ${
                     filterTab === tab
-                      ? 'bg-canvas text-ink font-semibold shadow-sm'
+                      ? 'bg-canvas text-ink font-medium'
                       : 'text-ink-muted-80 hover:text-ink'
                   }`}
                 >
@@ -429,7 +428,7 @@ export default function SubmissionAudit() {
                   )}
                   {selected.teamMembers && selected.teamMembers.length > 0 && (
                     <div className="md:col-span-2">
-                      <p className="text-[11px] text-ink-muted-48 uppercase tracking-wider mb-1.5">关联成员</p>
+                    <p className="text-[12px] text-ink-muted-48 mb-1.5">关联成员</p>
                       <div className="flex flex-wrap gap-1.5">
                         {selected.teamMembers.map(m => (
                           <span key={m.studentId} className="chip">
@@ -462,7 +461,7 @@ export default function SubmissionAudit() {
                 </div>
 
                 {selected.fileUrl ? (
-                  <div className="rounded-xl overflow-hidden border border-hairline bg-canvas/50"
+                  <div className="rounded-xl overflow-hidden border border-hairline bg-canvas"
                     style={{ height: '420px' }}
                   >
                     <FilePreview fileUrl={selected.fileUrl} fileName={selected.fileName} />
@@ -519,7 +518,7 @@ export default function SubmissionAudit() {
                   <div className="flex gap-2">
                     <button className="btn-secondary !py-2 !text-[13px]" onClick={handleReturnForSupplement}>退回补充</button>
                     <button
-                      className="!py-2 !text-[13px] !px-5 rounded-pill bg-error/10 text-error border border-error/20 font-medium hover:bg-error/15 transition flex items-center gap-2 active:scale-[0.96]"
+                      className="btn-danger !py-2 !text-[13px] !px-5"
                       onClick={handleReject}
                     >
                       驳回
@@ -593,7 +592,7 @@ export default function SubmissionAudit() {
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[11px] text-ink-muted-48 uppercase tracking-wider mb-0.5">{label}</p>
+      <p className="text-[12px] text-ink-muted-48 mb-0.5">{label}</p>
       <p className="text-[13px] text-ink font-medium">{value}</p>
     </div>
   );

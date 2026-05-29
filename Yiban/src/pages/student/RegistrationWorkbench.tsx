@@ -147,8 +147,6 @@ export default function RegistrationWorkbench() {
       <PageHero
         title="报名材料填写"
         description="根据赛事要求完成团队信息与赛道选择，确认后提交报名。"
-        titleClassName="text-[30px] sm:text-[32px] leading-[1.1]"
-        descriptionClassName="text-[14px]"
         prefix={(
           <nav className="flex items-center gap-1 text-[13px] text-ink-muted-48 mb-1">
             <button onClick={() => navigate('/student/competitions')} className="hover:text-ink transition">赛事大厅</button>
@@ -163,16 +161,16 @@ export default function RegistrationWorkbench() {
       {/* Stepper */}
       <div className="glass p-lg">
         <div className="relative grid grid-cols-5">
-          <div className="absolute top-5 left-[10%] right-[10%] h-px bg-hairline" />
-          <div className="absolute top-5 left-[10%] w-[40%] h-px bg-primary" />
+          <div className="absolute left-[10%] right-[10%] top-5 h-[2px] bg-hairline" />
+          <div className="absolute left-[10%] top-5 h-[2px] w-[40%] bg-primary" />
           {steps.map((step, idx) => (
             <div key={idx} className="flex flex-col items-center text-center">
               <div className={`w-10 h-10 rounded-full grid place-items-center text-[14px] font-semibold relative z-10 ${
                 step.done
                   ? 'bg-primary text-on-primary'
-                  : step.active
+                : step.active
                     ? 'bg-canvas border-2 border-primary text-primary'
-                    : 'bg-canvas border border-hairline text-ink-muted-48'
+                    : 'bg-surface-chip text-placeholder'
               }`}>
                 {step.done ? (
                   <span className="material-symbols-outlined text-[18px]">check</span>
@@ -181,7 +179,7 @@ export default function RegistrationWorkbench() {
                 )}
               </div>
               <span className={`mt-3 text-[13px] ${
-                step.active ? 'text-primary font-semibold' : step.done ? 'text-ink' : 'text-ink-muted-48'
+                step.active ? 'text-primary font-medium' : step.done ? 'text-ink' : 'text-placeholder'
               }`}>
                 {step.label}
               </span>

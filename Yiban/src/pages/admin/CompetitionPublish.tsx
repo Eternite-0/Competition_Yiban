@@ -74,6 +74,12 @@ const defaultForm: PublishFormState = {
 
 const defaultTracks = ['软件开发', 'AI 大模型', '数字媒体', '硬件创新', '学术论文', '创业实践'];
 
+const levelChipClass = (level?: string) => {
+  if (level === '国家级') return 'chip chip-national';
+  if (level === '省级') return 'chip chip-province';
+  return 'chip chip-school';
+};
+
 function formatDateForInput(value?: string) {
   if (!value) return '';
   const d = new Date(value);
@@ -335,11 +341,11 @@ export default function CompetitionPublish() {
                         className="absolute inset-0 w-full h-full object-cover"
                         onError={handleCoverLoadError}
                       />
-                      <div className="relative z-10 bg-canvas/90 border border-hairline px-3 py-1.5 rounded-pill text-ink text-[12px]">点击或拖拽以替换封面</div>
+                      <div className="relative z-10 bg-canvas border border-hairline px-3 py-1.5 rounded-pill text-ink text-[12px]">点击或拖拽以替换封面</div>
                     </>
                   ) : (
                     <>
-                      <div className="w-12 h-12 rounded-full bg-primary/10 grid place-items-center text-primary mb-3 group-hover:scale-110 transition">
+                      <div className="w-12 h-12 rounded-full bg-primary-soft grid place-items-center text-primary mb-3 group-hover:scale-110 transition">
                         <span className="material-symbols-outlined">{uploading ? 'hourglass_top' : 'add_photo_alternate'}</span>
                       </div>
                       <p className="text-[14px] text-ink">{uploading ? '上传中…' : '点击或拖拽上传图片'}</p>
@@ -392,7 +398,7 @@ export default function CompetitionPublish() {
                     onClick={() => toggleTrack(track)}
                     className={`group relative flex items-center gap-2 pl-3 pr-4 py-2 rounded-lg border text-[13px] font-medium transition-all ${
                       selected
-                        ? 'bg-primary text-on-primary border-primary shadow-sm shadow-primary/20'
+                        ? 'bg-primary text-on-primary border-primary'
                         : 'bg-canvas border-hairline text-ink-muted-80 hover:border-primary/40 hover:text-ink'
                     }`}
                   >
@@ -442,7 +448,7 @@ export default function CompetitionPublish() {
                       <button
                         type="button"
                         onClick={() => toggleTrack(t)}
-                        className="ml-1 p-0.5 rounded-full hover:bg-primary/20 text-primary/60 hover:text-primary transition"
+                        className="ml-1 p-0.5 rounded-full hover:bg-primary-soft text-primary hover:text-primary-focus transition"
                       >
                         <span className="material-symbols-outlined text-[14px]">close</span>
                       </button>
@@ -469,7 +475,7 @@ export default function CompetitionPublish() {
         {/* Right: Preview */}
         <div className="w-full lg:w-[380px] shrink-0">
           <div className="sticky top-[88px] flex flex-col gap-3">
-            <h3 className="text-[12px] uppercase tracking-[0.18em] text-ink-muted-48 px-1 flex items-center gap-2">
+            <h3 className="text-[12px] text-ink-muted-48 px-1 flex items-center gap-2">
               <span className="material-symbols-outlined text-[14px]">visibility</span>
               发布效果预览
             </h3>
@@ -492,9 +498,9 @@ export default function CompetitionPublish() {
                   <span className="material-symbols-outlined text-[40px] opacity-30">image</span>
                   <span className="text-[11px]">封面预览</span>
                 </div>
-                <div className="absolute top-3 left-3 glass-tint px-2.5 py-1 rounded-pill flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary"></span>
-                  <span className="text-[10px] font-medium text-ink">报名中</span>
+                <div className="absolute top-3 left-3 chip chip-success">
+                  <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
+                  <span>报名中</span>
                 </div>
               </div>
               <div className="p-md">
@@ -503,7 +509,7 @@ export default function CompetitionPublish() {
                 </h4>
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {form.category && <span className="chip chip-primary">{categoryOptions.find((o) => o.value === form.category)?.label}</span>}
-                  {form.level && <span className="chip">{form.level}</span>}
+                  {form.level && <span className={levelChipClass(form.level)}>{form.level}</span>}
                   {form.tracks.length > 0 && <span className="chip">{form.tracks.length} 个赛道</span>}
                 </div>
                 <div className="flex flex-col gap-2 mb-4 text-[12px]">
@@ -591,7 +597,7 @@ function StageManager({ competitionId }: { competitionId: number }) {
     <div className="flex flex-col gap-3">
       {stages.map((stage) => (
         <div key={stage.id} className="flex items-center gap-3 p-3 rounded-lg border border-hairline bg-canvas">
-          <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[12px] font-semibold grid place-items-center">{stage.stageOrder}</span>
+          <span className="w-6 h-6 rounded-full bg-primary-soft text-primary text-[12px] font-medium grid place-items-center">{stage.stageOrder}</span>
           <div className="flex-1 min-w-0">
             <span className="text-[14px] font-medium text-ink">{stage.name}</span>
             {stage.startTime && (
@@ -641,7 +647,7 @@ function StageManager({ competitionId }: { competitionId: number }) {
 function Field({ label, required, error, children, className = '' }: { label: string; required?: boolean; error?: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
-      <label className="text-[13px] font-medium text-ink">
+      <label className="text-[14px] font-medium text-body-muted">
         {label}{required && <span className="text-error ml-0.5">*</span>}
       </label>
       {children}
