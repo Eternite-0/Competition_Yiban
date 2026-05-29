@@ -1,365 +1,263 @@
-# 易赛通 高校赛事服务平台 — 任务清单
+# 易赛通 注册系统开发任务
 
-> 创建时间: 2026-05-27  
-> 最后更新: 2026-05-27 01:40  
-> 状态说明: ✅ 已完成 | 🔧 进行中 | ❌ 待完成 | ⚠️ 有问题
-
----
-
-## 项目概览
-
-| 模块 | 位置 | 状态 |
-|------|------|------|
-| 前端 (React + Vite + Tailwind) | `D:\Project\Competition\Yiban\` | ✅ 所有页面已实现，TypeScript 编译无错误 |
-| 后端 (Spring Boot + MyBatis-Plus) | `D:\Project\Competition\Yiban_backend\` | ✅ 已启动，所有接口验证通过 |
-| 数据库 (MySQL 5.7) | localhost:3306/etsaion | ✅ 已建表+已有测试数据+分类已修正 |
-| Redis | localhost:6379 | ✅ 已通过排除自动配置绕过（无需安装Redis） |
+> 创建时间: 2026-05-29
+> 状态说明: ☐ 待开发 | 🔧 进行中 | ✅ 已完成
 
 ---
 
-## 一、后端启动问题修复
+## 现状分析
 
-### 1.1 ✅ 禁用Redis自动配置
-- 在 `application.yml` 中排除 `RedisAutoConfiguration` 和 `RedisRepositoriesAutoConfiguration`
-- 后端现可在无Redis环境下正常启动
+### 已有基础
+- 后端 `POST /api/auth/register` 已存在，但只接受 username/password/realName/college/major/className，硬编码 role=student
+- 前端登录页 `LoginPage.tsx` **没有注册入口**，用户无法自行注册
+- 密码已使用 BCrypt 加密
+- User 实体已有 grade 字段（入学年份）
 
-### 1.2 ✅ 构建后端项目
-- `mvn clean package -DskipTests` 构建成功，生成 `target/etsaion-backend-1.0.0.jar`
-
-### 1.3 ✅ 启动后端服务
-- 服务运行在 `http://localhost:8080`，所有接口已验证
-
----
-
-## 二、后端功能完整性
-
-### 已实现的控制器
-| 控制器 | 路径 | 状态 |
-|--------|------|------|
-| AuthController | `/api/auth` | ✅ 登录/注册/查当前用户/搜索学生 |
-| CompetitionController | `/api/competition` | ✅ 列表/详情/发布/更新/删除 |
-| RegistrationController | `/api/registration` | ✅ 报名/我的报名/待审/审批 |
-| SubmissionController | `/api/submission` | ✅ 上传/提交/审核/优秀作品 |
-| TeamController | `/api/team` | ✅ 创建/列表/详情 |
-| GrowthController | `/api/growth` | ✅ 雷达图数据/成长时间轴 |
-| TeacherController | `/api/teacher` | ✅ 仪表盘/监控/学生列表/导出 |
-| UploadController | `/api/upload` | ✅ 七牛云token/签名URL |
-| FileController | `/api/file` | ✅ 本地文件上传 |
-
-### 2.1 ✅ 添加赛事更新接口
-- `PUT /api/competition/admin/update/{id}` 已添加至 `CompetitionController.java`
-- 前端管理员可以编辑已发布的赛事
-
-### 2.2 ✅ 添加成长时间轴接口
-- `GET /api/growth/timeline` 已添加至 `GrowthController.java`
-- 返回学生按时间倒序的成长事件记录
-
-### 2.3 ✅ 修复雷达图分类计算
-- `GrowthRecordServiceImpl.java` 分类匹配从中文关键词改为 A/B/C
-  - A (科技创新): `innovation += 12, programming += 6`
-  - B (商业创业): `innovation += 12, writing += 5`
-  - C (文化艺术): `writing += 12, teamwork += 5`
+### 缺失能力
+- 前端无注册页面
+- 注册不支持选择角色（学生/教师）
+- 教师注册需要管理员审核（涉及权限，不能随意开放）
+- 无邮箱/手机验证
+- 无注册协议确认
+- 管理员无法管理待审核的注册申请
 
 ---
 
-## 三、前端功能完整性
+## 设计方案
 
-### 已实现的页面
-| 页面 | 组件 | 状态 |
-|------|------|------|
-| 登录页 | `LoginPage.tsx` | ✅ 调用真实 `/api/auth/login` |
-| 学生首页 | `StudentHome.tsx` | ✅ 加载赛事+报名数据 |
-| 赛事中心 | `CompetitionsHub.tsx` | ✅ 分页+筛选 |
-| 赛事详情 | `CompetitionDetail.tsx` | ✅ 加载详情+报名状态 |
-| 组队招募 | `TeamRecruitment.tsx` | ✅ 列表+发帖 |
-| 我的报名 | `MyRegistrations.tsx` | ✅ 列表+状态筛选 |
-| 报名工作台 | `RegistrationWorkbench.tsx` | ✅ 报名提交 |
-| 成果上传 | `SubmissionUpload.tsx` | ✅ 调用 `/submission/upload` |
-| 成长档案 | `StudentGrowth.tsx` | ✅ 雷达图+汇总数据 |
-| 成果上传(获奖) | `AchievementUpload.tsx` | ✅ 调用 `/submission/submit-team`，TS错误已修复 |
-| 教师首页 | `TeacherHome.tsx` | ✅ 仪表盘数据 |
-| 成果审核 | `SubmissionAudit.tsx` | ✅ 调用 `/registration/pending` + `/submission/review` |
-| 学生赛事管理 | `TeacherStudentCompetitions.tsx` | ✅ 调用 `/teacher/monitor/registrations` |
-| 学生成长管理 | `TeacherStudentGrowth.tsx` | ✅ 雷达图+**导出综测按钮已添加** |
-| 管理员首页 | `AdminHome.tsx` | ✅ 赛事列表+仪表盘 |
-| 赛事发布 | `CompetitionPublish.tsx` | ✅ 调用 `/competition/admin/publish` |
-| 优秀作品管理 | `ExcellentWorks.tsx` | ✅ 调用 `/submission/excellent`，TS错误已修复 |
+### 注册流程设计
 
-### 3.1 ✅ 前端API路径全部正确
-- 所有前端页面 API 路径均与后端控制器对齐，经逐一核查确认
+```
+┌─────────────────────────────────────────────────────────┐
+│                    登录页增加"注册账号"入口                  │
+└───────────────────────────┬─────────────────────────────┘
+                            ▼
+┌─────────────────────────────────────────────────────────┐
+│               注册页（选择角色：学生 / 教师）                │
+│  学生: 学号 + 姓名 + 密码 + 学院 + 专业 + 班级 + 年级       │
+│  教师: 工号 + 姓名 + 密码 + 学院 + 职称                     │
+└───────────────────────────┬─────────────────────────────┘
+                            ▼
+              ┌─────────────┴─────────────┐
+              ▼                           ▼
+     学生注册流程                    教师注册流程
+  直接激活，自动登录            提交后进入"待审核"状态
+       │                              │
+       ▼                              ▼
+   跳转学生首页              管理员在工作台审核
+                                   │
+                         ┌─────────┴─────────┐
+                         ▼                   ▼
+                      审核通过             审核驳回
+                   账号激活+站内消息      驳回原因+站内消息
+                         │
+                         ▼
+                    教师可登录
+```
 
-### 3.2 ✅ 前端登录后持久化
-- `App.tsx` 中已实现：启动时检查 localStorage token，调用 `/api/auth/me` 恢复登录态
-- 刷新页面不会丢失登录状态
+### 角色策略
+- **学生**: 自注册即激活（学号是唯一标识，天然防滥用）
+- **教师**: 自注册后需管理员审核（教师有审核权限，属于敏感角色）
+- **管理员**: 不开放注册，由数据库 seed 或其他管理员手动创建
 
-### 3.3 ✅ 路由权限保护
-- `router/index.tsx` 中 `RequireAuth` 组件：未登录跳转登录页，角色错误跳转自己的首页
-
-### 3.4 ✅ 教师端综测导出按钮
-- `TeacherStudentGrowth.tsx` 已添加 "导出综测" 按钮
-- 调用 `GET /api/teacher/export/comprehensive`，下载 Excel 文件
-
-### 3.5 ✅ TypeScript 编译无错误
-- `npm run build` 构建成功，零 TS 错误
-
----
-
-## 四、数据完整性
-
-### 4.1 ✅ 数据库表结构
-- 所有表已创建: user, competition, registration, submission, team_post, team_application, growth_record, message, submission_student
-
-### 4.2 ✅ 测试数据
-- 13个用户(1管理员+2教师+10学生)
-- 6个赛事(5已发布+1草稿)，**分类已从中文改为 A/B/C**
-- 18条报名记录，11条成果提交，5条成长记录
-
-### 4.3 ✅ `data.sql` 已更新
-- 赛事分类已更新为 A/B/C（互联网+/蓝桥杯=A，电子设计/数模=B，艺术设计=C）
+### 学号/工号规则
+- 学生用户名 = 学号（纯数字，如 `20230101`）
+- 教师用户名 = 工号（如 `T001`）
+- 注册时根据用户名格式自动推断角色：纯数字 → 学生，T 开头 → 教师（或由用户手动选择）
 
 ---
 
-## 五、前后端联调验证
+## 任务清单
 
-### 5.1 ✅ 登录流程
-- admin/123456 ✅  teacher1/123456 ✅  20230101/123456 ✅
+### Phase 1: 后端 — 注册接口重构
 
-### 5.2 ✅ 赛事中心
-- 学生端查看赛事列表 ✅  分类筛选 ✅  返回5条已发布记录 ✅
+#### Task 1 — 扩展 RegisterDTO
+- **文件**: `Yiban_backend/src/main/java/com/etsaion/dto/RegisterDTO.java`
+- **改动**:
+  - 新增字段: `role` (student/teacher), `grade` (入学年份，学生必填), `phone` (手机号，选填), `email` (邮箱，选填)
+  - 新增字段: `agreement` (boolean，同意注册协议，前端必传 true)
+  - 添加分组校验: 学生注册时 grade 必填，教师注册时 grade 非必填
+- **验证**: 不同角色注册时字段校验正确
 
-### 5.3 ✅ 成长雷达
-- 学生 20230101：innovation=84, programming=72, writing=80, teamwork=78（A/B/C分类生效）
+#### Task 2 — 重构 UserService.register()
+- **文件**: `Yiban_backend/src/main/java/com/etsaion/service/impl/UserServiceImpl.java`
+- **改动**:
+  - 根据 dto.role 设置用户角色（不再硬编码 student）
+  - 学生注册: 直接设置 status=active，自动登录返回 token
+  - 教师注册: 设置 status=pending_approval，不返回 token，返回"等待管理员审核"提示
+  - 校验学号/工号格式: 学生纯数字，教师可自定义规则
+  - 校验 username 不能与已有用户重复（现有逻辑保留）
+  - 校验 role 只能是 student 或 teacher（禁止自注册 admin）
+- **验证**: 学生注册后可登录，教师注册后不能登录
 
-### 5.4 ✅ 成长时间轴
-- GET /api/growth/timeline 返回5条记录 ✅
+#### Task 3 — User 实体新增 status 字段
+- **文件**: `Yiban_backend/src/main/java/com/etsaion/entity/User.java`
+- **改动**:
+  - 新增 `status` 字段: `active` / `pending_approval` / `rejected`
+  - 现有用户默认 status=active（迁移脚本回填）
+- **数据库迁移**: `Yiban_backend/db/migrate-009-registration.sql`
+  - ALTER TABLE user ADD COLUMN status VARCHAR(20) DEFAULT 'active'
+  - UPDATE user SET status = 'active' WHERE status IS NULL（幂等）
+- **验证**: 现有用户不受影响，新注册教师 status=pending_approval
 
-### 5.5 ✅ 教师仪表盘
-- totalRegistrations=18, totalStudents=10, pendingReviews=2 ✅
+#### Task 4 — 登录接口增加 status 校验
+- **文件**: `Yiban_backend/src/main/java/com/etsaion/service/impl/UserServiceImpl.java`
+- **改动**:
+  - login() 方法在密码校验通过后，检查 user.status
+  - status=pending_approval → 抛出 "账号正在审核中，请等待管理员审核"
+  - status=rejected → 抛出 "账号审核未通过，请联系管理员"
+  - status=active → 正常登录
+- **验证**: pending_approval 状态的教师无法登录
 
-### 5.6 ✅ 赛事更新
-- PUT /api/competition/admin/update/6 成功更新赛事名称和状态 ✅
+#### Task 5 — 注册审核接口（管理员）
+- **文件**: `Yiban_backend/src/main/java/com/etsaion/controller/AuthController.java`（或新建 AdminController）
+- **新增端点**:
+  - `GET /api/admin/registrations/pending` — 获取待审核注册列表（分页，含 keyword/role 筛选）
+  - `POST /api/admin/registrations/approve` — 审核通过（body: { userId }），激活用户 + 发站内消息
+  - `POST /api/admin/registrations/reject` — 审核驳回（body: { userId, reason }），设 status=rejected + 发站内消息
+- **权限**: `@RequireRole("admin")`
+- **验证**: 管理员可查看待审核列表、通过/驳回注册
+
+#### Task 6 — 站内消息通知
+- **文件**: `Yiban_backend/src/main/java/com/etsaion/service/impl/UserServiceImpl.java`（或专门的 MessageService）
+- **改动**: 注册审核通过/驳回时，自动发送站内消息给申请人
+  - 通过: "您的教师账号已审核通过，现在可以正常登录系统。"
+  - 驳回: "您的教师账号审核未通过。原因：{reason}。如有疑问请联系管理员。"
+- **验证**: user 收到消息，GET /api/message/list 可查到
 
 ---
 
-## 六、测试账号
+### Phase 2: 前端 — 注册页面
 
-| 角色 | 用户名 | 密码 | 说明 |
-|------|--------|------|------|
-| 管理员 | admin | 123456 | 系统管理员，可发布/编辑/删除赛事，管理优秀作品 |
-| 教师 | teacher1 | 123456 | 王辅导员，计算机学院，可审核报名和成果 |
-| 教师 | teacher2 | 123456 | 徐教授，电子学院 |
-| 学生 | 20230101 | 123456 | 张三，软工2301，有3条报名记录，2个获奖 |
-| 学生 | 20230102 | 123456 | 李四，计科2302 |
-| 学生 | 20230201 | 123456 | 陈七，电子学院 |
+#### Task 7 — 登录页增加注册入口
+- **文件**: `Yiban/src/pages/LoginPage.tsx`
+- **改动**:
+  - 在表单底部（"忘记密码"旁边）增加 "注册账号" 链接
+  - 点击跳转到 `/register` 路由
+- **验证**: 点击后正确跳转
+
+#### Task 8 — 注册页面开发
+- **文件**: 新建 `Yiban/src/pages/RegisterPage.tsx`
+- **布局**:
+  - 左侧: 与登录页一致的品牌区域（复用 LoginPage 左侧样式）
+  - 右侧: 注册表单
+    - 角色切换: 学生 / 教师 Tab（与登录页风格一致）
+    - 学生表单: 学号、真实姓名、密码、确认密码、学院、专业、班级、年级（入学年份下拉，2020-2026）
+    - 教师表单: 工号、真实姓名、密码、确认密码、学院
+    - 底部: 同意注册协议 checkbox + "注册" 按钮
+    - 已有账号？去登录 链接
+- **交互**:
+  - 表单前端校验: 必填项、密码长度≥6、两次密码一致、学号纯数字 / 工号格式
+  - 注册按钮 loading 状态
+  - 学生注册成功 → toast 提示 + 自动登录 + 跳转首页
+  - 教师注册成功 → toast "注册成功，请等待管理员审核" + 跳转登录页
+- **API 调用**: `POST /api/auth/register`
+- **验证**: 学生注册后直接进入系统，教师注册后回到登录页
+
+#### Task 9 — 路由配置
+- **文件**: `Yiban/src/router/index.tsx`
+- **改动**: 新增 `/register` 路由，指向 `RegisterPage`，未登录可访问
+- **验证**: 路由跳转正常
 
 ---
 
-## 七、启动指南
+### Phase 3: 前端 — 管理员审核注册
+
+#### Task 10 — 管理员工作台增加注册审核入口
+- **文件**: `Yiban/src/components/Sidebar.tsx`
+- **改动**: 管理员侧边栏新增 "注册审核" 菜单项（图标: person_add）
+- **验证**: 菜单显示正确
+
+#### Task 11 — 注册审核页面
+- **文件**: 新建 `Yiban/src/pages/admin/RegistrationAudit.tsx`
+- **布局**:
+  - 顶部: 标题 + 统计数字（待审核数量）
+  - 筛选条: 角色（全部/学生/教师）、关键词搜索
+  - 列表: 表格展示待审核用户
+    - 列: 用户名、姓名、角色、学院、专业、年级、注册时间、操作
+    - 操作: "通过" 按钮 + "驳回" 按钮（驳回弹窗输入原因）
+  - 分页
+- **API 调用**:
+  - `GET /api/admin/registrations/pending` — 加载列表
+  - `POST /api/admin/registrations/approve` — 通过
+  - `POST /api/admin/registrations/reject` — 驳回（弹窗输入 reason）
+- **交互**:
+  - 通过/驳回后刷新列表 + toast 提示
+  - 驳回弹窗: textarea 输入原因，确认/取消
+- **验证**: 审核流程完整，通过后用户可登录，驳回后用户收到消息
+
+#### Task 12 — 路由配置
+- **文件**: `Yiban/src/router/index.tsx`
+- **改动**: 新增 `/admin/registration-audit` 路由，RequireRole("admin")
+- **验证**: 路由跳转正常
+
+---
+
+### Phase 4: 联调与完善
+
+#### Task 13 — 注册协议页面
+- **文件**: 新建 `Yiban/src/pages/TermsPage.tsx`
+- **改动**: 简单的注册协议/服务条款页面（静态 HTML 即可）
+- **路由**: `/terms`
+- **验证**: 从注册页"服务协议"链接可跳转
+
+#### Task 14 — 全流程联调测试
+- **学生注册**: 填写信息 → 注册 → 自动登录 → 进入学生首页 → ✅
+- **教师注册**: 填写信息 → 注册 → 提示等待审核 → 回到登录页 → 尝试登录 → 提示"审核中" → ✅
+- **管理员审核**: 登录 admin → 注册审核 → 查看待审核列表 → 通过教师 → 教师收到消息 → 教师可登录 → ✅
+- **管理员驳回**: 驳回教师（含原因）→ 教师收到消息 → 教师登录提示"审核未通过" → ✅
+- **边界测试**: 重复学号注册、密码不一致、必填项为空、admin 角色自注册被拒 → ✅
+
+#### Task 15 — 管理员首页增加待审核提醒
+- **文件**: `Yiban/src/pages/admin/AdminHome.tsx`
+- **改动**: 首页仪表盘增加"待审核注册"卡片，显示待审核数量，点击跳转审核页
+- **验证**: 有新注册时数字实时更新
+
+---
+
+## 涉及文件清单
 
 ### 后端
-```bash
-cd D:\Project\Competition\Yiban_backend
-java -jar target\etsaion-backend-1.0.0.jar
-# 访问: http://localhost:8080
-# Swagger UI: http://localhost:8080/swagger-ui/index.html
-```
+| 文件 | 操作 | 说明 |
+|------|------|------|
+| `dto/RegisterDTO.java` | 修改 | 新增 role/grade/phone/email/agreement 字段 |
+| `entity/User.java` | 修改 | 新增 status 字段 |
+| `service/impl/UserServiceImpl.java` | 修改 | register() 重构，login() 增加 status 校验 |
+| `controller/AuthController.java` | 修改 | register 接口适配新 DTO |
+| `controller/AdminController.java` | 新增 | 注册审核相关端点（或在已有 AdminController 中新增） |
+| `db/migrate-009-registration.sql` | 新增 | user 表新增 status 字段 |
 
 ### 前端
-```bash
-cd D:\Project\Competition\Yiban
-npm run dev
-# 访问: http://localhost:3000
-```
-
-### 数据库重置（如需）
-```bash
-mysql -u root -p etsaion < db/schema.sql
-mysql -u root -p etsaion < db/data.sql
-mysql -u root -p etsaion < db/migrate-002-organizer-tags-displayed.sql
-mysql -u root -p etsaion < db/migrate-003-submission-team.sql
-```
-
----
-
-## 执行完成总结
-
-所有关键任务已完成:
-1. ✅ 后端启动(Redis排除) → 已运行在8080
-2. ✅ 数据库分类修正(A/B/C)
-3. ✅ 前端登录持久化 + 路由权限保护
-4. ✅ 前端API路径全部对齐
-5. ✅ 后端新增: 赛事更新接口 PUT /competition/admin/update/{id}
-6. ✅ 后端新增: 成长时间轴接口 GET /growth/timeline
-7. ✅ 后端修复: 雷达图分类计算(A/B/C生效)
-8. ✅ 前端新增: 教师端"导出综测"按钮
-9. ✅ 前端TypeScript编译零错误
-10. ✅ data.sql更新(A/B/C分类)
-
----
-
-## 八、教师端功能深度完善
-
-> 目标：让教师能够按 **学院 → 年级 → 专业 → 班级 → 学生** 五级维度查看数据，并增强整体数据分析能力。  
-> 创建时间: 2026-05-27
-
----
-
-### Phase 1: 基础筛选体系搭建
-
-#### Task 1 — 数据库：新增年级字段
-- [x] `user` 表新增 `grade` 字段（如 2022/2023/2024，表示入学年份）
-- [x] 编写 `migrate-004-teacher-enhancement.sql`，回填现有学生 grade
-- [x] `User.java` 实体类新增 `grade` 字段
-- [x] 验证：seed data 中学生数据包含 grade 字段
-
-#### Task 2 — 后端：教师端筛选参数扩展
-- [x] `TeacherController` 所有接口增加 `grade`、`major`、`className` 筛选参数
-- [x] `TeacherServiceImpl` 中 dashboard/monitor/students 方法支持这些筛选条件
-- [x] 新增 `GET /api/teacher/colleges` — 返回所有学院列表（user 表去重）
-- [x] 新增 `GET /api/teacher/majors` — 根据 college 返回专业列表
-- [x] 新增 `GET /api/teacher/grades` — 根据 college+major 返回年级列表
-- [x] 新增 `GET /api/teacher/classes` — 根据 college+major+grade 返回班级列表
-- [x] 验证：接口返回正确的级联数据
-
-#### Task 3 — 前端：通用级联筛选组件
-- [x] 创建 `CascadeFilter.tsx` — 学院 / 年级 / 专业 / 班级 四级联动下拉框
-- [x] 每级选择后自动加载下一级选项（可选"全部"）
-- [x] 验证：组件级联逻辑正确
-
-#### Task 4 — 前端：将级联筛选接入现有页面
-- [x] `TeacherHome` — dashboard 顶部增加筛选条
-- [x] `TeacherStudentCompetitions` — 顶部增加筛选条
-- [x] `TeacherStudentGrowth` — 左侧学生列表增加筛选
-- [x] 验证：筛选后数据正确过滤
-
----
-
-### Phase 2: 学院数据总览
-
-#### Task 5 — 后端：学院维度统计接口
-- [x] `GET /api/teacher/college-overview` — 返回学院宏观数据：
-  - 学生总数、各年级人数分布
-  - 各专业学生数、参赛率
-  - 各竞赛等级（A/B/C类）参与人次
-  - 累计获奖数、待审核数
-- [x] 支持 `grade`、`major` 参数进一步筛选
-- [x] 验证：数据与数据库一致
-
-#### Task 6 — 前端：学院总览页面
-- [x] 新增 `/teacher/college-overview` 路由和 `CollegeOverview.tsx`
-- [x] KPI 卡片：学生总数、参赛率、人均参赛、获奖率
-- [x] 图表：年级参赛柱状图、竞赛类别分布图、各专业数据表格
-- [x] 底部：各专业详细数据表格
-- [x] 筛选条：年级/专业筛选
-- [x] 验证：页面正确展示
-
-#### Task 7 — 侧边栏与路由更新
-- [x] `Sidebar.tsx` 教师菜单新增"学院总览"
-- [x] `router/index.tsx` 新增路由
-- [x] 菜单顺序：工作台 → 学院总览 → 赛事大厅 → 成果审批 → 学生看板 → 学情分析
-- [x] 验证：导航正常
-
----
-
-### Phase 3: 学生个人档案
-
-#### Task 8 — 后端：学生详情接口
-- [x] `GET /api/teacher/student-detail?studentId=` — 返回：
-  - 基本信息：姓名、学号、学院、专业、班级、年级
-  - 参赛统计：总参赛数、获奖数、获奖率
-  - 竞赛列表：所有竞赛（名称、等级、状态、团队、时间线）
-  - 能力雷达：五维数据
-  - 综合评分及同专业排名
-- [x] 验证：数据完整准确
-
-#### Task 9 — 前端：学生详情页面
-- [x] 新增 `/teacher/student-detail` 路由和 `StudentDetail.tsx`
-- [x] 布局：学生信息卡片 + KPI + 雷达图 + 能力条 + 竞赛列表
-- [x] 从"学生看板"和"学情分析"增加"查看详情"跳转
-- [x] 验证：页面展示完整
-
-#### Task 10 — 前端：学生对比功能
-- [x] 学生列表增加"对比"勾选（最多 4 人）
-- [x] `StudentCompare.tsx` — 雷达图叠加、参赛数、获奖数对比
-- [x] 验证：对比图表正确
-
----
-
-### Phase 4: 增强分析能力
-
-#### Task 11 — 后端：高级统计接口
-- [x] `GET /api/teacher/trend` — 按月参赛人次变化
-- [x] 验证：数据计算正确
-
-#### Task 12 — 前端：赛事分析模块
-- [x] 学院总览中包含竞赛类别分布和各专业参赛数据
-- [x] 验证：图表数据正确
-
-#### Task 13 — 后端：导出功能增强
-- [x] 新增 `GET /api/teacher/export/student-detail` — 导出单个学生报告
-- [x] 验证：导出内容正确
-
-#### Task 14 — 前端：导出功能接入
-- [x] 学生详情页增加"导出报告"按钮
-- [x] 学情分析页保留"导出综测"按钮
-- [x] 验证：下载正确
-
----
-
-### Phase 5: 交互体验优化
-
-#### Task 15 — 教师工作台重构
-- [x] 重构 `TeacherHome.tsx`：增加级联筛选，统计数字随筛选变化
-- [x] 验证：操作更便捷
-
-#### Task 16 — 学生看板增强
-- [x] `TeacherStudentCompetitions.tsx` 支持级联筛选
-- [x] 增加"详情"和"成长"双入口
-- [x] 验证：功能正常
-
-#### Task 17 — 学情分析增强
-- [x] `TeacherStudentGrowth.tsx` 增加级联筛选
-- [x] 增加学生对比勾选功能
-- [x] 增加"查看详情"按钮
-- [x] 验证：展示正确
-
----
-
-### 完成状态
-
-| Phase | 状态 | 完成度 |
-|-------|------|--------|
-| Phase 1: 基础筛选体系 | ✅ 已完成 | 4/4 |
-| Phase 2: 学院数据总览 | ✅ 已完成 | 3/3 |
-| Phase 3: 学生个人档案 | ✅ 已完成 | 3/3 |
-| Phase 4: 增强分析能力 | ✅ 已完成 | 4/4 |
-| Phase 5: 交互体验优化 | ✅ 已完成 | 3/3 |
-
----
-
-### 新增文件清单
-
-**后端：**
-- `db/migrate-004-teacher-enhancement.sql` — 年级字段 migration
-- 修改: `User.java`, `UserVO.java`, `TeacherService.java`, `TeacherServiceImpl.java`, `TeacherController.java`
-- 修改: `schema.sql`, `data.sql`
-
-**前端：**
-- `components/CascadeFilter.tsx` — 级联筛选组件
-- `pages/teacher/CollegeOverview.tsx` — 学院总览页
-- `pages/teacher/StudentDetail.tsx` — 学生详情页
-- `pages/teacher/StudentCompare.tsx` — 学生对比页
-- 修改: `Sidebar.tsx`, `router/index.tsx`, `TeacherHome.tsx`, `TeacherStudentCompetitions.tsx`, `TeacherStudentGrowth.tsx`
-
-### 新增 API 端点
-
-| 方法 | 路径 | 说明 |
+| 文件 | 操作 | 说明 |
 |------|------|------|
-| GET | `/api/teacher/colleges` | 学院列表 |
-| GET | `/api/teacher/majors` | 专业列表（按学院筛选） |
-| GET | `/api/teacher/grades` | 年级列表（按学院+专业筛选） |
-| GET | `/api/teacher/classes` | 班级列表（按学院+专业+年级筛选） |
-| GET | `/api/teacher/college-overview` | 学院总览统计 |
-| GET | `/api/teacher/student-detail` | 学生详情 |
-| GET | `/api/teacher/trend` | 参赛趋势 |
-| GET | `/api/teacher/export/student-detail` | 导出学生报告 |
+| `pages/LoginPage.tsx` | 修改 | 增加"注册账号"入口链接 |
+| `pages/RegisterPage.tsx` | 新增 | 注册页面 |
+| `pages/TermsPage.tsx` | 新增 | 注册协议页面 |
+| `pages/admin/RegistrationAudit.tsx` | 新增 | 注册审核页面 |
+| `pages/admin/AdminHome.tsx` | 修改 | 增加待审核注册提醒卡片 |
+| `router/index.tsx` | 修改 | 新增 /register, /terms, /admin/registration-audit 路由 |
+| `components/Sidebar.tsx` | 修改 | 管理员菜单增加"注册审核" |
+| `types/index.ts` | 修改 | 新增注册相关类型定义 |
+
+---
+
+## API 端点汇总
+
+| 方法 | 路径 | 权限 | 说明 |
+|------|------|------|------|
+| POST | `/api/auth/register` | 公开 | 用户注册（重构） |
+| GET | `/api/admin/registrations/pending` | admin | 待审核注册列表 |
+| POST | `/api/admin/registrations/approve` | admin | 审核通过 |
+| POST | `/api/admin/registrations/reject` | admin | 审核驳回 |
+
+---
+
+## 注意事项
+
+1. **不使用 Redis**: 本任务不涉及 Redis，所有状态存 MySQL
+2. **密码安全**: 继续使用 BCrypt 加密，注册和登录逻辑保持一致
+3. **用户名即学号/工号**: 不额外设计"昵称"字段，realName 即展示名
+4. **教师注册审核是核心**: 教师有审核权限，不能随意开放，必须经管理员批准
+5. **幂等迁移**: migrate-009-registration.sql 必须幂等，可重复执行
+6. **中文 UI**: 所有界面文案使用中文
+7. **样式复用**: 注册页复用 LoginPage 的 glass 样式和动画配置
