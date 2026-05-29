@@ -191,8 +191,8 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
       const list = Array.isArray(data) ? data : [];
       setMessages(list.slice(0, 10));
       setUnreadCount(list.filter((m) => m.isRead === 0).length);
-    } catch {
-      // silently ignore — user may not be logged in yet
+    } catch (err) {
+      console.error(err);
     }
   }, []);
 
@@ -226,8 +226,8 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
         prev.map((m) => (m.id === id ? { ...m, isRead: 1 } : m))
       );
       setUnreadCount((c) => Math.max(0, c - 1));
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error(err);
     }
   };
 

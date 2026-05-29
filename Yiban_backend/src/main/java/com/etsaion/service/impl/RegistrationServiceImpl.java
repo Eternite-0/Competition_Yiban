@@ -24,6 +24,7 @@ import com.etsaion.service.StudentStageProgressService;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.UserService;
 import com.etsaion.vo.RegistrationVO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Registration> implements RegistrationService {
 
@@ -141,8 +143,8 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         // Initialize first stage progress for this student
         try {
             studentStageProgressService.initProgressForRegistration(studentId, comp.getId(), reg.getId());
-        } catch (Exception ignored) {
-            // No stages configured for this competition - that's fine
+        } catch (Exception e) {
+            log.warn("初始化阶段进度失败，可能未配置阶段: {}", e.getMessage());
         }
 
         return reg;
@@ -185,6 +187,7 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         if (Boolean.TRUE.equals(approve)) {
             reg.setStatus("审核通过");
             this.updateById(reg);
+            log.info("报名审核通过: 报名ID={}, 学生ID={}, 赛事={}", id, reg.getStudentId(), compName);
 
             Message msg = new Message();
             msg.setFromUser(teacherId);

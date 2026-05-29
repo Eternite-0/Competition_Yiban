@@ -9,11 +9,13 @@ import com.etsaion.utils.UserContext;
 import com.etsaion.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+@Slf4j
 @Tag(name = "管理员用户管理接口", description = "提供用户列表查询、统计及删除等管理功能")
 @RestController
 @RequestMapping("/api/admin/users")
@@ -55,6 +57,7 @@ public class AdminUserController {
         }
 
         userService.removeById(id);
+        log.info("删除用户: userId={}, username={}", id, user.getUsername());
         return Result.success();
     }
 }

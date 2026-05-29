@@ -18,6 +18,7 @@ import com.etsaion.service.UserService;
 import com.etsaion.vo.TeamVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ public class TeamPostServiceImpl extends ServiceImpl<TeamPostMapper, TeamPost> i
     private UserService userService;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public TeamPost createTeamPost(Long studentId, TeamPostCreateDTO dto) {
         Competition comp = competitionService.getById(dto.getCompetitionId());
         if (comp == null) {

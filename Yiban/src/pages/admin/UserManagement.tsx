@@ -81,8 +81,8 @@ export default function UserManagement() {
       if (data && typeof data.total === 'number') {
         setStats(data);
       }
-    } catch {
-      /* stats endpoint may not exist yet */
+    } catch (err) {
+      console.error(err);
     }
   }, []);
 
@@ -111,7 +111,8 @@ export default function UserManagement() {
         setUsers([]);
         setTotal(0);
       }
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error('加载用户列表失败');
       setUsers([]);
     } finally {

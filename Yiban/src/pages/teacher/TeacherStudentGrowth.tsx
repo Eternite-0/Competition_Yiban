@@ -35,7 +35,8 @@ function ExportButton({ filters, fixedCollege }: { filters: FilterValues; fixedC
       a.click();
       URL.revokeObjectURL(url);
       toast.success('导出成功');
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error('导出失败，请稍后再试');
     } finally {
       setExporting(false);

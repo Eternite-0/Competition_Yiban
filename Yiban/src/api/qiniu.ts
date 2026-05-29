@@ -57,7 +57,8 @@ export async function uploadToQiniu(
         try {
           const data = JSON.parse(xhr.responseText);
           resolve({ ...data, url: `${domain}/${data.key}` });
-        } catch {
+        } catch (err) {
+          console.error(err);
           reject(new Error('解析上传响应失败'));
         }
       } else {

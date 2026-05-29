@@ -47,7 +47,7 @@ export default function CascadeFilter({
     if (!showCollege) return;
     apiClient.get('/teacher/colleges').then((data: any) => {
       setColleges(Array.isArray(data) ? data : []);
-    }).catch(() => {});
+    }).catch(console.error);
   }, [showCollege]);
 
   // Load majors when college changes
@@ -57,7 +57,7 @@ export default function CascadeFilter({
     setMajor('');
     apiClient.get('/teacher/majors', { params: { college: college || undefined } }).then((data: any) => {
       setMajors(Array.isArray(data) ? data : []);
-    }).catch(() => {});
+    }).catch(console.error);
   }, [college, showMajor]);
 
   // Load grades when college or major changes
@@ -69,7 +69,7 @@ export default function CascadeFilter({
       params: { college: college || undefined, major: major || undefined },
     }).then((data: any) => {
       setGrades(Array.isArray(data) ? data : []);
-    }).catch(() => {});
+    }).catch(console.error);
   }, [college, major, showGrade]);
 
   // Load classes when college, major, or grade changes
@@ -81,7 +81,7 @@ export default function CascadeFilter({
       params: { college: college || undefined, major: major || undefined, grade: grade || undefined },
     }).then((data: any) => {
       setClasses(Array.isArray(data) ? data : []);
-    }).catch(() => {});
+    }).catch(console.error);
   }, [college, major, grade, showClass]);
 
   // Emit filter changes

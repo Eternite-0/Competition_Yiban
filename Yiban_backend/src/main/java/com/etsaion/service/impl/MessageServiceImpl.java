@@ -7,6 +7,7 @@ import com.etsaion.exception.BusinessException;
 import com.etsaion.mapper.MessageMapper;
 import com.etsaion.service.MessageService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -21,6 +22,7 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void markAsRead(Long userId, Long messageId) {
         Message msg = this.getById(messageId);
         if (msg == null) {

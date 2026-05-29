@@ -122,7 +122,7 @@ export default function ExcellentWorks() {
     apiClient.get('/competition/list', { params: { current: 1, size: 100 } }).then((data: any) => {
       const records = Array.isArray(data?.records) ? data.records : Array.isArray(data) ? data : [];
       setCompetitionOptions(records.map((c: any) => ({ id: c.id, name: c.name })));
-    }).catch(() => {});
+    }).catch(console.error);
   }, []);
 
   const callToggle = async (submissionId: string, displayed: boolean): Promise<boolean> => {
@@ -262,7 +262,8 @@ export default function ExcellentWorks() {
           .filter((r) => !r.displayed && !displayedIds.has(String(r.id)))
           .map(mapToWork)
       );
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error('加载审核通过的作品失败');
       setPickerWorks([]);
     } finally {
@@ -681,7 +682,8 @@ export default function ExcellentWorks() {
                         try {
                           const signedUrl = await getSignedDownloadUrl(detailWork.fileUrl);
                           window.open(signedUrl, '_blank');
-                        } catch {
+                        } catch (err) {
+                          console.error(err);
                           toast.error('获取下载链接失败');
                         }
                       }}

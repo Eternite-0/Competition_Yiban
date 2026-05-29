@@ -22,7 +22,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public Result<?> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
         log.warn("Request Body Parse Exception: {}", e.getMostSpecificCause().getMessage());
-        return Result.error(400, "请求参数格式错误: " + e.getMostSpecificCause().getMessage());
+        return Result.error(400, "请求格式错误");
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
@@ -45,8 +45,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public Result<?> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
-        log.warn("Data Integrity Exception: {}", e.getMostSpecificCause().getMessage());
-        return Result.error(400, "数据不符合约束: " + e.getMostSpecificCause().getMessage());
+        log.warn("数据约束违反: {}", e.getMostSpecificCause().getMessage());
+        return Result.error(400, "数据不符合约束，请检查输入");
     }
 
     @ExceptionHandler(Exception.class)

@@ -14,6 +14,7 @@ import com.etsaion.exception.BusinessException;
 import com.etsaion.service.*;
 import com.etsaion.utils.UserContext;
 import com.etsaion.vo.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class TeacherServiceImpl implements TeacherService {
 
@@ -236,8 +238,8 @@ public class TeacherServiceImpl implements TeacherService {
                 java.time.LocalDateTime endDate = java.time.LocalDateTime.of(startYear + 1, 8, 31, 23, 59, 59);
                 regWrapper.ge(Registration::getSubmitDate, startDate)
                            .le(Registration::getSubmitDate, endDate);
-            } catch (NumberFormatException ignored) {
-                // invalid academicYear format, skip filter
+            } catch (NumberFormatException e) {
+                log.debug("学年格式无效，跳过筛选: {}", e.getMessage());
             }
         }
 
@@ -502,6 +504,7 @@ public class TeacherServiceImpl implements TeacherService {
             StudentGrowthVO growthData = growthRecordService.getStudentGrowth(studentId);
             result.put("radar", growthData);
         } catch (Exception e) {
+            log.warn("获取学生成长数据失败: {}", e.getMessage());
             result.put("radar", null);
         }
 

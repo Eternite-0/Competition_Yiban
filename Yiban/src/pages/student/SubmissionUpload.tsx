@@ -52,8 +52,8 @@ export default function SubmissionUpload() {
           try {
             const c: any = await apiClient.get(`/competition/detail/${reg.competitionId}`);
             if (c?.name) setCompetitionName(c.name);
-          } catch {
-            // ignore
+          } catch (err) {
+            console.error(err);
           }
         }
       } catch (err: any) {

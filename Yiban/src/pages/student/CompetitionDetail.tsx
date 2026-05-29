@@ -2,18 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import DOMPurify from 'dompurify';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
-
-/** Strip dangerous HTML tags while keeping safe formatting */
-function sanitizeHtml(html: string): string {
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-    .replace(/on\w+="[^"]*"/gi, '')
-    .replace(/on\w+='[^']*'/gi, '')
-    .replace(/javascript:/gi, '');
-}
 
 type BackendCompetition = {
   id: number | string;
@@ -214,7 +205,7 @@ export default function CompetitionDetail() {
               className="text-[17px] leading-[1.6] text-ink-muted-80 prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{
                 __html: comp.content
-                  ? sanitizeHtml(comp.content)
+                  ? DOMPurify.sanitize(comp.content)
                   : '<p>本赛事旨在选拔信息技术领域优秀人才，鼓励学生在算法、软件开发、人工智能等方向开展创新实践。</p>'
               }}
             />

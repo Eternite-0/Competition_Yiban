@@ -125,7 +125,8 @@ export default function ExcellentWorks() {
       setDownloading(true);
       const signedUrl = await getSignedDownloadUrl(fileUrl);
       window.open(signedUrl, '_blank');
-    } catch {
+    } catch (err) {
+      console.error(err);
       window.open(fileUrl, '_blank');
     } finally {
       setDownloading(false);

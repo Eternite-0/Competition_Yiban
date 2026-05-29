@@ -61,8 +61,8 @@ export default function RegistrationWorkbench() {
         if (list.some((r) => String(r.competitionId) === String(competitionId) && activeStatuses.includes(r.status))) {
           setAlreadyRegistered(true);
         }
-      } catch {
-        // ignore
+      } catch (err) {
+        console.error(err);
       }
     };
     load();

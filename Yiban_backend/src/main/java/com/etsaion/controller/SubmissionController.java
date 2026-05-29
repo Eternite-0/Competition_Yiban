@@ -11,6 +11,7 @@ import com.etsaion.utils.UserContext;
 import com.etsaion.vo.SubmissionVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Slf4j
 @Tag(name = "成果文件上传与审核", description = "学生成果附件上传提交、教师审批成果接口")
 @RestController
 @RequestMapping("/api/submission")
@@ -87,7 +89,8 @@ public class SubmissionController {
 
             return Result.success(data);
         } catch (IOException e) {
-            return Result.error(500, "文件上传磁盘错误：" + e.getMessage());
+            log.error("文件上传失败", e);
+            return Result.error(500, "文件上传失败，请稍后重试");
         }
     }
 

@@ -14,6 +14,7 @@ import com.etsaion.service.UserService;
 import cn.hutool.core.util.StrUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -66,6 +67,7 @@ public class AnnouncementServiceImpl extends ServiceImpl<AnnouncementMapper, Ann
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Announcement createAnnouncement(Announcement announcement, Long authorId) {
         announcement.setAuthorId(authorId);
         if (announcement.getStatus() == null) {
@@ -84,6 +86,7 @@ public class AnnouncementServiceImpl extends ServiceImpl<AnnouncementMapper, Ann
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Announcement updateAnnouncement(Long id, Announcement announcement) {
         Announcement existing = this.getById(id);
         if (existing == null) {
@@ -102,6 +105,7 @@ public class AnnouncementServiceImpl extends ServiceImpl<AnnouncementMapper, Ann
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteAnnouncement(Long id) {
         Announcement announcement = this.getById(id);
         if (announcement == null) {

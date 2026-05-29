@@ -63,8 +63,8 @@ export default function StudentHome() {
           params: { current: 1, size: 3 },
         });
         setAnnouncements(Array.isArray(annPage?.records) ? annPage.records : []);
-      } catch {
-        // announcement list may not exist yet, silent fail
+      } catch (err) {
+        console.error(err);
       }
     };
     load();

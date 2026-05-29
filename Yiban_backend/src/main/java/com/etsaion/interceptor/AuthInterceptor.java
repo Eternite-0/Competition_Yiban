@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.utils.JwtUtil;
 import com.etsaion.utils.UserContext;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -12,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 
+@Slf4j
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
 
@@ -52,16 +54,18 @@ public class AuthInterceptor implements HandlerInterceptor {
         // If require role is set, check permission
         if (requireRole != null) {
             if (UserContext.get() == null) {
+                log.warn("认证失败: 未登录或登录已过期, URI={}", request.getRequestURI());
                 throw new BusinessException(401, "未登录或登录已过期");
             }
 
             String currentRole = UserContext.getUserRole();
             String[] allowedRoles = requireRole.value();
-            
+
             boolean hasPermission = Arrays.stream(allowedRoles)
                     .anyMatch(role -> role.equalsIgnoreCase(currentRole));
 
             if (!hasPermission) {
+                log.warn("权限不足: 用户角色={}, 所需角色={}, URI={}", currentRole, String.join(",", allowedRoles), request.getRequestURI());
                 throw new BusinessException(403, "权限不足，拒绝访问");
             }
         }

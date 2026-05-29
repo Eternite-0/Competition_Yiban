@@ -104,25 +104,25 @@ export default function AdminHome() {
         if (!cancelled && taskStats) {
           setWorkbenchStats(taskStats as { pending?: number; overdue?: number });
         }
-      } catch { if (!cancelled) setWorkbenchStats(null); }
+      } catch (err) { console.error(err); if (!cancelled) setWorkbenchStats(null); }
       try {
         const regData: any = await apiClient.get('/registration/pending', { params: { current: 1, size: 1 } });
         if (!cancelled && regData && typeof regData.total === 'number') {
           setPendingRegCount(regData.total);
         }
-      } catch { if (!cancelled) setPendingRegCount(0); }
+      } catch (err) { console.error(err); if (!cancelled) setPendingRegCount(0); }
       try {
         const subData: any = await apiClient.get('/submission/list', { params: { current: 1, size: 1, status: '待审核' } });
         if (!cancelled && subData && typeof subData.total === 'number') {
           setPendingSubCount(subData.total);
         }
-      } catch { if (!cancelled) setPendingSubCount(0); }
+      } catch (err) { console.error(err); if (!cancelled) setPendingSubCount(0); }
       try {
         const allSub: any = await apiClient.get('/submission/list', { params: { current: 1, size: 1 } });
         if (!cancelled && allSub && typeof allSub.total === 'number') {
           setTotalSubCount(allSub.total);
         }
-      } catch { if (!cancelled) setTotalSubCount(0); }
+      } catch (err) { console.error(err); if (!cancelled) setTotalSubCount(0); }
     };
     fetchCounts();
     return () => { cancelled = true; };
@@ -291,7 +291,8 @@ export default function AdminHome() {
       toast.success('已删除');
       setRecords((prev) => prev.filter((r) => r.id !== id));
       setTotal((t) => Math.max(0, t - 1));
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error('删除失败');
     }
   };
@@ -303,7 +304,8 @@ export default function AdminHome() {
       await apiClient.put(`/competition/admin/update/${comp.id}`, { status: newStatus });
       toast.success(newStatus === 'published' ? '已上架' : '已下架');
       setRecords((prev) => prev.map((r) => r.id === comp.id ? { ...r, status: newStatus } : r));
-    } catch {
+    } catch (err) {
+      console.error(err);
       toast.error('操作失败');
     }
   };

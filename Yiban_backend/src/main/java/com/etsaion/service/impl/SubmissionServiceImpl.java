@@ -24,6 +24,7 @@ import com.etsaion.service.SubmissionService;
 import com.etsaion.service.SubmissionStudentService;
 import com.etsaion.service.UserService;
 import com.etsaion.vo.SubmissionVO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submission> implements SubmissionService {
 
@@ -208,6 +210,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         sub.setReviewNote(reviewNote);
         sub.setApproved(Boolean.TRUE.equals(approve) ? true : (isReturn ? null : false));
         this.updateById(sub);
+        log.info("成果审核完成: 提交ID={}, 结果={}, 赛事={}", submissionId, approve ? "通过" : (isReturn ? "退回" : "驳回"), compName);
         reviewTaskService.resolveTarget("submission", submissionId, teacherId, reviewNote);
 
         // Update registration status if linked
@@ -322,6 +325,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void toggleDisplay(Long submissionId, Boolean displayed) {
         Submission sub = this.getById(submissionId);
         if (sub == null) {
@@ -337,6 +341,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateReviewNote(Long submissionId, String reviewNote) {
         Submission sub = this.getById(submissionId);
         if (sub == null) {

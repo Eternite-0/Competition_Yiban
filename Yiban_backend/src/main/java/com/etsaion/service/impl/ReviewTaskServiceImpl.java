@@ -26,6 +26,7 @@ import com.etsaion.service.SubmissionService;
 import com.etsaion.service.UserService;
 import com.etsaion.utils.UserContext;
 import com.etsaion.vo.ReviewTaskVO;
+import lombok.extern.slf4j.Slf4j;
 import com.etsaion.entity.Competition;
 import com.etsaion.entity.Registration;
 import com.etsaion.entity.Submission;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewTask> implements ReviewTaskService {
 
@@ -183,6 +185,7 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
 
         String action = normalizeAction(dto.getAction());
         String note = dto.getReviewNote();
+        log.info("处理待办任务: taskId={}, 动作={}, 类型={}", taskId, action, task.getTargetType());
         if (("reject".equals(action) || "return".equals(action)) && StrUtil.isBlank(note)) {
             throw new BusinessException("驳回或退回补充时必须填写审核意见");
         }

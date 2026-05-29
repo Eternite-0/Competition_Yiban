@@ -126,8 +126,8 @@ export default function CompetitionsHub() {
             .map((r: any) => String(r.competitionId))
         );
         setRegisteredCompIds(ids);
-      } catch {
-        // ignore
+      } catch (err) {
+        console.error(err);
       }
     };
     fetchRegistrations();

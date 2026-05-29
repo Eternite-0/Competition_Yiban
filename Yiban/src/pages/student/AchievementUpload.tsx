@@ -113,7 +113,7 @@ export default function AchievementUpload() {
         const records = Array.isArray(data?.records) ? data.records : Array.isArray(data) ? data : [];
         setCompetitions(records);
       })
-      .catch(() => {});
+      .catch(console.error);
   }, []);
 
   // Auto-add current user as team member

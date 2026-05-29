@@ -12,6 +12,7 @@ import com.etsaion.utils.UserContext;
 import com.etsaion.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Tag(name = "身份认证接口", description = "提供用户注册、登录及个人基本信息获取接口")
 @RestController
 @RequestMapping("/api/auth")
@@ -42,19 +44,25 @@ public class AuthController {
     @Operation(summary = "用户登录")
     @PostMapping("/login")
     public Result<Map<String, Object>> login(@Validated @RequestBody LoginDTO dto) {
-        User user = userService.login(dto.getUsername(), dto.getPassword());
-        
-        // Generate Token
-        String token = JwtUtil.generateToken(user.getId(), user.getRole());
-        
-        UserVO vo = new UserVO();
-        BeanUtils.copyProperties(user, vo);
+        try {
+            User user = userService.login(dto.getUsername(), dto.getPassword());
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("token", token);
-        data.put("user", vo);
-        
-        return Result.success(data);
+            // Generate Token
+            String token = JwtUtil.generateToken(user.getId(), user.getRole());
+
+            UserVO vo = new UserVO();
+            BeanUtils.copyProperties(user, vo);
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("token", token);
+            data.put("user", vo);
+
+            log.info("用户登录成功: {}", dto.getUsername());
+            return Result.success(data);
+        } catch (Exception e) {
+            log.warn("用户登录失败: {}", dto.getUsername());
+            throw e;
+        }
     }
 
     @Operation(summary = "获取当前登录用户信息")

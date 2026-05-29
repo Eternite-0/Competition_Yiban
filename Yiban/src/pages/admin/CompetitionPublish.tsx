@@ -114,7 +114,8 @@ export default function CompetitionPublish() {
     try {
       const signed = await getSignedDownloadUrl(form.coverUrl);
       if (signed) setCoverDisplayUrl(signed);
-    } catch {
+    } catch (err) {
+      console.error(err);
       setCoverDisplayUrl('');
     }
   };
@@ -555,7 +556,7 @@ function StageManager({ competitionId }: { competitionId: number }) {
   useEffect(() => {
     apiClient.get(`/competition/${competitionId}/stages`).then((data: any) => {
       setStages(Array.isArray(data) ? data : []);
-    }).catch(() => {});
+    }).catch(console.error);
   }, [competitionId]);
 
   const handleAdd = async () => {

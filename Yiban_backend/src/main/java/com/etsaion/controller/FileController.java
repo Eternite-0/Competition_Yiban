@@ -5,6 +5,7 @@ import com.etsaion.dto.Result;
 import com.etsaion.interceptor.RequireRole;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 
+@Slf4j
 @Tag(name = "文件存储管理接口", description = "支持本地环境上传赛事附件、成果证明等，返回可直接访问的文件 URL")
 @RestController
 @RequestMapping("/api/file")
@@ -67,7 +69,8 @@ public class FileController {
             String fileUrl = "/files/" + newFilename;
             return Result.success(fileUrl);
         } catch (IOException e) {
-            return Result.error(500, "文件上传失败，服务磁盘错误：" + e.getMessage());
+            log.error("文件上传失败", e);
+            return Result.error(500, "文件上传失败，请稍后重试");
         }
     }
 }
