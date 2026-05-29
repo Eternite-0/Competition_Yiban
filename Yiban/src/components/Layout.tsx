@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { pageTransition, pageVariants } from '../lib/motion';
 
 export default function Layout() {
   const location = useLocation();
@@ -15,7 +16,7 @@ export default function Layout() {
   }, [location.pathname]);
 
   return (
-    <div className="relative min-h-screen bg-canvas-parchment text-ink antialiased selection:bg-primary/20 selection:text-primary">
+    <div className="relative min-h-screen app-workspace text-ink antialiased selection:bg-primary/[0.18] selection:text-primary">
       <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 
       <AnimatePresence>
@@ -26,32 +27,35 @@ export default function Layout() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={() => setMobileNavOpen(false)}
-            className="fixed inset-0 z-40 bg-primary/12 md:hidden"
+            className="fixed inset-0 z-40 bg-ink/10 backdrop-blur-sm md:hidden"
             aria-label="关闭侧边导航"
           />
         )}
       </AnimatePresence>
 
-      <div className="relative flex min-h-screen flex-col md:ml-[260px]">
+      <div className="relative flex min-h-screen flex-col md:ml-[252px]">
         <Header
           mobileNavOpen={mobileNavOpen}
           onToggleMobileNav={() => setMobileNavOpen((prev) => !prev)}
         />
-        <main className="flex-1 pt-[52px] pb-section">
-          <div className="mx-auto w-full max-w-[1440px] px-md sm:px-lg md:px-xl">
+        <main className="flex-1 pt-[52px]">
+          <div className="app-main-frame">
+            <div className="mx-auto w-full max-w-[1280px] px-md py-lg sm:px-lg sm:py-xl md:px-xl">
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                variants={pageVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                transition={pageTransition}
               >
                 <PageErrorBoundary>
                   <Outlet />
                 </PageErrorBoundary>
               </motion.div>
             </AnimatePresence>
+            </div>
           </div>
         </main>
       </div>

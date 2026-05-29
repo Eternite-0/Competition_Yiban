@@ -33,8 +33,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const CATEGORY_COLORS: Record<string, string> = {
   A: 'bg-primary',
-  B: 'bg-emerald-500',
-  C: 'bg-amber-500',
+  B: 'bg-primary/[0.68]',
+  C: 'bg-ink-muted-48',
 };
 
 export default function CollegeOverview() {

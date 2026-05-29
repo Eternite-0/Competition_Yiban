@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useStore } from '../store/useStore';
 import { apiClient } from '../api/client';
+import { panelTransition, panelVariants } from '../lib/motion';
 
 interface Message {
   id: number;
@@ -36,6 +37,9 @@ const titleMap: Record<string, string> = {
   '/admin/works': '作品库',
   '/admin/audit': '系统审核',
   '/admin/announcements': '公告管理',
+  '/admin/users': '用户管理',
+  '/teacher/student-detail': '学生详情',
+  '/teacher/student-compare': '学生对比',
 };
 
 function resolveTitle(path: string): string {
@@ -44,6 +48,7 @@ function resolveTitle(path: string): string {
   if (/^\/student\/competitions\/.+/.test(path)) return '赛事详情';
   if (/^\/student\/registrations\/workbench\/.+/.test(path)) return '报名工作台';
   if (/^\/student\/upload\/.+/.test(path)) return '提交作品';
+  if (/^\/admin\/publish\/.+/.test(path)) return '编辑赛事';
   return '易赛通';
 }
 
@@ -245,27 +250,28 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
   }
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-30 flex h-[52px] items-center justify-between border-b border-hairline bg-canvas-parchment/85 px-md backdrop-blur-[20px] backdrop-saturate-150 sm:px-lg md:left-[260px] md:px-xl">
+    <header className="fixed left-0 right-0 top-0 z-30 flex h-[52px] items-center justify-between border-b border-white/70 bg-white/[0.68] px-md backdrop-blur-2xl backdrop-saturate-150 sm:px-lg md:left-[252px] md:px-xl">
       <div className="flex items-center gap-3 min-w-0">
         <button
           type="button"
           onClick={onToggleMobileNav}
-          className="grid h-9 w-9 place-items-center rounded-full text-ink md:hidden"
+          className="icon-button md:hidden"
           aria-label={mobileNavOpen ? '关闭导航' : '打开导航'}
         >
           <span className="material-symbols-outlined text-[20px]">
             {mobileNavOpen ? 'close' : 'menu'}
           </span>
         </button>
-        <h2 className="text-[21px] font-semibold tracking-tight text-ink leading-none">{title}</h2>
+        <h2 className="truncate text-[18px] font-semibold leading-none text-ink">{title}</h2>
       </div>
 
       <div className="flex items-center gap-3">
         <div ref={searchRef} className="relative hidden lg:block">
-          <div className="flex items-center h-9 w-[220px] rounded-pill bg-canvas border border-hairline focus-within:border-primary-focus transition-all" aria-expanded={searchOpen}>
+          <div className="flex h-9 w-[244px] items-center rounded-pill border border-white/80 bg-white/[0.72] shadow-[0_10px_30px_-26px_rgba(15,23,42,0.45)] transition-all focus-within:border-primary/40 focus-within:bg-white" aria-expanded={searchOpen}>
             <span className="material-symbols-outlined text-[17px] text-ink-muted-48 ml-3.5">search</span>
             <input
               ref={searchInputRef}
+              name="globalSearch"
               className="h-full flex-1 bg-transparent px-2 outline-none text-[14px] text-ink placeholder:text-ink-muted-48"
               placeholder="搜索赛事、团队、作品"
               type="text"
@@ -279,20 +285,21 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
             {searchLoading ? (
               <span className="material-symbols-outlined text-[16px] text-ink-muted-48 mr-2 animate-spin">progress_activity</span>
             ) : (
-              <kbd className="mr-2 px-1.5 py-0.5 rounded-xs bg-primary/8 text-[10px] text-ink-muted-48 font-mono">Ctrl K</kbd>
+              <kbd className="mr-2 rounded-xs bg-surface-chip px-1.5 py-0.5 font-mono text-[10px] text-ink-muted-48">Ctrl K</kbd>
             )}
           </div>
 
           <AnimatePresence>
             {searchOpen && (
               <motion.div
-                initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                transition={{ duration: 0.15 }}
-                className="absolute left-0 top-[42px] w-[320px] rounded-xl border border-hairline bg-canvas-parchment/95 shadow-xl backdrop-blur-xl overflow-hidden z-50"
+                variants={panelVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                transition={panelTransition}
+                className="absolute left-0 top-[42px] z-50 w-[340px] overflow-hidden rounded-md border border-white/80 bg-white/[0.92] shadow-[0_24px_64px_-36px_rgba(15,23,42,0.55)] backdrop-blur-2xl"
               >
-                <div className="px-3 py-2 border-b border-hairline">
+                <div className="border-b border-hairline/80 px-3 py-2">
                   <span className="text-[11px] text-ink-muted-48">搜索结果</span>
                 </div>
                 {searchResults.length === 0 ? (
@@ -307,8 +314,8 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
                       aria-selected={i === activeIndex}
                       onClick={() => handleSearchSelect(r)}
                       onMouseEnter={() => setActiveIndex(i)}
-                      className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition border-b border-hairline/50 last:border-b-0 ${
-                        i === activeIndex ? 'bg-primary/6' : 'hover:bg-primary/6'
+                      className={`flex cursor-pointer items-center gap-3 border-b border-hairline/50 px-3 py-2.5 transition last:border-b-0 ${
+                        i === activeIndex ? 'bg-primary/[0.06]' : 'hover:bg-primary/[0.05]'
                       }`}
                     >
                       <span className="material-symbols-outlined text-[18px] text-primary shrink-0">emoji_events</span>
@@ -335,7 +342,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
           <button
             ref={bellRef}
             onClick={() => setPanelOpen((v) => !v)}
-            className="relative w-9 h-9 grid place-items-center rounded-full hover:bg-primary/6 active:scale-95 transition-all text-ink-muted-80 hover:text-ink"
+            className="icon-button relative"
             aria-label="消息通知"
           >
             <span className="material-symbols-outlined text-[20px]">notifications</span>
@@ -350,13 +357,14 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
             {panelOpen && (
               <motion.div
                 ref={panelRef}
-                initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                transition={{ duration: 0.18, ease: 'easeOut' }}
-                className="absolute right-0 top-[46px] w-[340px] max-w-[calc(100vw-2rem)] max-h-[420px] rounded-xl border border-hairline bg-canvas-parchment/95 shadow-xl backdrop-blur-xl overflow-hidden"
+                variants={panelVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                transition={panelTransition}
+                className="absolute right-0 top-[46px] max-h-[420px] w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-md border border-white/80 bg-white/[0.92] shadow-[0_24px_64px_-36px_rgba(15,23,42,0.55)] backdrop-blur-2xl"
               >
-                <div className="flex items-center justify-between px-4 py-3 border-b border-hairline">
+                <div className="flex items-center justify-between border-b border-hairline/80 px-4 py-3">
                   <span className="text-sm font-semibold text-ink">消息通知</span>
                   {unreadCount > 0 && (
                     <span className="text-xs text-primary font-medium">{unreadCount} 条未读</span>
@@ -376,8 +384,8 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
                           key={msg.id}
                           role="menuitem"
                           onClick={() => msg.isRead === 0 && handleMarkRead(msg.id)}
-                          className={`flex gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-hairline/50 last:border-b-0 hover:bg-primary/4 ${
-                            msg.isRead === 0 ? 'bg-primary/3' : ''
+                          className={`flex cursor-pointer gap-3 border-b border-hairline/50 px-4 py-3 transition-colors last:border-b-0 hover:bg-primary/[0.04] ${
+                            msg.isRead === 0 ? 'bg-primary/[0.03]' : ''
                           }`}
                         >
                           <div className="flex-shrink-0 mt-0.5">
@@ -417,8 +425,8 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
           </AnimatePresence>
         </div>
 
-        <div className="flex items-center gap-2 cursor-pointer group">
-          <div className="w-8 h-8 rounded-full bg-primary text-on-primary grid place-items-center text-[12px] font-semibold transition-transform group-active:scale-95">
+        <div className="group flex cursor-pointer items-center gap-2">
+          <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[12px] font-semibold text-on-primary shadow-[0_10px_26px_-18px_rgba(0,102,204,0.75)] transition-transform group-active:scale-95">
             {user?.name?.[0] ?? 'U'}
           </div>
         </div>

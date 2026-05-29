@@ -121,12 +121,12 @@ export default function CascadeFilter({
   };
 
   const selectClass =
-    'h-9 rounded-md border border-hairline bg-canvas px-3 text-[13px] text-ink focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30 transition-colors min-w-[120px]';
+    'h-9 min-w-[120px] rounded-pill border border-white/80 bg-white/[0.74] px-3 text-[13px] text-ink shadow-[0_10px_30px_-26px_rgba(15,23,42,0.45)] transition focus:border-primary/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/[0.12]';
 
   return (
     <div className="flex flex-wrap items-center gap-3">
       {showCollege && (
-        <select value={college} onChange={(e) => handleCollege(e.target.value)} className={selectClass}>
+        <select name="college" value={college} onChange={(e) => handleCollege(e.target.value)} className={selectClass}>
           <option value="">全部学院</option>
           {colleges.map((c) => (
             <option key={c} value={c}>{c}</option>
@@ -134,7 +134,7 @@ export default function CascadeFilter({
         </select>
       )}
       {showMajor && (
-        <select value={major} onChange={(e) => handleMajor(e.target.value)} className={selectClass}>
+        <select name="major" value={major} onChange={(e) => handleMajor(e.target.value)} className={selectClass}>
           <option value="">全部专业</option>
           {majors.map((m) => (
             <option key={m} value={m}>{m}</option>
@@ -142,7 +142,7 @@ export default function CascadeFilter({
         </select>
       )}
       {showGrade && (
-        <select value={grade} onChange={(e) => handleGrade(e.target.value)} className={selectClass}>
+        <select name="grade" value={grade} onChange={(e) => handleGrade(e.target.value)} className={selectClass}>
           <option value="">全部年级</option>
           {grades.map((g) => (
             <option key={g} value={g}>{g}级</option>
@@ -150,7 +150,7 @@ export default function CascadeFilter({
         </select>
       )}
       {showClass && (
-        <select value={className} onChange={(e) => handleClass(e.target.value)} className={selectClass}>
+        <select name="className" value={className} onChange={(e) => handleClass(e.target.value)} className={selectClass}>
           <option value="">全部班级</option>
           {classes.map((c) => (
             <option key={c} value={c}>{c}</option>

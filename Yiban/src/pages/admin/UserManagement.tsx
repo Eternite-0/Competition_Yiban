@@ -191,6 +191,7 @@ export default function UserManagement() {
             search
           </span>
           <input
+            name="userKeyword"
             className="input-glass h-9 pl-9 text-[13px] !rounded-pill"
             placeholder="搜索用户名 / 姓名"
             aria-label="搜索用户名 / 姓名"
@@ -202,7 +203,8 @@ export default function UserManagement() {
           />
         </div>
         <select
-          className="h-9 px-3 rounded-pill bg-canvas border border-hairline text-[13px] text-ink focus:outline-none focus:border-primary-focus"
+          name="userRole"
+          className="h-9 min-w-[120px] rounded-pill border border-white/80 bg-white/[0.74] px-3 text-[13px] text-ink shadow-[0_10px_30px_-26px_rgba(15,23,42,0.45)] transition focus:border-primary/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/[0.12]"
           value={filterRole}
           onChange={(e) => {
             setFilterRole(e.target.value);
@@ -215,7 +217,8 @@ export default function UserManagement() {
           <option value="admin">管理员</option>
         </select>
         <input
-          className="h-9 px-3 rounded-pill bg-canvas border border-hairline text-[13px] text-ink focus:outline-none focus:border-primary-focus w-full md:w-[180px]"
+          name="userCollege"
+          className="h-9 w-full rounded-pill border border-white/80 bg-white/[0.74] px-3 text-[13px] text-ink shadow-[0_10px_30px_-26px_rgba(15,23,42,0.45)] transition placeholder:text-ink-muted-48 focus:border-primary/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/[0.12] md:w-[180px]"
           placeholder="学院筛选"
           value={filterCollege}
           onChange={(e) => {

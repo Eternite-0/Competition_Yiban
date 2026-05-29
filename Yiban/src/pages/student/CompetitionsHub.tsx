@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import { useStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
+import { listContainer, listItem, softSpring } from '../../lib/motion';
 
 type BackendCompetition = {
   id: number | string;
@@ -112,7 +113,6 @@ export default function CompetitionsHub() {
     setPage(1);
   }, [isAdmin]);
 
-  // 获取学生的报名列表，用于标记已报名的赛事
   useEffect(() => {
     if (!isStudent) return;
     const fetchRegistrations = async () => {
@@ -170,71 +170,79 @@ export default function CompetitionsHub() {
   const publishedCount = competitions.filter((c) => c.status === 'published').length;
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <div className="flex flex-col gap-lg py-1">
       <PageHero
         eyebrow="Competitions"
         title="赛事大厅"
-        description="按级别、分类和报名状态筛选校内外赛事，快速找到适合报名或维护的项目。"
-        className="!rounded-lg !border-0 shadow-sm"
+        description="按级别、分类和报名状态筛选校内外赛事。"
         contentClassName="max-w-3xl"
         actions={
-          <div className="hidden sm:grid grid-cols-2 gap-2 min-w-[220px]">
+          <div className="grid min-w-[220px] grid-cols-2 gap-2">
             <SummaryMetric label="当前结果" value={total} />
             <SummaryMetric label="报名中" value={publishedCount} />
           </div>
         }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-lg items-start">
-        {/* Category rail */}
-        <aside className="bg-canvas border border-black/5 rounded-lg p-sm h-fit lg:sticky lg:top-[68px] shadow-sm">
-          <div className="px-sm py-sm border-b border-hairline mb-1">
-            <p className="text-[11px] font-semibold tracking-[0.12em] uppercase text-ink-muted-48">分类筛选</p>
-            <p className="text-[12px] text-ink-muted-48 mt-1">按赛事方向收拢列表</p>
+      <div className="grid grid-cols-1 items-start gap-lg lg:grid-cols-[204px_minmax(0,1fr)]">
+        <aside className="app-panel-soft h-fit p-2 lg:sticky lg:top-[68px]">
+          <div className="px-2.5 py-2">
+            <p className="text-[11px] font-semibold uppercase text-ink-muted-48">分类筛选</p>
+            <p className="mt-1 text-[12px] text-ink-muted-48">按赛事方向收拢列表</p>
           </div>
-          <div className="flex flex-row lg:flex-col gap-1 overflow-x-auto no-scrollbar">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.label}
-                onClick={() => { setSelectedCategory(cat.value); setPage(1); }}
-                className={`min-w-fit lg:min-w-0 flex items-center justify-between gap-3 px-sm py-2.5 rounded-md text-[13px] transition-all ${
-                  selectedCategory === cat.value
-                    ? 'bg-[#eef6ff] text-primary font-semibold'
-                    : 'text-ink-muted-80 hover:bg-canvas-parchment hover:text-ink'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[17px]">
-                    {cat.value ? CATEGORY_ICON[cat.value] : 'apps'}
+          <div className="flex flex-row gap-1 overflow-x-auto no-scrollbar lg:flex-col">
+            {CATEGORIES.map((cat) => {
+              const active = selectedCategory === cat.value;
+              return (
+                <button
+                  key={cat.label}
+                  onClick={() => { setSelectedCategory(cat.value); setPage(1); }}
+                  className={`relative flex min-w-fit items-center justify-between gap-3 overflow-hidden rounded-sm px-3 py-2.5 text-[13px] transition lg:min-w-0 ${
+                    active ? 'text-ink' : 'text-ink-muted-80 hover:text-ink'
+                  }`}
+                >
+                  {active ? (
+                    <motion.span
+                      layoutId="competition-category-active"
+                      className="absolute inset-0 rounded-sm border border-white/80 bg-white/[0.82] shadow-[0_12px_30px_-24px_rgba(15,23,42,0.45)]"
+                      transition={softSpring}
+                    />
+                  ) : (
+                    <span className="absolute inset-0 rounded-sm opacity-0 transition hover:bg-white/[0.56] hover:opacity-100" />
+                  )}
+                  <span className="relative z-10 flex items-center gap-2">
+                    <span className={`material-symbols-outlined text-[17px] ${active ? 'icon-fill text-primary' : 'text-ink-muted-48'}`}>
+                      {cat.value ? CATEGORY_ICON[cat.value] : 'apps'}
+                    </span>
+                    {cat.label}
                   </span>
-                  {cat.label}
-                </span>
-                <span className="text-[11px] tabular-nums text-ink-muted-48">
-                  {cat.value ? categoryCounts[cat.value] || 0 : total}
-                </span>
-              </button>
-            ))}
+                  <span className="relative z-10 text-[11px] tabular-nums text-ink-muted-48">
+                    {cat.value ? categoryCounts[cat.value] || 0 : total}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </aside>
 
-        {/* Main */}
-        <main className="flex flex-col gap-md min-w-0">
-          {/* Filter bar */}
-          <div className="bg-canvas border border-black/5 rounded-lg px-md py-3 shadow-sm flex flex-col xl:flex-row xl:items-center gap-3">
+        <main className="flex min-w-0 flex-col gap-md">
+          <div className="app-command-bar flex flex-col gap-3 px-md py-3 xl:flex-row xl:items-center">
             <div className="flex flex-wrap items-center gap-3">
               <Segmented
+                id="level"
                 options={LEVELS}
                 value={selectedLevel}
                 onChange={(v) => { setSelectedLevel(v); setPage(1); }}
               />
               <Segmented
+                id="status"
                 options={STATUSES}
                 value={selectedStatus}
                 onChange={(v) => { setSelectedStatus(v); setPage(1); }}
               />
             </div>
-            <div className="flex-1 hidden xl:block" />
-            <div className="relative w-full md:w-[280px]">
+            <div className="hidden flex-1 xl:block" />
+            <div className="relative w-full md:w-[300px]">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">
                 search
               </span>
@@ -247,43 +255,46 @@ export default function CompetitionsHub() {
             </div>
           </div>
 
-          {/* Grid */}
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
+            <div className="flex flex-col items-center justify-center gap-2 py-section text-ink-muted-48">
               <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
               <span className="text-[14px]">加载中…</span>
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center justify-center py-section gap-2 text-primary">
+            <div className="flex flex-col items-center justify-center gap-2 py-section text-primary">
               <span className="material-symbols-outlined text-[32px]">error_outline</span>
               <span className="text-[14px]">{error}</span>
             </div>
           ) : competitions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
+            <div className="app-panel flex flex-col items-center justify-center gap-2 py-section text-ink-muted-48">
               <span className="material-symbols-outlined text-[32px]">search_off</span>
               <span className="text-[14px]">暂无符合条件的赛事</span>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-md">
-              {competitions.map((comp, i) => (
-                <motion.div
-                  key={comp.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.03, duration: 0.35 }}
-                  className="h-full"
-                >
-                  <CompetitionCard comp={comp} navigate={navigate} isAdmin={isAdmin} isRegistered={registeredCompIds.has(String(comp.id))} />
+            <motion.div
+              layout
+              variants={listContainer}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 gap-md md:grid-cols-2 xl:grid-cols-3"
+            >
+              {competitions.map((comp) => (
+                <motion.div key={comp.id} layout variants={listItem} className="h-full">
+                  <CompetitionCard
+                    comp={comp}
+                    navigate={navigate}
+                    isAdmin={isAdmin}
+                    isRegistered={registeredCompIds.has(String(comp.id))}
+                  />
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           )}
 
-          {/* Pagination */}
           {competitions.length > 0 && totalPages > 1 && (
-            <div className="flex justify-center items-center gap-1 pt-md">
+            <div className="flex items-center justify-center gap-1 pt-md">
               <button
-                className="w-9 h-9 grid place-items-center rounded-full hover:bg-primary/6 text-ink-muted-48 disabled:opacity-40"
+                className="icon-button !h-9 !w-9 disabled:opacity-40"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
               >
@@ -293,16 +304,16 @@ export default function CompetitionsHub() {
                 <button
                   key={n}
                   onClick={() => setPage(n)}
-                  className={`w-9 h-9 grid place-items-center rounded-full text-[14px] tabular-nums transition ${
-                    n === page ? 'bg-primary text-on-primary font-semibold' : 'text-ink hover:bg-primary/6'
+                  className={`grid h-9 w-9 place-items-center rounded-full text-[14px] tabular-nums transition ${
+                    n === page ? 'bg-primary font-semibold text-on-primary' : 'text-ink hover:bg-primary/[0.06]'
                   }`}
                 >
                   {n}
                 </button>
               ))}
-              {totalPages > 5 && <span className="text-ink-muted-48 px-2">…</span>}
+              {totalPages > 5 && <span className="px-2 text-ink-muted-48">…</span>}
               <button
-                className="w-9 h-9 grid place-items-center rounded-full hover:bg-primary/6 text-ink-muted-80 disabled:opacity-40"
+                className="icon-button !h-9 !w-9 disabled:opacity-40"
                 disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               >
@@ -318,7 +329,7 @@ export default function CompetitionsHub() {
 
 function SummaryMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg bg-canvas-parchment/70 border border-black/5 px-4 py-3">
+    <div className="rounded-sm border border-white/80 bg-white/[0.7] px-4 py-3">
       <div className="text-[22px] font-semibold leading-none tabular-nums text-ink">{value}</div>
       <div className="mt-1 text-[11px] text-ink-muted-48">{label}</div>
     </div>
@@ -326,34 +337,54 @@ function SummaryMetric({ label, value }: { label: string; value: number }) {
 }
 
 function Segmented({
+  id,
   options,
   value,
   onChange,
 }: {
+  id: string;
   options: { label: string; value: string }[];
   value: string;
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="inline-flex items-center p-1 bg-canvas-parchment rounded-full border border-black/5">
-      {options.map((o) => (
-        <button
-          key={o.label}
-          onClick={() => onChange(o.value)}
-          className={`px-3 py-1.5 rounded-full text-[13px] whitespace-nowrap transition-all ${
-            value === o.value
-              ? 'bg-canvas text-ink font-semibold shadow-sm'
-              : 'text-ink-muted-80 hover:text-ink'
-          }`}
-        >
-          {o.label}
-        </button>
-      ))}
+    <div className="inline-flex items-center rounded-pill border border-white/80 bg-surface-chip p-1">
+      {options.map((o) => {
+        const active = value === o.value;
+        return (
+          <button
+            key={o.label}
+            onClick={() => onChange(o.value)}
+            className={`relative overflow-hidden rounded-pill px-3 py-1.5 text-[13px] transition ${
+              active ? 'text-ink' : 'text-ink-muted-80 hover:text-ink'
+            }`}
+          >
+            {active && (
+              <motion.span
+                layoutId={`segmented-${id}`}
+                className="absolute inset-0 rounded-pill bg-white shadow-[0_8px_24px_-18px_rgba(15,23,42,0.45)]"
+                transition={softSpring}
+              />
+            )}
+            <span className={`relative z-10 whitespace-nowrap ${active ? 'font-semibold' : ''}`}>{o.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-function CompetitionCard({ comp, navigate, isAdmin, isRegistered }: { comp: BackendCompetition; navigate: ReturnType<typeof useNavigate>; isAdmin: boolean; isRegistered: boolean }) {
+function CompetitionCard({
+  comp,
+  navigate,
+  isAdmin,
+  isRegistered,
+}: {
+  comp: BackendCompetition;
+  navigate: ReturnType<typeof useNavigate>;
+  isAdmin: boolean;
+  isRegistered: boolean;
+}) {
   const remainingDays = daysUntil(comp.endTime);
   const isClosingSoon = remainingDays !== null && remainingDays >= 0 && remainingDays <= 7;
   const tagList = [
@@ -361,14 +392,14 @@ function CompetitionCard({ comp, navigate, isAdmin, isRegistered }: { comp: Back
     statusLabel(comp.status),
     ...(Array.isArray(comp.tracks) ? comp.tracks.slice(0, 1) : []),
   ].filter(Boolean);
+  const content = comp.content ? comp.content.replace(/<[^>]+>/g, '') : '查看赛事详情、报名时间与参赛要求';
 
   return (
-    <article className="group bg-canvas border border-black/6 rounded-lg overflow-hidden flex flex-col h-full shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary/20">
-      {/* Cover */}
-      <div className="aspect-[16/9] relative overflow-hidden bg-[#edf2f7]">
+    <article className="app-panel group flex h-full flex-col overflow-hidden transition duration-200 hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-[0_22px_56px_-36px_rgba(15,23,42,0.52)]">
+      <div className="relative aspect-[16/9] overflow-hidden bg-surface-tile-2">
         {comp.coverUrl && (
           <img
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]"
             src={comp.coverUrl}
             alt={comp.name}
             onError={(e) => {
@@ -378,17 +409,21 @@ function CompetitionCard({ comp, navigate, isAdmin, isRegistered }: { comp: Back
             }}
           />
         )}
-        <div className="w-full h-full bg-[#f2f5f8] grid place-items-center" style={comp.coverUrl ? { display: 'none' } : undefined}>
-          <div className="w-14 h-14 rounded-full bg-canvas grid place-items-center shadow-sm">
-            <span className="material-symbols-outlined text-[30px] text-primary">emoji_events</span>
+        <div className="grid h-full w-full place-items-center bg-surface-tile-1" style={comp.coverUrl ? { display: 'none' } : undefined}>
+          <div className="grid h-[52px] w-[52px] place-items-center rounded-full bg-white shadow-[0_14px_36px_-28px_rgba(15,23,42,0.6)]">
+            <span className="material-symbols-outlined text-[28px] text-primary">emoji_events</span>
           </div>
         </div>
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/28 to-transparent pointer-events-none" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/[0.24] to-transparent" />
+        {isClosingSoon && (
+          <span className="absolute right-3 top-3 rounded-pill bg-white/[0.88] px-2.5 py-1 text-[11px] font-semibold text-primary backdrop-blur-md">
+            {remainingDays === 0 ? '今日截止' : `${remainingDays} 天截止`}
+          </span>
+        )}
       </div>
 
-      {/* Body */}
-      <div className="p-lg flex flex-col flex-1">
-        <div className="flex flex-wrap gap-1.5 mb-3">
+      <div className="flex flex-1 flex-col p-md">
+        <div className="mb-3 flex flex-wrap gap-1.5">
           {tagList.map((tag) => (
             <span
               key={tag}
@@ -405,39 +440,24 @@ function CompetitionCard({ comp, navigate, isAdmin, isRegistered }: { comp: Back
           ))}
         </div>
 
-        <h4 className="text-[17px] font-semibold leading-snug text-ink line-clamp-2 min-h-[46px] mb-3">
+        <h4 className="mb-2 min-h-[44px] text-[16px] font-semibold leading-snug text-ink line-clamp-2">
           {comp.name}
         </h4>
+        <p className="mb-md line-clamp-2 text-[12px] leading-relaxed text-ink-muted-48">
+          {content}
+        </p>
 
-        <div className="grid grid-cols-2 gap-2 mb-md">
-          <InfoPill icon="calendar_today" label="报名截止" value={formatDate(comp.endTime)} tone={isClosingSoon ? 'warn' : 'default'} />
-          <InfoPill icon="groups" label="团队人数" value={`最多 ${comp.maxTeamSize ?? '—'} 人`} />
+        <div className="mb-md grid grid-cols-2 gap-x-3 gap-y-2 border-y border-hairline/80 py-3 text-[12px]">
+          <MetaItem icon="calendar_today" label="报名截止" value={formatDate(comp.endTime)} strong={isClosingSoon} />
+          <MetaItem icon="groups" label="团队人数" value={`最多 ${comp.maxTeamSize ?? '—'} 人`} />
+          <MetaItem icon={CATEGORY_ICON[comp.category] || 'category'} label="赛事方向" value={CATEGORY_LABEL[comp.category] ?? (comp.category || '未分类')} />
+          <MetaItem icon="flag" label="开赛时间" value={formatDate(comp.competitionStart)} />
         </div>
 
-        <div className="rounded-md bg-canvas-parchment/70 border border-black/5 p-3 mb-md">
-          <div className="flex items-start gap-2 text-[13px] text-ink-muted-80">
-            <span className="material-symbols-outlined text-[16px] text-ink-muted-48 mt-0.5">
-              {CATEGORY_ICON[comp.category] || 'category'}
-            </span>
-            <div className="min-w-0">
-              <div className="text-ink font-medium truncate">{CATEGORY_LABEL[comp.category] ?? (comp.category || '未分类')}</div>
-              <div className="mt-1 text-[12px] text-ink-muted-48 line-clamp-1">
-                {comp.content ? comp.content.replace(/<[^>]+>/g, '') : '查看赛事详情、报名时间与参赛要求'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between text-[12px] text-ink-muted-48 mb-md pt-3 border-t border-hairline">
-          <TimelinePoint icon="event" value={formatDate(comp.startTime)} />
-          <span className="h-px flex-1 mx-3 bg-hairline" />
-          <TimelinePoint icon="flag" value={formatDate(comp.competitionStart)} />
-        </div>
-
-        <div className="flex gap-2 mt-auto">
+        <div className="mt-auto flex gap-2">
           <button
             onClick={() => navigate(isAdmin ? `/admin/publish/${comp.id}` : `/student/competitions/${comp.id}`)}
-            className="btn-secondary flex-1 !py-2 !text-[13px]"
+            className="btn-secondary flex-1 !min-h-10 !py-2 !text-[13px]"
           >
             {isAdmin ? '编辑' : '详情'}
           </button>
@@ -445,14 +465,14 @@ function CompetitionCard({ comp, navigate, isAdmin, isRegistered }: { comp: Back
             isRegistered ? (
               <button
                 onClick={() => navigate('/student/registrations')}
-                className="btn-primary flex-1 !py-2 !text-[13px]"
+                className="btn-primary flex-1 !min-h-10 !py-2 !text-[13px]"
               >
                 已报名
               </button>
             ) : (
               <button
                 onClick={() => navigate(`/student/registrations/workbench/${comp.id}`)}
-                className="btn-primary flex-1 !py-2 !text-[13px]"
+                className="btn-primary flex-1 !min-h-10 !py-2 !text-[13px]"
               >
                 立即报名
               </button>
@@ -464,23 +484,24 @@ function CompetitionCard({ comp, navigate, isAdmin, isRegistered }: { comp: Back
   );
 }
 
-function InfoPill({ icon, label, value, tone = 'default' }: { icon: string; label: string; value: string; tone?: 'default' | 'warn' }) {
+function MetaItem({
+  icon,
+  label,
+  value,
+  strong = false,
+}: {
+  icon: string;
+  label: string;
+  value: string;
+  strong?: boolean;
+}) {
   return (
-    <div className={`rounded-md border px-3 py-2 ${tone === 'warn' ? 'bg-[#fff7ed] border-[#fed7aa]' : 'bg-canvas border-black/5'}`}>
+    <div className="min-w-0">
       <div className="flex items-center gap-1.5 text-[11px] text-ink-muted-48">
         <span className="material-symbols-outlined text-[14px]">{icon}</span>
         {label}
       </div>
-      <div className="mt-1 text-[12px] font-medium text-ink truncate">{value}</div>
+      <div className={`mt-0.5 truncate font-medium ${strong ? 'text-primary' : 'text-ink'}`}>{value}</div>
     </div>
-  );
-}
-
-function TimelinePoint({ icon, value }: { icon: string; value: string }) {
-  return (
-    <span className="flex items-center gap-1 whitespace-nowrap">
-      <span className="material-symbols-outlined text-[14px]">{icon}</span>
-      {value}
-    </span>
   );
 }

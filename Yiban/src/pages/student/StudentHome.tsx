@@ -5,13 +5,14 @@ import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import { useStore as useAuthStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
+import { listContainer, listItem, pageTransition } from '../../lib/motion';
 
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日'];
 
 const toneClass = {
   primary: 'bg-primary',
-  warning: 'bg-primary/55',
-  error: 'bg-primary/35',
+  warning: 'bg-primary/[0.55]',
+  error: 'bg-primary/[0.35]',
 };
 
 type Competition = {
@@ -74,6 +75,8 @@ export default function StudentHome() {
   const reviewingSubmissions = registrations.filter((r) => r.status === '审核中' || r.status === '已提交').length;
   const passedCount = registrations.filter((r) => r.status === '审核通过').length;
   const hotEvents = competitions.slice(0, 3);
+  const activeRegistration = registrations[0];
+  const todayLabel = `${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()}`;
 
   const firstDay = new Date(currentMonth.year, currentMonth.month - 1, 1).getDay();
   const daysInMonth = new Date(currentMonth.year, currentMonth.month, 0).getDate();
@@ -87,7 +90,6 @@ export default function StudentHome() {
   const isCurrentMonth = currentMonth.year === now.getFullYear() && currentMonth.month === now.getMonth() + 1;
   const today = isCurrentMonth ? now.getDate() : -1;
 
-  // Build calendar events from real competition data
   const calendarEvents: Record<number, { label: string; tone: 'primary' | 'warning' | 'error' }> = {};
   competitions.forEach((comp) => {
     if (!comp.endTime) return;
@@ -104,12 +106,30 @@ export default function StudentHome() {
     { label: '审核中成果', value: reviewingSubmissions, hint: reviewingSubmissions > 0 ? '预计下周反馈' : `已通过 ${passedCount}`, icon: 'rule' },
   ];
 
+  const focusSteps = activeRegistration
+    ? [
+        { step: 1, title: '报名', status: 'done' },
+        { step: 2, title: '材料', status: activeRegistration.status === '待完善' ? 'active' : 'done' },
+        {
+          step: 3,
+          title: '评审',
+          status:
+            activeRegistration.status === '已提交' || activeRegistration.status === '审核中'
+              ? 'active'
+              : activeRegistration.status === '审核通过'
+                ? 'done'
+                : 'pending',
+        },
+        { step: 4, title: '完成', status: activeRegistration.status === '审核通过' ? 'active' : 'pending' },
+      ]
+    : [];
+
   return (
-    <div className="flex flex-col gap-lg py-lg">
+    <div className="flex flex-col gap-lg py-1">
       <PageHero
-        eyebrow={`Today · ${currentMonth.year}.${currentMonth.month}.${today}`}
+        eyebrow={`Today · ${todayLabel}`}
         title={`欢迎回来，${currentUser?.name ?? '同学'}`}
-        description="这里是你近期的赛事节奏与成长概览。"
+        description="近期赛事、报名状态和待处理材料汇总。"
         actions={(
           <button onClick={() => navigate('/student/competitions')} className="btn-primary">
             浏览赛事大厅
@@ -118,75 +138,131 @@ export default function StudentHome() {
         )}
       />
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-md">
-        {stats.map((s, i) => (
-          <motion.div
-            key={s.label}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="glass p-lg flex flex-col gap-3"
-          >
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={pageTransition}
+        className="app-panel p-lg"
+      >
+        <div className="grid gap-lg lg:grid-cols-[minmax(0,1fr)_300px] lg:items-center">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[12px] font-semibold text-primary">
+              <span className="material-symbols-outlined icon-fill text-[18px]">adjust</span>
+              今日焦点
+            </div>
+            <h2 className="mt-2 text-[24px] font-semibold leading-tight text-ink">
+              {activeRegistration?.teamName || (hotEvents[0]?.name ?? '找到下一场适合的赛事')}
+            </h2>
+            <p className="mt-1.5 max-w-2xl text-[14px] text-ink-muted-80">
+              {activeRegistration
+                ? `当前状态：${activeRegistration.status}。继续完善材料或查看赛事工作台。`
+                : '还没有进行中的报名，可以先从热门赛事中挑选适合的项目。'}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {activeRegistration ? (
+              <div className="grid grid-cols-4 gap-2">
+                {focusSteps.map((item) => (
+                  <div key={item.step} className="min-w-0 text-center">
+                    <div
+                      className={`mx-auto grid h-8 w-8 place-items-center rounded-full text-[12px] font-semibold ${
+                        item.status === 'done'
+                          ? 'bg-primary text-on-primary'
+                          : item.status === 'active'
+                            ? 'border border-primary bg-white text-primary'
+                            : 'border border-hairline bg-white/[0.72] text-ink-muted-48'
+                      }`}
+                    >
+                      {item.status === 'done' ? (
+                        <span className="material-symbols-outlined text-[16px]">check</span>
+                      ) : (
+                        item.step
+                      )}
+                    </div>
+                    <div className="mt-1.5 truncate text-[11px] text-ink-muted-48">{item.title}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <button onClick={() => navigate('/student/competitions')} className="btn-secondary justify-center">
+                查看可报名赛事
+              </button>
+            )}
+            {activeRegistration ? (
+              <button onClick={() => navigate('/student/registrations')} className="btn-secondary justify-center">
+                进入我的参赛
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </motion.section>
+
+      <motion.div
+        variants={listContainer}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-2 gap-md md:grid-cols-4"
+      >
+        {stats.map((s) => (
+          <motion.div key={s.label} variants={listItem} className="stat-tile flex flex-col gap-3 p-md">
             <div className="flex items-center justify-between">
-              <span className="text-[13px] text-ink-muted-80 font-medium">{s.label}</span>
+              <span className="text-[13px] font-medium text-ink-muted-80">{s.label}</span>
               <span className="material-symbols-outlined text-[20px] text-primary">{s.icon}</span>
             </div>
-            <div className="font-display font-semibold text-[40px] leading-none tracking-[-0.02em] text-ink">
+            <div className="font-display text-[34px] font-semibold leading-none text-ink">
               {s.value}
             </div>
             <span className="text-[12px] text-ink-muted-48">{s.hint}</span>
           </motion.div>
         ))}
-      </div>
+      </motion.div>
 
-      {/* Main split */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-md">
-        {/* Calendar */}
+      <section className="grid grid-cols-1 gap-md lg:grid-cols-12">
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className="lg:col-span-7 glass p-xl"
+          transition={{ ...pageTransition, delay: 0.08 }}
+          className="app-panel p-lg lg:col-span-7"
         >
-          <div className="flex items-center justify-between mb-lg">
-            <h2 className="text-[21px] font-semibold tracking-tight">赛事日历</h2>
-            <div className="flex items-center gap-1 text-[14px] text-ink-muted-80">
-              <button onClick={() => setCurrentMonth(m => m.month === 1 ? { year: m.year - 1, month: 12 } : { year: m.year, month: m.month - 1 })} className="w-8 h-8 grid place-items-center rounded-full hover:bg-primary/6 transition">
+          <div className="mb-lg flex items-center justify-between">
+            <h2 className="text-[20px] font-semibold">赛事日历</h2>
+            <div className="flex items-center gap-1 text-[13px] text-ink-muted-80">
+              <button onClick={() => setCurrentMonth((m) => m.month === 1 ? { year: m.year - 1, month: 12 } : { year: m.year, month: m.month - 1 })} className="icon-button !h-8 !w-8">
                 <span className="material-symbols-outlined text-[18px]">chevron_left</span>
               </button>
               <span className="px-2 font-medium tabular-nums">{currentMonth.year} · {currentMonth.month}月</span>
-              <button onClick={() => setCurrentMonth(m => m.month === 12 ? { year: m.year + 1, month: 1 } : { year: m.year, month: m.month + 1 })} className="w-8 h-8 grid place-items-center rounded-full hover:bg-primary/6 transition">
+              <button onClick={() => setCurrentMonth((m) => m.month === 12 ? { year: m.year + 1, month: 1 } : { year: m.year, month: m.month + 1 })} className="icon-button !h-8 !w-8">
                 <span className="material-symbols-outlined text-[18px]">chevron_right</span>
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-y-2 gap-x-1 text-center text-[13px]">
+          <div className="grid grid-cols-7 gap-x-1 gap-y-2 text-center text-[13px]">
             {WEEKDAYS.map((d) => (
-              <div key={d} className="text-[11px] text-ink-muted-48 font-medium uppercase tracking-widest pb-2">{d}</div>
+              <div key={d} className="pb-2 text-[11px] font-medium text-ink-muted-48">{d}</div>
             ))}
             {cells.map((c, idx) => {
               const event = c.current ? calendarEvents[c.day] : undefined;
               const isToday = c.current && c.day === today;
               return (
-                <div key={idx} className="group relative h-12 flex flex-col items-center justify-start pt-1">
+                <div key={idx} className="group relative flex h-12 flex-col items-center justify-start pt-1">
                   <span
-                    className={`w-9 h-9 grid place-items-center rounded-full text-[14px] tabular-nums transition ${
+                    className={`grid h-9 w-9 place-items-center rounded-full text-[14px] tabular-nums transition ${
                       isToday
-                        ? 'bg-primary text-on-primary font-semibold'
+                        ? 'bg-primary font-semibold text-on-primary'
                         : c.current
-                        ? 'text-ink hover:bg-primary/6'
-                        : 'text-ink-muted-48/50'
+                          ? 'text-ink hover:bg-primary/[0.06]'
+                          : 'text-ink-muted-48/50'
                     }`}
                   >
                     {c.day}
                   </span>
                   {event && (
-                    <span className={`mt-1 w-1.5 h-1.5 rounded-full ${toneClass[event.tone]}`} />
+                    <span className={`mt-1 h-1.5 w-1.5 rounded-full ${toneClass[event.tone]}`} />
                   )}
                   {event && (
-                    <span className="opacity-0 group-hover:opacity-100 transition pointer-events-none absolute -bottom-7 px-2 py-1 rounded-sm border border-hairline text-[11px] text-ink-muted-80 bg-canvas whitespace-nowrap z-10">
+                    <span className="pointer-events-none absolute -bottom-7 z-10 whitespace-nowrap rounded-xs border border-hairline bg-white px-2 py-1 text-[11px] text-ink-muted-80 opacity-0 transition group-hover:opacity-100">
                       {event.label}
                     </span>
                   )}
@@ -196,17 +272,16 @@ export default function StudentHome() {
           </div>
         </motion.div>
 
-        {/* Hot events */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25, duration: 0.4 }}
-          className="lg:col-span-5 glass p-xl flex flex-col"
+          transition={{ ...pageTransition, delay: 0.12 }}
+          className="app-panel flex flex-col p-lg lg:col-span-5"
         >
-          <div className="flex items-center justify-between mb-lg">
-            <h2 className="text-[21px] font-semibold tracking-tight">热门赛事</h2>
-            <button onClick={() => navigate('/student/competitions')} className="text-[14px] text-primary hover:text-primary-focus">
-              查看全部 →
+          <div className="mb-md flex items-center justify-between">
+            <h2 className="text-[20px] font-semibold">热门赛事</h2>
+            <button onClick={() => navigate('/student/competitions')} className="text-[13px] font-medium text-primary hover:text-primary-focus">
+              查看全部
             </button>
           </div>
           <div className="flex flex-col">
@@ -214,23 +289,23 @@ export default function StudentHome() {
               <button
                 key={event.id}
                 onClick={() => navigate(`/student/competitions/${event.id}`)}
-                className={`group flex items-center gap-md text-left py-3 ${
-                  idx !== hotEvents.length - 1 ? 'border-b border-hairline' : ''
+                className={`group flex items-center gap-md py-3 text-left ${
+                  idx !== hotEvents.length - 1 ? 'border-b border-hairline/80' : ''
                 }`}
               >
-                <div className="w-12 h-12 rounded-md bg-canvas-parchment border border-hairline grid place-items-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-[22px] text-primary">emoji_events</span>
+                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-sm border border-hairline bg-surface-pearl">
+                  <span className="material-symbols-outlined text-[21px] text-primary">emoji_events</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-[15px] font-medium text-ink truncate group-hover:text-primary transition">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[15px] font-semibold text-ink transition group-hover:text-primary">
                     {event.name}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="mt-1 flex items-center gap-2">
                     <span className="chip chip-primary !py-0.5 !text-[11px]">{event.level}</span>
-                    <span className="text-[12px] text-ink-muted-48 truncate">{event.category} 类</span>
+                    <span className="truncate text-[12px] text-ink-muted-48">{event.category} 类</span>
                   </div>
                 </div>
-                <span className="material-symbols-outlined text-[18px] text-ink-muted-48 group-hover:text-primary group-hover:translate-x-0.5 transition">
+                <span className="material-symbols-outlined text-[18px] text-ink-muted-48 transition group-hover:translate-x-0.5 group-hover:text-primary">
                   chevron_right
                 </span>
               </button>
@@ -242,34 +317,33 @@ export default function StudentHome() {
         </motion.div>
       </section>
 
-      {/* Announcements */}
       {announcements.length > 0 && (
         <motion.section
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.28, duration: 0.4 }}
-          className="glass p-xl"
+          transition={{ ...pageTransition, delay: 0.16 }}
+          className="app-panel p-lg"
         >
-          <div className="flex items-center justify-between mb-md">
-            <h2 className="text-[21px] font-semibold tracking-tight flex items-center gap-2">
+          <div className="mb-md flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-[20px] font-semibold">
               <span className="material-symbols-outlined text-[20px] text-primary">campaign</span>
               最新公告
             </h2>
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col">
             {announcements.map((a: any) => (
-              <div key={a.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-primary/3 transition">
-                {a.isPinned && <span className="material-symbols-outlined text-[16px] text-warning mt-0.5">push_pin</span>}
-                <div className="flex-1 min-w-0">
+              <div key={a.id} className="flex items-start gap-3 border-b border-hairline/70 py-3 last:border-0">
+                {a.isPinned && <span className="material-symbols-outlined mt-0.5 text-[16px] text-primary">push_pin</span>}
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-[14px] font-medium text-ink truncate">{a.title}</span>
+                    <span className="truncate text-[14px] font-medium text-ink">{a.title}</span>
                     <span className={`chip !text-[10px] ${a.type === 'system' ? 'chip-primary' : 'chip-warning'}`}>
                       {a.type === 'system' ? '系统' : '赛事'}
                     </span>
                   </div>
-                  <p className="text-[12px] text-ink-muted-48 mt-0.5 line-clamp-2">{a.content}</p>
+                  <p className="mt-0.5 line-clamp-2 text-[12px] text-ink-muted-48">{a.content}</p>
                 </div>
-                <span className="text-[11px] text-ink-muted-48 whitespace-nowrap">
+                <span className="whitespace-nowrap text-[11px] text-ink-muted-48">
                   {new Date(a.createTime).toLocaleDateString('zh-CN')}
                 </span>
               </div>
@@ -277,87 +351,6 @@ export default function StudentHome() {
           </div>
         </motion.section>
       )}
-
-      {/* Current Focus */}
-      <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3, duration: 0.4 }}
-        className="glass p-xl"
-      >
-        <div className="flex items-center justify-between mb-lg flex-wrap gap-3">
-          <div>
-            <h2 className="text-[21px] font-semibold tracking-tight">当前聚焦</h2>
-            {registrations.length > 0 ? (
-              <p className="text-[15px] text-ink-muted-80 mt-1">
-                {registrations[0].teamName || '我的团队'} · {registrations[0].status}
-              </p>
-            ) : (
-              <p className="text-[15px] text-ink-muted-80 mt-1">暂无进行中的赛事</p>
-            )}
-          </div>
-          {registrations.length > 0 && (
-            <span className={`chip ${
-              registrations[0].status === '审核通过' ? 'chip-success' :
-              registrations[0].status === '已提交' || registrations[0].status === '审核中' ? 'chip-primary' :
-              'chip-warning'
-            }`}>{registrations[0].status}</span>
-          )}
-        </div>
-
-        {registrations.length > 0 ? (
-          <div className="grid grid-cols-4 gap-md relative">
-            <div className="absolute top-5 left-[12.5%] right-[12.5%] h-px bg-hairline" />
-            <div className="absolute top-5 left-[12.5%] w-[37.5%] h-px bg-primary" />
-            {[
-              { step: 1, title: '提交报名', status: 'done' },
-              { step: 2, title: '材料审核', status: registrations[0].status === '待完善' ? 'active' : 'done' },
-              { step: 3, title: '作品评审', status: registrations[0].status === '已提交' || registrations[0].status === '审核中' ? 'active' : registrations[0].status === '审核通过' ? 'done' : 'pending' },
-              { step: 4, title: '完成', status: registrations[0].status === '审核通过' ? 'active' : 'pending' },
-            ].map((s) => (
-              <div key={s.step} className="flex flex-col items-center text-center relative">
-                <div
-                  className={`w-10 h-10 rounded-full grid place-items-center text-[14px] font-semibold relative z-10 ${
-                    s.status === 'done'
-                      ? 'bg-primary text-on-primary'
-                      : s.status === 'active'
-                      ? 'bg-canvas border-2 border-primary text-primary'
-                      : 'bg-canvas border border-hairline text-ink-muted-48'
-                  }`}
-                >
-                  {s.status === 'done' ? (
-                    <span className="material-symbols-outlined text-[18px]">check</span>
-                  ) : (
-                    s.step
-                  )}
-                </div>
-                <div
-                  className={`mt-3 text-[14px] ${
-                    s.status === 'pending'
-                      ? 'text-ink-muted-48'
-                      : s.status === 'active'
-                      ? 'text-primary font-semibold'
-                      : 'text-ink font-medium'
-                  }`}
-                >
-                  {s.title}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <span className="material-symbols-outlined text-[40px] text-ink-muted-48">emoji_events</span>
-            <p className="text-[14px] text-ink-muted-48 mt-2">还没有报名赛事</p>
-            <button
-              onClick={() => navigate('/student/competitions')}
-              className="btn-primary mt-4 !py-1.5 !text-[13px]"
-            >
-              去报名赛事
-            </button>
-          </div>
-        )}
-      </motion.section>
     </div>
   );
 }

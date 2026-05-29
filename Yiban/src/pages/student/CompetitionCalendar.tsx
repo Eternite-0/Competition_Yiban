@@ -17,13 +17,13 @@ type Competition = {
 };
 
 const levelColor: Record<string, { bg: string; dot: string; text: string; chip: string }> = {
-  国家级: { bg: 'bg-red-50', dot: 'bg-red-500', text: 'text-red-700', chip: 'chip-error' },
-  省级: { bg: 'bg-blue-50', dot: 'bg-blue-500', text: 'text-blue-700', chip: 'chip-primary' },
-  校级: { bg: 'bg-emerald-50', dot: 'bg-emerald-500', text: 'text-emerald-700', chip: 'chip-success' },
+  国家级: { bg: 'bg-primary/[0.08]', dot: 'bg-primary', text: 'text-primary', chip: 'chip-primary' },
+  省级: { bg: 'bg-primary/[0.05]', dot: 'bg-primary/[0.72]', text: 'text-primary', chip: 'chip-primary' },
+  校级: { bg: 'bg-surface-chip', dot: 'bg-ink-muted-48', text: 'text-ink-muted-80', chip: 'chip' },
 };
 
 function getLevelStyle(level: string) {
-  return levelColor[level] ?? { bg: 'bg-gray-50', dot: 'bg-gray-400', text: 'text-gray-600', chip: 'chip' };
+  return levelColor[level] ?? { bg: 'bg-surface-chip', dot: 'bg-ink-muted-48', text: 'text-ink-muted-80', chip: 'chip' };
 }
 
 function toDateKey(d: Date): string {
@@ -218,7 +218,7 @@ export default function CompetitionCalendar() {
               </div>
             ))}
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-gray-300" />
+              <span className="w-2.5 h-2.5 rounded-full bg-ink-muted-48/45" />
               <span className="text-ink-muted-80">其他</span>
             </div>
           </div>
@@ -241,7 +241,7 @@ export default function CompetitionCalendar() {
                   onClick={() => setSelectedDay(isSelected ? null : c.key)}
                   aria-label={dateLabel}
                   aria-pressed={isSelected}
-                  className={`group relative h-14 sm:h-16 flex flex-col items-center justify-start pt-1 rounded-lg transition ${
+                  className={`group relative h-14 sm:h-16 flex flex-col items-center justify-start pt-1 rounded-sm transition ${
                     isSelected ? 'bg-primary/8 ring-1 ring-primary/30' : 'hover:bg-primary/4'
                   }`}
                 >
@@ -310,7 +310,7 @@ export default function CompetitionCalendar() {
                       return (
                         <div
                           key={c.id}
-                          className={`p-4 rounded-lg border border-hairline ${s.bg} transition hover:shadow-sm`}
+                          className={`p-4 rounded-sm border border-hairline ${s.bg} transition hover:shadow-sm`}
                         >
                           <div className="flex items-start gap-3">
                             <span className={`mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.dot}`} />
@@ -400,7 +400,7 @@ export default function CompetitionCalendar() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.03, duration: 0.3 }}
-                    className="flex items-center gap-3 p-4 rounded-lg border border-hairline hover:shadow-sm transition"
+                    className="flex items-center gap-3 p-4 rounded-sm border border-hairline hover:shadow-sm transition"
                   >
                     <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.dot}`} />
                     <div className="flex-1 min-w-0">

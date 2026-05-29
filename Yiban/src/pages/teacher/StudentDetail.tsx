@@ -60,10 +60,10 @@ const statusChip: Record<string, string> = {
 };
 
 const LEVEL_COLORS: Record<string, string> = {
-  '国家级': 'bg-red-500/10 text-red-600',
-  '省级': 'bg-amber-500/10 text-amber-600',
-  '校级': 'bg-blue-500/10 text-blue-600',
-  '院级': 'bg-gray-500/10 text-gray-600',
+  '国家级': 'bg-primary/[0.10] text-primary',
+  '省级': 'bg-primary/[0.07] text-primary',
+  '校级': 'bg-surface-chip text-ink-muted-80',
+  '院级': 'bg-surface-chip text-ink-muted-80',
 };
 
 function RadarChart({ data }: { data: RadarDim[] }) {
