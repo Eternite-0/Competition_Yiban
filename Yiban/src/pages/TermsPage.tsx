@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 export default function TermsPage() {
   return (
@@ -7,10 +8,10 @@ export default function TermsPage() {
 
       {/* 顶栏 */}
       <div className="h-[44px] flex items-center px-xl text-[12px] tracking-tight text-ink bg-canvas border-b border-hairline">
-        <a href="/login" className="flex items-center gap-2 font-medium hover:text-primary transition">
+        <Link to="/login" className="flex items-center gap-2 font-medium hover:text-primary transition">
           <span className="material-symbols-outlined text-[16px] text-primary icon-fill">workspace_premium</span>
           易赛通 · 学生竞赛管理平台
-        </a>
+        </Link>
       </div>
 
       <div className="max-w-[800px] mx-auto px-xl py-xxl">
@@ -126,13 +127,13 @@ export default function TermsPage() {
           </div>
 
           <div className="mt-xl pt-lg border-t border-hairline text-center">
-            <a
-              href="/register"
+            <Link
+              to="/register"
               className="inline-flex items-center gap-2 h-[44px] px-6 rounded-pill bg-primary text-on-primary text-[14px] font-medium hover:bg-primary-focus transition"
             >
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
               返回注册
-            </a>
+            </Link>
           </div>
         </motion.div>
       </div>

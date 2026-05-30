@@ -16,9 +16,75 @@ CREATE TABLE `user` (
   `major` varchar(100) DEFAULT NULL,
   `class_name` varchar(50) DEFAULT NULL,
   `grade` varchar(10) DEFAULT NULL COMMENT '年级(入学年份)',
+  `status` varchar(20) DEFAULT 'active' COMMENT 'active/pending_approval/rejected',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+
+-- ----------------------------
+-- Table structure for major
+-- ----------------------------
+DROP TABLE IF EXISTS `major`;
+CREATE TABLE `major` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL COMMENT '专业名称',
+  `college` varchar(100) NOT NULL COMMENT '所属学院',
+  `status` varchar(20) DEFAULT 'active' COMMENT 'active/inactive',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_name_college` (`name`, `college`),
+  KEY `idx_college` (`college`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='专业表';
+
+-- ----------------------------
+-- Table structure for class_info
+-- ----------------------------
+DROP TABLE IF EXISTS `class_info`;
+CREATE TABLE `class_info` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL COMMENT '班级名称',
+  `college` varchar(100) NOT NULL COMMENT '所属学院',
+  `major_id` bigint DEFAULT NULL COMMENT '关联专业ID',
+  `grade` varchar(10) DEFAULT NULL COMMENT '年级(入学年份)',
+  `status` varchar(20) DEFAULT 'active' COMMENT 'active/inactive',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_name_major_grade` (`name`, `major_id`, `grade`),
+  KEY `idx_major` (`major_id`),
+  KEY `idx_college` (`college`),
+  KEY `idx_grade` (`grade`),
+  KEY `idx_status` (`status`),
+  CONSTRAINT `fk_class_major` FOREIGN KEY (`major_id`) REFERENCES `major` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='班级表';
+
+-- ----------------------------
+-- Table structure for student_roster
+-- ----------------------------
+DROP TABLE IF EXISTS `student_roster`;
+CREATE TABLE `student_roster` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `student_no` varchar(50) NOT NULL COMMENT '学号',
+  `real_name` varchar(50) NOT NULL COMMENT '姓名',
+  `college` varchar(100) DEFAULT NULL COMMENT '学院',
+  `major_id` bigint DEFAULT NULL COMMENT '关联专业ID',
+  `class_id` bigint DEFAULT NULL COMMENT '关联班级ID',
+  `grade` varchar(10) DEFAULT NULL COMMENT '年级(入学年份)',
+  `status` varchar(20) DEFAULT 'pending' COMMENT 'pending(未注册)/registered(已注册)',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_student_no` (`student_no`),
+  KEY `idx_major` (`major_id`),
+  KEY `idx_class` (`class_id`),
+  KEY `idx_grade` (`grade`),
+  KEY `idx_status` (`status`),
+  KEY `idx_college` (`college`),
+  CONSTRAINT `fk_roster_major` FOREIGN KEY (`major_id`) REFERENCES `major` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_roster_class` FOREIGN KEY (`class_id`) REFERENCES `class_info` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='学生花名册表';
 
 -- ----------------------------
 -- Table structure for competition

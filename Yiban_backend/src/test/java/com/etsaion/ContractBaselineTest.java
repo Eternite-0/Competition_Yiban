@@ -55,11 +55,12 @@ class ContractBaselineTest {
     }
 
     @Test
-    void publicRegistrationDtoDoesNotExposeRoleSelection() {
+    void publicRegistrationDtoAcceptsStudentAndTeacherRoles() {
+        // 注册系统支持学生和教师两种角色注册
         boolean hasRoleField = Arrays.stream(RegisterDTO.class.getDeclaredFields())
                 .anyMatch(field -> "role".equals(field.getName()));
 
-        assertFalse(hasRoleField, "public registration must not allow clients to choose role");
+        assertTrue(hasRoleField, "registration DTO must have role field for student/teacher registration");
     }
 
     @Test

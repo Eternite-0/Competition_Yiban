@@ -61,5 +61,5 @@ public class RegisterDTO {
      * 是否同意注册协议（前端必传 true）
      */
     @AssertTrue(message = "必须同意注册协议")
-    private Boolean agreement;
+    private boolean agreement;
 }

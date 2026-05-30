@@ -73,26 +73,33 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private User registerStudent(RegisterDTO dto) {
         String studentNo = dto.getUsername();
 
-        // 1. 根据学号查花名册
+        // 1. 先检查用户是否已注册（利用 username 唯一约束）
+        long userCount = this.count(new LambdaQueryWrapper<User>()
+                .eq(User::getUsername, studentNo));
+        if (userCount > 0) {
+            throw new BusinessException("该学号已被注册");
+        }
+
+        // 2. 根据学号查花名册
         StudentRoster roster = studentRosterService.getOne(new LambdaQueryWrapper<StudentRoster>()
                 .eq(StudentRoster::getStudentNo, studentNo));
 
-        // 2. 未找到 → 拒绝
+        // 3. 未找到 → 拒绝
         if (roster == null) {
             throw new BusinessException("学号未录入系统，请联系辅导员");
         }
 
-        // 3. 已注册 → 拒绝
+        // 4. 已注册 → 拒绝
         if ("registered".equals(roster.getStatus())) {
             throw new BusinessException("该学号已注册");
         }
 
-        // 4. 校验姓名
+        // 5. 校验姓名
         if (!dto.getRealName().trim().equals(roster.getRealName())) {
             throw new BusinessException("姓名与学籍信息不符，请核对后重试");
         }
 
-        // 5. 创建用户
+        // 6. 创建用户
         User user = new User();
         user.setUsername(studentNo.trim());
         user.setRealName(dto.getRealName().trim());
@@ -107,9 +114,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String hashedPw = BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt());
         user.setPassword(hashedPw);
 
-        this.save(user);
+        // 7. 先保存用户（利用 username 唯一约束防止并发）
+        try {
+            this.save(user);
+        } catch (Exception e) {
+            // 如果保存失败（可能是并发导致的重复），抛出明确错误
+            throw new BusinessException("该学号已被注册");
+        }
 
-        // 6. 更新花名册状态
+        // 8. 更新花名册状态
         roster.setStatus("registered");
         roster.setUpdateTime(java.time.LocalDateTime.now());
         studentRosterService.updateById(roster);

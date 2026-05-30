@@ -1,8 +1,9 @@
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { motion } from 'framer-motion';
+import apiClient from '../api/client';
 
 type RegisterRole = 'student' | 'teacher';
 
@@ -53,7 +54,6 @@ export default function RegisterPage() {
     setStudentLookup(null);
 
     try {
-      const { default: apiClient } = await import('../api/client');
       const res: any = await apiClient.post('/auth/lookup-student', { studentNo: studentNo.trim() });
 
       if (res.found) {
@@ -94,7 +94,6 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      const { default: apiClient } = await import('../api/client');
       const res: any = await apiClient.post('/auth/register', {
         role: 'student',
         username: studentNo.trim(),
@@ -171,10 +170,10 @@ export default function RegisterPage() {
 
       {/* 顶栏 */}
       <div className="h-[44px] flex items-center px-xl text-[12px] tracking-tight text-ink bg-canvas border-b border-hairline">
-        <a href="/login" className="flex items-center gap-2 font-medium hover:text-primary transition">
+        <Link to="/login" className="flex items-center gap-2 font-medium hover:text-primary transition">
           <span className="material-symbols-outlined text-[16px] text-primary icon-fill">workspace_premium</span>
           易赛通 · 学生竞赛管理平台
-        </a>
+        </Link>
       </div>
 
       <div className="min-h-[calc(100vh-44px)] flex items-center justify-center px-xl py-xxl">
@@ -225,6 +224,10 @@ export default function RegisterPage() {
                       setStudentNo(e.target.value);
                       setStudentLookup(null);
                       setLookupError('');
+                      setStudentName('');
+                      setStudentPassword('');
+                      setStudentConfirmPwd('');
+                      setAgreement(false);
                     }}
                   />
                   <button
@@ -299,9 +302,9 @@ export default function RegisterPage() {
                       />
                       <span className="text-[12px] text-ink-muted-80 leading-relaxed">
                         我已阅读并同意
-                        <a href="/terms" target="_blank" className="text-primary hover:underline mx-1">《注册协议》</a>
+                        <Link to="/terms" target="_blank" className="text-primary hover:underline mx-1">《注册协议》</Link>
                         和
-                        <a href="#" className="text-primary hover:underline mx-1">《隐私政策》</a>
+                        <span className="text-primary hover:underline mx-1 cursor-pointer">《隐私政策》</span>
                       </span>
                     </label>
 
@@ -384,9 +387,9 @@ export default function RegisterPage() {
           {/* 底部链接 */}
           <div className="mt-md text-center text-[13px] text-ink-muted-80">
             已有账号？
-            <a href="/login" className="text-primary hover:text-primary-focus font-medium ml-1 transition">
+            <Link to="/login" className="text-primary hover:text-primary-focus font-medium ml-1 transition">
               返回登录
-            </a>
+            </Link>
           </div>
         </motion.div>
       </div>

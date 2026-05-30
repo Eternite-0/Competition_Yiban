@@ -13,9 +13,11 @@ import com.etsaion.service.MajorService;
 import com.etsaion.service.StudentRosterService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
@@ -145,6 +147,7 @@ public class StudentRosterServiceImpl extends ServiceImpl<StudentRosterMapper, S
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> importRecords(List<Map<String, String>> records) {
         int success = 0;
         int skipped = 0;
@@ -262,6 +265,7 @@ public class StudentRosterServiceImpl extends ServiceImpl<StudentRosterMapper, S
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> importFromExcel(MultipartFile file) {
         int success = 0;
         int skipped = 0;
@@ -382,7 +386,36 @@ public class StudentRosterServiceImpl extends ServiceImpl<StudentRosterMapper, S
                 value = String.valueOf(cell.getBooleanCellValue());
                 break;
             case FORMULA:
-                value = cell.getCellFormula();
+                // 计算公式的值而不是返回公式本身
+                try {
+                    FormulaEvaluator evaluator = cell.getSheet().getWorkbook().getCreationHelper().createFormulaEvaluator();
+                    CellValue cellValue = evaluator.evaluate(cell);
+                    switch (cellValue.getCellType()) {
+                        case STRING:
+                            value = cellValue.getStringValue();
+                            break;
+                        case NUMERIC:
+                            double num = cellValue.getNumberValue();
+                            if (num == Math.floor(num) && !Double.isInfinite(num)) {
+                                value = String.valueOf((long) num);
+                            } else {
+                                value = String.valueOf(num);
+                            }
+                            break;
+                        case BOOLEAN:
+                            value = String.valueOf(cellValue.getBooleanValue());
+                            break;
+                        default:
+                            value = cell.getCellFormula();
+                    }
+                } catch (Exception e) {
+                    // 公式计算失败时，尝试直接获取字符串值
+                    try {
+                        value = cell.getStringCellValue();
+                    } catch (Exception e2) {
+                        value = cell.getCellFormula();
+                    }
+                }
                 break;
             default:
                 value = "";

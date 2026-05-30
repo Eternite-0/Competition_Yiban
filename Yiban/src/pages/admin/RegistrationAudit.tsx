@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import apiClient from '../../api/client';
 
 interface PendingTeacher {
   id: number;
@@ -19,7 +20,6 @@ export default function RegistrationAudit() {
   const fetchPending = useCallback(async () => {
     setLoading(true);
     try {
-      const { default: apiClient } = await import('../../api/client');
       const res = await apiClient.get('/admin/registrations/pending');
       setTeachers(res as any);
     } catch (err: any) {
@@ -34,7 +34,7 @@ export default function RegistrationAudit() {
   }, [fetchPending]);
 
   const handleApprove = async (userId: number) => {
-    if (!confirm('确定通过该教师的注册申请？')) return;
+    if (!window.confirm('确定通过该教师的注册申请？')) return;
     try {
       const { default: apiClient } = await import('../../api/client');
       await apiClient.post('/admin/registrations/approve', { userId });

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import apiClient from '../../api/client';
 
 interface Major {
   id: number;
@@ -23,7 +24,6 @@ export default function MajorManagement() {
   const fetchMajors = useCallback(async () => {
     setLoading(true);
     try {
-      const { default: apiClient } = await import('../../api/client');
       const params: any = {};
       if (filterCollege) params.college = filterCollege;
       const res = await apiClient.get('/admin/majors', { params });
@@ -73,7 +73,6 @@ export default function MajorManagement() {
 
   const handleToggleStatus = async (major: Major) => {
     try {
-      const { default: apiClient } = await import('../../api/client');
       const newStatus = major.status === 'active' ? 'inactive' : 'active';
       await apiClient.put(`/admin/majors/${major.id}`, { status: newStatus });
       toast.success(newStatus === 'active' ? '已启用' : '已停用');
@@ -84,7 +83,7 @@ export default function MajorManagement() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定删除该专业？')) return;
+    if (!window.confirm('确定删除该专业？')) return;
     try {
       const { default: apiClient } = await import('../../api/client');
       await apiClient.delete(`/admin/majors/${id}`);

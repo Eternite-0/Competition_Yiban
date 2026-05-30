@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import apiClient from '../../api/client';
 
 interface ClassInfo {
   id: number;
@@ -36,7 +37,6 @@ export default function ClassManagement() {
   const fetchClasses = useCallback(async () => {
     setLoading(true);
     try {
-      const { default: apiClient } = await import('../../api/client');
       const params: any = {};
       if (filterCollege) params.college = filterCollege;
       if (filterMajor) params.majorId = filterMajor;
@@ -52,7 +52,6 @@ export default function ClassManagement() {
 
   const fetchMajors = useCallback(async () => {
     try {
-      const { default: apiClient } = await import('../../api/client');
       const res = await apiClient.get('/admin/majors');
       setMajors(res as any);
     } catch (err: any) {
@@ -95,7 +94,6 @@ export default function ClassManagement() {
       return;
     }
     try {
-      const { default: apiClient } = await import('../../api/client');
       const payload = {
         name: formData.name.trim(),
         college: formData.college,
@@ -118,7 +116,6 @@ export default function ClassManagement() {
 
   const handleToggleStatus = async (cls: ClassInfo) => {
     try {
-      const { default: apiClient } = await import('../../api/client');
       const newStatus = cls.status === 'active' ? 'inactive' : 'active';
       await apiClient.put(`/admin/classes/${cls.id}`, { status: newStatus });
       toast.success(newStatus === 'active' ? '已启用' : '已停用');
@@ -129,7 +126,7 @@ export default function ClassManagement() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定删除该班级？')) return;
+    if (!window.confirm('确定删除该班级？')) return;
     try {
       const { default: apiClient } = await import('../../api/client');
       await apiClient.delete(`/admin/classes/${id}`);

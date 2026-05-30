@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import apiClient from '../../api/client';
 
 interface RosterRecord {
   id: number;
@@ -58,7 +59,6 @@ export default function StudentRosterManagement() {
   const fetchRoster = useCallback(async () => {
     setLoading(true);
     try {
-      const { default: apiClient } = await import('../../api/client');
       const params: any = {
         current: pagination.current,
         size: pagination.size,
@@ -80,7 +80,6 @@ export default function StudentRosterManagement() {
 
   const fetchMajors = useCallback(async () => {
     try {
-      const { default: apiClient } = await import('../../api/client');
       const res = await apiClient.get('/admin/majors');
       setMajors(res as any);
     } catch (err) { /* ignore */ }
@@ -88,7 +87,6 @@ export default function StudentRosterManagement() {
 
   const fetchClasses = useCallback(async () => {
     try {
-      const { default: apiClient } = await import('../../api/client');
       const params: any = {};
       if (filters.college) params.college = filters.college;
       if (filters.majorId) params.majorId = filters.majorId;
@@ -99,7 +97,6 @@ export default function StudentRosterManagement() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const { default: apiClient } = await import('../../api/client');
       const res: any = await apiClient.get('/admin/roster/stats');
       setStats(res);
     } catch (err) { /* ignore */ }
@@ -148,7 +145,6 @@ export default function StudentRosterManagement() {
       return;
     }
     try {
-      const { default: apiClient } = await import('../../api/client');
       const payload = {
         ...formData,
         majorId: formData.majorId ? Number(formData.majorId) : null,
@@ -170,7 +166,7 @@ export default function StudentRosterManagement() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定删除该记录？')) return;
+    if (!window.confirm('确定删除该记录？')) return;
     try {
       const { default: apiClient } = await import('../../api/client');
       await apiClient.delete(`/admin/roster/${id}`);
@@ -189,7 +185,6 @@ export default function StudentRosterManagement() {
     }
     setImporting(true);
     try {
-      const { default: apiClient } = await import('../../api/client');
       const formDataObj = new FormData();
       formDataObj.append('file', importFile);
       const res: any = await apiClient.post('/admin/roster/upload-excel', formDataObj, {
