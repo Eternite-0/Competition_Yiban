@@ -6,6 +6,7 @@ import com.etsaion.dto.RegisterDTO;
 import com.etsaion.dto.Result;
 import com.etsaion.entity.User;
 import com.etsaion.interceptor.RequireRole;
+import com.etsaion.service.StudentRosterService;
 import com.etsaion.service.UserService;
 import com.etsaion.utils.JwtUtil;
 import com.etsaion.utils.UserContext;
@@ -32,13 +33,35 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private StudentRosterService studentRosterService;
+
     @Operation(summary = "用户注册")
     @PostMapping("/register")
-    public Result<UserVO> register(@Validated @RequestBody RegisterDTO dto) {
+    public Result<Map<String, Object>> register(@Validated @RequestBody RegisterDTO dto) {
         User user = userService.register(dto);
-        UserVO vo = new UserVO();
-        BeanUtils.copyProperties(user, vo);
-        return Result.success(vo);
+
+        // 学生注册自动登录，教师注册返回提示
+        if ("student".equals(user.getRole())) {
+            String token = JwtUtil.generateToken(user.getId(), user.getRole());
+            UserVO vo = new UserVO();
+            BeanUtils.copyProperties(user, vo);
+            Map<String, Object> data = new HashMap<>();
+            data.put("token", token);
+            data.put("user", vo);
+            return Result.success(data);
+        } else {
+            Map<String, Object> data = new HashMap<>();
+            data.put("message", "注册成功，请等待管理员审核");
+            return Result.success(data);
+        }
+    }
+
+    @Operation(summary = "查询学号对应信息（注册前校验）")
+    @PostMapping("/lookup-student")
+    public Result<Map<String, Object>> lookupStudent(@RequestBody Map<String, String> body) {
+        String studentNo = body.get("studentNo");
+        return Result.success(studentRosterService.lookupByStudentNo(studentNo));
     }
 
     @Operation(summary = "用户登录")

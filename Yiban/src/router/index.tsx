@@ -2,6 +2,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import Layout from '../components/Layout';
 import LoginPage from '../pages/LoginPage';
+import RegisterPage from '../pages/RegisterPage';
+import TermsPage from '../pages/TermsPage';
 import { useStore } from '../store/useStore';
 
 // Student pages
@@ -33,6 +35,10 @@ import CompetitionPublish from '../pages/admin/CompetitionPublish';
 import ExcellentWorks from '../pages/admin/ExcellentWorks';
 import UserManagement from '../pages/admin/UserManagement';
 import AnnouncementManagement from '../pages/admin/AnnouncementManagement';
+import MajorManagement from '../pages/admin/MajorManagement';
+import ClassManagement from '../pages/admin/ClassManagement';
+import StudentRosterManagement from '../pages/admin/StudentRosterManagement';
+import RegistrationAudit from '../pages/admin/RegistrationAudit';
 
 function RequireAuth({ role, children }: { role?: string; children: ReactNode }) {
   const currentUser = useStore((s) => s.currentUser);
@@ -46,6 +52,9 @@ function RequireAuth({ role, children }: { role?: string; children: ReactNode })
 
 export const router = createBrowserRouter([
   { path: '/', element: <LoginPage /> },
+  { path: '/login', element: <LoginPage /> },
+  { path: '/register', element: <RegisterPage /> },
+  { path: '/terms', element: <TermsPage /> },
   {
     path: '/student',
     element: <RequireAuth role="student"><Layout /></RequireAuth>,
@@ -90,6 +99,10 @@ export const router = createBrowserRouter([
       { path: 'audit', element: <SubmissionAudit /> },
       { path: 'users', element: <UserManagement /> },
       { path: 'announcements', element: <AnnouncementManagement /> },
+      { path: 'majors', element: <MajorManagement /> },
+      { path: 'classes', element: <ClassManagement /> },
+      { path: 'roster', element: <StudentRosterManagement /> },
+      { path: 'registration-audit', element: <RegistrationAudit /> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

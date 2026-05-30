@@ -38,6 +38,10 @@ const adminNav: NavItem[] = [
   { icon: 'auto_awesome', label: '作品库', path: '/admin/works' },
   { icon: 'fact_check', label: '系统审核', path: '/admin/audit' },
   { icon: 'manage_accounts', label: '用户管理', path: '/admin/users' },
+  { icon: 'school', label: '专业管理', path: '/admin/majors' },
+  { icon: 'class', label: '班级管理', path: '/admin/classes' },
+  { icon: 'group', label: '花名册管理', path: '/admin/roster' },
+  { icon: 'how_to_reg', label: '注册审核', path: '/admin/registration-audit' },
 ];
 
 const navMap: Record<string, NavItem[]> = { student: studentNav, teacher: teacherNav, admin: adminNav };

@@ -298,6 +298,13 @@ export default function LoginPage() {
                 统一身份认证 (CAS)
               </button>
             </form>
+
+            <div className="mt-lg text-center text-[13px] text-ink-muted-80">
+              还没有账号？
+              <a href="/register" className="text-primary hover:text-primary-focus font-medium ml-1 transition">
+                注册账号
+              </a>
+            </div>
           </div>
 
           <div className="mt-md text-center text-[11px] text-ink-muted-48 leading-relaxed">

@@ -5,18 +5,18 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
-@TableName("user")
-public class User {
+@TableName("class_info")
+public class ClassInfo {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String username;
-    private String password;
-    private String realName;
-    private String role; // admin, student, teacher
+    private String name;
     private String college;
-    private String major;
-    private String className;
+    private Long majorId;
     private String grade;
-    private String status; // active/pending_approval/rejected
+    private String status; // active/inactive
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 }
