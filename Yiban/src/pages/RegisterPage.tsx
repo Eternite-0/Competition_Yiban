@@ -213,13 +213,20 @@ export default function RegisterPage() {
 
             {/* 学生注册表单 */}
             {activeRole === 'student' && (
-              <div className="flex flex-col gap-3">
+              <form
+                className="flex flex-col gap-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleStudentRegister();
+                }}
+              >
                 {/* 学号查询 */}
                 <div className="flex gap-2">
                   <input
                     className="input-glass h-[48px] px-4 text-[15px] flex-1"
                     placeholder="请输入学号"
                     value={studentNo}
+                    aria-label="学号"
                     onChange={(e) => {
                       setStudentNo(e.target.value);
                       setStudentLookup(null);
@@ -270,6 +277,7 @@ export default function RegisterPage() {
                     className="input-glass h-[48px] px-4 text-[15px]"
                     placeholder="请输入真实姓名（需与学籍一致）"
                     value={studentName}
+                    aria-label="真实姓名"
                     onChange={(e) => setStudentName(e.target.value)}
                   />
                 )}
@@ -282,6 +290,7 @@ export default function RegisterPage() {
                       placeholder="设置密码（至少6位）"
                       type="password"
                       value={studentPassword}
+                      aria-label="密码"
                       onChange={(e) => setStudentPassword(e.target.value)}
                     />
                     <input
@@ -289,6 +298,7 @@ export default function RegisterPage() {
                       placeholder="确认密码"
                       type="password"
                       value={studentConfirmPwd}
+                      aria-label="确认密码"
                       onChange={(e) => setStudentConfirmPwd(e.target.value)}
                     />
 
@@ -310,8 +320,7 @@ export default function RegisterPage() {
 
                     {/* 注册按钮 */}
                     <button
-                      type="button"
-                      onClick={handleStudentRegister}
+                      type="submit"
                       disabled={loading}
                       className="w-full h-[48px] mt-2 rounded-pill bg-primary text-on-primary text-[15px] font-medium hover:bg-primary-focus active:scale-[0.97] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                     >
@@ -322,27 +331,36 @@ export default function RegisterPage() {
                     </button>
                   </>
                 )}
-              </div>
+              </form>
             )}
 
             {/* 教师注册表单 */}
             {activeRole === 'teacher' && (
-              <div className="flex flex-col gap-3">
+              <form
+                className="flex flex-col gap-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleTeacherRegister();
+                }}
+              >
                 <input
                   className="input-glass h-[48px] px-4 text-[15px]"
                   placeholder="请输入工号"
                   value={teacherUsername}
+                  aria-label="工号"
                   onChange={(e) => setTeacherUsername(e.target.value)}
                 />
                 <input
                   className="input-glass h-[48px] px-4 text-[15px]"
                   placeholder="请输入真实姓名"
                   value={teacherName}
+                  aria-label="真实姓名"
                   onChange={(e) => setTeacherName(e.target.value)}
                 />
                 <select
                   className="input-glass h-[48px] px-4 text-[15px] appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23666%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-10"
                   value={teacherCollege}
+                  aria-label="所属学院"
                   onChange={(e) => setTeacherCollege(e.target.value)}
                 >
                   <option value="">请选择所属学院</option>
@@ -355,6 +373,7 @@ export default function RegisterPage() {
                   placeholder="设置密码（至少6位）"
                   type="password"
                   value={teacherPassword}
+                  aria-label="密码"
                   onChange={(e) => setTeacherPassword(e.target.value)}
                 />
                 <input
@@ -362,6 +381,7 @@ export default function RegisterPage() {
                   placeholder="确认密码"
                   type="password"
                   value={teacherConfirmPwd}
+                  aria-label="确认密码"
                   onChange={(e) => setTeacherConfirmPwd(e.target.value)}
                 />
 
@@ -370,8 +390,7 @@ export default function RegisterPage() {
                 </div>
 
                 <button
-                  type="button"
-                  onClick={handleTeacherRegister}
+                  type="submit"
                   disabled={loading}
                   className="w-full h-[48px] mt-2 rounded-pill bg-primary text-on-primary text-[15px] font-medium hover:bg-primary-focus active:scale-[0.97] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
@@ -380,7 +399,7 @@ export default function RegisterPage() {
                   )}
                   {loading ? '注册中...' : '提交注册'}
                 </button>
-              </div>
+              </form>
             )}
           </div>
 

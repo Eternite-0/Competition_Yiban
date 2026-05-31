@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
+import PageHero from '../../components/PageHero';
 
 interface Major {
   id: number;
@@ -95,42 +96,45 @@ export default function MajorManagement() {
   };
 
   return (
-    <div className="p-xl">
-      <div className="flex items-center justify-between mb-lg">
-        <div>
-          <h1 className="text-[24px] font-semibold text-ink">专业管理</h1>
-          <p className="text-[13px] text-ink-muted-48 mt-1">管理各学院的专业信息</p>
-        </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="h-[40px] px-4 rounded-pill bg-primary text-on-primary text-[13px] font-medium hover:bg-primary-focus transition flex items-center gap-2"
-        >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          新增专业
-        </button>
-      </div>
+    <div className="py-lg flex flex-col gap-lg">
+      <PageHero
+        eyebrow="Administration"
+        title="专业管理"
+        description="管理各学院的专业信息"
+        actions={
+          <button
+            onClick={() => handleOpenModal()}
+            className="h-10 px-4 rounded-pill bg-primary text-on-primary text-[13px] font-medium hover:bg-primary-focus transition flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            新增专业
+          </button>
+        }
+      />
 
       {/* 筛选 */}
-      <div className="glass p-md mb-lg">
-        <div className="flex items-center gap-3">
-          <select
-            className="input-glass h-[40px] px-3 text-[13px] w-[200px]"
-            value={filterCollege}
-            onChange={(e) => setFilterCollege(e.target.value)}
-          >
-            <option value="">全部学院</option>
-            {colleges.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-          <span className="text-[13px] text-ink-muted-48">
-            共 {majors.length} 个专业
-          </span>
-        </div>
+      <div className="glass-tint flex flex-wrap gap-sm items-center px-md py-3" role="search">
+        <select
+          name="filterCollege"
+          className="input-glass h-9 w-full sm:w-[200px] text-[13px]"
+          value={filterCollege}
+          aria-label="筛选学院"
+          onChange={(e) => setFilterCollege(e.target.value)}
+        >
+          <option value="">全部学院</option>
+          {colleges.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        <div className="flex-1" />
+        <span className="text-[13px] text-ink-muted-48">
+          共 {majors.length} 个专业
+        </span>
       </div>
 
       {/* 表格 */}
       <div className="glass overflow-hidden">
+        <div className="overflow-x-auto">
         {loading ? (
           <div className="flex items-center justify-center py-xxl">
             <span className="material-symbols-outlined animate-spin text-[24px] text-primary">progress_activity</span>
@@ -171,19 +175,19 @@ export default function MajorManagement() {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleOpenModal(major)}
-                        className="h-[32px] px-3 rounded-lg text-[12px] text-primary hover:bg-primary/10 transition"
+                        className="h-9 px-3 rounded-lg text-[12px] text-primary hover:bg-primary/10 transition"
                       >
                         编辑
                       </button>
                       <button
                         onClick={() => handleToggleStatus(major)}
-                        className="h-[32px] px-3 rounded-lg text-[12px] text-yellow-600 hover:bg-yellow-50 transition"
+                        className="h-9 px-3 rounded-lg text-[12px] text-yellow-600 hover:bg-yellow-50 transition"
                       >
                         {major.status === 'active' ? '停用' : '启用'}
                       </button>
                       <button
                         onClick={() => handleDelete(major.id)}
-                        className="h-[32px] px-3 rounded-lg text-[12px] text-red-500 hover:bg-red-50 transition"
+                        className="h-9 px-3 rounded-lg text-[12px] text-red-500 hover:bg-red-50 transition"
                       >
                         删除
                       </button>
@@ -194,17 +198,18 @@ export default function MajorManagement() {
             </tbody>
           </table>
         )}
+        </div>
       </div>
 
       {/* 弹窗 */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true" aria-labelledby="major-modal-title">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="glass-strong w-full max-w-[400px] mx-4 p-xl rounded-2xl"
           >
-            <h3 className="text-[18px] font-semibold text-ink mb-lg">
+            <h3 id="major-modal-title" className="text-[18px] font-semibold text-ink mb-lg">
               {editingId ? '编辑专业' : '新增专业'}
             </h3>
             <div className="flex flex-col gap-3">

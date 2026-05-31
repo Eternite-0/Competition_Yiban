@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
+import PageHero from '../../components/PageHero';
 
 interface PendingTeacher {
   id: number;
@@ -68,20 +69,22 @@ export default function RegistrationAudit() {
   };
 
   return (
-    <div className="p-xl">
-      <div className="flex items-center justify-between mb-lg">
-        <div>
-          <h1 className="text-[24px] font-semibold text-ink">注册审核</h1>
-          <p className="text-[13px] text-ink-muted-48 mt-1">审核教师注册申请</p>
-        </div>
-        <div className="glass px-4 py-2 flex items-center gap-2">
-          <span className="material-symbols-outlined text-[18px] text-yellow-500">pending_actions</span>
-          <span className="text-[14px] font-medium text-ink">待审核: {teachers.length}</span>
-        </div>
-      </div>
+    <div className="py-lg flex flex-col gap-lg">
+      <PageHero
+        eyebrow="Administration"
+        title="注册审核"
+        description="审核教师注册申请"
+        actions={
+          <div className="glass px-4 py-2 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px] text-yellow-500">pending_actions</span>
+            <span className="text-[14px] font-medium text-ink">待审核: {teachers.length}</span>
+          </div>
+        }
+      />
 
       {/* 列表 */}
       <div className="glass overflow-hidden">
+        <div className="overflow-x-auto">
         {loading ? (
           <div className="flex items-center justify-center py-xxl">
             <span className="material-symbols-outlined animate-spin text-[24px] text-primary">progress_activity</span>
@@ -116,14 +119,14 @@ export default function RegistrationAudit() {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleApprove(t.id)}
-                        className="h-[36px] px-4 rounded-pill bg-green-500 text-white text-[13px] font-medium hover:bg-green-600 transition flex items-center gap-1"
+                        className="h-9 px-4 rounded-pill bg-green-500 text-white text-[13px] font-medium hover:bg-green-600 transition flex items-center gap-1"
                       >
                         <span className="material-symbols-outlined text-[16px]">check</span>
                         通过
                       </button>
                       <button
                         onClick={() => handleOpenReject(t.id)}
-                        className="h-[36px] px-4 rounded-pill bg-red-500 text-white text-[13px] font-medium hover:bg-red-600 transition flex items-center gap-1"
+                        className="h-9 px-4 rounded-pill bg-red-500 text-white text-[13px] font-medium hover:bg-red-600 transition flex items-center gap-1"
                       >
                         <span className="material-symbols-outlined text-[16px]">close</span>
                         驳回
@@ -135,17 +138,18 @@ export default function RegistrationAudit() {
             </tbody>
           </table>
         )}
+        </div>
       </div>
 
       {/* 驳回弹窗 */}
       {showRejectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true" aria-labelledby="reject-modal-title">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="glass-strong w-full max-w-[400px] mx-4 p-xl rounded-2xl"
           >
-            <h3 className="text-[18px] font-semibold text-ink mb-lg">驳回注册申请</h3>
+            <h3 id="reject-modal-title" className="text-[18px] font-semibold text-ink mb-lg">驳回注册申请</h3>
             <div className="mb-4">
               <label className="text-[13px] text-ink-muted-48 mb-2 block">驳回原因（选填）</label>
               <textarea

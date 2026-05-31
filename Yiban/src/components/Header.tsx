@@ -282,10 +282,8 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
               aria-haspopup="listbox"
               aria-activedescendant={activeIndex >= 0 ? `search-option-${searchResults[activeIndex]?.id}` : undefined}
             />
-            {searchLoading ? (
+            {searchLoading && (
               <span className="material-symbols-outlined text-[16px] text-placeholder mr-2 animate-spin">progress_activity</span>
-            ) : (
-              <kbd className="mr-2 rounded-xs bg-surface-chip px-1.5 py-0.5 font-mono text-[10px] font-normal text-placeholder">Ctrl K</kbd>
             )}
           </div>
 

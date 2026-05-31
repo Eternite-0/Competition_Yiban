@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
+import PageHero from '../../components/PageHero';
 
 interface ClassInfo {
   id: number;
@@ -138,65 +139,72 @@ export default function ClassManagement() {
   };
 
   return (
-    <div className="p-xl">
-      <div className="flex items-center justify-between mb-lg">
-        <div>
-          <h1 className="text-[24px] font-semibold text-ink">班级管理</h1>
-          <p className="text-[13px] text-ink-muted-48 mt-1">管理各专业的班级信息</p>
-        </div>
-        <button
-          onClick={() => handleOpenModal()}
-          className="h-[40px] px-4 rounded-pill bg-primary text-on-primary text-[13px] font-medium hover:bg-primary-focus transition flex items-center gap-2"
-        >
-          <span className="material-symbols-outlined text-[18px]">add</span>
-          新增班级
-        </button>
-      </div>
+    <div className="py-lg flex flex-col gap-lg">
+      <PageHero
+        eyebrow="Administration"
+        title="班级管理"
+        description="管理各专业的班级信息"
+        actions={
+          <button
+            onClick={() => handleOpenModal()}
+            className="h-10 px-4 rounded-pill bg-primary text-on-primary text-[13px] font-medium hover:bg-primary-focus transition flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[18px]">add</span>
+            新增班级
+          </button>
+        }
+      />
 
       {/* 筛选 */}
-      <div className="glass p-md mb-lg">
-        <div className="flex items-center gap-3 flex-wrap">
-          <select
-            className="input-glass h-[40px] px-3 text-[13px] w-[160px]"
-            value={filterCollege}
-            onChange={(e) => {
-              setFilterCollege(e.target.value);
-              setFilterMajor('');
-            }}
-          >
-            <option value="">全部学院</option>
-            {colleges.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-          <select
-            className="input-glass h-[40px] px-3 text-[13px] w-[160px]"
-            value={filterMajor}
-            onChange={(e) => setFilterMajor(e.target.value)}
-          >
-            <option value="">全部专业</option>
-            {filteredMajors.map((m) => (
-              <option key={m.id} value={m.id}>{m.name}</option>
-            ))}
-          </select>
-          <select
-            className="input-glass h-[40px] px-3 text-[13px] w-[120px]"
-            value={filterGrade}
-            onChange={(e) => setFilterGrade(e.target.value)}
-          >
-            <option value="">全部年级</option>
-            {grades.map((g) => (
-              <option key={g} value={g}>{g}级</option>
-            ))}
-          </select>
-          <span className="text-[13px] text-ink-muted-48">
-            共 {classes.length} 个班级
-          </span>
-        </div>
+      <div className="glass-tint flex flex-wrap gap-sm items-center px-md py-3" role="search">
+        <select
+          name="filterCollege"
+          className="input-glass h-9 w-full sm:w-[160px] text-[13px]"
+          value={filterCollege}
+          aria-label="筛选学院"
+          onChange={(e) => {
+            setFilterCollege(e.target.value);
+            setFilterMajor('');
+          }}
+        >
+          <option value="">全部学院</option>
+          {colleges.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        <select
+          name="filterMajor"
+          className="input-glass h-9 w-full sm:w-[160px] text-[13px]"
+          value={filterMajor}
+          aria-label="筛选专业"
+          onChange={(e) => setFilterMajor(e.target.value)}
+        >
+          <option value="">全部专业</option>
+          {filteredMajors.map((m) => (
+            <option key={m.id} value={m.id}>{m.name}</option>
+          ))}
+        </select>
+        <select
+          name="filterGrade"
+          className="input-glass h-9 w-full sm:w-[120px] text-[13px]"
+          value={filterGrade}
+          aria-label="筛选年级"
+          onChange={(e) => setFilterGrade(e.target.value)}
+        >
+          <option value="">全部年级</option>
+          {grades.map((g) => (
+            <option key={g} value={g}>{g}级</option>
+          ))}
+        </select>
+        <div className="flex-1" />
+        <span className="text-[13px] text-ink-muted-48">
+          共 {classes.length} 个班级
+        </span>
       </div>
 
       {/* 表格 */}
       <div className="glass overflow-hidden">
+        <div className="overflow-x-auto">
         {loading ? (
           <div className="flex items-center justify-center py-xxl">
             <span className="material-symbols-outlined animate-spin text-[24px] text-primary">progress_activity</span>
@@ -239,19 +247,19 @@ export default function ClassManagement() {
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleOpenModal(cls)}
-                        className="h-[32px] px-3 rounded-lg text-[12px] text-primary hover:bg-primary/10 transition"
+                        className="h-9 px-3 rounded-lg text-[12px] text-primary hover:bg-primary/10 transition"
                       >
                         编辑
                       </button>
                       <button
                         onClick={() => handleToggleStatus(cls)}
-                        className="h-[32px] px-3 rounded-lg text-[12px] text-yellow-600 hover:bg-yellow-50 transition"
+                        className="h-9 px-3 rounded-lg text-[12px] text-yellow-600 hover:bg-yellow-50 transition"
                       >
                         {cls.status === 'active' ? '停用' : '启用'}
                       </button>
                       <button
                         onClick={() => handleDelete(cls.id)}
-                        className="h-[32px] px-3 rounded-lg text-[12px] text-red-500 hover:bg-red-50 transition"
+                        className="h-9 px-3 rounded-lg text-[12px] text-red-500 hover:bg-red-50 transition"
                       >
                         删除
                       </button>
@@ -262,17 +270,18 @@ export default function ClassManagement() {
             </tbody>
           </table>
         )}
+        </div>
       </div>
 
       {/* 弹窗 */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true" aria-labelledby="class-modal-title">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className="glass-strong w-full max-w-[400px] mx-4 p-xl rounded-2xl"
           >
-            <h3 className="text-[18px] font-semibold text-ink mb-lg">
+            <h3 id="class-modal-title" className="text-[18px] font-semibold text-ink mb-lg">
               {editingId ? '编辑班级' : '新增班级'}
             </h3>
             <div className="flex flex-col gap-3">
