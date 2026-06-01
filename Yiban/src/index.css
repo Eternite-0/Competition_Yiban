@@ -5,6 +5,20 @@
   html {
     scroll-behavior: smooth;
   }
+
+  /* iOS-style theme transition: smooth color crossfade on all elements */
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition:
+      background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+      color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+      fill 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+      stroke 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
 }
 
 .material-symbols-outlined {

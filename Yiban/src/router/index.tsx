@@ -6,6 +6,9 @@ import RegisterPage from '../pages/RegisterPage';
 import TermsPage from '../pages/TermsPage';
 import { useStore } from '../store/useStore';
 
+// Shared pages (lazy loaded)
+const NotificationsPage = lazy(() => import('../pages/NotificationsPage'));
+
 // Student pages (lazy loaded)
 const StudentHome = lazy(() => import('../pages/student/StudentHome'));
 const CompetitionsHub = lazy(() => import('../pages/student/CompetitionsHub'));
@@ -76,6 +79,7 @@ export const router = createBrowserRouter([
     element: <RequireAuth role="student"><Layout /></RequireAuth>,
     children: [
       { index: true, element: <LazyPage><StudentHome /></LazyPage> },
+      { path: 'notifications', element: <LazyPage><NotificationsPage /></LazyPage> },
       { path: 'competitions', element: <LazyPage><CompetitionsHub /></LazyPage> },
       { path: 'competitions/:id', element: <LazyPage><CompetitionDetail /></LazyPage> },
       { path: 'teams', element: <LazyPage><TeamRecruitment /></LazyPage> },
@@ -94,6 +98,7 @@ export const router = createBrowserRouter([
     element: <RequireAuth role="teacher"><Layout /></RequireAuth>,
     children: [
       { index: true, element: <LazyPage><TeacherHome /></LazyPage> },
+      { path: 'notifications', element: <LazyPage><NotificationsPage /></LazyPage> },
       { path: 'college-overview', element: <LazyPage><CollegeOverview /></LazyPage> },
       { path: 'competitions', element: <LazyPage><CompetitionsHub /></LazyPage> },
       { path: 'audit', element: <LazyPage><SubmissionAudit /></LazyPage> },
@@ -108,6 +113,7 @@ export const router = createBrowserRouter([
     element: <RequireAuth role="admin"><Layout /></RequireAuth>,
     children: [
       { index: true, element: <LazyPage><AdminHome /></LazyPage> },
+      { path: 'notifications', element: <LazyPage><NotificationsPage /></LazyPage> },
       { path: 'competitions', element: <LazyPage><CompetitionsHub /></LazyPage> },
       { path: 'publish', element: <LazyPage><CompetitionPublish /></LazyPage> },
       { path: 'publish/:id', element: <LazyPage><CompetitionPublish /></LazyPage> },

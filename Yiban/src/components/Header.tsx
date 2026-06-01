@@ -38,6 +38,9 @@ const titleMap: Record<string, string> = {
   '/admin/audit': '系统审核',
   '/admin/announcements': '公告管理',
   '/admin/users': '用户管理',
+  '/student/notifications': '消息中心',
+  '/teacher/notifications': '消息中心',
+  '/admin/notifications': '消息中心',
   '/teacher/student-detail': '学生详情',
   '/teacher/student-compare': '学生对比',
 };
@@ -169,6 +172,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
     if (!searchOpen) return;
     const count = searchResults.length;
+    if (count === 0) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setActiveIndex((prev) => (prev + 1) % count);
@@ -228,6 +232,31 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
         prev.map((m) => (m.id === id ? { ...m, isRead: 1 } : m))
       );
       setUnreadCount((c) => Math.max(0, c - 1));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await apiClient.post('/message/read-all');
+      setMessages((prev) => prev.map((m) => ({ ...m, isRead: 1 })));
+      setUnreadCount(0);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteMessage = async (id: number) => {
+    try {
+      await apiClient.delete(`/message/${id}`);
+      setMessages((prev) => {
+        const deleted = prev.find((m) => m.id === id);
+        if (deleted && deleted.isRead === 0) {
+          setUnreadCount((c) => Math.max(0, c - 1));
+        }
+        return prev.filter((m) => m.id !== id);
+      });
     } catch (err) {
       console.error(err);
     }
@@ -366,9 +395,16 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
               >
                 <div className="flex items-center justify-between border-b border-hairline/80 px-4 py-3">
                   <span className="text-[14px] font-medium text-ink">消息通知</span>
-                  {unreadCount > 0 && (
-                    <span className="text-[12px] text-primary font-normal">{unreadCount} 条未读</span>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={handleMarkAllRead}
+                        className="text-[12px] text-primary hover:underline"
+                      >
+                        全部已读
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="overflow-y-auto max-h-[330px]">
@@ -383,12 +419,12 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
                         <li
                           key={msg.id}
                           role="menuitem"
-                          onClick={() => msg.isRead === 0 && handleMarkRead(msg.id)}
-                          className={`flex cursor-pointer gap-3 border-b border-hairline/50 px-4 py-3 transition-colors last:border-b-0 hover:bg-primary/[0.04] ${
+                          onClick={() => handleMarkRead(msg.id)}
+                          className={`group flex items-start gap-3 border-b border-hairline/50 px-4 py-3 transition-colors last:border-b-0 hover:bg-primary/[0.04] ${
                             msg.isRead === 0 ? 'bg-primary/[0.03]' : ''
                           }`}
                         >
-                          <div className="flex-shrink-0 mt-0.5">
+                          <div className="flex-shrink-0 mt-1">
                             {msg.isRead === 0 ? (
                               <span className="block w-2 h-2 rounded-full bg-primary" />
                             ) : (
@@ -406,6 +442,13 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
                               {msg.content}
                             </p>
                           </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg.id); }}
+                            className="flex-shrink-0 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label="删除消息"
+                          >
+                            <span className="material-symbols-outlined text-[16px] text-placeholder hover:text-error">close</span>
+                          </button>
                         </li>
                       ))}
                     </ul>
@@ -415,7 +458,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
                 <div className="border-t border-hairline px-4 py-2.5 text-center">
                   <span
                     className="cursor-pointer text-[12px] font-normal text-primary hover:underline"
-                    onClick={() => setPanelOpen(false)}
+                    onClick={() => { setPanelOpen(false); navigate(`/${user?.role || 'student'}/notifications`); }}
                   >
                     查看全部
                   </span>
@@ -426,21 +469,29 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
         </div>
 
         {/* Theme toggle */}
-        <button
+        <motion.button
           type="button"
           onClick={() => {
             const order: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
             const next = order[(order.indexOf(theme) + 1) % order.length];
             setTheme(next);
           }}
+          whileTap={{ scale: 0.85, rotate: 180 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
           className="icon-button"
           aria-label={`当前主题：${theme === 'light' ? '浅色' : theme === 'dark' ? '深色' : '跟随系统'}，点击切换`}
           title={theme === 'light' ? '浅色模式' : theme === 'dark' ? '深色模式' : '跟随系统'}
         >
-          <span className="material-symbols-outlined text-[20px]">
+          <motion.span
+            className="material-symbols-outlined text-[20px]"
+            key={theme}
+            initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+            animate={{ rotate: 0, opacity: 1, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          >
             {theme === 'light' ? 'light_mode' : theme === 'dark' ? 'dark_mode' : 'brightness_auto'}
-          </span>
-        </button>
+          </motion.span>
+        </motion.button>
 
         <div className="group flex cursor-pointer items-center gap-2">
           <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[12px] font-medium text-on-primary">

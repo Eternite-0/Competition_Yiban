@@ -36,11 +36,34 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
         if (msg == null) {
             throw new BusinessException("消息不存在");
         }
-        if (!msg.getToUser().equals(userId)) {
+        if (!userId.equals(msg.getToUser())) {
             throw new BusinessException("您无权修改此消息状态");
         }
 
         msg.setIsRead(1);
         this.updateById(msg);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void markAllAsRead(Long userId) {
+        Message update = new Message();
+        update.setIsRead(1);
+        this.update(update, new LambdaQueryWrapper<Message>()
+                .eq(Message::getToUser, userId)
+                .eq(Message::getIsRead, 0));
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteMessage(Long userId, Long messageId) {
+        Message msg = this.getById(messageId);
+        if (msg == null) {
+            throw new BusinessException("消息不存在");
+        }
+        if (!userId.equals(msg.getToUser())) {
+            throw new BusinessException("您无权删除此消息");
+        }
+        this.removeById(messageId);
     }
 }

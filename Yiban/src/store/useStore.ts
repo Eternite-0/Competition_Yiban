@@ -18,9 +18,18 @@ function getSystemTheme(): 'light' | 'dark' {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
-function applyThemeClass(theme: Theme) {
+function applyThemeClass(theme: Theme, animate = false) {
   const resolved = theme === 'system' ? getSystemTheme() : theme;
-  document.documentElement.classList.toggle('dark', resolved === 'dark');
+  const root = document.documentElement;
+
+  if (animate) {
+    // Add transition class, toggle theme, remove after animation completes
+    root.classList.add('theme-transition');
+    root.classList.toggle('dark', resolved === 'dark');
+    setTimeout(() => root.classList.remove('theme-transition'), 400);
+  } else {
+    root.classList.toggle('dark', resolved === 'dark');
+  }
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -37,7 +46,7 @@ export const useStore = create<AppState>((set) => ({
   theme: (localStorage.getItem('theme') as Theme) || 'system',
   setTheme: (theme) => {
     localStorage.setItem('theme', theme);
-    applyThemeClass(theme);
+    applyThemeClass(theme, true);
     set({ theme });
   },
 }));
