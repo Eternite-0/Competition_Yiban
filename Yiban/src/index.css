@@ -364,6 +364,113 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* ── Mobile touch optimizations ── */
+@media (max-width: 767px) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-utility,
+  .btn-danger {
+    min-height: 44px;
+  }
+
+  .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .input-glass {
+    min-height: 44px;
+    font-size: 16px; /* Prevent iOS zoom on focus */
+  }
+
+  .chip {
+    padding: 4px 10px;
+    font-size: 13px;
+  }
+
+  /* Improve scroll momentum on iOS */
+  .overflow-y-auto,
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Better tap highlight */
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: rgba(37, 99, 235, 0.08);
+  }
+}
+
+/* ── Dark mode: override common hardcoded Tailwind colors ── */
+.dark .bg-white,
+.dark .bg-canvas { background-color: var(--color-canvas); }
+.dark .bg-slate-50 { background-color: var(--color-surface-tile-1); }
+.dark .bg-slate-100 { background-color: var(--color-surface-tile-2); }
+.dark .bg-blue-50 { background-color: var(--color-primary-soft); }
+
+.dark .text-slate-900,
+.dark .text-gray-900 { color: var(--color-ink); }
+.dark .text-slate-800,
+.dark .text-gray-800 { color: var(--color-ink); }
+.dark .text-slate-700,
+.dark .text-gray-700 { color: var(--color-body); }
+.dark .text-slate-600,
+.dark .text-gray-600 { color: var(--color-body-muted); }
+.dark .text-slate-500,
+.dark .text-gray-500 { color: var(--color-body-subtle); }
+.dark .text-slate-400,
+.dark .text-gray-400 { color: var(--color-ink-muted-48); }
+
+.dark .border-slate-100,
+.dark .border-slate-200 { border-color: var(--color-border); }
+.dark .border-slate-300 { border-color: var(--color-border-emphasis); }
+.dark .border-blue-500,
+.dark .border-l-blue-500 { border-color: var(--color-primary); }
+.dark .border-l-slate-200 { border-color: var(--color-border); }
+
+.dark .text-blue-600,
+.dark .text-blue-700 { color: var(--color-primary); }
+.dark .bg-blue-600,
+.dark .bg-blue-500 { background-color: var(--color-primary); }
+
+.dark .hover\:bg-slate-50:hover { background-color: var(--color-surface-tile-1); }
+.dark .hover\:bg-slate-100:hover { background-color: var(--color-surface-tile-2); }
+.dark .hover\:border-slate-300:hover { border-color: var(--color-border-emphasis); }
+
+.dark .ring-canvas-parchment { --tw-ring-color: var(--color-canvas-parchment); }
+
+/* ── Dark mode: 冰蓝高光卡片效果 ── */
+.dark .app-panel {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: var(--color-canvas);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+.dark .app-panel:hover {
+  border-color: rgba(96, 165, 250, 0.36);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(59, 130, 246, 0.18),
+    0 0 24px rgba(37, 99, 235, 0.12);
+}
+.dark .glass,
+.dark .glass-strong,
+.dark .glass-tint {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: var(--color-canvas);
+}
+.dark .stat-tile {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: var(--color-canvas);
+}
+
+/* ── Dark mode: 按钮冰蓝渐变 ── */
+.dark .btn-primary {
+  background: linear-gradient(135deg, #2563EB, #38BDF8);
+  color: #ffffff;
+}
+.dark .btn-primary:hover {
+  background: linear-gradient(135deg, #3B82F6, #60A5FA);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -88,3 +88,73 @@
   --scrollbar-thumb: rgba(15, 23, 42, 0.18);
   --scrollbar-thumb-hover: rgba(15, 23, 42, 0.28);
 }
+
+/* ── Dark mode overrides — 深蓝黑 + 冰蓝高光 ── */
+.dark {
+  /* ── 主色：冰蓝，保证按钮和重点信息清晰 ── */
+  --color-primary: #3B82F6;
+  --color-primary-focus: #60A5FA;
+  --color-primary-active: #2563EB;
+  --color-primary-soft: rgba(59, 130, 246, 0.16);
+  --color-info: #60A5FA;
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+
+  /* ── 文字：分层，避免纯白刺眼 ── */
+  --color-ink: #F3F8FF;
+  --color-body: #EAF2FF;
+  --color-body-muted: #A8B3C7;
+  --color-body-subtle: #6B7890;
+  --color-body-on-dark: #EAF2FF;
+  --color-primary-on-dark: #60A5FA;
+  --color-ink-muted-80: #A8B3C7;
+  --color-ink-muted-48: #6B7890;
+  --color-ink-muted-20: #3D4E68;
+  --color-placeholder: #6B7890;
+  --color-disabled: #475569;
+  --color-on-primary: #ffffff;
+  --color-on-dark: #EAF2FF;
+
+  /* ── 背景：深蓝黑，专业工作台质感 ── */
+  --color-canvas: #111C2E;
+  --color-canvas-parchment: #07111F;
+  --color-surface-pearl: #0B1628;
+  --color-surface-tile-1: #111C2E;
+  --color-surface-tile-2: #16233A;
+  --color-surface-tile-3: #1E2D47;
+  --color-surface-black: #EAF2FF;
+  --color-surface-chip: #1E2D47;
+
+  /* ── 边框：隐形但有层次 ── */
+  --color-border: rgba(148, 163, 184, 0.22);
+  --color-border-emphasis: rgba(96, 165, 250, 0.36);
+  --color-border-disabled: rgba(148, 163, 184, 0.08);
+  --color-divider-soft: rgba(148, 163, 184, 0.10);
+  --color-hairline: rgba(148, 163, 184, 0.14);
+
+  /* ── 徽章 ── */
+  --color-badge-national-bg: rgba(59, 130, 246, 0.16);
+  --color-badge-national-text: #60A5FA;
+  --color-badge-national-border: rgba(96, 165, 250, 0.28);
+  --color-badge-province-bg: rgba(56, 189, 248, 0.12);
+  --color-badge-province-text: #7DD3FC;
+  --color-badge-school-bg: rgba(148, 163, 184, 0.10);
+  --color-badge-school-text: #A8B3C7;
+  --color-badge-open-bg: rgba(34, 197, 94, 0.12);
+  --color-badge-open-text: #22C55E;
+  --color-badge-closed-bg: rgba(148, 163, 184, 0.08);
+  --color-badge-closed-text: #6B7890;
+  --color-badge-review-bg: rgba(245, 158, 11, 0.12);
+  --color-badge-review-text: #F59E0B;
+  --color-danger-border: rgba(239, 68, 68, 0.3);
+  --color-danger-bg: rgba(239, 68, 68, 0.10);
+
+  /* ── 阴影：卡片悬浮 + 蓝光外发光 ── */
+  --shadow-card-hover: 0 12px 32px rgba(0, 0, 0, 0.28);
+  --shadow-float: 0 16px 40px rgba(0, 0, 0, 0.32);
+  --shadow-focus: 0 0 0 3px rgba(59, 130, 246, 0.3);
+
+  --scrollbar-thumb: rgba(148, 163, 184, 0.14);
+  --scrollbar-thumb-hover: rgba(148, 163, 184, 0.24);
+}
