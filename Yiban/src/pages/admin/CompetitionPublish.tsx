@@ -8,6 +8,7 @@ import { uploadToQiniu, getSignedDownloadUrl } from '../../api/qiniu';
 import type { CompetitionLevel, CompetitionCategory } from '../../types';
 import PageHero from '../../components/PageHero';
 import ConfirmModal from '../../components/ConfirmModal';
+import LazyImage from '../../components/LazyImage';
 import { useConfirmModal } from '../../hooks/useConfirmModal';
 
 interface PublishFormState {
@@ -348,7 +349,7 @@ export default function CompetitionPublish() {
                 >
                   {form.coverUrl ? (
                     <>
-                      <img
+                      <LazyImage
                         src={coverDisplayUrl || form.coverUrl}
                         alt="封面预览"
                         className="absolute inset-0 w-full h-full object-cover"
@@ -496,23 +497,12 @@ export default function CompetitionPublish() {
             </h3>
             <div className="glass-strong overflow-hidden rounded-lg">
               <div className="aspect-video bg-canvas-parchment relative overflow-hidden">
-                {form.coverUrl ? (
-                  <img
-                    src={coverDisplayUrl || form.coverUrl}
-                    alt="封面预览"
-                    className="absolute inset-0 w-full h-full object-cover"
-                    onError={(e) => {
-                      handleCoverLoadError();
-                      e.currentTarget.style.display = 'none';
-                      const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                      if (fallback) fallback.style.display = 'grid';
-                    }}
-                  />
-                ) : null}
-                <div className="absolute inset-0 grid place-items-center text-ink-muted-48 flex-col gap-2" style={form.coverUrl ? { display: 'none' } : undefined}>
-                  <span className="material-symbols-outlined text-[40px] opacity-30">image</span>
-                  <span className="text-[11px]">封面预览</span>
-                </div>
+                <LazyImage
+                  src={form.coverUrl ? (coverDisplayUrl || form.coverUrl) : ''}
+                  alt="封面预览"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  onError={handleCoverLoadError}
+                />
                 <div className="absolute top-3 left-3 chip chip-success">
                   <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
                   <span>报名中</span>

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
 import { listContainer, listItem } from '../../lib/motion';
 import PageHero from '../../components/PageHero';
+import Pagination from '../../components/Pagination';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useConfirmModal } from '../../hooks/useConfirmModal';
 
@@ -412,25 +413,12 @@ export default function StudentRosterManagement() {
               <span className="text-[12px] text-ink-muted-48">
                 共 {pagination.total} 条记录
               </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPagination((p) => ({ ...p, current: Math.max(1, p.current - 1) }))}
-                  disabled={pagination.current <= 1}
-                  className="h-9 px-3 rounded-lg text-[12px] text-ink hover:bg-primary/10 transition disabled:opacity-30"
-                >
-                  上一页
-                </button>
-                <span className="text-[12px] text-ink">
-                  {pagination.current} / {Math.ceil(pagination.total / pagination.size)}
-                </span>
-                <button
-                  onClick={() => setPagination((p) => ({ ...p, current: p.current + 1 }))}
-                  disabled={pagination.current >= Math.ceil(pagination.total / pagination.size)}
-                  className="h-9 px-3 rounded-lg text-[12px] text-ink hover:bg-primary/10 transition disabled:opacity-30"
-                >
-                  下一页
-                </button>
-              </div>
+              <Pagination
+                current={pagination.current}
+                total={pagination.total}
+                pageSize={pagination.size}
+                onChange={(p) => setPagination((prev) => ({ ...prev, current: p }))}
+              />
             </div>
           </>
         )}

@@ -397,6 +397,16 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 16px; /* Prevent iOS zoom on focus */
   }
 
+  /* Small icon buttons (p-1.5, w-8 h-8) need larger touch targets */
+  [class*="p-1.5"][class*="rounded"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  [class*="w-8"][class*="h-8"][class*="grid"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
   .chip {
     padding: 4px 10px;
     font-size: 13px;

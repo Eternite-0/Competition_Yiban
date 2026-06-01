@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
 import { getSignedDownloadUrl } from '../../api/qiniu';
 import PageHero from '../../components/PageHero';
+import Pagination from '../../components/Pagination';
 import { pageVariants, pageTransition, listContainer, listItem } from '../../lib/motion';
 
 interface TeamMember {
@@ -115,7 +116,6 @@ export default function ExcellentWorks() {
     });
   }, [works, search, filterLevel]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
 
   // Reset page when filters change
@@ -243,46 +243,7 @@ export default function ExcellentWorks() {
           </motion.div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-1 pt-md">
-              <button
-                className="w-9 h-9 grid place-items-center rounded-full hover:bg-primary/6 text-ink-muted-48 disabled:opacity-40"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-              </button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, idx) => idx + 1).map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setPage(n)}
-                  className={`w-9 h-9 grid place-items-center rounded-full text-[14px] tabular-nums transition ${
-                    n === page ? 'bg-primary text-on-primary font-semibold' : 'text-ink hover:bg-primary/6'
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-              {totalPages > 5 && <span className="text-ink-muted-48 px-2">…</span>}
-              {totalPages > 5 && (
-                <button
-                  onClick={() => setPage(totalPages)}
-                  className={`w-9 h-9 grid place-items-center rounded-full text-[14px] tabular-nums transition ${
-                    totalPages === page ? 'bg-primary text-on-primary font-semibold' : 'text-ink hover:bg-primary/6'
-                  }`}
-                >
-                  {totalPages}
-                </button>
-              )}
-              <button
-                className="w-9 h-9 grid place-items-center rounded-full hover:bg-primary/6 text-ink-muted-80 disabled:opacity-40"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              >
-                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-              </button>
-            </div>
-          )}
+          <Pagination current={page} total={filtered.length} pageSize={pageSize} onChange={setPage} />
         </>
       )}
 

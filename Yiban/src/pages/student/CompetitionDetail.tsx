@@ -7,6 +7,7 @@ import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 import ErrorState from '../../components/ErrorState';
 import { PageSkeleton } from '../../components/Skeleton';
+import LazyImage from '../../components/LazyImage';
 import { pageVariants, pageTransition } from '../../lib/motion';
 
 type BackendCompetition = {
@@ -167,21 +168,12 @@ export default function CompetitionDetail() {
       {/* Hero */}
       <div className="glass overflow-hidden">
         <div className="h-[280px] md:h-[320px] relative">
-          {comp.coverUrl && (
-            <img
-              className="w-full h-full object-cover"
-              src={comp.coverUrl}
-              alt={comp.name}
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                if (fallback) fallback.style.display = 'grid';
-              }}
-            />
-          )}
-          <div className="w-full h-full bg-canvas-parchment grid place-items-center" style={comp.coverUrl ? { display: 'none' } : undefined}>
-            <span className="material-symbols-outlined text-[120px] text-primary/50 icon-fill">emoji_events</span>
-          </div>
+          <LazyImage
+            className="w-full h-full object-cover"
+            src={comp.coverUrl}
+            alt={comp.name}
+            fallbackIcon="emoji_events"
+          />
             <div className="absolute bottom-0 left-0 right-0 p-xl bg-canvas border-t border-hairline">
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <span className="chip">{comp.level} · {comp.category}类</span>

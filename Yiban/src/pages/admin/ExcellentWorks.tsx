@@ -5,6 +5,7 @@ import { listContainer, listItem, pageTransition } from '../../lib/motion';
 import apiClient from '../../api/client';
 import { uploadToQiniu, getSignedDownloadUrl } from '../../api/qiniu';
 import PageHero from '../../components/PageHero';
+import Pagination from '../../components/Pagination';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useConfirmModal } from '../../hooks/useConfirmModal';
 
@@ -173,7 +174,6 @@ export default function ExcellentWorks() {
     });
   }, [allWorks, search, filterCompetition, filterYear, filterAward]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredWorks.length / pageSize));
   const pagedWorks = filteredWorks.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   const toggleSelect = (id: string) => {
@@ -616,35 +616,7 @@ export default function ExcellentWorks() {
           <span className="text-[12px] text-ink-muted-48">
             共 <span className="text-ink font-medium tabular-nums">{filteredWorks.length}</span> 条
           </span>
-          <div className="flex items-center gap-1">
-            <button
-              className="w-8 h-8 rounded-pill grid place-items-center text-ink-muted-80 hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            >
-              <span className="material-symbols-outlined text-[16px]">chevron_left</span>
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-8 h-8 rounded-pill text-[12px] font-medium tabular-nums transition ${
-                  currentPage === page
-                    ? 'bg-primary text-white'
-                    : 'text-ink-muted-80 hover:text-ink hover:bg-primary/6'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              className="w-8 h-8 rounded-pill grid place-items-center text-ink-muted-80 hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            >
-              <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-            </button>
-          </div>
+          <Pagination current={currentPage} total={filteredWorks.length} pageSize={pageSize} onChange={setCurrentPage} />
         </div>
       </section>
 

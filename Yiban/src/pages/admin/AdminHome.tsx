@@ -6,6 +6,7 @@ import apiClient from '../../api/client';
 import { listContainer, listItem, pageTransition } from '../../lib/motion';
 import { useStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
+import Pagination from '../../components/Pagination';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useConfirmModal } from '../../hooks/useConfirmModal';
 
@@ -62,21 +63,6 @@ const monthsAgoLabel = (offset: number): { key: string; label: string } => {
   d.setMonth(d.getMonth() - offset);
   const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   return { key, label: `${d.getMonth() + 1}月` };
-};
-
-const getCompPageWindow = (current: number, total: number): (number | '...')[] => {
-  if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages: (number | '...')[] = [];
-  let start = Math.max(2, current - 1);
-  let end = Math.min(total - 1, current + 1);
-  if (current <= 3) { start = 2; end = 4; }
-  if (current >= total - 2) { start = total - 3; end = total - 1; }
-  pages.push(1);
-  if (start > 2) pages.push('...');
-  for (let i = start; i <= end; i++) pages.push(i);
-  if (end < total - 1) pages.push('...');
-  pages.push(total);
-  return pages;
 };
 
 const levelChipClass = (level?: string) => {
@@ -565,39 +551,7 @@ export default function AdminHome() {
                 <span className="text-[12px] text-ink-muted-48">
                   共 <span className="text-ink font-medium tabular-nums">{recentCompetitions.length}</span> 条
                 </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    className="w-8 h-8 rounded-pill grid place-items-center text-ink-muted-80 hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition"
-                    disabled={currentCompPage === 1}
-                    onClick={() => setCurrentCompPage((p) => Math.max(1, p - 1))}
-                  >
-                    <span className="material-symbols-outlined text-[16px]">chevron_left</span>
-                  </button>
-                  {getCompPageWindow(currentCompPage, totalCompPages).map((page, i) =>
-                    page === '...' ? (
-                      <span key={`e${i}`} className="w-8 h-8 grid place-items-center text-[12px] text-ink-muted-48">...</span>
-                    ) : (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentCompPage(page)}
-                        className={`w-8 h-8 rounded-pill text-[12px] font-medium tabular-nums transition ${
-                          currentCompPage === page
-                            ? 'bg-primary text-white'
-                            : 'text-ink-muted-80 hover:text-ink hover:bg-primary/6'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    )
-                  )}
-                  <button
-                    className="w-8 h-8 rounded-pill grid place-items-center text-ink-muted-80 hover:bg-primary/6 disabled:opacity-30 disabled:cursor-not-allowed transition"
-                    disabled={currentCompPage === totalCompPages}
-                    onClick={() => setCurrentCompPage((p) => Math.min(totalCompPages, p + 1))}
-                  >
-                    <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-                  </button>
-                </div>
+                <Pagination current={currentCompPage} total={recentCompetitions.length} pageSize={compPageSize} onChange={setCurrentCompPage} />
               </div>
             )}
           </motion.div>

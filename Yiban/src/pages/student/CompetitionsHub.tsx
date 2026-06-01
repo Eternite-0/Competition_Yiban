@@ -4,8 +4,10 @@ import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import { useStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
+import Pagination from '../../components/Pagination';
 import { CardSkeleton } from '../../components/Skeleton';
 import ErrorState from '../../components/ErrorState';
+import LazyImage from '../../components/LazyImage';
 import { listContainer, listItem, pageTransition, softSpring } from '../../lib/motion';
 
 type BackendCompetition = {
@@ -161,7 +163,6 @@ export default function CompetitionsHub() {
     fetchCompetitions();
   }, [page, selectedLevel, selectedCategory, selectedStatus, searchQuery, isAdmin]);
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { '': total };
     competitions.forEach((comp) => {
@@ -320,35 +321,8 @@ export default function CompetitionsHub() {
             </motion.div>
           )}
 
-          {competitions.length > 0 && totalPages > 1 && (
-            <div className="flex items-center justify-center gap-1 pt-md">
-              <button
-                className="icon-button !h-9 !w-9 disabled:opacity-40"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-              </button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, idx) => idx + 1).map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setPage(n)}
-                  className={`grid h-9 w-9 place-items-center rounded-full text-[14px] tabular-nums transition ${
-                    n === page ? 'bg-primary font-semibold text-on-primary' : 'text-ink hover:bg-primary/[0.06]'
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-              {totalPages > 5 && <span className="px-2 text-ink-muted-48">…</span>}
-              <button
-                className="icon-button !h-9 !w-9 disabled:opacity-40"
-                disabled={page >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              >
-                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-              </button>
-            </div>
+          {competitions.length > 0 && (
+            <Pagination current={page} total={total} pageSize={pageSize} onChange={setPage} />
           )}
         </main>
       </div>
@@ -426,24 +400,12 @@ function CompetitionCard({
   return (
     <article className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-sm transition-all group flex h-full flex-col">
       <div className="relative h-[140px] bg-slate-100 overflow-hidden">
-        {comp.coverUrl && (
-          <img
-            loading="lazy"
-            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-[1.025]"
-            src={comp.coverUrl}
-            alt={comp.name}
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-              if (fallback) fallback.style.display = 'grid';
-            }}
-          />
-        )}
-        <div className="grid h-full w-full place-items-center bg-slate-100" style={comp.coverUrl ? { display: 'none' } : undefined}>
-          <div className="grid h-[52px] w-[52px] place-items-center rounded-full bg-canvas">
-            <span className="material-symbols-outlined text-[28px] text-primary">emoji_events</span>
-          </div>
-        </div>
+        <LazyImage
+          className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-[1.025]"
+          src={comp.coverUrl}
+          alt={comp.name}
+          fallbackIcon="emoji_events"
+        />
         {isClosingSoon && (
           <span className="absolute right-3 top-3 rounded-xs border border-hairline bg-canvas px-2.5 py-1 text-[12px] font-normal text-primary">
             {remainingDays === 0 ? '今日截止' : `${remainingDays} 天截止`}

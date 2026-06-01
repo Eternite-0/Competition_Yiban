@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import Pagination from '../../components/Pagination';
 import { pageVariants, pageTransition, listContainer, listItem } from '../../lib/motion';
 import { useStore } from '../../store/useStore';
 
@@ -296,7 +297,7 @@ export default function TeamRecruitment() {
       </div>
 
       {/* Main Grid */}
-      <div className="flex gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         {/* Left: Recruitment Cards */}
         <div className="flex-1 min-w-0 flex flex-col gap-md">
           <div className="flex justify-between items-center">
@@ -400,29 +401,11 @@ export default function TeamRecruitment() {
             </motion.div>
           )}
 
-          {total > pageSize && (
-            <div className="flex justify-center items-center gap-1 pt-md">
-              <button
-                className="w-9 h-9 grid place-items-center rounded-full hover:bg-primary/6 text-ink-muted-48 disabled:opacity-40"
-                disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-              </button>
-              <span className="px-3 text-[13px] text-ink tabular-nums">{page} / {Math.max(1, Math.ceil(total / pageSize))}</span>
-              <button
-                className="w-9 h-9 grid place-items-center rounded-full hover:bg-primary/6 text-ink-muted-80 disabled:opacity-40"
-                disabled={page >= Math.ceil(total / pageSize)}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-              </button>
-            </div>
-          )}
+          <Pagination current={page} total={total} pageSize={pageSize} onChange={setPage} />
         </div>
 
         {/* Right: Sidebar */}
-        <aside className="w-[240px] shrink-0 sticky top-6 self-start bg-white border border-slate-200 rounded-xl p-4">
+        <aside className="w-full lg:w-[240px] shrink-0 lg:sticky lg:top-6 lg:self-start bg-white border border-slate-200 rounded-xl p-4">
           {/* My Posts - Captain Application Management */}
           {currentUser && (
             <div>

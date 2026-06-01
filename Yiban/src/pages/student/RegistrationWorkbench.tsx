@@ -167,7 +167,7 @@ export default function RegistrationWorkbench() {
           <div className="absolute left-[10%] top-5 h-[2px] w-[40%] bg-primary" />
           {steps.map((step, idx) => (
             <motion.div key={idx} variants={listItem} className="flex flex-col items-center text-center">
-              <div className={`w-10 h-10 rounded-full grid place-items-center text-[14px] font-semibold relative z-10 ${
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full grid place-items-center text-[12px] sm:text-[14px] font-semibold relative z-10 ${
                 step.done
                   ? 'bg-primary text-on-primary'
                 : step.active
@@ -180,7 +180,7 @@ export default function RegistrationWorkbench() {
                   idx + 1
                 )}
               </div>
-              <span className={`mt-3 text-[13px] ${
+              <span className={`mt-3 text-[13px] hidden sm:block ${
                 step.active ? 'text-primary font-medium' : step.done ? 'text-ink' : 'text-placeholder'
               }`}>
                 {step.label}

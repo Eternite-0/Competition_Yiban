@@ -186,6 +186,7 @@ export default function SubmissionAudit() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTab, setFilterTab] = useState<'全部' | '待审核'>('全部');
   const [previewFile, setPreviewFile] = useState<{ fileName: string; fileUrl: string } | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   const fetchPending = async () => {
     setLoading(true);
@@ -357,9 +358,9 @@ export default function SubmissionAudit() {
       />
 
       {/* Three-column */}
-      <div className="flex-1 flex gap-md overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row gap-md overflow-hidden">
         {/* Left: list */}
-        <section className="w-80 glass flex flex-col overflow-hidden shrink-0">
+        <section className="w-full lg:w-80 glass flex flex-col overflow-hidden shrink-0">
           <div className="p-md border-b border-hairline">
             <h2 className="text-[15px] font-semibold text-ink mb-3">待审核列表</h2>
             <div className="relative mb-3">
@@ -386,6 +387,13 @@ export default function SubmissionAudit() {
                 </button>
               ))}
             </div>
+            <button
+              onClick={() => setShowHistory(true)}
+              className="lg:hidden mt-2 text-[12px] text-primary flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-[14px]">history</span>
+              已处理记录 ({processedSubmissions.length})
+            </button>
           </div>
           <div className="flex-1 overflow-y-auto">
             {loading ? (
@@ -427,7 +435,7 @@ export default function SubmissionAudit() {
         </section>
 
         {/* Middle: details */}
-        <section className="flex-1 flex flex-col min-w-[400px] gap-md overflow-y-auto pr-1">
+        <section className="flex-1 flex flex-col min-w-0 lg:min-w-[400px] gap-md overflow-y-auto pr-1">
           <AnimatePresence mode="wait">
           {selected ? (
             <motion.div
@@ -579,12 +587,18 @@ export default function SubmissionAudit() {
         </section>
 
         {/* Right: history */}
-        <section className="w-72 glass flex flex-col overflow-hidden shrink-0">
-          <div className="p-md border-b border-hairline">
+        <section className={`w-full lg:w-72 glass flex flex-col overflow-hidden shrink-0 ${showHistory ? '' : 'hidden lg:flex'}`}>
+          <div className="p-md border-b border-hairline flex items-center justify-between">
             <h3 className="text-[14px] font-semibold text-ink flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">history</span>
               已处理记录
             </h3>
+            <button
+              onClick={() => setShowHistory(false)}
+              className="lg:hidden text-ink-muted-48 hover:text-ink"
+            >
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
           </div>
           <div className="flex-1 overflow-y-auto">
             {processedSubmissions.length === 0 ? (

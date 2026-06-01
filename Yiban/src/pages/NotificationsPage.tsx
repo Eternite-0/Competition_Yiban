@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { apiClient } from '../api/client';
 import { useStore } from '../store/useStore';
 import PageHero from '../components/PageHero';
+import Pagination from '../components/Pagination';
 import { listContainer, listItem, pageVariants, pageTransition } from '../lib/motion';
 
 interface Message {
@@ -106,7 +107,6 @@ export default function NotificationsPage() {
   };
 
   const unreadCount = messages.filter((m) => m.isRead === 0).length;
-  const totalPages = Math.ceil(total / size);
 
   return (
     <motion.div variants={pageVariants} initial="hidden" animate="visible" className="flex flex-col">
@@ -173,7 +173,7 @@ export default function NotificationsPage() {
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDelete(msg.id); }}
-                    className="flex-shrink-0 mt-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="flex-shrink-0 mt-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
                     aria-label="删除消息"
                   >
                     <span className="material-symbols-outlined text-[18px] text-placeholder hover:text-error">delete</span>
@@ -184,25 +184,7 @@ export default function NotificationsPage() {
           </motion.div>
         )}
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 border-t border-border px-4 py-3">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="btn-secondary !h-8 !px-3 text-[12px] disabled:opacity-40"
-            >
-              上一页
-            </button>
-            <span className="text-[12px] text-body-muted">{page} / {totalPages}</span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="btn-secondary !h-8 !px-3 text-[12px] disabled:opacity-40"
-            >
-              下一页
-            </button>
-          </div>
-        )}
+        <Pagination current={page} total={total} pageSize={size} onChange={setPage} />
       </div>
     </motion.div>
   );
