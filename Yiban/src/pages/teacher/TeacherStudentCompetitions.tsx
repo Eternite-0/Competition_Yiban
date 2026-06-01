@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 import CascadeFilter, { type FilterValues } from '../../components/CascadeFilter';
+import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
 
 interface MonitorRow {
   id: string;
@@ -95,7 +96,13 @@ export default function TeacherStudentCompetitions() {
   }, [rows, total]);
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <motion.div
+      className="py-lg flex flex-col gap-lg"
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      transition={pageTransition}
+    >
       {/* Header */}
       <PageHero
         eyebrow="Students"
@@ -135,6 +142,7 @@ export default function TeacherStudentCompetitions() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.35 }}
+            whileHover={{ scale: 1.03, y: -2 }}
             className="stat-tile p-lg flex flex-col gap-2"
           >
             <div className="flex justify-between items-center">
@@ -163,7 +171,7 @@ export default function TeacherStudentCompetitions() {
                 <th className="py-3 px-md font-medium text-right">操作</th>
               </tr>
             </thead>
-            <tbody className="text-[13px]">
+            <motion.tbody className="text-[13px]" variants={listContainer} initial="hidden" animate="visible">
               {loading ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-ink-muted-48">
@@ -179,7 +187,7 @@ export default function TeacherStudentCompetitions() {
                 </tr>
               ) : (
                 rows.map((reg) => (
-                  <tr key={reg.id} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
+                  <motion.tr key={reg.id} variants={listItem} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
                     <td className="py-3 px-md">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-canvas-parchment text-ink-muted-80 grid place-items-center font-semibold text-[12px]">
@@ -203,27 +211,29 @@ export default function TeacherStudentCompetitions() {
                     </td>
                     <td className="py-3 px-md text-right">
                       <div className="flex items-center justify-end gap-3">
-                        <button
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
                           onClick={() => navigate(`/teacher/student-detail?studentId=${reg.studentId}`)}
                           className="text-[12px] text-primary hover:text-primary-focus font-medium"
                         >
                           详情 →
-                        </button>
-                        <button
+                        </motion.button>
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
                           onClick={() => navigate(`/teacher/student-growth?studentId=${reg.studentId}`)}
                           className="text-[12px] text-primary hover:text-primary-focus font-medium"
                         >
                           成长 →
-                        </button>
+                        </motion.button>
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))
               )}
-            </tbody>
+            </motion.tbody>
           </table>
         </div>
       </section>
-    </div>
+    </motion.div>
   );
 }

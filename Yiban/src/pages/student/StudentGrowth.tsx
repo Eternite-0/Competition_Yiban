@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import { useStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
+import { pageVariants, pageTransition, listContainer, listItem } from '../../lib/motion';
 
 type RadarData = {
   innovation: number;
@@ -164,7 +165,12 @@ export default function StudentGrowth() {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
+    <motion.div
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col gap-6"
+    >
       <PageHero
         eyebrow="Growth"
         title="我的成长档案"
@@ -209,13 +215,13 @@ export default function StudentGrowth() {
       </motion.section>
 
       {/* Metrics */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-md">
-        {metrics.map((m, i) => (
+      <motion.section variants={listContainer} initial="hidden" animate="visible" className="grid grid-cols-2 md:grid-cols-4 gap-md">
+        {metrics.map((m) => (
           <motion.div
             key={m.label}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05, duration: 0.35 }}
+            variants={listItem}
+            whileHover={{ scale: 1.03, y: -2 }}
+            transition={pageTransition}
             className="stat-tile flex flex-col gap-2 p-lg"
           >
             <div className="flex items-center justify-between">
@@ -228,7 +234,7 @@ export default function StudentGrowth() {
             </div>
           </motion.div>
         ))}
-      </section>
+      </motion.section>
 
       {/* Bento */}
       <section className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6">
@@ -251,22 +257,24 @@ export default function StudentGrowth() {
               <span className="material-symbols-outlined text-[18px] text-primary">bar_chart</span>
               能力详情
             </h3>
-            <div>
+            <motion.div variants={listContainer} initial="hidden" animate="visible">
               {dimensionBars.map((d) => (
-                <div key={d.label} className="flex items-center gap-3 mb-3">
+                <motion.div key={d.label} variants={listItem} className="flex items-center gap-3 mb-3">
                   <span className="text-sm text-slate-600 w-[72px] shrink-0">{d.label}</span>
-                  <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div
+                  <motion.div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <motion.div
                       className={`h-full rounded-full ${
                         d.score < 70 ? 'bg-slate-400' : d.score < 85 ? 'bg-blue-400' : 'bg-blue-600'
                       }`}
-                      style={{ width: `${Math.min(100, d.score)}%` }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(100, d.score)}%` }}
+                      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
                     />
-                  </div>
+                  </motion.div>
                   <span className="text-sm font-medium text-slate-700 w-[28px] text-right tabular-nums">{d.score}</span>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </div>
 
@@ -310,22 +318,22 @@ export default function StudentGrowth() {
             <span className="material-symbols-outlined text-[18px] text-primary">tips_and_updates</span>
             成长建议
           </h3>
-          <ul className="flex flex-col gap-3 text-[13px] text-ink-muted-80 leading-relaxed">
-            <li className="flex gap-2">
+          <motion.ul variants={listContainer} initial="hidden" animate="visible" className="flex flex-col gap-3 text-[13px] text-ink-muted-80 leading-relaxed">
+            <motion.li variants={listItem} className="flex gap-2">
               <span className="material-symbols-outlined text-[16px] text-primary mt-0.5">trending_up</span>
               <span>继续参与不同方向的赛事，全面提升能力雷达。</span>
-            </li>
-            <li className="flex gap-2">
+            </motion.li>
+            <motion.li variants={listItem} className="flex gap-2">
               <span className="material-symbols-outlined text-[16px] text-primary mt-0.5">groups</span>
               <span>积极参与组队，团队协作维度增长最快。</span>
-            </li>
-            <li className="flex gap-2">
+            </motion.li>
+            <motion.li variants={listItem} className="flex gap-2">
               <span className="material-symbols-outlined text-[16px] text-primary mt-0.5">edit_note</span>
               <span>认真撰写参赛文档，能显著提升写作维度评分。</span>
-            </li>
-          </ul>
+            </motion.li>
+          </motion.ul>
         </div>
       </section>
-    </div>
+    </motion.div>
   );
 }

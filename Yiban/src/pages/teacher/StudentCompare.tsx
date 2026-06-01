@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
 
 interface RadarDim {
   dimension: string;
@@ -144,16 +145,22 @@ export default function StudentCompare() {
   }
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <motion.div
+      className="py-lg flex flex-col gap-lg"
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      transition={pageTransition}
+    >
       <PageHero
         eyebrow="Compare"
         title="学生对比"
         description={`${students.length} 名学生的能力对比分析。`}
         actions={(
-          <button onClick={() => navigate(-1)} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px]">
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate(-1)} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px]">
             <span className="material-symbols-outlined text-[16px]">arrow_back</span>
             返回
-          </button>
+          </motion.button>
         )}
       />
 
@@ -164,15 +171,15 @@ export default function StudentCompare() {
       ) : (
         <>
           {/* Legend */}
-          <div className="flex flex-wrap gap-4">
+          <motion.div className="flex flex-wrap gap-4" variants={listContainer} initial="hidden" animate="visible">
             {students.map((s, i) => (
-              <div key={s.studentId} className="flex items-center gap-2">
+              <motion.div key={s.studentId} variants={listItem} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
                 <span className="text-[13px] font-medium text-ink">{s.realName}</span>
                 <span className="text-[12px] text-ink-muted-48">{s.className}</span>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           {/* Radar + Stats */}
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-lg">
@@ -209,12 +216,12 @@ export default function StudentCompare() {
                       <div key={s.studentId} className="flex items-center gap-3">
                         <span className="text-[12px] text-ink w-16 truncate shrink-0">{s.realName}</span>
                         <div className="flex-1 h-5 rounded-full bg-primary/8 overflow-hidden">
-                          <div
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min((s.totalCompetitions / Math.max(...students.map(st => st.totalCompetitions), 1)) * 100, 100)}%` }}
+                            transition={{ delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                             className="h-full rounded-full"
-                            style={{
-                              width: `${Math.min((s.totalCompetitions / Math.max(...students.map(st => st.totalCompetitions), 1)) * 100, 100)}%`,
-                              backgroundColor: COLORS[i % COLORS.length],
-                            }}
+                            style={{ backgroundColor: COLORS[i % COLORS.length] }}
                           />
                         </div>
                         <span className="text-[12px] tabular-nums text-ink font-semibold w-8 text-right">{s.totalCompetitions}</span>
@@ -230,12 +237,12 @@ export default function StudentCompare() {
                       <div key={s.studentId} className="flex items-center gap-3">
                         <span className="text-[12px] text-ink w-16 truncate shrink-0">{s.realName}</span>
                         <div className="flex-1 h-5 rounded-full bg-primary/8 overflow-hidden">
-                          <div
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min((s.awards / Math.max(...students.map(st => st.awards), 1)) * 100, 100)}%` }}
+                            transition={{ delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                             className="h-full rounded-full"
-                            style={{
-                              width: `${Math.min((s.awards / Math.max(...students.map(st => st.awards), 1)) * 100, 100)}%`,
-                              backgroundColor: COLORS[i % COLORS.length],
-                            }}
+                            style={{ backgroundColor: COLORS[i % COLORS.length] }}
                           />
                         </div>
                         <span className="text-[12px] tabular-nums text-ink font-semibold w-8 text-right">{s.awards}</span>
@@ -244,7 +251,7 @@ export default function StudentCompare() {
                   </div>
                 </div>
                 {/* Radar dimensions */}
-                {RADAR_FIELDS.map((f) => (
+                {RADAR_FIELDS.map((f, fi) => (
                   <div key={f.key}>
                     <p className="text-[13px] text-ink-muted-80 mb-2">{f.label}</p>
                     <div className="flex flex-col gap-2">
@@ -254,12 +261,12 @@ export default function StudentCompare() {
                           <div key={s.studentId} className="flex items-center gap-3">
                             <span className="text-[12px] text-ink w-16 truncate shrink-0">{s.realName}</span>
                             <div className="flex-1 h-5 rounded-full bg-primary/8 overflow-hidden">
-                              <div
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${dim ? dim.score : 0}%` }}
+                                transition={{ delay: (fi * students.length + i) * 0.04, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                                 className="h-full rounded-full"
-                                style={{
-                                  width: `${dim ? dim.score : 0}%`,
-                                  backgroundColor: COLORS[i % COLORS.length],
-                                }}
+                                style={{ backgroundColor: COLORS[i % COLORS.length] }}
                               />
                             </div>
                             <span className="text-[12px] tabular-nums text-ink font-semibold w-8 text-right">{dim?.score ?? 0}</span>
@@ -274,6 +281,6 @@ export default function StudentCompare() {
           </section>
         </>
       )}
-    </div>
+    </motion.div>
   );
 }

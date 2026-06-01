@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { motion } from 'framer-motion';
@@ -38,10 +38,22 @@ export default function RegisterPage() {
   const [teacherPassword, setTeacherPassword] = useState('');
   const [teacherConfirmPwd, setTeacherConfirmPwd] = useState('');
 
-  const colleges = [
-    '计算机学院', '电子学院', '商学院', '设计学院',
-    '机械学院', '外语学院', '理学院', '文学院'
-  ];
+  // 学院列表
+  const [colleges, setColleges] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchColleges = async () => {
+      try {
+        const res: any = await apiClient.get('/admin/colleges');
+        setColleges(res || []);
+      } catch (err) {
+        console.error('获取学院列表失败:', err);
+        // 使用默认列表作为后备
+        setColleges(['计算机学院', '电子学院', '商学院', '设计学院', '机械学院', '外语学院', '理学院', '文学院']);
+      }
+    };
+    fetchColleges();
+  }, []);
 
   // 查询学号
   const handleLookupStudent = async () => {

@@ -1,10 +1,14 @@
 import { toast } from 'sonner';
 import { useRef, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
+import { pageVariants, pageTransition, listContainer, listItem, smoothEase } from '../../lib/motion';
 import apiClient from '../../api/client';
 import { uploadToQiniu, getSignedDownloadUrl } from '../../api/qiniu';
 import type { CompetitionLevel, CompetitionCategory } from '../../types';
 import PageHero from '../../components/PageHero';
+import ConfirmModal from '../../components/ConfirmModal';
+import { useConfirmModal } from '../../hooks/useConfirmModal';
 
 interface PublishFormState {
   title: string;
@@ -91,6 +95,7 @@ export default function CompetitionPublish() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
+  const { isOpen, title, message, variant, confirm, close } = useConfirmModal();
 
   const [form, setForm] = useState<PublishFormState>({ ...defaultForm });
   const [errors, setErrors] = useState<Partial<Record<keyof PublishFormState, string>>>({});
@@ -268,7 +273,14 @@ export default function CompetitionPublish() {
   }
 
   return (
-    <div className="py-lg flex flex-col gap-lg pb-32">
+    <motion.div
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      transition={pageTransition}
+      className="py-lg flex flex-col gap-lg pb-32"
+    >
       <PageHero
         eyebrow={isEdit ? 'Edit' : 'Publish'}
         title={isEdit ? '编辑赛事' : '发布新赛事'}
@@ -277,9 +289,9 @@ export default function CompetitionPublish() {
 
       <div className="flex flex-col lg:flex-row gap-lg">
         {/* Left: Form */}
-        <div className="flex-1 flex flex-col gap-md min-w-0">
+        <motion.div className="flex-1 flex flex-col gap-md min-w-0" variants={listContainer} initial="hidden" animate="visible">
           {/* Basic info */}
-          <section className="glass p-lg">
+          <motion.section variants={listItem} className="glass p-lg">
             <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
               <span className="material-symbols-outlined text-[20px] text-primary">info</span>
               <h2 className="text-[17px] font-semibold tracking-tight text-ink">基本信息</h2>
@@ -357,10 +369,10 @@ export default function CompetitionPublish() {
                 </div>
               </Field>
             </div>
-          </section>
+          </motion.section>
 
           {/* Content */}
-          <section className="glass p-lg">
+          <motion.section variants={listItem} className="glass p-lg">
             <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
               <span className="material-symbols-outlined text-[20px] text-primary">description</span>
               <h2 className="text-[17px] font-semibold tracking-tight text-ink">赛事内容</h2>
@@ -378,10 +390,10 @@ export default function CompetitionPublish() {
                 <input className="input-glass" placeholder="输入标签，用逗号分隔，如：IT/计算机, 创新创业" value={form.tags} onChange={(e) => updateField('tags', e.target.value)} />
               </Field>
             </div>
-          </section>
+          </motion.section>
 
           {/* Settings */}
-          <section className="glass p-lg">
+          <motion.section variants={listItem} className="glass p-lg">
             <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
               <span className="material-symbols-outlined text-[20px] text-primary">settings</span>
               <h2 className="text-[17px] font-semibold tracking-tight text-ink">参赛赛道</h2>
@@ -393,9 +405,11 @@ export default function CompetitionPublish() {
               {defaultTracks.map((track) => {
                 const selected = form.tracks.includes(track);
                 return (
-                  <button
+                  <motion.button
                     key={track}
                     type="button"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => toggleTrack(track)}
                     className={`group relative flex items-center gap-2 pl-3 pr-4 py-2 rounded-lg border text-[13px] font-medium transition-all ${
                       selected
@@ -407,7 +421,7 @@ export default function CompetitionPublish() {
                       {selected ? 'check_circle' : 'add_circle_outline'}
                     </span>
                     {track}
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
@@ -458,20 +472,20 @@ export default function CompetitionPublish() {
                 </div>
               </div>
             )}
-          </section>
+          </motion.section>
 
           {/* Stages Management (edit mode only) */}
           {isEdit && (
-            <section className="glass p-xl">
+            <motion.section variants={listItem} className="glass p-xl">
               <h3 className="text-[17px] font-semibold tracking-tight text-ink mb-1 flex items-center gap-2">
                 <span className="material-symbols-outlined text-[20px] text-primary">route</span>
                 赛事阶段管理
               </h3>
               <p className="text-[13px] text-ink-muted-48 mb-4">按需添加赛事阶段，如院赛、校赛、省赛等。不添加阶段则使用默认报名流程。</p>
               <StageManager competitionId={Number(id)} />
-            </section>
+            </motion.section>
           )}
-        </div>
+        </motion.div>
 
         {/* Right: Preview */}
         <div className="w-full lg:w-[380px] shrink-0">
@@ -528,23 +542,23 @@ export default function CompetitionPublish() {
       <div className="fixed bottom-0 left-0 lg:left-[240px] right-0 z-40">
         <div className="bg-canvas border-t border-hairline px-lg py-3">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <button type="button" onClick={() => navigate('/admin')} className="btn-secondary">
+            <motion.button whileTap={{ scale: 0.97 }} type="button" onClick={() => navigate('/admin')} className="btn-secondary">
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
               返回
-            </button>
+            </motion.button>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={() => handleSubmit('draft')} disabled={loading || uploading} className="btn-secondary disabled:opacity-60">
+              <motion.button whileTap={{ scale: 0.97 }} type="button" onClick={() => handleSubmit('draft')} disabled={loading || uploading} className="btn-secondary disabled:opacity-60">
                 保存草稿
-              </button>
-              <button type="button" onClick={() => handleSubmit('published')} disabled={loading || uploading} className="btn-primary disabled:opacity-60">
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.97 }} type="button" onClick={() => handleSubmit('published')} disabled={loading || uploading} className="btn-primary disabled:opacity-60">
                 <span className="material-symbols-outlined text-[18px]">publish</span>
                 {loading ? '提交中…' : isEdit ? '保存修改' : '发布赛事'}
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -552,6 +566,7 @@ function StageManager({ competitionId }: { competitionId: number }) {
   const [stages, setStages] = useState<any[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [newStage, setNewStage] = useState({ name: '', startTime: '', endTime: '', description: '' });
+  const { isOpen, title, message, variant, confirm, close } = useConfirmModal();
 
   useEffect(() => {
     apiClient.get(`/competition/${competitionId}/stages`).then((data: any) => {
@@ -579,7 +594,14 @@ function StageManager({ competitionId }: { competitionId: number }) {
   };
 
   const handleDelete = async (stageId: number) => {
-    if (!confirm('确定删除此阶段？')) return;
+    const confirmed = await confirm({
+      title: '删除阶段',
+      message: '确定删除此阶段？',
+      confirmText: '删除',
+      cancelText: '取消',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await apiClient.delete(`/competition/${competitionId}/stages/${stageId}`);
       setStages(prev => prev.filter(s => s.id !== stageId));
@@ -622,25 +644,53 @@ function StageManager({ competitionId }: { competitionId: number }) {
         </div>
       ))}
 
-      {showAdd ? (
-        <div className="p-3 rounded-lg border border-primary/30 bg-primary/5 flex flex-col gap-2">
-          <input className="input-glass !h-9" placeholder="阶段名称，如：院赛报名、校赛评审" value={newStage.name} onChange={e => setNewStage(s => ({ ...s, name: e.target.value }))} />
-          <div className="grid grid-cols-2 gap-2">
-            <input type="date" className="input-glass !h-9" value={newStage.startTime} onChange={e => setNewStage(s => ({ ...s, startTime: e.target.value }))} />
-            <input type="date" className="input-glass !h-9" value={newStage.endTime} onChange={e => setNewStage(s => ({ ...s, endTime: e.target.value }))} />
-          </div>
-          <input className="input-glass !h-9" placeholder="阶段说明（选填）" value={newStage.description} onChange={e => setNewStage(s => ({ ...s, description: e.target.value }))} />
-          <div className="flex gap-2 justify-end">
-            <button type="button" className="btn-secondary !py-1.5 !text-[12px]" onClick={() => setShowAdd(false)}>取消</button>
-            <button type="button" className="btn-primary !py-1.5 !text-[12px]" onClick={handleAdd}>添加</button>
-          </div>
-        </div>
-      ) : (
-        <button type="button" onClick={() => setShowAdd(true)} className="flex items-center gap-2 text-[13px] text-primary hover:text-primary-focus font-medium">
-          <span className="material-symbols-outlined text-[18px]">add_circle</span>
-          添加阶段
-        </button>
-      )}
+      <AnimatePresence mode="wait">
+        {showAdd ? (
+          <motion.div
+            key="add-form"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2, ease: smoothEase }}
+            className="overflow-hidden"
+          >
+            <div className="p-3 rounded-lg border border-primary/30 bg-primary/5 flex flex-col gap-2">
+              <input className="input-glass !h-9" placeholder="阶段名称，如：院赛报名、校赛评审" value={newStage.name} onChange={e => setNewStage(s => ({ ...s, name: e.target.value }))} />
+              <div className="grid grid-cols-2 gap-2">
+                <input type="date" className="input-glass !h-9" value={newStage.startTime} onChange={e => setNewStage(s => ({ ...s, startTime: e.target.value }))} />
+                <input type="date" className="input-glass !h-9" value={newStage.endTime} onChange={e => setNewStage(s => ({ ...s, endTime: e.target.value }))} />
+              </div>
+              <input className="input-glass !h-9" placeholder="阶段说明（选填）" value={newStage.description} onChange={e => setNewStage(s => ({ ...s, description: e.target.value }))} />
+              <div className="flex gap-2 justify-end">
+                <button type="button" className="btn-secondary !py-1.5 !text-[12px]" onClick={() => setShowAdd(false)}>取消</button>
+                <button type="button" className="btn-primary !py-1.5 !text-[12px]" onClick={handleAdd}>添加</button>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.button
+            key="add-btn"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            type="button"
+            onClick={() => setShowAdd(true)}
+            className="flex items-center gap-2 text-[13px] text-primary hover:text-primary-focus font-medium"
+          >
+            <span className="material-symbols-outlined text-[18px]">add_circle</span>
+            添加阶段
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      <ConfirmModal
+        isOpen={isOpen}
+        onClose={close}
+        onConfirm={() => {}}
+        title={title}
+        message={message}
+        variant={variant}
+      />
     </div>
   );
 }

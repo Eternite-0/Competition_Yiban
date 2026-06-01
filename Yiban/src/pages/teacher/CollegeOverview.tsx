@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 import CascadeFilter, { type FilterValues } from '../../components/CascadeFilter';
+import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
 
 interface MajorStat {
   major: string;
@@ -88,7 +89,13 @@ export default function CollegeOverview() {
   const majorStats = data?.majorDistribution ?? [];
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <motion.div
+      className="py-lg flex flex-col gap-lg"
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      transition={pageTransition}
+    >
       <PageHero
         eyebrow="Overview"
         title="学院总览"
@@ -116,6 +123,7 @@ export default function CollegeOverview() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.35 }}
+                whileHover={{ scale: 1.03, y: -2 }}
                 className="stat-tile p-lg flex flex-col gap-2"
               >
                 <div className="flex items-center justify-between">
@@ -223,14 +231,14 @@ export default function CollegeOverview() {
                     <th className="py-3 px-md font-medium">参赛率</th>
                   </tr>
                 </thead>
-                <tbody className="text-[13px]">
+                <motion.tbody className="text-[13px]" variants={listContainer} initial="hidden" animate="visible">
                   {majorStats.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-10 text-center text-ink-muted-48">暂无数据</td>
                     </tr>
                   ) : (
                     majorStats.map((m) => (
-                      <tr key={m.major} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
+                      <motion.tr key={m.major} variants={listItem} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
                         <td className="py-3 px-md font-medium text-ink">{m.major}</td>
                         <td className="py-3 px-md text-right tabular-nums text-ink">{m.studentCount}</td>
                         <td className="py-3 px-md text-right tabular-nums text-ink">{m.registrationCount}</td>
@@ -248,15 +256,15 @@ export default function CollegeOverview() {
                             </span>
                           </div>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))
                   )}
-                </tbody>
+                </motion.tbody>
               </table>
             </div>
           </motion.section>
         </>
       )}
-    </div>
+    </motion.div>
   );
 }

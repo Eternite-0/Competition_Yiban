@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import { useStore } from '../../store/useStore';
 import CascadeFilter, { type FilterValues } from '../../components/CascadeFilter';
+import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
 
 interface DashboardStats {
   totalStudents?: number;
@@ -235,7 +236,13 @@ export default function TeacherHome() {
   const statusTotal = Math.max(1, statusGroups.reduce((sum, item) => sum + item.count, 0));
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <motion.div
+      className="py-lg flex flex-col gap-lg"
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      transition={pageTransition}
+    >
       <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -255,22 +262,24 @@ export default function TeacherHome() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-sm">
-                <button
+                <motion.button
                   className="btn-utility"
                   onClick={() => navigate(`${basePath}/audit`)}
                   aria-label="前往审核"
+                  whileTap={{ scale: 0.97 }}
                 >
                   <span className="material-symbols-outlined text-[17px]">fact_check</span>
                   审核中心
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   className="btn-utility"
                   onClick={() => navigate(`${basePath}/student-competitions`)}
                   aria-label="学生动态"
+                  whileTap={{ scale: 0.97 }}
                 >
                   <span className="material-symbols-outlined text-[17px]">groups</span>
                   学生动态
-                </button>
+                </motion.button>
               </div>
             </div>
 
@@ -281,6 +290,7 @@ export default function TeacherHome() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.08 + index * 0.05, duration: 0.35 }}
+                  whileHover={{ scale: 1.03, y: -2 }}
                   className="stat-tile p-md"
                 >
                   <div className="mb-3 flex items-center justify-between gap-2">
@@ -430,13 +440,13 @@ export default function TeacherHome() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-2">
+              <motion.div className="flex flex-col gap-2" variants={listContainer} initial="hidden" animate="visible">
                 {riskRows.map((row, index) => (
                   <motion.button
                     key={`${row.id}-${index}`}
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.04, duration: 0.3 }}
+                    variants={listItem}
+                    whileHover={{ scale: 1.01, x: 2 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => row.studentId && navigate(`${basePath}/student-detail?studentId=${row.studentId}`)}
                     className="rounded-md border border-hairline bg-canvas px-3 py-3 text-left transition hover:border-primary/30 hover:bg-primary/5"
                   >
@@ -449,7 +459,7 @@ export default function TeacherHome() {
                     </div>
                   </motion.button>
                 ))}
-              </div>
+              </motion.div>
             )}
           </div>
         </motion.div>
@@ -467,22 +477,23 @@ export default function TeacherHome() {
               <h2 className="text-[16px] font-medium text-ink">班级活跃排行</h2>
               <p className="mt-1 text-[12px] text-ink-muted-48">按当前筛选范围内参赛记录数排序。</p>
             </div>
-            <button
+            <motion.button
+              whileTap={{ scale: 0.97 }}
               onClick={() => navigate(`${basePath}/student-growth`)}
               className="text-[12px] font-medium text-primary hover:text-primary-focus"
             >
               学情分析 →
-            </button>
+            </motion.button>
           </div>
           <div className="p-lg">
             {classRank.length === 0 ? (
               <div className="py-14 text-center text-[13px] text-ink-muted-48">暂无班级数据</div>
             ) : (
-              <div className="flex flex-col gap-4">
+              <motion.div className="flex flex-col gap-4" variants={listContainer} initial="hidden" animate="visible">
                 {classRank.map((item, index) => {
                   const width = Math.max(8, (item.count / Math.max(classRank[0]?.count || 1, 1)) * 100);
                   return (
-                    <div key={item.className} className="grid grid-cols-[100px_minmax(0,1fr)_52px] items-center gap-3">
+                    <motion.div key={item.className} variants={listItem} className="grid grid-cols-[100px_minmax(0,1fr)_52px] items-center gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-[13px] font-semibold text-ink">{item.className}</p>
                         <p className="truncate text-[11px] text-ink-muted-48">{item.major || '未标注专业'}</p>
@@ -499,10 +510,10 @@ export default function TeacherHome() {
                         <p className="text-[15px] font-semibold tabular-nums text-ink">{item.count}</p>
                         <p className="text-[10px] text-ink-muted-48">人次</p>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
-              </div>
+              </motion.div>
             )}
           </div>
         </motion.div>
@@ -518,20 +529,21 @@ export default function TeacherHome() {
               <h2 className="text-[16px] font-medium text-ink">近期动态流</h2>
               <p className="mt-1 text-[12px] text-ink-muted-48">最新报名、审核和材料流转。</p>
             </div>
-            <button
+            <motion.button
+              whileTap={{ scale: 0.97 }}
               onClick={() => navigate(`${basePath}/student-competitions`)}
               className="text-[12px] font-medium text-primary hover:text-primary-focus"
             >
               查看学生 →
-            </button>
+            </motion.button>
           </div>
           <div className="p-md">
             {recentActivities.length === 0 ? (
               <div className="py-14 text-center text-[13px] text-ink-muted-48">暂无近期动态</div>
             ) : (
-              <div className="flex flex-col">
+              <motion.div className="flex flex-col" variants={listContainer} initial="hidden" animate="visible">
                 {recentActivities.map((item, index) => (
-                  <div key={index} className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 border-b border-hairline px-1 py-3 last:border-0">
+                  <motion.div key={index} variants={listItem} className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 border-b border-hairline px-1 py-3 last:border-0">
                     <div className="grid h-8 w-8 place-items-center rounded-md bg-canvas-parchment text-[12px] font-semibold text-ink-muted-80">
                       {(item.studentName || '?')[0]}
                     </div>
@@ -544,9 +556,9 @@ export default function TeacherHome() {
                     <span className={item.status === '审核驳回' ? 'chip chip-error' : item.status === '审核通过' ? 'chip chip-success' : 'chip'}>
                       {item.status || '—'}
                     </span>
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
           </div>
         </motion.div>
@@ -558,21 +570,25 @@ export default function TeacherHome() {
               <h2 className="text-[16px] font-medium text-ink">待审核报名</h2>
               <p className="mt-1 text-[12px] text-ink-muted-48">教师角色可直接进入审核中心处理。</p>
             </div>
-            <button
+            <motion.button
+              whileTap={{ scale: 0.97 }}
               onClick={() => navigate(`${basePath}/audit`)}
               className="text-[12px] font-medium text-primary hover:text-primary-focus"
             >
               查看全部 →
-            </button>
+            </motion.button>
           </div>
           <div className="p-md">
             {pending.length === 0 ? (
               <div className="py-10 text-center text-[13px] text-ink-muted-48">暂无待审核</div>
             ) : (
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+              <motion.div className="grid grid-cols-1 gap-2 md:grid-cols-2" variants={listContainer} initial="hidden" animate="visible">
                 {pending.map((item) => (
-                  <button
+                  <motion.button
                     key={item.id}
+                    variants={listItem}
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => navigate('/teacher/audit')}
                     className="rounded-md border border-hairline bg-canvas p-3 text-left transition hover:border-primary/30 hover:bg-primary/5"
                   >
@@ -583,12 +599,12 @@ export default function TeacherHome() {
                       </div>
                       <span className="chip chip-warning">{item.status}</span>
                     </div>
-                  </button>
+                  </motion.button>
                 ))}
-              </div>
+              </motion.div>
             )}
           </div>
       </section>
-    </div>
+    </motion.div>
   );
 }

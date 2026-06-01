@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
+import { listContainer, listItem } from '../../lib/motion';
 import PageHero from '../../components/PageHero';
+import ConfirmModal from '../../components/ConfirmModal';
+import { useConfirmModal } from '../../hooks/useConfirmModal';
 
 interface RosterRecord {
   id: number;
@@ -53,8 +56,9 @@ export default function StudentRosterManagement() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<any>(null);
   const [importing, setImporting] = useState(false);
+  const [colleges, setColleges] = useState<string[]>([]);
+  const { isOpen, title, message, variant, confirm, close } = useConfirmModal();
 
-  const colleges = ['计算机学院', '电子学院', '商学院', '设计学院', '机械学院', '外语学院', '理学院', '文学院'];
   const grades = ['2022', '2023', '2024', '2025'];
 
   const fetchRoster = useCallback(async () => {
@@ -103,12 +107,24 @@ export default function StudentRosterManagement() {
     } catch (err) { /* ignore */ }
   }, []);
 
+  const fetchColleges = useCallback(async () => {
+    try {
+      const res: any = await apiClient.get('/admin/colleges');
+      setColleges(res || []);
+    } catch (err) {
+      console.error('获取学院列表失败:', err);
+      // 使用默认列表作为后备
+      setColleges(['计算机学院', '电子学院', '商学院', '设计学院', '机械学院', '外语学院', '理学院', '文学院']);
+    }
+  }, []);
+
   useEffect(() => {
     fetchRoster();
     fetchMajors();
     fetchClasses();
     fetchStats();
-  }, [fetchRoster, fetchMajors, fetchClasses, fetchStats]);
+    fetchColleges();
+  }, [fetchRoster, fetchMajors, fetchClasses, fetchStats, fetchColleges]);
 
   const filteredMajors = filters.college
     ? majors.filter((m) => m.college === filters.college)
@@ -167,7 +183,14 @@ export default function StudentRosterManagement() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('确定删除该记录？')) return;
+    const confirmed = await confirm({
+      title: '删除记录',
+      message: '确定删除该记录？',
+      confirmText: '删除',
+      cancelText: '取消',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       const { default: apiClient } = await import('../../api/client');
       await apiClient.delete(`/admin/roster/${id}`);
@@ -230,33 +253,28 @@ export default function StudentRosterManagement() {
 
       {/* 统计卡片 */}
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-md">
-        <div className="stat-tile p-lg flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] text-ink-muted-80">花名册总数</span>
-            <span className="material-symbols-outlined text-[18px] text-primary">group</span>
-          </div>
-          <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">
-            {loading ? '—' : stats.total}
-          </span>
-        </div>
-        <div className="stat-tile p-lg flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] text-ink-muted-80">已注册</span>
-            <span className="material-symbols-outlined text-[18px] text-green-600">check_circle</span>
-          </div>
-          <span className="font-display font-medium text-[22px] leading-none tabular-nums text-green-600">
-            {loading ? '—' : stats.registered}
-          </span>
-        </div>
-        <div className="stat-tile p-lg flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[13px] text-ink-muted-80">未注册</span>
-            <span className="material-symbols-outlined text-[18px] text-yellow-600">pending</span>
-          </div>
-          <span className="font-display font-medium text-[22px] leading-none tabular-nums text-yellow-600">
-            {loading ? '—' : stats.pending}
-          </span>
-        </div>
+        {[
+          { label: '花名册总数', value: stats.total, icon: 'group', color: 'text-primary' },
+          { label: '已注册', value: stats.registered, icon: 'check_circle', color: 'text-green-600' },
+          { label: '未注册', value: stats.pending, icon: 'pending', color: 'text-yellow-600' },
+        ].map((m, i) => (
+          <motion.div
+            key={m.label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05, duration: 0.35 }}
+            whileHover={{ scale: 1.02, y: -2 }}
+            className="stat-tile p-lg flex flex-col gap-2 cursor-default"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-ink-muted-80">{m.label}</span>
+              <span className={`material-symbols-outlined text-[18px] ${m.color}`}>{m.icon}</span>
+            </div>
+            <span className={`font-display font-medium text-[22px] leading-none tabular-nums ${m.color}`}>
+              {loading ? '—' : m.value}
+            </span>
+          </motion.div>
+        ))}
       </section>
 
       {/* 筛选 */}
@@ -350,12 +368,11 @@ export default function StudentRosterManagement() {
                   <th className="text-right px-md py-3 text-[12px] font-medium text-ink-muted-48">操作</th>
                 </tr>
               </thead>
-              <tbody>
+              <motion.tbody variants={listContainer} initial="hidden" animate="visible">
                 {records.map((r) => (
                   <motion.tr
                     key={r.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+                    variants={listItem}
                     className="border-b border-hairline last:border-0 hover:bg-primary/5 transition"
                   >
                     <td className="px-md py-3 text-[13px] text-ink font-mono">{r.studentNo}</td>
@@ -387,7 +404,7 @@ export default function StudentRosterManagement() {
                     </td>
                   </motion.tr>
                 ))}
-              </tbody>
+              </motion.tbody>
             </table>
 
             {/* 分页 */}
@@ -421,13 +438,23 @@ export default function StudentRosterManagement() {
       </div>
 
       {/* 添加/编辑弹窗 */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true" aria-labelledby="roster-modal-title">
+      <AnimatePresence>
+        {showModal && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-strong w-full max-w-[480px] mx-4 p-xl rounded-2xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="roster-modal-title"
           >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-strong w-full max-w-[480px] mx-4 p-xl rounded-2xl"
+            >
             <h3 id="roster-modal-title" className="text-[18px] font-semibold text-ink mb-lg">
               {editingId ? '编辑记录' : '添加学生'}
             </h3>
@@ -500,18 +527,29 @@ export default function StudentRosterManagement() {
                 保存
               </button>
             </div>
+            </motion.div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* 导入弹窗 */}
-      {showImportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true" aria-labelledby="roster-modal-title">
+      <AnimatePresence>
+        {showImportModal && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-strong w-full max-w-[500px] mx-4 p-xl rounded-2xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="roster-modal-title"
           >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-strong w-full max-w-[500px] mx-4 p-xl rounded-2xl"
+            >
             <h3 id="roster-modal-title" className="text-[18px] font-semibold text-ink mb-lg">导入花名册</h3>
 
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4 text-[13px]">
@@ -568,9 +606,19 @@ export default function StudentRosterManagement() {
                 {importing ? '导入中...' : '开始导入'}
               </button>
             </div>
+            </motion.div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
+
+      <ConfirmModal
+        isOpen={isOpen}
+        onClose={close}
+        onConfirm={() => {}}
+        title={title}
+        message={message}
+        variant={variant}
+      />
     </div>
   );
 }

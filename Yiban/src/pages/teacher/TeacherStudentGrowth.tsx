@@ -6,6 +6,7 @@ import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 import CascadeFilter, { type FilterValues } from '../../components/CascadeFilter';
 import { useStore } from '../../store/useStore';
+import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
 
 function currentAcademicYear() {
   const now = new Date();
@@ -294,7 +295,13 @@ export default function TeacherStudentGrowth() {
   ];
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <motion.div
+      className="py-lg flex flex-col gap-lg"
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      transition={pageTransition}
+    >
       {/* Header */}
       <PageHero
         eyebrow="Growth"
@@ -346,6 +353,7 @@ export default function TeacherStudentGrowth() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.35 }}
+            whileHover={{ scale: 1.03, y: -2 }}
             className="stat-tile p-lg"
           >
             <div className="flex justify-between items-start mb-2">
@@ -382,8 +390,9 @@ export default function TeacherStudentGrowth() {
                 <p className="text-[12px]">暂无学生</p>
               </div>
             ) : (
-              filteredStudents.map((s) => (
-                <div key={s.studentId} className={`flex items-center gap-2 p-2 rounded-md transition mb-1 ${
+              <motion.div variants={listContainer} initial="hidden" animate="visible">
+              {filteredStudents.map((s) => (
+                <motion.div key={s.studentId} variants={listItem} whileHover={{ x: 2 }} className={`flex items-center gap-2 p-2 rounded-md transition mb-1 ${
                   selectedId === s.studentId ? 'bg-primary/8' : 'hover:bg-primary/6'
                 }`}>
                   <input
@@ -404,8 +413,9 @@ export default function TeacherStudentGrowth() {
                       {s.studentId}{s.className ? ` · ${s.className}` : ''}
                     </div>
                   </button>
-                </div>
-              ))
+                </motion.div>
+              ))}
+              </motion.div>
             )}
           </div>
         </aside>
@@ -464,30 +474,35 @@ export default function TeacherStudentGrowth() {
 
               {/* Dimension bars */}
               {growth && growth.radar.length > 0 && (
-                <div>
+                <motion.div variants={listContainer} initial="hidden" animate="visible">
                   <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px] text-primary">bar_chart</span>
                     能力详情
                   </h3>
                   <div className="flex flex-col gap-3">
-                    {growth.radar.map((d) => (
-                      <div key={d.dimension}>
+                    {growth.radar.map((d, i) => (
+                      <motion.div key={d.dimension} variants={listItem}>
                         <div className="flex justify-between text-[12px] mb-1">
                           <span className="text-ink-muted-80">{d.dimension}</span>
                           <span className="text-ink font-semibold tabular-nums">{d.score} / {d.maxScore}</span>
                         </div>
                         <div className="h-1 w-full rounded-full bg-primary/8 overflow-hidden">
-                          <div className="h-full bg-primary" style={{ width: `${(d.score / Math.max(d.maxScore, 1)) * 100}%` }} />
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(d.score / Math.max(d.maxScore, 1)) * 100}%` }}
+                            transition={{ delay: i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                            className="h-full bg-primary"
+                          />
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
-                </div>
+                </motion.div>
               )}
             </div>
           )}
         </div>
       </section>
-    </div>
+    </motion.div>
   );
 }

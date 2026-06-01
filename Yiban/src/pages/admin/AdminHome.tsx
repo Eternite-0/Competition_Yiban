@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
+import { listContainer, listItem, pageTransition } from '../../lib/motion';
 import { useStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
+import ConfirmModal from '../../components/ConfirmModal';
+import { useConfirmModal } from '../../hooks/useConfirmModal';
 
 // Raw competition record from the backend. Field names are tolerant because
 // the API contract documents both English (name/startTime/status) and the
@@ -85,6 +88,7 @@ const levelChipClass = (level?: string) => {
 export default function AdminHome() {
   const navigate = useNavigate();
   const currentUser = useStore((s) => s.currentUser);
+  const { isOpen, title, message, variant, confirm, close } = useConfirmModal();
 
   const [records, setRecords] = useState<CompetitionRecord[]>([]);
   const [total, setTotal] = useState<number>(0);
@@ -285,7 +289,14 @@ export default function AdminHome() {
 
   const handleDelete = async (id: string | number | undefined) => {
     if (!id) return;
-    if (!confirm('确定要删除这个赛事吗？此操作不可恢复。')) return;
+    const confirmed = await confirm({
+      title: '删除赛事',
+      message: '确定要删除这个赛事吗？此操作不可恢复。',
+      confirmText: '删除',
+      cancelText: '取消',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await apiClient.delete(`/competition/admin/delete/${id}`);
       toast.success('已删除');
@@ -317,10 +328,10 @@ export default function AdminHome() {
         title={`${greetingName}，欢迎回来`}
         description="查看平台运营概览，处理待办事项。"
         actions={(
-          <button onClick={() => navigate('/admin/publish')} className="btn-primary">
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate('/admin/publish')} className="btn-primary">
             <span className="material-symbols-outlined text-[18px]">add</span>
             发布新赛事
-          </button>
+          </motion.button>
         )}
       />
 
@@ -345,7 +356,8 @@ export default function AdminHome() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.4 }}
-            className="stat-tile p-lg flex flex-col gap-2"
+            whileHover={{ scale: 1.02, y: -2 }}
+            className="stat-tile p-lg flex flex-col gap-2 cursor-default"
           >
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-ink-muted-80">{m.label}</span>
@@ -470,7 +482,7 @@ export default function AdminHome() {
                     <th className="py-3 px-md font-medium text-right">操作</th>
                   </tr>
                 </thead>
-                <tbody className="text-[13px]">
+                <motion.tbody className="text-[13px]" variants={listContainer} initial="hidden" animate="visible">
                   {loading ? (
                     Array.from({ length: 3 }).map((_, i) => (
                       <tr key={i} className="border-b border-hairline last:border-0 animate-pulse">
@@ -490,7 +502,7 @@ export default function AdminHome() {
                   ) : pagedCompetitions.map((comp, idx) => {
                     const display = statusLabel(comp.status);
                     return (
-                      <tr key={comp.id ?? idx} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
+                      <motion.tr key={comp.id ?? idx} variants={listItem} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
                         <td className="py-3 px-md font-medium text-ink truncate max-w-[260px]">{comp.name || comp.title || '未命名赛事'}</td>
                         <td className="py-3 px-md">
                           <span className={levelChipClass(comp.level)}>{comp.level || '校级'}</span>
@@ -542,10 +554,10 @@ export default function AdminHome() {
                             </button>
                           </div>
                         </td>
-                      </tr>
+                      </motion.tr>
                     );
                   })}
-                </tbody>
+                </motion.tbody>
               </table>
             </div>
             {totalCompPages > 1 && (
@@ -602,13 +614,11 @@ export default function AdminHome() {
             <h3 className="text-[15px] font-semibold tracking-tight text-ink">待处理事项</h3>
             <span className="chip">{pendingTasks.filter((t) => t.link).length || pendingTasks.length} 项</span>
           </div>
-          <div className="flex flex-col">
-            {pendingTasks.map((task, i) => (
+          <motion.div className="flex flex-col" variants={listContainer} initial="hidden" animate="visible">
+            {pendingTasks.map((task) => (
               <motion.div
                 key={task.title}
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.35 + i * 0.06, duration: 0.4 }}
+                variants={listItem}
                 className="py-3 border-b border-hairline last:border-0 group cursor-pointer"
                 onClick={() => task.link && navigate(task.link)}
               >
@@ -623,9 +633,18 @@ export default function AdminHome() {
                 <p className="text-[12px] text-ink-muted-80 leading-relaxed pl-3.5">{task.description}</p>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </motion.div>
       </section>
+
+      <ConfirmModal
+        isOpen={isOpen}
+        onClose={close}
+        onConfirm={() => {}}
+        title={title}
+        message={message}
+        variant={variant}
+      />
     </div>
   );
 }

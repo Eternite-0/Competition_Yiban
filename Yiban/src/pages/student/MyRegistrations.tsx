@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import { CardSkeleton } from '../../components/Skeleton';
+import ErrorState from '../../components/ErrorState';
+import { listContainer, listItem, pageVariants } from '../../lib/motion';
 
 type Registration = {
   id: number | string;
@@ -76,7 +79,12 @@ export default function MyRegistrations() {
   const pendingCount = registrations.filter((r) => r.status === '待完善').length;
 
   return (
-    <div className="flex flex-col gap-6">
+    <motion.div
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col gap-6"
+    >
       <PageHero
         eyebrow="Registrations"
         title="我的报名"
@@ -107,22 +115,23 @@ export default function MyRegistrations() {
           {/* Cards */}
           <div className="flex flex-col gap-4">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
-                <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
-                <span className="text-[14px]">加载中…</span>
+              <div className="flex flex-col gap-4">
+                {Array.from({ length: 3 }, (_, i) => <CardSkeleton key={i} />)}
               </div>
             ) : error ? (
-              <div className="flex flex-col items-center justify-center py-section gap-2 text-primary">
-                <span className="material-symbols-outlined text-[32px]">error_outline</span>
-                <span className="text-[14px]">{error}</span>
-              </div>
+              <ErrorState
+                message={error}
+                onRetry={() => window.location.reload()}
+              />
             ) : filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
-                <span className="material-symbols-outlined text-[32px]">inbox</span>
-                <span className="text-[14px]">暂无报名记录</span>
-              </div>
+              <ErrorState
+                variant="not-found"
+                title="暂无报名记录"
+                message={activeTab !== '全部' ? '当前筛选条件下没有报名记录' : '您还没有报名任何赛事'}
+              />
             ) : (
-              filtered.map((reg, i) => {
+              <motion.div variants={listContainer} initial="hidden" animate="visible" className="flex flex-col gap-4">
+                {filtered.map((reg) => {
                 const statusInfo = STATUS_CHIP[reg.status] || { label: reg.status || '未知', chip: 'chip' };
                 const isPendingCompletion = reg.status === '待完善';
                 const compName = reg.competitionName || `赛事 #${reg.competitionId}`;
@@ -130,9 +139,7 @@ export default function MyRegistrations() {
                 return (
                   <motion.div
                     key={reg.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.04, duration: 0.35 }}
+                    variants={listItem}
                     className="bg-white border border-slate-200 rounded-xl p-5"
                   >
                     <div className="flex items-center justify-between mb-3">
@@ -194,48 +201,49 @@ export default function MyRegistrations() {
                     })()}
 
                     <div className="flex justify-end gap-2 pt-3 border-t border-hairline">
-                      <button
+                      <motion.button whileTap={{ scale: 0.97 }}
                         className="btn-secondary !py-2 !text-[13px]"
                         onClick={() => navigate(`/student/competitions/${reg.competitionId}`)}
                       >
                         查看赛事
-                      </button>
+                      </motion.button>
                       {isPendingCompletion ? (
-                        <button
+                        <motion.button whileTap={{ scale: 0.97 }}
                           className="btn-primary !py-2 !text-[13px]"
                           onClick={() => navigate(`/student/upload/${reg.id}`)}
                         >
                           <span className="material-symbols-outlined text-[16px]">upload_file</span>
                           上传成果
-                        </button>
+                        </motion.button>
                       ) : reg.status === '退回补充' ? (
-                        <button
+                        <motion.button whileTap={{ scale: 0.97 }}
                           className="btn-primary !py-2 !text-[13px]"
                           onClick={() => navigate(`/student/upload/${reg.id}`)}
                         >
                           <span className="material-symbols-outlined text-[16px]">assignment_return</span>
                           补充材料
-                        </button>
+                        </motion.button>
                       ) : reg.status === '审核驳回' ? (
-                        <button
+                        <motion.button whileTap={{ scale: 0.97 }}
                           className="btn-primary !py-2 !text-[13px]"
                           onClick={() => navigate(`/student/upload/${reg.id}`)}
                         >
                           <span className="material-symbols-outlined text-[16px]">refresh</span>
                           重新提交
-                        </button>
+                        </motion.button>
                       ) : (
-                        <button
+                        <motion.button whileTap={{ scale: 0.97 }}
                           className="btn-secondary !py-2 !text-[13px]"
                           onClick={() => navigate(`/student/upload/${reg.id}`)}
                         >
                           查看详情
-                        </button>
+                        </motion.button>
                       )}
                     </div>
                   </motion.div>
                 );
-              })
+                })}
+              </motion.div>
             )}
           </div>
         </div>
@@ -285,16 +293,16 @@ export default function MyRegistrations() {
               <span className="material-symbols-outlined text-[18px] text-primary">insights</span>
               报名统计
             </h3>
-            <div className="grid grid-cols-4 gap-4 mb-6">
-              <StatBlock label="累计报名" value={registrations.length} tone="primary" />
-              <StatBlock label="待完善" value={pendingCount} tone="warning" />
-              <StatBlock label="审核中" value={registrations.filter((r) => r.status === '审核中' || r.status === '已提交').length} tone="warning" />
-              <StatBlock label="已通过" value={registrations.filter((r) => r.status === '审核通过').length} tone="success" />
-            </div>
+            <motion.div variants={listContainer} initial="hidden" animate="visible" className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+              <motion.div variants={listItem}><StatBlock label="累计报名" value={registrations.length} tone="primary" /></motion.div>
+              <motion.div variants={listItem}><StatBlock label="待完善" value={pendingCount} tone="warning" /></motion.div>
+              <motion.div variants={listItem}><StatBlock label="审核中" value={registrations.filter((r) => r.status === '审核中' || r.status === '已提交').length} tone="warning" /></motion.div>
+              <motion.div variants={listItem}><StatBlock label="已通过" value={registrations.filter((r) => r.status === '审核通过').length} tone="success" /></motion.div>
+            </motion.div>
           </div>
         </aside>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
+import { listContainer, listItem } from '../../lib/motion';
 import PageHero from '../../components/PageHero';
+import ConfirmModal from '../../components/ConfirmModal';
+import { useConfirmModal } from '../../hooks/useConfirmModal';
 
 interface PendingTeacher {
   id: number;
@@ -17,6 +20,7 @@ export default function RegistrationAudit() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const { isOpen, title, message, variant, confirm, close } = useConfirmModal();
 
   const fetchPending = useCallback(async () => {
     setLoading(true);
@@ -35,7 +39,14 @@ export default function RegistrationAudit() {
   }, [fetchPending]);
 
   const handleApprove = async (userId: number) => {
-    if (!window.confirm('确定通过该教师的注册申请？')) return;
+    const confirmed = await confirm({
+      title: '审核通过',
+      message: '确定通过该教师的注册申请？',
+      confirmText: '通过',
+      cancelText: '取消',
+      variant: 'info',
+    });
+    if (!confirmed) return;
     try {
       const { default: apiClient } = await import('../../api/client');
       await apiClient.post('/admin/registrations/approve', { userId });
@@ -104,12 +115,11 @@ export default function RegistrationAudit() {
                 <th className="text-right px-md py-3 text-[12px] font-medium text-ink-muted-48">操作</th>
               </tr>
             </thead>
-            <tbody>
+            <motion.tbody variants={listContainer} initial="hidden" animate="visible">
               {teachers.map((t) => (
                 <motion.tr
                   key={t.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  variants={listItem}
                   className="border-b border-hairline last:border-0 hover:bg-primary/5 transition"
                 >
                   <td className="px-md py-3 text-[13px] text-ink font-mono">{t.username}</td>
@@ -135,20 +145,30 @@ export default function RegistrationAudit() {
                   </td>
                 </motion.tr>
               ))}
-            </tbody>
+            </motion.tbody>
           </table>
         )}
         </div>
       </div>
 
       {/* 驳回弹窗 */}
-      {showRejectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true" aria-labelledby="reject-modal-title">
+      <AnimatePresence>
+        {showRejectModal && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-strong w-full max-w-[400px] mx-4 p-xl rounded-2xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reject-modal-title"
           >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-strong w-full max-w-[400px] mx-4 p-xl rounded-2xl"
+            >
             <h3 id="reject-modal-title" className="text-[18px] font-semibold text-ink mb-lg">驳回注册申请</h3>
             <div className="mb-4">
               <label className="text-[13px] text-ink-muted-48 mb-2 block">驳回原因（选填）</label>
@@ -173,9 +193,19 @@ export default function RegistrationAudit() {
                 确认驳回
               </button>
             </div>
+            </motion.div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
+
+      <ConfirmModal
+        isOpen={isOpen}
+        onClose={close}
+        onConfirm={() => {}}
+        title={title}
+        message={message}
+        variant={variant}
+      />
     </div>
   );
 }

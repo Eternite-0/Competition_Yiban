@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { listContainer, listItem, pageTransition } from '../../lib/motion';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import ConfirmModal from '../../components/ConfirmModal';
+import { useConfirmModal } from '../../hooks/useConfirmModal';
 
 interface UserRecord {
   id: string | number;
@@ -61,6 +64,7 @@ export default function UserManagement() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<UserStats>({ total: 0, students: 0, teachers: 0, admins: 0 });
+  const { isOpen, title, message, variant, confirm, close } = useConfirmModal();
 
   const [keyword, setKeyword] = useState('');
   const [debouncedKeyword, setDebouncedKeyword] = useState('');
@@ -131,7 +135,14 @@ export default function UserManagement() {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   const handleDelete = async (user: UserRecord) => {
-    if (!window.confirm(`确定要删除用户「${user.realName || user.username}」吗？此操作不可恢复。`)) return;
+    const confirmed = await confirm({
+      title: '删除用户',
+      message: `确定要删除用户「${user.realName || user.username}」吗？此操作不可恢复。`,
+      confirmText: '删除',
+      cancelText: '取消',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await apiClient.delete(`/admin/users/${user.id}`);
       toast.success('已删除');
@@ -172,7 +183,8 @@ export default function UserManagement() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.35 }}
-            className="stat-tile p-lg flex flex-col gap-2"
+            whileHover={{ scale: 1.02, y: -2 }}
+            className="stat-tile p-lg flex flex-col gap-2 cursor-default"
           >
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-ink-muted-80">{m.label}</span>
@@ -252,7 +264,7 @@ export default function UserManagement() {
                 <th className="py-3 px-md font-medium text-right">操作</th>
               </tr>
             </thead>
-            <tbody className="text-[13px]">
+            <motion.tbody className="text-[13px]" variants={listContainer} initial="hidden" animate="visible">
               {users.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-16 text-center text-ink-muted-48">
@@ -264,8 +276,9 @@ export default function UserManagement() {
                 </tr>
               ) : (
                 users.map((user) => (
-                  <tr
+                  <motion.tr
                     key={user.id}
+                    variants={listItem}
                     className="border-b border-hairline last:border-0 hover:bg-primary/6 transition"
                   >
                     <td className="py-3 px-md font-medium text-ink truncate max-w-[180px]">{user.username}</td>
@@ -287,10 +300,10 @@ export default function UserManagement() {
                         <span className="material-symbols-outlined text-[16px]">delete</span>
                       </button>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))
               )}
-            </tbody>
+            </motion.tbody>
           </table>
         </div>
 
@@ -334,6 +347,15 @@ export default function UserManagement() {
           </div>
         </div>
       </section>
+
+      <ConfirmModal
+        isOpen={isOpen}
+        onClose={close}
+        onConfirm={() => {}}
+        title={title}
+        message={message}
+        variant={variant}
+      />
     </div>
   );
 }

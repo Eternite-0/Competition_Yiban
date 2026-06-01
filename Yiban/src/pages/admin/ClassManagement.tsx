@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
+import { listContainer, listItem } from '../../lib/motion';
 import PageHero from '../../components/PageHero';
+import ConfirmModal from '../../components/ConfirmModal';
+import { useConfirmModal } from '../../hooks/useConfirmModal';
 
 interface ClassInfo {
   id: number;
@@ -28,6 +31,7 @@ export default function ClassManagement() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState({ name: '', college: '', majorId: '', grade: '' });
+  const { isOpen, title, message, variant, confirm, close } = useConfirmModal();
   const [filterCollege, setFilterCollege] = useState('');
   const [filterMajor, setFilterMajor] = useState('');
   const [filterGrade, setFilterGrade] = useState('');
@@ -127,7 +131,14 @@ export default function ClassManagement() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('确定删除该班级？')) return;
+    const confirmed = await confirm({
+      title: '删除班级',
+      message: '确定删除该班级？',
+      confirmText: '删除',
+      cancelText: '取消',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       const { default: apiClient } = await import('../../api/client');
       await apiClient.delete(`/admin/classes/${id}`);
@@ -226,12 +237,11 @@ export default function ClassManagement() {
                 <th className="text-right px-md py-3 text-[12px] font-medium text-ink-muted-48">操作</th>
               </tr>
             </thead>
-            <tbody>
+            <motion.tbody variants={listContainer} initial="hidden" animate="visible">
               {classes.map((cls) => (
                 <motion.tr
                   key={cls.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  variants={listItem}
                   className="border-b border-hairline last:border-0 hover:bg-primary/5 transition"
                 >
                   <td className="px-md py-3 text-[13px] text-ink font-medium">{cls.name}</td>
@@ -267,20 +277,30 @@ export default function ClassManagement() {
                   </td>
                 </motion.tr>
               ))}
-            </tbody>
+            </motion.tbody>
           </table>
         )}
         </div>
       </div>
 
       {/* 弹窗 */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true" aria-labelledby="class-modal-title">
+      <AnimatePresence>
+        {showModal && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-strong w-full max-w-[400px] mx-4 p-xl rounded-2xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="class-modal-title"
           >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-strong w-full max-w-[400px] mx-4 p-xl rounded-2xl"
+            >
             <h3 id="class-modal-title" className="text-[18px] font-semibold text-ink mb-lg">
               {editingId ? '编辑班级' : '新增班级'}
             </h3>
@@ -336,9 +356,19 @@ export default function ClassManagement() {
                 保存
               </button>
             </div>
+            </motion.div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
+
+      <ConfirmModal
+        isOpen={isOpen}
+        onClose={close}
+        onConfirm={() => {}}
+        title={title}
+        message={message}
+        variant={variant}
+      />
     </div>
   );
 }

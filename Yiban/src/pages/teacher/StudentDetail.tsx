@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
 
 interface StudentInfo {
   id: number;
@@ -191,21 +192,27 @@ export default function StudentDetail() {
     : [];
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <motion.div
+      className="py-lg flex flex-col gap-lg"
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      transition={pageTransition}
+    >
       <PageHero
         eyebrow="Student"
         title="学生详情"
         description={data?.student ? `${data.student.realName} · ${data.student.college}` : '加载中...'}
         actions={(
           <>
-            <button onClick={handleExport} disabled={exporting} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px] disabled:opacity-60">
+            <motion.button whileTap={{ scale: 0.97 }} onClick={handleExport} disabled={exporting} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px] disabled:opacity-60">
               <span className="material-symbols-outlined text-[16px]">{exporting ? 'hourglass_top' : 'download'}</span>
               {exporting ? '导出中…' : '导出报告'}
-            </button>
-            <button onClick={() => navigate(-1)} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px]">
+            </motion.button>
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate(-1)} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px]">
               <span className="material-symbols-outlined text-[16px]">arrow_back</span>
               返回
-            </button>
+            </motion.button>
           </>
         )}
       />
@@ -247,6 +254,7 @@ export default function StudentDetail() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.35 }}
+                whileHover={{ scale: 1.03, y: -2 }}
                 className="stat-tile p-lg flex flex-col gap-2"
               >
                 <div className="flex items-center justify-between">
@@ -347,14 +355,14 @@ export default function StudentDetail() {
                     <th className="py-3 px-md font-medium">状态</th>
                   </tr>
                 </thead>
-                <tbody className="text-[13px]">
+                <motion.tbody className="text-[13px]" variants={listContainer} initial="hidden" animate="visible">
                   {(data.competitions ?? []).length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-10 text-center text-ink-muted-48">暂无参赛记录</td>
                     </tr>
                   ) : (
                     data.competitions.map((c) => (
-                      <tr key={c.registrationId} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
+                      <motion.tr key={c.registrationId} variants={listItem} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
                         <td className="py-3 px-md">
                           <div className="text-ink font-medium truncate max-w-[280px]">{c.competitionName}</div>
                           <div className="text-[11px] text-ink-muted-48">{c.competitionCategory}类</div>
@@ -369,15 +377,15 @@ export default function StudentDetail() {
                         <td className="py-3 px-md">
                           <span className={statusChip[c.status] || 'chip'}>{c.status}</span>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))
                   )}
-                </tbody>
+                </motion.tbody>
               </table>
             </div>
           </motion.section>
         </>
       )}
-    </div>
+    </motion.div>
   );
 }

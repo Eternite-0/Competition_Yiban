@@ -1,9 +1,11 @@
 import { toast } from 'sonner';
 import { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
 import { getSignedDownloadUrl } from '../../api/qiniu';
 import PageHero from '../../components/PageHero';
 import { useStore } from '../../store/useStore';
+import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
 
 interface Submission {
   id: string;
@@ -76,6 +78,7 @@ function FilePreview({ fileUrl, fileName }: { fileUrl: string; fileName: string 
     return (
       <div className="flex items-center justify-center h-full p-4 overflow-auto">
         <img
+          loading="lazy"
           src={signedUrl}
           alt={fileName}
           className="max-w-full max-h-full object-contain rounded-md"
@@ -133,11 +136,18 @@ function PreviewModal({
   onClose: () => void;
 }) {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-primary/15 backdrop-blur-sm p-4"
       onClick={onClose}
     >
-      <div
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
         className="relative glass-strong flex flex-col overflow-hidden"
         style={{ width: '90vw', height: '88vh', maxWidth: '1100px' }}
         onClick={(e) => e.stopPropagation()}
@@ -159,8 +169,8 @@ function PreviewModal({
         <div className="flex-1 overflow-hidden">
           <FilePreview fileUrl={fileUrl} fileName={fileName} />
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -332,7 +342,13 @@ export default function SubmissionAudit() {
   };
 
   return (
-      <div className="py-lg flex flex-col gap-md h-[calc(100vh-100px)]">
+      <motion.div
+        className="py-lg flex flex-col gap-md h-[calc(100vh-100px)]"
+        variants={pageVariants}
+        initial="hidden"
+        animate="visible"
+        transition={pageTransition}
+      >
       {/* Header */}
       <PageHero
         eyebrow="Review"
@@ -382,9 +398,11 @@ export default function SubmissionAudit() {
                 <p className="text-[13px]">暂无待审核</p>
               </div>
             ) : (
-              filteredPending.map((s) => (
-                <button
+              <motion.div variants={listContainer} initial="hidden" animate="visible">
+              {filteredPending.map((s) => (
+                <motion.button
                   key={s.id}
+                  variants={listItem}
                   onClick={() => setSelectedId(s.id)}
                   className={`w-full text-left p-md border-b border-hairline transition relative ${
                     selectedId === s.id
@@ -401,16 +419,25 @@ export default function SubmissionAudit() {
                   </div>
                   <p className="text-[12px] text-ink-muted-80 line-clamp-2 leading-snug">{s.competitionTitle || '未知赛事'}</p>
                   <p className="text-[11px] text-ink-muted-48 mt-1">{s.fileName || '无文件'} · {s.uploadDate || '—'}</p>
-                </button>
-              ))
+                </motion.button>
+              ))}
+              </motion.div>
             )}
           </div>
         </section>
 
         {/* Middle: details */}
         <section className="flex-1 flex flex-col min-w-[400px] gap-md overflow-y-auto pr-1">
+          <AnimatePresence mode="wait">
           {selected ? (
-            <>
+            <motion.div
+              key={selected.id}
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -12 }}
+              transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col gap-md"
+            >
               <div className="glass p-lg">
                 <h3 className="text-[17px] font-semibold tracking-tight text-ink pb-3 mb-md border-b border-hairline">申报详情</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-[13px]">
@@ -516,31 +543,39 @@ export default function SubmissionAudit() {
                 />
                 <div className="flex items-center justify-end flex-wrap gap-3">
                   <div className="flex gap-2">
-                    <button className="btn-secondary !py-2 !text-[13px]" onClick={handleReturnForSupplement}>退回补充</button>
-                    <button
+                    <motion.button whileTap={{ scale: 0.97 }} className="btn-secondary !py-2 !text-[13px]" onClick={handleReturnForSupplement}>退回补充</motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.97 }}
                       className="btn-danger !py-2 !text-[13px] !px-5"
                       onClick={handleReject}
                     >
                       驳回
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.97 }}
                       className="btn-primary !py-2 !text-[13px]"
                       onClick={handleApprove}
                     >
                       <span className="material-symbols-outlined text-[16px]">check</span>
                       审核通过
-                    </button>
+                    </motion.button>
                   </div>
                 </div>
               </div>
-            </>
+            </motion.div>
           ) : (
-            <div className="flex-1 glass flex flex-col items-center justify-center text-ink-muted-48 gap-2">
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex-1 glass flex flex-col items-center justify-center text-ink-muted-48 gap-2"
+            >
               <span className="material-symbols-outlined text-[56px] opacity-40">assignment</span>
               <p className="text-[15px] font-medium text-ink-muted-80">选择左侧列表查看详情</p>
               <p className="text-[13px]">点击待审核项目以查看申报信息</p>
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
         </section>
 
         {/* Right: history */}
@@ -558,8 +593,9 @@ export default function SubmissionAudit() {
                 <p className="text-[12px]">暂无已处理记录</p>
               </div>
             ) : (
-              processedSubmissions.map((s, index) => (
-                <div key={`${s.id}-${index}`} className="p-md border-b border-hairline hover:bg-primary/6 transition">
+              <motion.div variants={listContainer} initial="hidden" animate="visible">
+              {processedSubmissions.map((s, index) => (
+                <motion.div key={`${s.id}-${index}`} variants={listItem} className="p-md border-b border-hairline hover:bg-primary/6 transition">
                   <div className="flex justify-between items-start mb-1">
                     <span className="text-[13px] font-semibold text-ink">{s.studentName || '未知'}</span>
                     <span className={s.status === '审核通过' ? 'chip chip-success' : s.status === '退回补充' ? 'chip chip-warning' : 'chip chip-error'}>
@@ -570,8 +606,9 @@ export default function SubmissionAudit() {
                   {s.reviewNote && (
                     <p className="text-[11px] text-ink-muted-48 mt-1 italic">"{s.reviewNote}"</p>
                   )}
-                </div>
-              ))
+                </motion.div>
+              ))}
+              </motion.div>
             )}
           </div>
         </section>
@@ -585,7 +622,7 @@ export default function SubmissionAudit() {
           onClose={() => setPreviewFile(null)}
         />
       )}
-    </div>
+    </motion.div>
   );
 }
 

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import { pageVariants, pageTransition, listContainer, listItem } from '../../lib/motion';
 
 type BackendCompetition = {
   id: number | string;
@@ -138,9 +139,10 @@ export default function RegistrationWorkbench() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      transition={pageTransition}
       className="py-lg flex flex-col gap-lg"
     >
       {/* Header */}
@@ -160,11 +162,11 @@ export default function RegistrationWorkbench() {
 
       {/* Stepper */}
       <div className="glass p-lg">
-        <div className="relative grid grid-cols-5">
+        <motion.div variants={listContainer} initial="hidden" animate="visible" className="relative grid grid-cols-5">
           <div className="absolute left-[10%] right-[10%] top-5 h-[2px] bg-hairline" />
           <div className="absolute left-[10%] top-5 h-[2px] w-[40%] bg-primary" />
           {steps.map((step, idx) => (
-            <div key={idx} className="flex flex-col items-center text-center">
+            <motion.div key={idx} variants={listItem} className="flex flex-col items-center text-center">
               <div className={`w-10 h-10 rounded-full grid place-items-center text-[14px] font-semibold relative z-10 ${
                 step.done
                   ? 'bg-primary text-on-primary'
@@ -183,9 +185,9 @@ export default function RegistrationWorkbench() {
               }`}>
                 {step.label}
               </span>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
 
       {alreadyRegistered && (
@@ -310,8 +312,11 @@ export default function RegistrationWorkbench() {
               </label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {trackList.map((track) => (
-                  <button
+                  <motion.button
                     key={track}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    transition={pageTransition}
                     onClick={() => setSelectedTrack(track)}
                     className={`text-left rounded-md p-md border transition ${
                       selectedTrack === track
@@ -323,7 +328,7 @@ export default function RegistrationWorkbench() {
                       selectedTrack === track ? 'text-primary icon-fill' : 'text-ink-muted-48'
                     }`}>flag</span>
                     <h3 className="text-[14px] font-semibold text-ink mt-2">{track}</h3>
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </div>
@@ -407,10 +412,10 @@ export default function RegistrationWorkbench() {
 
       {/* Bottom Actions */}
       <div className="flex justify-end gap-2">
-        <button className="btn-secondary" onClick={() => navigate(-1)}>
+        <motion.button whileTap={{ scale: 0.97 }} className="btn-secondary" onClick={() => navigate(-1)}>
           返回
-        </button>
-        <button
+        </motion.button>
+        <motion.button whileTap={{ scale: 0.97 }}
           onClick={handleSubmit}
           disabled={submitting || alreadyRegistered || !teamName.trim()}
           className="btn-primary"
@@ -418,7 +423,7 @@ export default function RegistrationWorkbench() {
           {submitting && <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>}
           <span className="material-symbols-outlined text-[18px]">send</span>
           {alreadyRegistered ? '已报名' : '提交报名'}
-        </button>
+        </motion.button>
       </div>
     </motion.div>
   );

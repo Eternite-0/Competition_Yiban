@@ -5,6 +5,9 @@ import { toast } from 'sonner';
 import DOMPurify from 'dompurify';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import ErrorState from '../../components/ErrorState';
+import { PageSkeleton } from '../../components/Skeleton';
+import { pageVariants, pageTransition } from '../../lib/motion';
 
 type BackendCompetition = {
   id: number | string;
@@ -103,21 +106,17 @@ export default function CompetitionDetail() {
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="py-section text-center text-ink-muted-48">
-        <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
-        <p className="mt-2 text-[14px]">加载中…</p>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   if (!comp) {
     return (
-      <div className="py-section text-center">
-        <span className="material-symbols-outlined text-[40px] text-ink-muted-48">search_off</span>
-        <p className="mt-3 text-[15px] text-ink-muted-80">赛事不存在</p>
-        <button onClick={() => navigate('/student/competitions')} className="btn-primary mt-lg">返回大厅</button>
-      </div>
+      <ErrorState
+        variant="not-found"
+        title="赛事不存在"
+        message="该赛事可能已被删除或您没有访问权限"
+        onRetry={() => navigate('/student/competitions')}
+      />
     );
   }
 
@@ -127,9 +126,10 @@ export default function CompetitionDetail() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      transition={pageTransition}
       className="py-lg flex flex-col gap-lg"
     >
       <PageHero
@@ -145,21 +145,21 @@ export default function CompetitionDetail() {
         )}
         actions={(
           isRegistered ? (
-            <button
+            <motion.button whileTap={{ scale: 0.97 }}
               onClick={() => navigate('/student/registrations')}
               className="btn-primary"
             >
               <span className="material-symbols-outlined text-[18px]">assignment</span>
               查看我的报名
-            </button>
+            </motion.button>
           ) : (
-            <button
+            <motion.button whileTap={{ scale: 0.97 }}
               onClick={() => navigate(`/student/registrations/workbench/${comp.id}`)}
               className="btn-primary"
             >
               <span className="material-symbols-outlined text-[18px]">how_to_reg</span>
               立即报名
-            </button>
+            </motion.button>
           )
         )}
       />
@@ -304,27 +304,27 @@ export default function CompetitionDetail() {
                 {registration.teamName && (
                   <p className="text-[13px] text-ink-muted-80 mt-1">队伍：{registration.teamName}</p>
                 )}
-                <button
+                <motion.button whileTap={{ scale: 0.97 }}
                   onClick={() => navigate('/student/registrations')}
                   className="btn-primary w-full !py-3 !text-[15px] mt-md"
                 >
                   <span className="material-symbols-outlined text-[18px]">assignment</span>
                   查看我的报名
-                </button>
-                <button
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.97 }}
                   onClick={() => navigate('/student/progress')}
                   className="btn-secondary w-full !py-3 !text-[15px] mt-2"
                 >
                   <span className="material-symbols-outlined text-[18px]">timeline</span>
                   查看我的进度
-                </button>
-                <button
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.97 }}
                   onClick={() => navigate('/student/teams')}
                   className="btn-secondary w-full !py-3 !text-[15px] mt-2"
                 >
                   <span className="material-symbols-outlined text-[18px]">group_add</span>
                   去组队
-                </button>
+                </motion.button>
               </>
             ) : (
               <>
@@ -332,20 +332,20 @@ export default function CompetitionDetail() {
                 <h3 className="text-[21px] font-semibold tracking-tight mt-2">立即报名</h3>
                 <p className="text-[13px] text-ink-muted-48 mt-1">完成报名后将进入工作台</p>
 
-                <button
+                <motion.button whileTap={{ scale: 0.97 }}
                   onClick={() => navigate(`/student/registrations/workbench/${comp.id}`)}
                   className="btn-primary w-full !py-3 !text-[15px] mt-md"
                 >
                   <span className="material-symbols-outlined text-[18px]">how_to_reg</span>
                   立即报名
-                </button>
-                <button
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.97 }}
                   onClick={() => navigate('/student/teams')}
                   className="btn-secondary w-full !py-3 !text-[15px] mt-2"
                 >
                   <span className="material-symbols-outlined text-[18px]">group_add</span>
                   去组队
-                </button>
+                </motion.button>
               </>
             )}
           </div>

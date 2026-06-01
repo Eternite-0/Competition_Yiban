@@ -1,9 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { listContainer, listItem, pageTransition } from '../../lib/motion';
 import apiClient from '../../api/client';
 import { uploadToQiniu, getSignedDownloadUrl } from '../../api/qiniu';
 import PageHero from '../../components/PageHero';
+import ConfirmModal from '../../components/ConfirmModal';
+import { useConfirmModal } from '../../hooks/useConfirmModal';
 
 interface Work {
   id: string;
@@ -69,6 +72,7 @@ export default function ExcellentWorks() {
   const [rawById, setRawById] = useState<Record<string, SubmissionRecord>>({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const { isOpen, title, message, variant, confirm, close } = useConfirmModal();
 
   const [search, setSearch] = useState('');
   const [filterCompetition, setFilterCompetition] = useState('');
@@ -99,8 +103,8 @@ export default function ExcellentWorks() {
     try {
       setLoading(true);
       setLoadError(null);
-      const data: SubmissionRecord[] | null = await apiClient.get('/submission/excellent');
-      const records: SubmissionRecord[] = Array.isArray(data) ? data : [];
+      const data: any = await apiClient.get('/submission/excellent', { params: { current: 1, size: 100 } });
+      const records: SubmissionRecord[] = Array.isArray(data?.records) ? data.records : (Array.isArray(data) ? data : []);
       const mapped = records.map(mapToWork);
       const raw: Record<string, SubmissionRecord> = {};
       records.forEach((r, idx) => {
@@ -211,7 +215,14 @@ export default function ExcellentWorks() {
       toast('该作品未上架，无需下架');
       return;
     }
-    if (!window.confirm(`确认将「${work.title}」从优秀作品墙下架？\n（不会删除提交记录本身）`)) return;
+    const confirmed = await confirm({
+      title: '下架作品',
+      message: `确认将「${work.title}」从优秀作品墙下架？（不会删除提交记录本身）`,
+      confirmText: '下架',
+      cancelText: '取消',
+      variant: 'warning',
+    });
+    if (!confirmed) return;
     const ok = await callToggle(work.id, false);
     if (ok) toast.success('已下架');
   };
@@ -367,7 +378,8 @@ export default function ExcellentWorks() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.35 }}
-            className="stat-tile p-lg flex flex-col gap-2"
+            whileHover={{ scale: 1.02, y: -2 }}
+            className="stat-tile p-lg flex flex-col gap-2 cursor-default"
           >
             <div className="flex items-center justify-between">
               <span className="text-[13px] text-ink-muted-80">{m.label}</span>
@@ -505,7 +517,7 @@ export default function ExcellentWorks() {
                 <th className="py-3 px-md font-medium text-right">操作</th>
               </tr>
             </thead>
-            <tbody className="text-[13px]">
+            <motion.tbody className="text-[13px]" variants={listContainer} initial="hidden" animate="visible">
               {pagedWorks.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-16 text-center text-ink-muted-48">
@@ -525,8 +537,9 @@ export default function ExcellentWorks() {
                 </tr>
               ) : (
                 pagedWorks.map((work) => (
-                  <tr
+                  <motion.tr
                     key={work.id}
+                    variants={listItem}
                     className={`border-b border-hairline last:border-0 transition group ${
                       selectedIds.has(work.id) ? 'bg-primary/5' : 'hover:bg-primary/6'
                     }`}
@@ -591,10 +604,10 @@ export default function ExcellentWorks() {
                         下架
                       </button>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))
               )}
-            </tbody>
+            </motion.tbody>
           </table>
         </div>
 
@@ -1051,6 +1064,15 @@ export default function ExcellentWorks() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmModal
+        isOpen={isOpen}
+        onClose={close}
+        onConfirm={() => {}}
+        title={title}
+        message={message}
+        variant={variant}
+      />
     </div>
   );
 }

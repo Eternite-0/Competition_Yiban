@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
 import { getSignedDownloadUrl } from '../../api/qiniu';
 import PageHero from '../../components/PageHero';
+import { pageVariants, pageTransition, listContainer, listItem } from '../../lib/motion';
 
 interface TeamMember {
   studentId?: number;
@@ -83,8 +84,8 @@ export default function ExcellentWorks() {
       try {
         setLoading(true);
         setError(null);
-        const data: any = await apiClient.get('/submission/excellent');
-        const records: SubmissionVO[] = Array.isArray(data) ? data : [];
+        const data: any = await apiClient.get('/submission/excellent', { params: { current: 1, size: 100 } });
+        const records: SubmissionVO[] = Array.isArray(data?.records) ? data.records : (Array.isArray(data) ? data : []);
         setWorks(records);
       } catch (err: any) {
         setError(err.message || '加载失败');
@@ -139,7 +140,12 @@ export default function ExcellentWorks() {
   );
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <motion.div
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      className="py-lg flex flex-col gap-lg"
+    >
       <PageHero
         eyebrow="Showcase"
         title="光荣榜"
@@ -147,18 +153,18 @@ export default function ExcellentWorks() {
       />
 
       {/* Summary strip */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-md">
+      <motion.section variants={listContainer} initial="hidden" animate="visible" className="grid grid-cols-2 md:grid-cols-4 gap-md">
         {[
           { label: '作品总数', value: works.length, icon: 'auto_awesome' },
           { label: '赛事覆盖', value: new Set(works.map((w) => w.competitionName).filter(Boolean)).size, icon: 'emoji_events' },
           { label: '院系参与', value: new Set(works.map((w) => w.college).filter(Boolean)).size, icon: 'school' },
           { label: '级别分布', value: uniqueLevels.length, icon: 'layers' },
-        ].map((m, i) => (
+        ].map((m) => (
           <motion.div
             key={m.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05, duration: 0.35 }}
+            variants={listItem}
+            whileHover={{ scale: 1.03, y: -2 }}
+            transition={pageTransition}
             className="bg-white border border-slate-200 rounded-xl p-4"
           >
             <div className="flex items-center gap-2 mb-1">
@@ -170,7 +176,7 @@ export default function ExcellentWorks() {
             <span className="text-[13px] text-ink-muted-80">{m.label}</span>
           </motion.div>
         ))}
-      </section>
+      </motion.section>
 
       {/* Filter bar */}
       <div className="glass-tint flex flex-wrap items-center gap-sm px-md py-3">
@@ -223,18 +229,18 @@ export default function ExcellentWorks() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-md">
-            {paged.map((work, i) => (
+          <motion.div variants={listContainer} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-md">
+            {paged.map((work) => (
               <motion.div
                 key={String(work.id)}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03, duration: 0.35 }}
+                variants={listItem}
+                whileHover={{ scale: 1.02, y: -3 }}
+                transition={pageTransition}
               >
                 <WorkCard work={work} onClick={() => setDetailWork(work)} />
               </motion.div>
             ))}
-          </div>
+          </motion.div>
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -381,7 +387,7 @@ export default function ExcellentWorks() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 

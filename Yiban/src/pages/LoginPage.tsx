@@ -1,9 +1,9 @@
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import type { UserRole } from '../types';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const roleTabs: { key: UserRole; label: string }[] = [
   { key: 'student', label: '学生' },
@@ -11,31 +11,39 @@ const roleTabs: { key: UserRole; label: string }[] = [
   { key: 'admin', label: '管理员' },
 ];
 
-const announcements: Array<{
-  tag: string;
-  tone: 'primary' | 'warning' | 'default';
+interface Announcement {
+  id: number;
   title: string;
-  date: string;
-}> = [
-  {
-    tag: '报名',
-    tone: 'primary' as const,
-    title: '2026 年"蓝桥杯"校内选拔赛开放报名',
-    date: '2026-05-20',
-  },
-  {
-    tag: '截止',
-    tone: 'default' as const,
-    title: '"挑战杯"创业计划书提交将于本周五截止',
-    date: '2026-05-23',
-  },
-  {
-    tag: '通知',
-    tone: 'default' as const,
-    title: '系统于 5 月 28 日 22:00–24:00 例行维护',
-    date: '2026-05-18',
-  },
-];
+  type: string;
+  isPinned: boolean;
+  createTime: string;
+}
+
+// 计算当前学年和学期
+function getCurrentSemester(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // 0-indexed to 1-indexed
+
+  let academicYear: string;
+  let semester: string;
+
+  if (month >= 9) {
+    // 秋季学期: 当年9月 - 次年1月
+    academicYear = `${year}–${year + 1}`;
+    semester = '秋季学期';
+  } else if (month >= 2) {
+    // 春季学期: 当年2月 - 当年7月
+    academicYear = `${year - 1}–${year}`;
+    semester = '春季学期';
+  } else {
+    // 1月属于上一年秋季学期
+    academicYear = `${year - 1}–${year}`;
+    semester = '秋季学期';
+  }
+
+  return `${academicYear} ${semester}`;
+}
 
 export default function LoginPage() {
   const [activeRole, setActiveRole] = useState<UserRole>('student');
@@ -45,6 +53,37 @@ export default function LoginPage() {
   const setAuth = useStore((s) => s.setAuth);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [systemStatus, setSystemStatus] = useState<'ok' | 'error' | 'checking'>('checking');
+  const currentSemester = getCurrentSemester();
+
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        const { default: apiClient } = await import('../api/client');
+        const res: any = await apiClient.get('/announcement/list', {
+          params: { current: 1, size: 3 }
+        });
+        setAnnouncements(res.records || []);
+      } catch (err) {
+        console.error('获取公告失败:', err);
+      }
+    };
+
+    const checkSystemStatus = async () => {
+      try {
+        const { default: apiClient } = await import('../api/client');
+        await apiClient.get('/health');
+        setSystemStatus('ok');
+      } catch (err) {
+        console.error('系统状态检查失败:', err);
+        setSystemStatus('error');
+      }
+    };
+
+    fetchAnnouncements();
+    checkSystemStatus();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,15 +153,36 @@ export default function LoginPage() {
           <div className="glass-tint flex items-center gap-lg px-md py-3 max-w-[520px]">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">calendar_month</span>
-              <span className="text-[13px] text-ink">2025–2026 春季学期</span>
+              <span className="text-[13px] text-ink">{currentSemester}</span>
             </div>
             <span className="w-px h-4 bg-hairline" />
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-60 animate-ping" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                {systemStatus === 'ok' && (
+                  <>
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-60 animate-ping" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                  </>
+                )}
+                {systemStatus === 'error' && (
+                  <>
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-error opacity-60 animate-ping" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-error" />
+                  </>
+                )}
+                {systemStatus === 'checking' && (
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-ink-muted-48 animate-pulse" />
+                )}
               </span>
-              <span className="text-[13px] text-ink-muted-80">系统运行正常</span>
+              <span className={`text-[13px] ${
+                systemStatus === 'ok' ? 'text-ink-muted-80' :
+                systemStatus === 'error' ? 'text-error' :
+                'text-ink-muted-48'
+              }`}>
+                {systemStatus === 'ok' && '系统运行正常'}
+                {systemStatus === 'error' && '系统异常'}
+                {systemStatus === 'checking' && '检查中...'}
+              </span>
             </div>
           </div>
 
@@ -137,33 +197,37 @@ export default function LoginPage() {
               </a>
             </div>
             <ul className="flex flex-col">
-              {announcements.map((n, i) => (
-                <motion.li
-                  key={i}
-                  initial={{ opacity: 0, x: 8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15 + i * 0.06, duration: 0.4 }}
-                  className="py-3 border-b border-hairline last:border-0 flex items-start gap-3 cursor-pointer group"
-                >
-                  <span
-                    className={
-                      n.tone === 'primary'
-                        ? 'chip chip-primary shrink-0'
-                        : n.tone === 'warning'
-                          ? 'chip chip-warning shrink-0'
-                          : 'chip shrink-0'
-                    }
+              {announcements.length === 0 ? (
+                <li className="py-3 text-[13px] text-ink-muted-48 text-center">暂无公告</li>
+              ) : (
+                announcements.map((n, i) => (
+                  <motion.li
+                    key={n.id}
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15 + i * 0.06, duration: 0.4 }}
+                    className="py-3 border-b border-hairline last:border-0 flex items-start gap-3 cursor-pointer group"
                   >
-                    {n.tag}
-                  </span>
-                  <span className="flex-1 text-[13px] text-ink leading-snug group-hover:text-primary transition">
-                    {n.title}
-                  </span>
-                  <span className="text-[11px] text-ink-muted-48 tabular-nums shrink-0 mt-0.5">
-                    {n.date}
-                  </span>
-                </motion.li>
-              ))}
+                    <span
+                      className={
+                        n.isPinned
+                          ? 'chip chip-primary shrink-0'
+                          : n.type === 'competition'
+                            ? 'chip chip-warning shrink-0'
+                            : 'chip shrink-0'
+                      }
+                    >
+                      {n.isPinned ? '置顶' : n.type === 'competition' ? '赛事' : '通知'}
+                    </span>
+                    <span className="flex-1 text-[13px] text-ink leading-snug group-hover:text-primary transition">
+                      {n.title}
+                    </span>
+                    <span className="text-[11px] text-ink-muted-48 tabular-nums shrink-0 mt-0.5">
+                      {n.createTime ? new Date(n.createTime).toLocaleDateString('zh-CN') : ''}
+                    </span>
+                  </motion.li>
+                ))
+              )}
             </ul>
           </section>
 
@@ -201,19 +265,26 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <div className="flex w-full p-1 mb-md bg-canvas-parchment rounded-pill border border-hairline">
+            <div className="flex w-full p-1 mb-md bg-canvas-parchment rounded-pill border border-hairline relative">
               {roleTabs.map((tab) => (
                 <button
                   key={tab.key}
                   type="button"
                   onClick={() => setActiveRole(tab.key)}
-                  className={`flex-1 py-2 text-[13px] text-center transition-all rounded-pill ${
+                  className={`flex-1 py-2 text-[13px] text-center relative z-10 transition-colors duration-200 rounded-pill ${
                     activeRole === tab.key
-                      ? 'bg-canvas text-ink font-semibold shadow-sm'
+                      ? 'text-ink font-semibold'
                       : 'text-ink-muted-48 hover:text-ink'
                   }`}
                 >
-                  {tab.label}
+                  {activeRole === tab.key && (
+                    <motion.div
+                      layoutId="roleTab"
+                      className="absolute inset-0 bg-canvas rounded-pill shadow-sm"
+                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">{tab.label}</span>
                 </button>
               ))}
             </div>
@@ -223,14 +294,29 @@ export default function LoginPage() {
                 <span className="material-symbols-outlined absolute left-4 text-ink-muted-48 text-[19px] pointer-events-none">
                   badge
                 </span>
-                <input
-                  className="input-glass h-[48px] pl-12 text-[15px]"
-                  placeholder={activeRole === 'student' ? '学号' : activeRole === 'teacher' ? '工号' : '管理员账号'}
-                  type="text"
-                  value={account}
-                  onChange={(e) => setAccount(e.target.value)}
-                  autoComplete="username"
-                />
+                <div className="relative flex-1">
+                  <input
+                    className="input-glass h-[48px] pl-12 text-[15px] w-full"
+                    type="text"
+                    value={account}
+                    onChange={(e) => setAccount(e.target.value)}
+                    autoComplete="username"
+                  />
+                  {!account && (
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={activeRole}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute left-12 top-1/2 -translate-y-1/2 text-[15px] text-ink-muted-48 pointer-events-none"
+                      >
+                        {activeRole === 'student' ? '学号' : activeRole === 'teacher' ? '工号' : '管理员账号'}
+                      </motion.span>
+                    </AnimatePresence>
+                  )}
+                </div>
               </label>
 
               <label className="relative flex items-center">

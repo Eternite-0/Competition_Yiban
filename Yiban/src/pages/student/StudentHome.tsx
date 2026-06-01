@@ -5,7 +5,8 @@ import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import { useStore as useAuthStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
-import { listContainer, listItem, pageTransition } from '../../lib/motion';
+import Skeleton, { StatSkeleton } from '../../components/Skeleton';
+import { listContainer, listItem, pageTransition, pageVariants } from '../../lib/motion';
 
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日'];
 
@@ -41,9 +42,11 @@ export default function StudentHome() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
       try {
         const compPage: any = await apiClient.get('/competition/list', {
           params: { current: 1, size: 5, status: 'published' },
@@ -65,6 +68,8 @@ export default function StudentHome() {
         setAnnouncements(Array.isArray(annPage?.records) ? annPage.records : []);
       } catch (err) {
         console.error(err);
+      } finally {
+        setLoading(false);
       }
     };
     load();
@@ -124,20 +129,71 @@ export default function StudentHome() {
       ]
     : [];
 
+  if (loading) {
+    return (
+      <div className="flex flex-col">
+        <PageHero
+          eyebrow={`Today · ${todayLabel}`}
+          title={`欢迎回来，${currentUser?.name ?? '同学'}`}
+          description="近期赛事、报名状态和待处理材料汇总。"
+          className="mb-6 [&>div]:flex-row [&>div]:items-center [&>div]:justify-between"
+          titleClassName="text-[22px] font-medium text-ink"
+          descriptionClassName="mt-1 text-sm text-body-subtle"
+          actions={(
+            <button onClick={() => navigate('/student/competitions')} className="btn-primary">
+              浏览赛事大厅
+              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </button>
+          )}
+        />
+        <div className="app-panel p-lg mb-6">
+          <Skeleton className="h-4 w-24 mb-3" />
+          <Skeleton className="h-7 w-64 mb-2" />
+          <Skeleton className="h-4 w-80" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+          {Array.from({ length: 4 }, (_, i) => <StatSkeleton key={i} />)}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-[5fr_4fr] gap-5 mb-6">
+          <div className="app-panel p-5">
+            <Skeleton className="h-5 w-24 mb-4" />
+            <div className="grid grid-cols-7 gap-2">
+              {Array.from({ length: 35 }, (_, i) => <Skeleton key={i} className="h-9 w-9" />)}
+            </div>
+          </div>
+          <div className="app-panel p-5">
+            <Skeleton className="h-5 w-24 mb-4" />
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={i} className="flex items-center gap-3 py-3 border-b border-hairline last:border-0">
+                <Skeleton className="h-11 w-11" />
+                <div className="flex-1"><Skeleton className="h-4 w-32 mb-1" /><Skeleton className="h-3 w-20" /></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col">
+    <motion.div
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col"
+    >
       <PageHero
         eyebrow={`Today · ${todayLabel}`}
         title={`欢迎回来，${currentUser?.name ?? '同学'}`}
         description="近期赛事、报名状态和待处理材料汇总。"
         className="mb-6 [&>div]:flex-row [&>div]:items-center [&>div]:justify-between"
-        titleClassName="text-[22px] font-medium text-slate-900"
-        descriptionClassName="mt-1 text-sm text-slate-500"
+        titleClassName="text-[22px] font-medium text-ink"
+        descriptionClassName="mt-1 text-sm text-body-muted"
         actions={(
-          <button onClick={() => navigate('/student/competitions')} className="btn-primary">
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate('/student/competitions')} className="btn-primary">
             浏览赛事大厅
             <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-          </button>
+          </motion.button>
         )}
       />
 
@@ -145,7 +201,7 @@ export default function StudentHome() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={pageTransition}
-        className="app-panel p-lg"
+        className="app-panel p-lg mb-4"
       >
         <div className="grid gap-lg lg:grid-cols-[minmax(0,1fr)_300px] lg:items-center">
           <div className="min-w-0">
@@ -188,14 +244,14 @@ export default function StudentHome() {
                 ))}
               </div>
             ) : (
-              <button onClick={() => navigate('/student/competitions')} className="btn-secondary justify-center">
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate('/student/competitions')} className="btn-secondary justify-center">
                 查看可报名赛事
-              </button>
+              </motion.button>
             )}
             {activeRegistration ? (
-              <button onClick={() => navigate('/student/registrations')} className="btn-secondary justify-center">
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate('/student/registrations')} className="btn-secondary justify-center">
                 进入我的参赛
-              </button>
+              </motion.button>
             ) : null}
           </div>
         </div>
@@ -205,18 +261,18 @@ export default function StudentHome() {
         variants={listContainer}
         initial="hidden"
         animate="visible"
-        className="grid grid-cols-4 gap-4 mb-6"
+        className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6"
       >
         {stats.map((s) => (
-          <motion.div key={s.label} variants={listItem} className="bg-slate-50 rounded-xl p-4 min-h-[88px] flex flex-col justify-between">
+          <motion.div key={s.label} variants={listItem} whileHover={{ scale: 1.03, y: -2 }} transition={pageTransition} className="app-panel p-3 md:p-4 min-h-[88px] flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500">{s.label}</span>
+              <span className="text-xs text-body-muted">{s.label}</span>
               <span className="material-symbols-outlined text-[18px] text-primary">{s.icon}</span>
             </div>
-            <div className="text-[26px] font-medium leading-none text-slate-900">
+            <div className="text-[26px] font-medium leading-none text-ink">
               {s.value}
             </div>
-            <span className="text-xs text-slate-500">{s.hint}</span>
+            <span className="text-xs text-body-muted">{s.hint}</span>
           </motion.div>
         ))}
       </motion.div>
@@ -226,7 +282,7 @@ export default function StudentHome() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...pageTransition, delay: 0.08 }}
-          className="bg-white border border-slate-200 rounded-xl p-5"
+          className="app-panel p-5"
         >
           <div className="mb-lg flex items-center justify-between">
             <h2 className="text-[20px] font-semibold">赛事日历</h2>
@@ -265,7 +321,7 @@ export default function StudentHome() {
                     <span className={`mt-1 h-1.5 w-1.5 rounded-full ${toneClass[event.tone]}`} />
                   )}
                   {event && (
-                    <span className="pointer-events-none absolute -bottom-7 z-10 whitespace-nowrap rounded-xs border border-hairline bg-canvas px-2 py-1 text-[12px] text-body-muted opacity-0 shadow-float transition group-hover:opacity-100">
+                    <span className="pointer-events-none absolute -bottom-7 z-10 whitespace-nowrap rounded-xs border border-border bg-canvas px-2 py-1 text-[12px] text-body-muted opacity-0 shadow-float transition group-hover:opacity-100">
                       {event.label}
                     </span>
                   )}
@@ -279,7 +335,7 @@ export default function StudentHome() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...pageTransition, delay: 0.12 }}
-          className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col"
+          className="app-panel p-5 flex flex-col"
         >
           <div className="mb-md flex items-center justify-between">
             <h2 className="text-[20px] font-semibold">热门赛事</h2>
@@ -287,10 +343,12 @@ export default function StudentHome() {
               查看全部
             </button>
           </div>
-          <div className="flex flex-col">
+          <motion.div variants={listContainer} initial="hidden" animate="visible" className="flex flex-col">
             {hotEvents.map((event, idx) => (
-              <button
+              <motion.button
                 key={event.id}
+                variants={listItem}
+                whileHover={{ x: 2 }}
                 onClick={() => navigate(`/student/competitions/${event.id}`)}
                 className={`group flex items-center gap-md py-3 text-left ${
                   idx !== hotEvents.length - 1 ? 'border-b border-hairline/80' : ''
@@ -311,12 +369,12 @@ export default function StudentHome() {
                 <span className="material-symbols-outlined text-[18px] text-ink-muted-48 transition group-hover:translate-x-0.5 group-hover:text-primary">
                   chevron_right
                 </span>
-              </button>
+              </motion.button>
             ))}
             {hotEvents.length === 0 && (
               <div className="py-8 text-center text-[14px] text-ink-muted-48">暂无可报名赛事</div>
             )}
-          </div>
+          </motion.div>
         </motion.div>
       </section>
 
@@ -333,15 +391,12 @@ export default function StudentHome() {
               最新公告
             </h2>
           </div>
-          <div className="flex flex-col">
+          <motion.div variants={listContainer} initial="hidden" animate="visible" className="flex flex-col">
             {announcements.map((a: any) => (
-              <div
+              <motion.div
                 key={a.id}
-                className={`flex items-start gap-3 border-b border-b-slate-100 border-l-2 py-3 pl-3 last:border-b-0 ${
-                  a.type === 'system'
-                    ? 'border-l-blue-500'
-                    : 'border-l-slate-200'
-                }`}
+                variants={listItem}
+                className="flex items-start gap-3 border-b border-border py-3 pl-3 last:border-b-0"
               >
                 {a.isPinned && <span className="material-symbols-outlined mt-0.5 text-[16px] text-primary">push_pin</span>}
                 <div className="min-w-0 flex-1">
@@ -351,16 +406,16 @@ export default function StudentHome() {
                       {a.type === 'system' ? '系统' : '赛事'}
                     </span>
                   </div>
-                  <p className="mt-0.5 line-clamp-2 text-[12px] text-placeholder">{a.content}</p>
+                  <p className="mt-0.5 line-clamp-2 text-[12px] text-body-muted">{a.content}</p>
                 </div>
-                <span className="whitespace-nowrap text-[12px] text-placeholder">
+                <span className="whitespace-nowrap text-[12px] text-body-muted">
                   {new Date(a.createTime).toLocaleDateString('zh-CN')}
                 </span>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </motion.section>
       )}
-    </div>
+    </motion.div>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import { pageVariants, pageTransition, listContainer, listItem } from '../../lib/motion';
 
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日'];
 
@@ -151,7 +152,12 @@ export default function CompetitionCalendar() {
   const selectedCompetitions = selectedDay ? (dayMap[selectedDay] ?? []) : [];
 
   return (
-    <div className="flex flex-col gap-lg py-lg">
+    <motion.div
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col gap-lg py-lg"
+    >
       <PageHero
         eyebrow="Competition calendar"
         title="赛事日历"
@@ -236,8 +242,9 @@ export default function CompetitionCalendar() {
               const isSelected = c.key === selectedDay;
               const dateLabel = `${parseInt(c.key.split('-')[1])}月${parseInt(c.key.split('-')[2])}日${events.length > 0 ? `, ${events.length}个赛事` : ''}`;
               return (
-                <button
+                <motion.button
                   key={c.key}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedDay(isSelected ? null : c.key)}
                   aria-label={dateLabel}
                   aria-pressed={isSelected}
@@ -269,7 +276,7 @@ export default function CompetitionCalendar() {
                       )}
                     </div>
                   )}
-                </button>
+                </motion.button>
               );
             })}
           </div>
@@ -390,16 +397,16 @@ export default function CompetitionCalendar() {
           });
 
           return monthComps.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
-              {monthComps.map((c, i) => {
+            <motion.div variants={listContainer} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 gap-md">
+              {monthComps.map((c) => {
                 const s = getLevelStyle(c.level);
                 const end = parseDate(c.endTime);
                 return (
                   <motion.div
                     key={c.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.03, duration: 0.3 }}
+                    variants={listItem}
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    transition={pageTransition}
                     className="flex items-center gap-3 p-4 rounded-sm border border-hairline hover:shadow-sm transition"
                   >
                     <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.dot}`} />
@@ -417,7 +424,7 @@ export default function CompetitionCalendar() {
                   </motion.div>
                 );
               })}
-            </div>
+            </motion.div>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <span className="material-symbols-outlined text-[40px] text-ink-muted-48">emoji_events</span>
@@ -428,6 +435,6 @@ export default function CompetitionCalendar() {
       </motion.section>
       </>
       )}
-    </div>
+    </motion.div>
   );
 }

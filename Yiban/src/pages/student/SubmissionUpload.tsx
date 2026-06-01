@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import { uploadToQiniu } from '../../api/qiniu';
 import PageHero from '../../components/PageHero';
+import { pageVariants, pageTransition } from '../../lib/motion';
 
 type Registration = {
   id: number | string;
@@ -150,9 +151,10 @@ export default function SubmissionUpload() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      transition={pageTransition}
       className="py-lg flex flex-col gap-lg"
     >
       {/* Breadcrumb + actions */}
@@ -167,8 +169,8 @@ export default function SubmissionUpload() {
         )}
         actions={(
           <>
-            <button className="btn-secondary" onClick={() => navigate('/student/registrations')}>取消</button>
-            <button
+            <motion.button whileTap={{ scale: 0.97 }} className="btn-secondary" onClick={() => navigate('/student/registrations')}>取消</motion.button>
+            <motion.button whileTap={{ scale: 0.97 }}
               onClick={handleSubmit}
               disabled={!file || submitting}
               className="btn-primary"
@@ -176,7 +178,7 @@ export default function SubmissionUpload() {
               {submitting && <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>}
               <span className="material-symbols-outlined text-[18px]">send</span>
               提交审核
-            </button>
+            </motion.button>
           </>
         )}
       />
@@ -237,7 +239,7 @@ export default function SubmissionUpload() {
             </div>
 
             {fileName ? (
-              <div className="rounded-md border border-hairline p-3 bg-canvas flex items-center justify-between group hover:border-primary/40 transition">
+              <motion.div whileHover={{ scale: 1.01 }} transition={pageTransition} className="rounded-md border border-hairline p-3 bg-canvas flex items-center justify-between group hover:border-primary/40 transition">
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-md bg-primary/10 grid place-items-center text-primary">
                     <span className="material-symbols-outlined icon-fill">description</span>
@@ -254,7 +256,7 @@ export default function SubmissionUpload() {
                 >
                   <span className="material-symbols-outlined text-[20px]">delete</span>
                 </button>
-              </div>
+              </motion.div>
             ) : (
               <div
                 className={`rounded-md border-2 border-dashed p-section flex flex-col items-center justify-center text-center transition-all cursor-pointer group ${

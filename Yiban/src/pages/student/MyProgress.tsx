@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 import type { CompetitionProgress, StudentStageProgress, StageProgressStatus } from '../../types';
+import { pageVariants, pageTransition, listContainer, listItem } from '../../lib/motion';
 
 const statusConfig: Record<StageProgressStatus, { icon: string; label: string; color: string; bg: string }> = {
   passed: { icon: 'check_circle', label: '已通过', color: 'text-success', bg: 'bg-success/10' },
@@ -20,12 +21,12 @@ function StageTimeline({ stages }: { stages: StudentStageProgress[] }) {
       {/* Vertical line */}
       <div className="absolute left-[15px] top-2 bottom-2 w-px bg-hairline" />
 
-      <div className="flex flex-col gap-4">
+      <motion.div variants={listContainer} initial="hidden" animate="visible" className="flex flex-col gap-4">
         {stages.map((stage, idx) => {
           const cfg = statusConfig[stage.status];
           const isLast = idx === stages.length - 1;
           return (
-            <div key={stage.stageId} className="relative flex items-start gap-3">
+            <motion.div key={stage.stageId} variants={listItem} className="relative flex items-start gap-3">
               {/* Dot */}
               <div className={`absolute left-[-17px] w-[10px] h-[10px] rounded-full mt-1.5 z-10 ${
                 stage.status === 'passed' ? 'bg-success' :
@@ -61,10 +62,10 @@ function StageTimeline({ stages }: { stages: StudentStageProgress[] }) {
                   </p>
                 )}
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -113,9 +114,10 @@ export default function MyProgress() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      transition={pageTransition}
       className="py-lg flex flex-col gap-lg"
     >
       <PageHero
@@ -140,13 +142,11 @@ export default function MyProgress() {
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-lg">
-          {progressList.map((comp, idx) => (
+        <motion.div variants={listContainer} initial="hidden" animate="visible" className="flex flex-col gap-lg">
+          {progressList.map((comp) => (
             <motion.div
               key={comp.competitionId}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05, duration: 0.4 }}
+              variants={listItem}
               className="glass p-xl"
             >
               {/* Header */}
@@ -175,7 +175,7 @@ export default function MyProgress() {
               <StageTimeline stages={comp.stages} />
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
     </motion.div>
   );

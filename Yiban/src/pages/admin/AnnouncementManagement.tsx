@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
+import { listContainer, listItem } from '../../lib/motion';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import ConfirmModal from '../../components/ConfirmModal';
+import { useConfirmModal } from '../../hooks/useConfirmModal';
 import type { Announcement, AnnouncementType } from '../../types';
 
 const typeLabels: Record<AnnouncementType, string> = {
@@ -24,6 +27,7 @@ export default function AnnouncementManagement() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({ title: '', content: '', type: 'system' as AnnouncementType, competitionId: '', isPinned: false });
+  const { isOpen, title, message, variant, confirm, close } = useConfirmModal();
 
   const loadAnnouncements = async () => {
     try {
@@ -85,7 +89,14 @@ export default function AnnouncementManagement() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('确定删除此公告？')) return;
+    const confirmed = await confirm({
+      title: '删除公告',
+      message: '确定删除此公告？',
+      confirmText: '删除',
+      cancelText: '取消',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await apiClient.delete(`/announcement/${id}`);
       toast.success('已删除');
@@ -115,12 +126,15 @@ export default function AnnouncementManagement() {
       />
 
       {/* Form */}
-      {showForm && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="glass p-xl"
-        >
+      <AnimatePresence>
+        {showForm && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="glass p-xl overflow-hidden"
+          >
           <h3 className="text-[17px] font-semibold text-ink mb-md">{editingId ? '编辑公告' : '发布新公告'}</h3>
           <div className="flex flex-col gap-md">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
@@ -154,7 +168,8 @@ export default function AnnouncementManagement() {
             </div>
           </div>
         </motion.div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Filter tabs */}
       <div className="flex gap-1 p-1 bg-primary/6 rounded-pill w-fit">
@@ -196,9 +211,9 @@ export default function AnnouncementManagement() {
                 <th className="text-right text-[11px] text-ink-muted-48 font-medium px-lg py-3">操作</th>
               </tr>
             </thead>
-            <tbody>
+            <motion.tbody variants={listContainer} initial="hidden" animate="visible">
               {announcements.map(a => (
-                <tr key={a.id} className="border-b border-hairline last:border-0 hover:bg-primary/3 transition">
+                <motion.tr key={a.id} variants={listItem} className="border-b border-hairline last:border-0 hover:bg-primary/3 transition">
                   <td className="px-lg py-3">
                     <div className="flex items-center gap-2">
                       {a.isPinned && <span className="material-symbols-outlined text-[16px] text-warning">push_pin</span>}
@@ -219,12 +234,21 @@ export default function AnnouncementManagement() {
                       <span className="material-symbols-outlined text-[18px]">delete</span>
                     </button>
                   </td>
-                </tr>
+                </motion.tr>
               ))}
-            </tbody>
+            </motion.tbody>
           </table>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={isOpen}
+        onClose={close}
+        onConfirm={() => {}}
+        title={title}
+        message={message}
+        variant={variant}
+      />
     </motion.div>
   );
 }

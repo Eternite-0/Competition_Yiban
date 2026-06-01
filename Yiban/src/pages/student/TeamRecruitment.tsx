@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import { pageVariants, pageTransition, listContainer, listItem } from '../../lib/motion';
 import { useStore } from '../../store/useStore';
 
 type TeamVO = {
@@ -246,7 +247,12 @@ export default function TeamRecruitment() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <motion.div
+      variants={pageVariants}
+      initial="hidden"
+      animate="visible"
+      className="flex flex-col gap-6"
+    >
       {/* Page Header */}
       <PageHero
         eyebrow="Teams"
@@ -326,12 +332,13 @@ export default function TeamRecruitment() {
               <span className="text-[14px]">暂无招募信息</span>
             </div>
           ) : (
-            filtered.map((post, i) => (
+            <motion.div variants={listContainer} initial="hidden" animate="visible" className="flex flex-col gap-md">
+            {filtered.map((post) => (
               <motion.div
                 key={post.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04, duration: 0.35 }}
+                variants={listItem}
+                whileHover={{ scale: 1.01, y: -2 }}
+                transition={pageTransition}
                 className="bg-white border border-slate-200 rounded-xl p-5 min-h-[140px]"
               >
                 <div className="flex justify-between items-start mb-3">
@@ -366,7 +373,7 @@ export default function TeamRecruitment() {
                   <div className="flex items-center gap-2">
                     {String(post.authorId) !== String(currentUser?.id) && (
                       <>
-                        <button
+                        <motion.button whileTap={{ scale: 0.97 }}
                           onClick={() => {
                             setApplyTarget(post);
                             setApplyForm({ role: post.rolesNeeded?.[0] || '', reason: '' });
@@ -374,8 +381,8 @@ export default function TeamRecruitment() {
                           className="btn-primary !py-1.5 !px-4 !text-[13px]"
                         >
                           申请加入
-                        </button>
-                        <button
+                        </motion.button>
+                        <motion.button whileTap={{ scale: 0.97 }}
                           onClick={() => {
                             setContactTarget(post);
                             setContactForm({ title: `关于「${post.competitionName}」组队招募`, content: '' });
@@ -383,13 +390,14 @@ export default function TeamRecruitment() {
                           className="btn-secondary !py-1.5 !px-4 !text-[13px]"
                         >
                           联系 TA
-                        </button>
+                        </motion.button>
                       </>
                     )}
                   </div>
                 </div>
               </motion.div>
-            ))
+            ))}
+            </motion.div>
           )}
 
           {total > pageSize && (
@@ -838,6 +846,6 @@ export default function TeamRecruitment() {
         document.body
       )}
 
-    </div>
+    </motion.div>
   );
 }

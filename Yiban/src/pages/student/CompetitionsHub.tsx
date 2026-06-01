@@ -4,7 +4,9 @@ import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import { useStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
-import { listContainer, listItem, softSpring } from '../../lib/motion';
+import { CardSkeleton } from '../../components/Skeleton';
+import ErrorState from '../../components/ErrorState';
+import { listContainer, listItem, pageTransition, softSpring } from '../../lib/motion';
 
 type BackendCompetition = {
   id: number | string;
@@ -184,13 +186,37 @@ export default function CompetitionsHub() {
         }
       />
 
-      <div className="flex gap-0">
-        <aside className="w-[180px] shrink-0 border-r border-slate-100 pr-4 mr-6">
-          <div className="px-2.5 py-2">
+      <div className="flex flex-col md:flex-row gap-0">
+        <aside className="md:w-[180px] shrink-0 md:border-r md:border-slate-100 md:pr-4 md:mr-6">
+          <div className="px-2.5 py-2 hidden md:block">
             <p className="text-[11px] font-medium uppercase text-slate-400">分类筛选</p>
             <p className="mt-1 text-[12px] text-ink-muted-48">按赛事方向收拢列表</p>
           </div>
-          <div className="flex flex-col gap-1">
+          {/* Mobile: horizontal scroll chips */}
+          <div className="flex md:hidden gap-2 overflow-x-auto no-scrollbar pb-3 px-1">
+            {CATEGORIES.map((cat) => {
+              const active = selectedCategory === cat.value;
+              return (
+                <button
+                  key={cat.label}
+                  onClick={() => { setSelectedCategory(cat.value); setPage(1); }}
+                  className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] whitespace-nowrap cursor-pointer transition-colors ${
+                    active ? 'bg-primary-soft text-primary font-medium' : 'text-body-muted hover:bg-canvas-parchment'
+                  }`}
+                >
+                  <span className={`material-symbols-outlined text-[16px] ${active ? 'icon-fill text-primary' : 'text-placeholder'}`}>
+                    {cat.value ? CATEGORY_ICON[cat.value] : 'apps'}
+                  </span>
+                  {cat.label}
+                  <span className="text-[11px] bg-surface-chip text-body-subtle px-1.5 rounded-full tabular-nums">
+                    {cat.value ? categoryCounts[cat.value] || 0 : total}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {/* Desktop: vertical sidebar */}
+          <div className="hidden md:flex flex-col gap-1">
             {CATEGORIES.map((cat) => {
               const active = selectedCategory === cat.value;
               return (
@@ -198,25 +224,25 @@ export default function CompetitionsHub() {
                   key={cat.label}
                   onClick={() => { setSelectedCategory(cat.value); setPage(1); }}
                   className={`relative flex items-center justify-between px-3 py-2 rounded-lg text-sm cursor-pointer transition-colors ${
-                    active ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600 hover:bg-slate-50'
+                    active ? 'bg-primary-soft text-primary font-medium' : 'text-body-muted hover:bg-canvas-parchment'
                   }`}
                 >
                   {active ? (
                     <motion.span
                       layoutId="competition-category-active"
-                      className="absolute inset-0 rounded-lg bg-blue-50"
+                      className="absolute inset-0 rounded-lg bg-primary-soft"
                       transition={softSpring}
                     />
                   ) : (
-                    <span className="absolute inset-0 rounded-lg opacity-0 transition hover:bg-slate-50 hover:opacity-100" />
+                    <span className="absolute inset-0 rounded-lg opacity-0 transition hover:bg-canvas-parchment hover:opacity-100" />
                   )}
                   <span className="relative z-10 flex items-center gap-2">
-                    <span className={`material-symbols-outlined text-[17px] ${active ? 'icon-fill text-blue-600' : 'text-slate-400'}`}>
+                    <span className={`material-symbols-outlined text-[17px] ${active ? 'icon-fill text-primary' : 'text-placeholder'}`}>
                       {cat.value ? CATEGORY_ICON[cat.value] : 'apps'}
                     </span>
                     {cat.label}
                   </span>
-                  <span className="relative z-10 text-xs bg-slate-100 text-slate-500 px-2 rounded-full tabular-nums">
+                  <span className="relative z-10 text-xs bg-surface-chip text-body-subtle px-2 rounded-full tabular-nums">
                     {cat.value ? categoryCounts[cat.value] || 0 : total}
                   </span>
                 </button>
@@ -242,7 +268,7 @@ export default function CompetitionsHub() {
               />
             </div>
             <div className="hidden flex-1 xl:block" />
-            <div className="relative w-full md:w-[300px]">
+            <div className="relative w-full sm:w-[300px]">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">
                 search
               </span>
@@ -256,20 +282,23 @@ export default function CompetitionsHub() {
           </div>
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-section text-ink-muted-48">
-              <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
-              <span className="text-[14px]">加载中…</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {Array.from({ length: 6 }, (_, i) => <CardSkeleton key={i} />)}
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-section text-primary">
-              <span className="material-symbols-outlined text-[32px]">error_outline</span>
-              <span className="text-[14px]">{error}</span>
-            </div>
+            <ErrorState
+              message={error}
+              onRetry={() => {
+                setError(null);
+                setPage(1);
+              }}
+            />
           ) : competitions.length === 0 ? (
-            <div className="app-panel flex flex-col items-center justify-center gap-2 py-section text-ink-muted-48">
-              <span className="material-symbols-outlined text-[32px]">search_off</span>
-              <span className="text-[14px]">暂无符合条件的赛事</span>
-            </div>
+            <ErrorState
+              variant="not-found"
+              title="暂无赛事"
+              message={searchQuery ? '没有找到匹配的赛事，请尝试其他关键词' : '暂无符合条件的赛事'}
+            />
           ) : (
             <motion.div
               layout
@@ -279,7 +308,7 @@ export default function CompetitionsHub() {
               className="grid grid-cols-1 md:grid-cols-2 gap-5"
             >
               {competitions.map((comp) => (
-                <motion.div key={comp.id} layout variants={listItem} className="h-full">
+                <motion.div key={comp.id} layout variants={listItem} whileHover={{ scale: 1.02, y: -3 }} transition={pageTransition} className="h-full">
                   <CompetitionCard
                     comp={comp}
                     navigate={navigate}
@@ -399,6 +428,7 @@ function CompetitionCard({
       <div className="relative h-[140px] bg-slate-100 overflow-hidden">
         {comp.coverUrl && (
           <img
+            loading="lazy"
             className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-[1.025]"
             src={comp.coverUrl}
             alt={comp.name}
@@ -454,27 +484,30 @@ function CompetitionCard({
         </div>
 
         <div className="flex gap-2 mt-auto pt-3 border-t border-slate-100">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.97 }}
             onClick={() => navigate(isAdmin ? `/admin/publish/${comp.id}` : `/student/competitions/${comp.id}`)}
             className="btn-secondary flex-1 !min-h-10 !py-2 !text-[13px]"
           >
             {isAdmin ? '编辑' : '详情'}
-          </button>
+          </motion.button>
           {!isAdmin && (
             isRegistered ? (
-              <button
+              <motion.button
+                whileTap={{ scale: 0.97 }}
                 onClick={() => navigate('/student/registrations')}
                 className="btn-primary flex-1 !min-h-10 !py-2 !text-[13px]"
               >
                 已报名
-              </button>
+              </motion.button>
             ) : (
-              <button
+              <motion.button
+                whileTap={{ scale: 0.97 }}
                 onClick={() => navigate(`/student/registrations/workbench/${comp.id}`)}
                 className="btn-primary flex-1 !min-h-10 !py-2 !text-[13px]"
               >
                 立即报名
-              </button>
+              </motion.button>
             )
           )}
         </div>
