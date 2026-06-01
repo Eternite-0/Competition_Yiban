@@ -9,6 +9,11 @@ import java.util.Map;
 public interface MajorService extends IService<Major> {
 
     /**
+     * 获取所有学院列表（去重）
+     */
+    List<String> listColleges();
+
+    /**
      * 获取专业列表（支持按学院筛选）
      */
     List<Map<String, Object>> listMajors(String college);

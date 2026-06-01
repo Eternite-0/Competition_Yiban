@@ -46,6 +46,12 @@ public class AdminController {
 
     // ==================== 专业管理 ====================
 
+    @Operation(summary = "获取所有学院列表")
+    @GetMapping("/colleges")
+    public Result<List<String>> listColleges() {
+        return Result.success(majorService.listColleges());
+    }
+
     @Operation(summary = "获取专业列表")
     @GetMapping("/majors")
     public Result<List<Map<String, Object>>> listMajors(@RequestParam(required = false) String college) {

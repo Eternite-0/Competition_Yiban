@@ -325,6 +325,18 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     }
 
     @Override
+    public Page<SubmissionVO> listExcellentPage(int current, int size) {
+        Page<Submission> page = this.page(new Page<>(current, size), new LambdaQueryWrapper<Submission>()
+                .eq(Submission::getStatus, "已审核")
+                .eq(Submission::getApproved, true)
+                .eq(Submission::getDisplayed, true)
+                .orderByDesc(Submission::getUploadDate));
+        Page<SubmissionVO> voPage = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        voPage.setRecords(joinSubmissionVOs(page.getRecords()));
+        return voPage;
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void toggleDisplay(Long submissionId, Boolean displayed) {
         Submission sub = this.getById(submissionId);

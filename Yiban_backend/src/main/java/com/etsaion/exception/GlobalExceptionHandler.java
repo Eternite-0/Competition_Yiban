@@ -1,7 +1,9 @@
 package com.etsaion.exception;
 
 import com.etsaion.dto.Result;
+import com.etsaion.filter.CorrelationIdFilter;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
@@ -51,7 +53,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public Result<?> handleException(Exception e) {
-        log.error("System Exception: ", e);
+        String correlationId = MDC.get(CorrelationIdFilter.CORRELATION_ID_MDC_KEY);
+        log.error("System Exception [correlationId={}]: ", correlationId, e);
         return Result.error(500, "系统内部错误，请联系管理员");
     }
 }

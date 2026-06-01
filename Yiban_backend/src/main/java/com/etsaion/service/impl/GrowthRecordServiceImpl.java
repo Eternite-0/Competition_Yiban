@@ -3,6 +3,7 @@ package com.etsaion.service.impl;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etsaion.entity.Competition;
 import com.etsaion.entity.GrowthRecord;
@@ -19,7 +20,10 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,6 +43,13 @@ public class GrowthRecordServiceImpl extends ServiceImpl<GrowthRecordMapper, Gro
     @Override
     public List<GrowthRecord> getTimeline(Long studentId) {
         return this.list(new LambdaQueryWrapper<GrowthRecord>()
+                .eq(GrowthRecord::getStudentId, studentId)
+                .orderByDesc(GrowthRecord::getHappenTime));
+    }
+
+    @Override
+    public Page<GrowthRecord> getTimelinePage(Long studentId, int current, int size) {
+        return this.page(new Page<>(current, size), new LambdaQueryWrapper<GrowthRecord>()
                 .eq(GrowthRecord::getStudentId, studentId)
                 .orderByDesc(GrowthRecord::getHappenTime));
     }
@@ -82,11 +93,21 @@ public class GrowthRecordServiceImpl extends ServiceImpl<GrowthRecordMapper, Gro
             }
         }
 
+        // Batch-fetch competitions to avoid N+1 queries
+        Map<Long, Registration> regMap = registrations.stream()
+                .collect(Collectors.toMap(Registration::getId, r -> r, (a, b) -> a));
+        List<Long> compIds = registrations.stream()
+                .map(Registration::getCompetitionId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        Map<Long, Competition> compMap = CollUtil.isNotEmpty(compIds)
+                ? competitionService.listByIds(compIds).stream()
+                        .collect(Collectors.toMap(Competition::getId, c -> c, (a, b) -> a))
+                : Collections.emptyMap();
+
         for (Submission sub : approvedSubmissions) {
-            Registration reg = registrations.stream().filter(r -> r.getId().equals(sub.getRegistrationId())).findFirst().orElse(null);
+            Registration reg = regMap.get(sub.getRegistrationId());
             if (reg == null) continue;
 
-            Competition comp = competitionService.getById(reg.getCompetitionId());
+            Competition comp = compMap.get(reg.getCompetitionId());
             if (comp == null) continue;
 
             // Base boost for approved deliverables

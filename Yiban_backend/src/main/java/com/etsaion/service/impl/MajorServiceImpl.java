@@ -18,6 +18,21 @@ import java.util.Map;
 public class MajorServiceImpl extends ServiceImpl<MajorMapper, Major> implements MajorService {
 
     @Override
+    public List<String> listColleges() {
+        LambdaQueryWrapper<Major> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(Major::getCollege)
+               .eq(Major::getStatus, "active")
+               .groupBy(Major::getCollege)
+               .orderByAsc(Major::getCollege);
+        List<Major> majors = this.list(wrapper);
+        return majors.stream()
+                .map(Major::getCollege)
+                .filter(c -> c != null && !c.isEmpty())
+                .distinct()
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
     public List<Map<String, Object>> listMajors(String college) {
         LambdaQueryWrapper<Major> wrapper = new LambdaQueryWrapper<>();
         if (college != null && !college.isEmpty()) {

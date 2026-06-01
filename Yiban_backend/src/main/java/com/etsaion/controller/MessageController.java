@@ -1,5 +1,6 @@
 package com.etsaion.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etsaion.dto.Result;
 import com.etsaion.entity.Message;
 import com.etsaion.entity.User;
@@ -50,12 +51,14 @@ public class MessageController {
 
     @Operation(summary = "获取我的消息列表")
     @GetMapping("/list")
-    public Result<List<Message>> listMessages() {
+    public Result<Page<Message>> listMessages(
+            @RequestParam(defaultValue = "1") int current,
+            @RequestParam(defaultValue = "10") int size) {
         Long userId = UserContext.getUserId();
         if (userId == null) {
             return Result.error(401, "请先登录");
         }
-        return Result.success(messageService.getMyMessages(userId));
+        return Result.success(messageService.getMyMessagesPage(userId, current, size));
     }
 
     @Operation(summary = "标记消息已读")

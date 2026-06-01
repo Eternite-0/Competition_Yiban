@@ -1,5 +1,6 @@
 package com.etsaion.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etsaion.dto.Result;
 import com.etsaion.entity.GrowthRecord;
 import com.etsaion.interceptor.RequireRole;
@@ -45,7 +46,10 @@ public class GrowthController {
     @Operation(summary = "获取学生成长时间轴")
     @GetMapping("/timeline")
     @RequireRole({"student", "teacher", "admin"})
-    public Result<List<GrowthRecord>> getTimeline(@RequestParam(required = false) Long studentId) {
+    public Result<Page<GrowthRecord>> getTimeline(
+            @RequestParam(required = false) Long studentId,
+            @RequestParam(defaultValue = "1") int current,
+            @RequestParam(defaultValue = "20") int size) {
         Long targetStudentId = studentId;
         if (targetStudentId == null) {
             targetStudentId = UserContext.getUserId();
@@ -57,6 +61,6 @@ public class GrowthController {
                 && !targetStudentId.equals(UserContext.getUserId())) {
             return Result.error(403, "学生只能查看自己的成长档案");
         }
-        return Result.success(growthRecordService.getTimeline(targetStudentId));
+        return Result.success(growthRecordService.getTimelinePage(targetStudentId, current, size));
     }
 }

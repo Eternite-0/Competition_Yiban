@@ -204,11 +204,36 @@ public class TeacherServiceImpl implements TeacherService {
         }
         wrapper.orderByAsc(User::getId);
 
-        return userService.list(wrapper).stream().map(u -> {
-            UserVO vo = new UserVO();
-            BeanUtils.copyProperties(u, vo);
-            return vo;
-        }).collect(Collectors.toList());
+        return userService.list(wrapper).stream().map(this::toUserVO).collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<UserVO> listStudentsPage(int current, int size, String keyword, String college, String className, String grade, String major) {
+        String effectiveCollege = scopedCollege(college);
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
+                .eq(User::getRole, "student")
+                .eq(StrUtil.isNotBlank(effectiveCollege), User::getCollege, effectiveCollege)
+                .eq(StrUtil.isNotBlank(className), User::getClassName, className)
+                .eq(StrUtil.isNotBlank(grade), User::getGrade, grade)
+                .eq(StrUtil.isNotBlank(major), User::getMajor, major);
+
+        if (StrUtil.isNotBlank(keyword)) {
+            wrapper.and(w -> w.like(User::getRealName, keyword)
+                              .or().like(User::getUsername, keyword)
+                              .or().like(User::getMajor, keyword));
+        }
+        wrapper.orderByAsc(User::getId);
+
+        Page<User> page = userService.page(new Page<>(current, size), wrapper);
+        Page<UserVO> voPage = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        voPage.setRecords(page.getRecords().stream().map(this::toUserVO).collect(Collectors.toList()));
+        return voPage;
+    }
+
+    private UserVO toUserVO(User u) {
+        UserVO vo = new UserVO();
+        BeanUtils.copyProperties(u, vo);
+        return vo;
     }
 
     @Override

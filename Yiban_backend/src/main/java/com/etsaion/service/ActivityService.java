@@ -17,5 +17,6 @@ public interface ActivityService extends IService<Activity> {
     ActivityVO saveActivity(Long id, ActivitySaveDTO dto);
     Participation createParticipation(Long studentId, Long activityId, ParticipationCreateDTO dto);
     List<ParticipationVO> listMyParticipations(Long studentId);
+    Page<ParticipationVO> listMyParticipationsPage(Long studentId, int current, int size);
     ActivityVO toVO(Activity activity);
 }

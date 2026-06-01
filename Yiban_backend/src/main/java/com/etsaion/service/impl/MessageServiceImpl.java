@@ -1,6 +1,7 @@
 package com.etsaion.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.etsaion.entity.Message;
 import com.etsaion.exception.BusinessException;
@@ -17,6 +18,13 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
     @Override
     public List<Message> getMyMessages(Long userId) {
         return this.list(new LambdaQueryWrapper<Message>()
+                .eq(Message::getToUser, userId)
+                .orderByDesc(Message::getCreateTime));
+    }
+
+    @Override
+    public Page<Message> getMyMessagesPage(Long userId, int current, int size) {
+        return this.page(new Page<>(current, size), new LambdaQueryWrapper<Message>()
                 .eq(Message::getToUser, userId)
                 .orderByDesc(Message::getCreateTime));
     }

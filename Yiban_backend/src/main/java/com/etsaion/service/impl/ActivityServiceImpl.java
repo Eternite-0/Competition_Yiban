@@ -170,6 +170,23 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
                 .orderByDesc(Participation::getSubmitDate));
         if (CollUtil.isEmpty(list)) return new ArrayList<>();
 
+        return joinParticipationVOs(list, studentId);
+    }
+
+    @Override
+    public Page<ParticipationVO> listMyParticipationsPage(Long studentId, int current, int size) {
+        Page<Participation> page = participationService.page(new Page<>(current, size),
+                new LambdaQueryWrapper<Participation>()
+                        .eq(Participation::getStudentId, studentId)
+                        .orderByDesc(Participation::getSubmitDate));
+        Page<ParticipationVO> voPage = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
+        voPage.setRecords(joinParticipationVOs(page.getRecords(), studentId));
+        return voPage;
+    }
+
+    private List<ParticipationVO> joinParticipationVOs(List<Participation> list, Long studentId) {
+        if (CollUtil.isEmpty(list)) return new ArrayList<>();
+
         List<Long> activityIds = list.stream().map(Participation::getActivityId).distinct().collect(Collectors.toList());
         Map<Long, Activity> activityMap = CollUtil.isEmpty(activityIds) ? Collections.emptyMap()
                 : this.listByIds(activityIds).stream().collect(Collectors.toMap(Activity::getId, a -> a, (a, b) -> a));

@@ -17,6 +17,8 @@ CREATE TABLE `user` (
   `class_name` varchar(50) DEFAULT NULL,
   `grade` varchar(10) DEFAULT NULL COMMENT '年级(入学年份)',
   `status` varchar(20) DEFAULT 'active' COMMENT 'active/pending_approval/rejected',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
@@ -124,7 +126,10 @@ CREATE TABLE `registration` (
   `member_student_ids` varchar(1000) DEFAULT NULL COMMENT 'JSON数组 - 团队成员学生ID',
   `status` varchar(20) DEFAULT '待完善' COMMENT '待完善/已提交/审核中/审核通过/退回补充/审核驳回',
   `submit_date` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_competition_id` (`competition_id`),
+  KEY `idx_student_id` (`student_id`),
+  KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='报名表';
 
 -- ----------------------------
@@ -144,7 +149,11 @@ CREATE TABLE `submission` (
   `review_note` varchar(500) DEFAULT NULL COMMENT '教师评语',
   `approved` tinyint DEFAULT NULL COMMENT '已审核时 1=通过, 0=驳回; 待审核为 NULL',
   `displayed` tinyint DEFAULT '0' COMMENT '是否展示在优秀作品墙',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_registration_id` (`registration_id`),
+  KEY `idx_competition_id` (`competition_id`),
+  KEY `idx_submitter_id` (`submitter_id`),
+  KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='成果附件上传表';
 
 -- ----------------------------
@@ -251,7 +260,10 @@ CREATE TABLE `team_post` (
   `roles_needed` varchar(255) DEFAULT NULL COMMENT 'JSON数组 - 所需角色',
   `date` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '发布时间',
   `status` varchar(20) DEFAULT '招募中' COMMENT '招募中/已满员',
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_author_id` (`author_id`),
+  KEY `idx_competition_id` (`competition_id`),
+  KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='组队招募贴表';
 
 -- ----------------------------
@@ -280,7 +292,9 @@ CREATE TABLE `growth_record` (
   `record_type` varchar(20) COMMENT 'competition/award/certificate',
   `title` varchar(200) DEFAULT NULL,
   `happen_time` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_student_id` (`student_id`),
+  KEY `idx_competition_id` (`competition_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='成长记录表';
 
 -- ----------------------------
@@ -295,7 +309,10 @@ CREATE TABLE `message` (
   `content` text,
   `is_read` tinyint DEFAULT '0',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `idx_to_user` (`to_user`),
+  KEY `idx_is_read` (`is_read`),
+  KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息表';
 
 -- ----------------------------

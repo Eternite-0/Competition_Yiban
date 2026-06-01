@@ -63,15 +63,16 @@ public class TeacherController {
 
     @Operation(summary = "教师可查看的学生列表（按学院/班级/关键字过滤）")
     @GetMapping("/students")
-    public Result<List<UserVO>> listStudents(
+    public Result<Page<UserVO>> listStudents(
+            @RequestParam(defaultValue = "1") int current,
+            @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String college,
             @RequestParam(required = false) String className,
             @RequestParam(required = false) String grade,
             @RequestParam(required = false) String major) {
 
-        List<UserVO> list = teacherService.listStudents(keyword, college, className, grade, major);
-        return Result.success(list);
+        return Result.success(teacherService.listStudentsPage(current, size, keyword, college, className, grade, major));
     }
 
     @Operation(summary = "导出综测评分表 (Excel 流)")

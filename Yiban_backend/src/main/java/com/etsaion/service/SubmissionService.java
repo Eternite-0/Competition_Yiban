@@ -13,6 +13,7 @@ public interface SubmissionService extends IService<Submission> {
 
     Page<SubmissionVO> listSubmissions(int current, int size, String status, String keyword);
     List<SubmissionVO> listExcellent();
+    Page<SubmissionVO> listExcellentPage(int current, int size);
     void toggleDisplay(Long submissionId, Boolean displayed);
     void updateReviewNote(Long submissionId, String reviewNote);
     Submission adminCreateExcellent(Long competitionId, String fileName, String fileUrl, Long fileSize, String reviewNote);

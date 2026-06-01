@@ -160,8 +160,10 @@ public class SubmissionController {
 
     @Operation(summary = "优秀作品展示墙（已审核通过且被标记展示）")
     @GetMapping("/excellent")
-    public Result<List<SubmissionVO>> listExcellent() {
-        return Result.success(submissionService.listExcellent());
+    public Result<Page<SubmissionVO>> listExcellent(
+            @RequestParam(defaultValue = "1") int current,
+            @RequestParam(defaultValue = "12") int size) {
+        return Result.success(submissionService.listExcellentPage(current, size));
     }
 
     @Operation(summary = "管理员切换优秀作品展示状态")

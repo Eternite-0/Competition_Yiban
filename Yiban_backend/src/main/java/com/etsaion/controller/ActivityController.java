@@ -79,7 +79,9 @@ public class ActivityController {
     @Operation(summary = "当前学生的活动参与记录")
     @GetMapping("/me/participations")
     @RequireRole("student")
-    public Result<List<ParticipationVO>> listMyParticipations() {
-        return Result.success(activityService.listMyParticipations(UserContext.getUserId()));
+    public Result<Page<ParticipationVO>> listMyParticipations(
+            @RequestParam(defaultValue = "1") int current,
+            @RequestParam(defaultValue = "10") int size) {
+        return Result.success(activityService.listMyParticipationsPage(UserContext.getUserId(), current, size));
     }
 }
