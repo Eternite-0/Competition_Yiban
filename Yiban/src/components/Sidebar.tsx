@@ -107,7 +107,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                 end={item.path.split('/').length <= 2}
                 className={({ isActive }) =>
                   `group relative flex h-10 items-center gap-3 overflow-hidden rounded-sm border-l-2 px-3 text-[14px] font-normal transition-colors ${
-                    isActive ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-transparent text-body-muted hover:bg-slate-50 hover:text-ink'
+                    isActive ? 'border-primary bg-primary-soft text-primary' : 'border-transparent text-body-muted hover:bg-canvas-parchment hover:text-ink'
                   }`
                 }
               >
@@ -116,22 +116,22 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                     {isActive ? (
                       <motion.span
                         layoutId="dock-active-item"
-                        className="absolute inset-0 rounded-sm bg-blue-50"
+                        className="absolute inset-0 rounded-sm bg-primary-soft"
                         transition={softSpring}
                       />
                     ) : (
-                      <span className="absolute inset-0 rounded-sm opacity-0 transition group-hover:bg-slate-50 group-hover:opacity-100" />
+                      <span className="absolute inset-0 rounded-sm opacity-0 transition group-hover:bg-canvas-parchment group-hover:opacity-100" />
                     )}
                     {isActive && (
                       <motion.span
                         layoutId="dock-active-mark"
-                        className="absolute left-0 top-0 bottom-0 w-[2px] bg-blue-600"
+                        className="absolute left-0 top-0 bottom-0 w-[2px] bg-primary"
                         transition={softSpring}
                       />
                     )}
                     <span
                       className={`material-symbols-outlined relative z-10 text-[19px] transition ${
-                        isActive ? 'icon-fill text-blue-600' : 'text-placeholder group-hover:text-body-muted'
+                        isActive ? 'icon-fill text-primary' : 'text-placeholder group-hover:text-body-muted'
                       }`}
                     >
                       {item.icon}

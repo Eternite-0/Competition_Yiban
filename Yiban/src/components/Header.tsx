@@ -67,6 +67,8 @@ interface SearchResult {
 
 export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps) {
   const user = useStore((s) => s.currentUser);
+  const theme = useStore((s) => s.theme);
+  const setTheme = useStore((s) => s.setTheme);
   const location = useLocation();
   const navigate = useNavigate();
   const title = resolveTitle(location.pathname);
@@ -187,10 +189,10 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
 
   const fetchMessages = useCallback(async () => {
     try {
-      const data = await apiClient.get<Message[]>('/message/list');
-      const list = Array.isArray(data) ? data : [];
-      setMessages(list.slice(0, 10));
-      setUnreadCount(list.filter((m) => m.isRead === 0).length);
+      const data: any = await apiClient.get('/message/list', { params: { current: 1, size: 10 } });
+      const list: Message[] = Array.isArray(data?.records) ? data.records : (Array.isArray(data) ? data : []);
+      setMessages(list);
+      setUnreadCount(data?.total ? Math.min(data.total, 99) : list.filter((m) => m.isRead === 0).length);
     } catch (err) {
       console.error(err);
     }
@@ -265,9 +267,9 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
         <span className="sr-only">{title}</span>
       </div>
 
-      <div className="flex items-center gap-3">
-        <div ref={searchRef} className="relative hidden lg:block">
-          <div className="flex h-9 w-[244px] items-center rounded-sm border border-hairline bg-canvas transition-all focus-within:border-primary focus-within:shadow-focus" aria-expanded={searchOpen}>
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div ref={searchRef} className="relative hidden md:block">
+          <div className="flex h-9 w-[180px] lg:w-[244px] items-center rounded-sm border border-hairline bg-canvas transition-all focus-within:border-primary focus-within:shadow-focus" aria-expanded={searchOpen}>
             <span className="material-symbols-outlined text-[17px] text-placeholder ml-3">search</span>
             <input
               ref={searchInputRef}
@@ -422,6 +424,23 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
             )}
           </AnimatePresence>
         </div>
+
+        {/* Theme toggle */}
+        <button
+          type="button"
+          onClick={() => {
+            const order: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
+            const next = order[(order.indexOf(theme) + 1) % order.length];
+            setTheme(next);
+          }}
+          className="icon-button"
+          aria-label={`当前主题：${theme === 'light' ? '浅色' : theme === 'dark' ? '深色' : '跟随系统'}，点击切换`}
+          title={theme === 'light' ? '浅色模式' : theme === 'dark' ? '深色模式' : '跟随系统'}
+        >
+          <span className="material-symbols-outlined text-[20px]">
+            {theme === 'light' ? 'light_mode' : theme === 'dark' ? 'dark_mode' : 'brightness_auto'}
+          </span>
+        </button>
 
         <div className="group flex cursor-pointer items-center gap-2">
           <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[12px] font-medium text-on-primary">

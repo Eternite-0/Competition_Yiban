@@ -2,6 +2,8 @@ import { Component, type ReactNode } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import Breadcrumb from './Breadcrumb';
+import ErrorState from './ErrorState';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { pageTransition, pageVariants } from '../lib/motion';
@@ -40,7 +42,8 @@ export default function Layout() {
         />
         <main className="flex-1 pt-[52px]">
           <div className="app-main-frame">
-            <div className="mx-auto w-full max-w-[1100px] px-6 pt-8 pb-8">
+            <div className="mx-auto w-full max-w-[1100px] px-4 sm:px-6 pt-6 sm:pt-8 pb-6 sm:pb-8">
+            <Breadcrumb />
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}
@@ -81,16 +84,12 @@ class PageErrorBoundary extends Component<{ children: ReactNode }, EBState> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <span className="text-[15px] text-ink-muted-80">页面加载出错</span>
-          <button
-            type="button"
-            onClick={this.handleRetry}
-            className="btn-primary"
-          >
-            重试
-          </button>
-        </div>
+        <ErrorState
+          variant="generic"
+          title="页面加载出错"
+          message="渲染页面时发生错误，请尝试刷新"
+          onRetry={this.handleRetry}
+        />
       );
     }
     return this.props.children;

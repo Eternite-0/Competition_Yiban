@@ -32,8 +32,8 @@ function AppShell() {
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-canvas-parchment">
-        <span className="material-symbols-outlined animate-spin text-[32px] text-primary">progress_activity</span>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-canvas-parchment)' }}>
+        <span className="material-symbols-outlined animate-spin text-[32px]" style={{ color: 'var(--color-primary)' }}>progress_activity</span>
       </div>
     );
   }

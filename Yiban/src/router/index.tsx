@@ -1,44 +1,60 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import Layout from '../components/Layout';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import TermsPage from '../pages/TermsPage';
 import { useStore } from '../store/useStore';
 
-// Student pages
-import StudentHome from '../pages/student/StudentHome';
-import CompetitionsHub from '../pages/student/CompetitionsHub';
-import CompetitionDetail from '../pages/student/CompetitionDetail';
-import TeamRecruitment from '../pages/student/TeamRecruitment';
-import MyRegistrations from '../pages/student/MyRegistrations';
-import RegistrationWorkbench from '../pages/student/RegistrationWorkbench';
-import SubmissionUpload from '../pages/student/SubmissionUpload';
-import StudentGrowth from '../pages/student/StudentGrowth';
-import AchievementUpload from '../pages/student/AchievementUpload';
-import CompetitionCalendar from '../pages/student/CompetitionCalendar';
-import StudentExcellentWorks from '../pages/student/ExcellentWorks';
-import MyProgress from '../pages/student/MyProgress';
+// Student pages (lazy loaded)
+const StudentHome = lazy(() => import('../pages/student/StudentHome'));
+const CompetitionsHub = lazy(() => import('../pages/student/CompetitionsHub'));
+const CompetitionDetail = lazy(() => import('../pages/student/CompetitionDetail'));
+const TeamRecruitment = lazy(() => import('../pages/student/TeamRecruitment'));
+const MyRegistrations = lazy(() => import('../pages/student/MyRegistrations'));
+const RegistrationWorkbench = lazy(() => import('../pages/student/RegistrationWorkbench'));
+const SubmissionUpload = lazy(() => import('../pages/student/SubmissionUpload'));
+const StudentGrowth = lazy(() => import('../pages/student/StudentGrowth'));
+const AchievementUpload = lazy(() => import('../pages/student/AchievementUpload'));
+const CompetitionCalendar = lazy(() => import('../pages/student/CompetitionCalendar'));
+const StudentExcellentWorks = lazy(() => import('../pages/student/ExcellentWorks'));
+const MyProgress = lazy(() => import('../pages/student/MyProgress'));
 
-// Teacher pages
-import TeacherHome from '../pages/teacher/TeacherHome';
-import SubmissionAudit from '../pages/teacher/SubmissionAudit';
-import TeacherStudentCompetitions from '../pages/teacher/TeacherStudentCompetitions';
-import TeacherStudentGrowth from '../pages/teacher/TeacherStudentGrowth';
-import CollegeOverview from '../pages/teacher/CollegeOverview';
-import StudentDetail from '../pages/teacher/StudentDetail';
-import StudentCompare from '../pages/teacher/StudentCompare';
+// Teacher pages (lazy loaded)
+const TeacherHome = lazy(() => import('../pages/teacher/TeacherHome'));
+const SubmissionAudit = lazy(() => import('../pages/teacher/SubmissionAudit'));
+const TeacherStudentCompetitions = lazy(() => import('../pages/teacher/TeacherStudentCompetitions'));
+const TeacherStudentGrowth = lazy(() => import('../pages/teacher/TeacherStudentGrowth'));
+const CollegeOverview = lazy(() => import('../pages/teacher/CollegeOverview'));
+const StudentDetail = lazy(() => import('../pages/teacher/StudentDetail'));
+const StudentCompare = lazy(() => import('../pages/teacher/StudentCompare'));
 
-// Admin pages
-import AdminHome from '../pages/admin/AdminHome';
-import CompetitionPublish from '../pages/admin/CompetitionPublish';
-import ExcellentWorks from '../pages/admin/ExcellentWorks';
-import UserManagement from '../pages/admin/UserManagement';
-import AnnouncementManagement from '../pages/admin/AnnouncementManagement';
-import MajorManagement from '../pages/admin/MajorManagement';
-import ClassManagement from '../pages/admin/ClassManagement';
-import StudentRosterManagement from '../pages/admin/StudentRosterManagement';
-import RegistrationAudit from '../pages/admin/RegistrationAudit';
+// Admin pages (lazy loaded)
+const AdminHome = lazy(() => import('../pages/admin/AdminHome'));
+const CompetitionPublish = lazy(() => import('../pages/admin/CompetitionPublish'));
+const ExcellentWorks = lazy(() => import('../pages/admin/ExcellentWorks'));
+const UserManagement = lazy(() => import('../pages/admin/UserManagement'));
+const AnnouncementManagement = lazy(() => import('../pages/admin/AnnouncementManagement'));
+const MajorManagement = lazy(() => import('../pages/admin/MajorManagement'));
+const ClassManagement = lazy(() => import('../pages/admin/ClassManagement'));
+const StudentRosterManagement = lazy(() => import('../pages/admin/StudentRosterManagement'));
+const RegistrationAudit = lazy(() => import('../pages/admin/RegistrationAudit'));
+
+// Loading fallback for lazy routes
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center h-full min-h-[200px]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span className="text-sm text-ink-muted">加载中...</span>
+      </div>
+    </div>
+  );
+}
+
+function LazyPage({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+}
 
 function RequireAuth({ role, children }: { role?: string; children: ReactNode }) {
   const currentUser = useStore((s) => s.currentUser);
@@ -59,50 +75,50 @@ export const router = createBrowserRouter([
     path: '/student',
     element: <RequireAuth role="student"><Layout /></RequireAuth>,
     children: [
-      { index: true, element: <StudentHome /> },
-      { path: 'competitions', element: <CompetitionsHub /> },
-      { path: 'competitions/:id', element: <CompetitionDetail /> },
-      { path: 'teams', element: <TeamRecruitment /> },
-      { path: 'registrations', element: <MyRegistrations /> },
-      { path: 'registrations/workbench/:competitionId', element: <RegistrationWorkbench /> },
-      { path: 'upload/:registrationId', element: <SubmissionUpload /> },
-      { path: 'growth', element: <StudentGrowth /> },
-      { path: 'achievements/upload', element: <AchievementUpload /> },
-      { path: 'calendar', element: <CompetitionCalendar /> },
-      { path: 'works', element: <StudentExcellentWorks /> },
-      { path: 'progress', element: <MyProgress /> },
+      { index: true, element: <LazyPage><StudentHome /></LazyPage> },
+      { path: 'competitions', element: <LazyPage><CompetitionsHub /></LazyPage> },
+      { path: 'competitions/:id', element: <LazyPage><CompetitionDetail /></LazyPage> },
+      { path: 'teams', element: <LazyPage><TeamRecruitment /></LazyPage> },
+      { path: 'registrations', element: <LazyPage><MyRegistrations /></LazyPage> },
+      { path: 'registrations/workbench/:competitionId', element: <LazyPage><RegistrationWorkbench /></LazyPage> },
+      { path: 'upload/:registrationId', element: <LazyPage><SubmissionUpload /></LazyPage> },
+      { path: 'growth', element: <LazyPage><StudentGrowth /></LazyPage> },
+      { path: 'achievements/upload', element: <LazyPage><AchievementUpload /></LazyPage> },
+      { path: 'calendar', element: <LazyPage><CompetitionCalendar /></LazyPage> },
+      { path: 'works', element: <LazyPage><StudentExcellentWorks /></LazyPage> },
+      { path: 'progress', element: <LazyPage><MyProgress /></LazyPage> },
     ],
   },
   {
     path: '/teacher',
     element: <RequireAuth role="teacher"><Layout /></RequireAuth>,
     children: [
-      { index: true, element: <TeacherHome /> },
-      { path: 'college-overview', element: <CollegeOverview /> },
-      { path: 'competitions', element: <CompetitionsHub /> },
-      { path: 'audit', element: <SubmissionAudit /> },
-      { path: 'student-competitions', element: <TeacherStudentCompetitions /> },
-      { path: 'student-growth', element: <TeacherStudentGrowth /> },
-      { path: 'student-detail', element: <StudentDetail /> },
-      { path: 'student-compare', element: <StudentCompare /> },
+      { index: true, element: <LazyPage><TeacherHome /></LazyPage> },
+      { path: 'college-overview', element: <LazyPage><CollegeOverview /></LazyPage> },
+      { path: 'competitions', element: <LazyPage><CompetitionsHub /></LazyPage> },
+      { path: 'audit', element: <LazyPage><SubmissionAudit /></LazyPage> },
+      { path: 'student-competitions', element: <LazyPage><TeacherStudentCompetitions /></LazyPage> },
+      { path: 'student-growth', element: <LazyPage><TeacherStudentGrowth /></LazyPage> },
+      { path: 'student-detail', element: <LazyPage><StudentDetail /></LazyPage> },
+      { path: 'student-compare', element: <LazyPage><StudentCompare /></LazyPage> },
     ],
   },
   {
     path: '/admin',
     element: <RequireAuth role="admin"><Layout /></RequireAuth>,
     children: [
-      { index: true, element: <AdminHome /> },
-      { path: 'competitions', element: <CompetitionsHub /> },
-      { path: 'publish', element: <CompetitionPublish /> },
-      { path: 'publish/:id', element: <CompetitionPublish /> },
-      { path: 'works', element: <ExcellentWorks /> },
-      { path: 'audit', element: <SubmissionAudit /> },
-      { path: 'users', element: <UserManagement /> },
-      { path: 'announcements', element: <AnnouncementManagement /> },
-      { path: 'majors', element: <MajorManagement /> },
-      { path: 'classes', element: <ClassManagement /> },
-      { path: 'roster', element: <StudentRosterManagement /> },
-      { path: 'registration-audit', element: <RegistrationAudit /> },
+      { index: true, element: <LazyPage><AdminHome /></LazyPage> },
+      { path: 'competitions', element: <LazyPage><CompetitionsHub /></LazyPage> },
+      { path: 'publish', element: <LazyPage><CompetitionPublish /></LazyPage> },
+      { path: 'publish/:id', element: <LazyPage><CompetitionPublish /></LazyPage> },
+      { path: 'works', element: <LazyPage><ExcellentWorks /></LazyPage> },
+      { path: 'audit', element: <LazyPage><SubmissionAudit /></LazyPage> },
+      { path: 'users', element: <LazyPage><UserManagement /></LazyPage> },
+      { path: 'announcements', element: <LazyPage><AnnouncementManagement /></LazyPage> },
+      { path: 'majors', element: <LazyPage><MajorManagement /></LazyPage> },
+      { path: 'classes', element: <LazyPage><ClassManagement /></LazyPage> },
+      { path: 'roster', element: <LazyPage><StudentRosterManagement /></LazyPage> },
+      { path: 'registration-audit', element: <LazyPage><RegistrationAudit /></LazyPage> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },
