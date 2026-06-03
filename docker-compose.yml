@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mysql:
     image: mysql:8.0
@@ -10,7 +8,7 @@ services:
       TZ: "Asia/Shanghai"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./db:/docker-entrypoint-initdb.d
+      - ./Yiban_backend/db:/docker-entrypoint-initdb.d
     networks:
       - etsaion-network
     restart: unless-stopped
@@ -40,6 +38,7 @@ services:
       SPRING_DATASOURCE_USERNAME: "root"
       SPRING_DATASOURCE_PASSWORD: "${MYSQL_ROOT_PASSWORD:-etsaion2024}"
       SPRING_DATA_REDIS_HOST: "redis"
+      JWT_SECRET: "${JWT_SECRET:-etsaion2024jwtSecretKey256bits!!}"
     depends_on:
       mysql:
         condition: service_healthy
