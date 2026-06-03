@@ -38,7 +38,7 @@ services:
       SPRING_DATASOURCE_USERNAME: "root"
       SPRING_DATASOURCE_PASSWORD: "${MYSQL_ROOT_PASSWORD:-etsaion2024}"
       SPRING_DATA_REDIS_HOST: "redis"
-      JWT_SECRET: "${JWT_SECRET:-etsaion2024jwtSecretKey256bits!!}"
+      JWT_SECRET: "${JWT_SECRET:-etsaion2024JwtSecretKey256BitsSecure!!}"
     depends_on:
       mysql:
         condition: service_healthy
