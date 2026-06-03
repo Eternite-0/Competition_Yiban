@@ -5,7 +5,7 @@ import { apiClient } from '../api/client';
 import { useStore } from '../store/useStore';
 import PageHero from '../components/PageHero';
 import Pagination from '../components/Pagination';
-import { listContainer, listItem, pageVariants, pageTransition } from '../lib/motion';
+import { listContainer, listItem, pageVariants } from '../lib/motion';
 
 interface Message {
   id: number;
@@ -36,7 +36,7 @@ function formatTime(raw: string): string {
 }
 
 export default function NotificationsPage() {
-  const user = useStore((s) => s.currentUser);
+  useStore((s) => s.currentUser); // 保持 store 订阅
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);

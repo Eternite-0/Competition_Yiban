@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: etsaion-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-etsaion2024}"
+      MYSQL_DATABASE: "etsaion"
+      TZ: "Asia/Shanghai"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db:/docker-entrypoint-initdb.d
+    networks:
+      - etsaion-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: etsaion-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - etsaion-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./Yiban_backend
+      dockerfile: Dockerfile
+    container_name: etsaion-backend
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/etsaion?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true"
+      SPRING_DATASOURCE_USERNAME: "root"
+      SPRING_DATASOURCE_PASSWORD: "${MYSQL_ROOT_PASSWORD:-etsaion2024}"
+      SPRING_DATA_REDIS_HOST: "redis"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - etsaion-network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./Yiban
+      dockerfile: Dockerfile
+    container_name: etsaion-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - etsaion-network
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+  redis-data:
+
+networks:
+  etsaion-network:
+    driver: bridge

@@ -38,7 +38,7 @@ const pathNameMap: Record<string, string> = {
 
 export default function Breadcrumb() {
   const location = useLocation();
-  const currentUser = useStore((s) => s.currentUser);
+  useStore((s) => s.currentUser); // 保持 store 订阅
 
   // 生成面包屑项
   const generateBreadcrumbs = (): BreadcrumbItem[] => {

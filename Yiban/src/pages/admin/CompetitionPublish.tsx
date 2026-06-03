@@ -96,7 +96,6 @@ export default function CompetitionPublish() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
-  const { isOpen, title, message, variant, confirm, close } = useConfirmModal();
 
   const [form, setForm] = useState<PublishFormState>({ ...defaultForm });
   const [errors, setErrors] = useState<Partial<Record<keyof PublishFormState, string>>>({});

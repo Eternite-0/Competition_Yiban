@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { listContainer, listItem, pageTransition } from '../../lib/motion';
+import { listContainer, listItem } from '../../lib/motion';
 import apiClient from '../../api/client';
 import { uploadToQiniu, getSignedDownloadUrl } from '../../api/qiniu';
 import PageHero from '../../components/PageHero';

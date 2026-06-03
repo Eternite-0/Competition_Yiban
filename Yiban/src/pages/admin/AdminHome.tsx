@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
-import { listContainer, listItem, pageTransition } from '../../lib/motion';
+import { listContainer, listItem } from '../../lib/motion';
 import { useStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
 import Pagination from '../../components/Pagination';
