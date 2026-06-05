@@ -47,7 +47,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public Result<?> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
-        log.warn("数据约束违反: {}", e.getMostSpecificCause().getMessage());
+        // 不记录完整异常消息，避免泄露数据库表名/列名
+        log.warn("数据约束违反: 请求数据不符合业务约束");
         return Result.error(400, "数据不符合约束，请检查输入");
     }
 

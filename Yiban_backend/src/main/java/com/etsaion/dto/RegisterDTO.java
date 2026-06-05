@@ -21,7 +21,8 @@ public class RegisterDTO {
     private String username;
 
     @NotBlank(message = "密码不能为空")
-    @Size(min = 6, message = "密码长度不能少于6位")
+    @Size(min = 8, message = "密码长度不能少于8位")
+    @javax.validation.constraints.Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d).+$", message = "密码必须包含字母和数字")
     private String password;
 
     @NotBlank(message = "真实姓名不能为空")

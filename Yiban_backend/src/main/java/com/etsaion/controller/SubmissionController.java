@@ -80,7 +80,7 @@ public class SubmissionController {
             file.transferTo(targetFile);
 
             // Return file details mapped virtual URL
-            String fileUrl = "/files/" + newFilename;
+            String fileUrl = "/api/file/serve/" + newFilename;
             Map<String, Object> data = MapUtil.<String, Object>builder()
                     .put("fileName", originalFilename)
                     .put("fileUrl", fileUrl)

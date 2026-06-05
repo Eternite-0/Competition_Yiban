@@ -63,6 +63,11 @@ public class CompetitionController {
         if (comp == null) {
             return Result.error("赛事不存在");
         }
+        // 非管理员只能查看已发布赛事
+        if (!"admin".equalsIgnoreCase(UserContext.getUserRole())
+                && !"published".equalsIgnoreCase(comp.getStatus())) {
+            return Result.error(404, "赛事不存在");
+        }
         CompetitionVO vo = competitionService.toVO(comp);
         Map<String, Object> result = new java.util.HashMap<>();
         result.put("id", vo.getId());

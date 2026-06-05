@@ -71,6 +71,40 @@ public class StudentRosterServiceImpl extends ServiceImpl<StudentRosterMapper, S
     }
 
     @Override
+    public boolean existsByStudentNo(String studentNo) {
+        if (studentNo == null || studentNo.isBlank()) return false;
+        return this.count(new LambdaQueryWrapper<StudentRoster>()
+                .eq(StudentRoster::getStudentNo, studentNo.trim())
+                .ne(StudentRoster::getStatus, "registered")) > 0;
+    }
+
+    @Override
+    public Map<String, Object> lookupStudentStatus(String studentNo) {
+        Map<String, Object> result = new HashMap<>();
+        if (studentNo == null || studentNo.isBlank()) {
+            result.put("found", false);
+            return result;
+        }
+
+        StudentRoster roster = this.getOne(new LambdaQueryWrapper<StudentRoster>()
+                .eq(StudentRoster::getStudentNo, studentNo.trim()));
+
+        if (roster == null) {
+            result.put("found", false);
+            return result;
+        }
+
+        if ("registered".equals(roster.getStatus())) {
+            result.put("found", false);
+            result.put("registered", true);
+            return result;
+        }
+
+        result.put("found", true);
+        return result;
+    }
+
+    @Override
     public Map<String, Object> lookupByStudentNo(String studentNo) {
         if (studentNo == null || studentNo.trim().isEmpty()) {
             throw new BusinessException("学号不能为空");

@@ -66,7 +66,7 @@ public class FileController {
             file.transferTo(targetFile);
 
             // Return access URL mapped in WebMvcConfig
-            String fileUrl = "/files/" + newFilename;
+            String fileUrl = "/api/file/serve/" + newFilename;
             return Result.success(fileUrl);
         } catch (IOException e) {
             log.error("文件上传失败", e);

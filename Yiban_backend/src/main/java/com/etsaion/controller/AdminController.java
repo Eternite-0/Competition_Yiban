@@ -258,12 +258,27 @@ public class AdminController {
         msg.setFromUser(0L);
         msg.setToUser(userId);
         msg.setTitle("注册审核未通过");
-        msg.setContent("很抱歉，您的教师注册审核未通过。原因：" + (reason != null ? reason : "请联系管理员了解详情"));
+        String cleanReason = sanitizeInput(reason);
+        msg.setContent("很抱歉，您的教师注册审核未通过。原因：" + (cleanReason != null ? cleanReason : "请联系管理员了解详情"));
         msg.setIsRead(0);
         msg.setCreateTime(LocalDateTime.now());
         messageService.save(msg);
 
         log.info("教师注册审核驳回: {}, 原因: {}", user.getUsername(), reason);
         return Result.success(null);
+    }
+
+    /**
+     * 清理用户输入，去除 HTML 标签防止 XSS
+     */
+    private String sanitizeInput(String input) {
+        if (input == null) return null;
+        // 去除 HTML 标签
+        String cleaned = input.replaceAll("<[^>]*>", "");
+        // 去除 javascript: 协议
+        cleaned = cleaned.replaceAll("(?i)javascript\\s*:", "");
+        // 去除 on 事件属性模式
+        cleaned = cleaned.replaceAll("(?i)on\\w+\\s*=", "");
+        return cleaned.trim();
     }
 }

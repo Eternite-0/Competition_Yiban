@@ -16,7 +16,7 @@ import java.util.Date;
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret:dGhlLXNlY3JldC1rZXktZm9yLWV0c2Fpb24taGlnaC1zY2hvb2wtZXZlbnQtc2VydmljZS1wbGF0Zm9ybS1iYWNrZW5kLXNlY3VyZQ==}")
+    @Value("${jwt.secret}")
     private String jwtSecret;
 
     @Value("${jwt.expire:86400000}")
@@ -27,6 +27,9 @@ public class JwtUtil {
 
     @PostConstruct
     public void init() {
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException("JWT_SECRET 环境变量未配置，应用启动中止");
+        }
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
         key = Keys.hmacShaKeyFor(keyBytes);
         staticExpire = jwtExpire;

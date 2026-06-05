@@ -59,7 +59,8 @@ public class TeacherServiceImpl implements TeacherService {
     private String scopedCollege(String requestedCollege) {
         String ownCollege = currentTeacherCollege();
         if (StrUtil.isBlank(ownCollege)) {
-            return requestedCollege;
+            // 教师未设置学院时拒绝访问，而非放行
+            return "__NO_ACCESS__";
         }
         if (StrUtil.isBlank(requestedCollege)) {
             return ownCollege;

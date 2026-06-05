@@ -67,6 +67,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     @Override
     @Transactional
     public Submission submitSubmission(Long studentId, Long registrationId, String fileName, String fileUrl, Long fileSize) {
+        validateFileUrl(fileUrl);
         Registration reg = registrationService.getById(registrationId);
         if (reg == null) {
             throw new BusinessException("关联的报名表不存在");
@@ -131,6 +132,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     @Override
     @Transactional
     public List<Submission> submitTeamSubmission(Long submitterId, Long competitionId, String fileName, String fileUrl, Long fileSize, List<Long> studentIds) {
+        validateFileUrl(fileUrl);
         Competition comp = competitionService.getById(competitionId);
         if (comp == null) {
             throw new BusinessException("赛事不存在");
@@ -195,6 +197,9 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         if (!"待审核".equalsIgnoreCase(sub.getStatus())) {
             throw new BusinessException("该成果已审核过，请勿重复处理");
         }
+
+        // 教师只能审核本学院学生的成果
+        validateTeacherCollegeAccess(sub.getSubmitterId());
 
         // Resolve competition name
         Long compId = sub.getCompetitionId();
@@ -281,6 +286,24 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     public Page<SubmissionVO> listSubmissions(int current, int size, String status, String keyword) {
         Page<Submission> page = new Page<>(current, size);
         LambdaQueryWrapper<Submission> wrapper = new LambdaQueryWrapper<>();
+
+        // 教师只能看到本学院学生的成果
+        String teacherCollege = getTeacherCollege();
+        if (teacherCollege != null) {
+            java.util.List<Long> collegeStudentIds = userService.list(
+                    new LambdaQueryWrapper<User>()
+                            .eq(User::getRole, "student")
+                            .eq(User::getCollege, teacherCollege)
+                            .select(User::getId))
+                    .stream().map(User::getId).collect(Collectors.toList());
+            if (collegeStudentIds.isEmpty()) {
+                Page<SubmissionVO> emptyPage = new Page<>(current, size, 0);
+                emptyPage.setRecords(new java.util.ArrayList<>());
+                return emptyPage;
+            }
+            // 按 submitterId 过滤
+            wrapper.in(Submission::getSubmitterId, collegeStudentIds);
+        }
 
         if ("审核通过".equals(status)) {
             wrapper.eq(Submission::getStatus, "已审核").eq(Submission::getApproved, true);
@@ -384,6 +407,46 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         sub.setDisplayed(true);
         this.save(sub);
         return sub;
+    }
+
+    /**
+     * 获取当前教师的学院
+     */
+    private String getTeacherCollege() {
+        String role = com.etsaion.utils.UserContext.getUserRole();
+        if ("admin".equalsIgnoreCase(role)) return null;
+        if (!"teacher".equalsIgnoreCase(role)) return null;
+        Long userId = com.etsaion.utils.UserContext.getUserId();
+        if (userId == null) return null;
+        User teacher = userService.getById(userId);
+        return teacher != null ? teacher.getCollege() : null;
+    }
+
+    /**
+     * 校验教师是否有权操作指定学生
+     */
+    private void validateTeacherCollegeAccess(Long studentId) {
+        String teacherCollege = getTeacherCollege();
+        if (teacherCollege == null) return; // admin 不限制
+        if (studentId == null) return;
+        User student = userService.getById(studentId);
+        if (student == null || !teacherCollege.equals(student.getCollege())) {
+            throw new BusinessException(403, "无权审核其他学院学生的成果");
+        }
+    }
+
+    /**
+     * 校验 fileUrl 来源
+     */
+    private void validateFileUrl(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) return;
+        if (fileUrl.startsWith("/api/file/serve/")) return;
+        // 拒绝明显的外部 URL（非本地路径）
+        if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
+            if (!fileUrl.contains("qiniu") && !fileUrl.contains("qnssl")) {
+                throw new BusinessException("不支持的外部文件链接，请通过上传接口提交文件");
+            }
+        }
     }
 
     private List<SubmissionVO> joinSubmissionVOs(List<Submission> subs) {

@@ -57,11 +57,11 @@ public class AuthController {
         }
     }
 
-    @Operation(summary = "查询学号对应信息（注册前校验）")
+    @Operation(summary = "查询学号是否存在（注册前校验）")
     @PostMapping("/lookup-student")
     public Result<Map<String, Object>> lookupStudent(@RequestBody Map<String, String> body) {
         String studentNo = body.get("studentNo");
-        return Result.success(studentRosterService.lookupByStudentNo(studentNo));
+        return Result.success(studentRosterService.lookupStudentStatus(studentNo));
     }
 
     @Operation(summary = "用户登录")
@@ -84,7 +84,8 @@ public class AuthController {
             return Result.success(data);
         } catch (Exception e) {
             log.warn("用户登录失败: {}", dto.getUsername());
-            throw e;
+            // 统一错误消息，防止用户枚举
+            throw new com.etsaion.exception.BusinessException("用户名或密码错误");
         }
     }
 

@@ -161,15 +161,47 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
     @Override
     public Map<String, Object> getStats() {
         Map<String, Object> stats = new HashMap<>();
-        stats.put("pending", this.count(new LambdaQueryWrapper<ReviewTask>().eq(ReviewTask::getStatus, "pending")));
-        stats.put("processing", this.count(new LambdaQueryWrapper<ReviewTask>().eq(ReviewTask::getStatus, "processing")));
-        stats.put("resolved", this.count(new LambdaQueryWrapper<ReviewTask>().eq(ReviewTask::getStatus, "resolved")));
-        stats.put("competition", this.count(new LambdaQueryWrapper<ReviewTask>().eq(ReviewTask::getActivityType, "competition")));
-        stats.put("volunteer", this.count(new LambdaQueryWrapper<ReviewTask>().eq(ReviewTask::getActivityType, "volunteer")));
-        stats.put("overdue", this.count(new LambdaQueryWrapper<ReviewTask>()
-                .eq(ReviewTask::getStatus, "pending")
-                .lt(ReviewTask::getDeadline, LocalDateTime.now())));
+
+        String college = currentReviewerCollege();
+        java.util.List<Long> collegeStudentIds = null;
+        if (StrUtil.isNotBlank(college)) {
+            collegeStudentIds = userService.list(new LambdaQueryWrapper<User>()
+                    .eq(User::getRole, "student")
+                    .eq(User::getCollege, college)
+                    .select(User::getId))
+                    .stream().map(User::getId).collect(Collectors.toList());
+            if (collegeStudentIds.isEmpty()) {
+                stats.put("pending", 0L);
+                stats.put("processing", 0L);
+                stats.put("resolved", 0L);
+                stats.put("competition", 0L);
+                stats.put("volunteer", 0L);
+                stats.put("overdue", 0L);
+                return stats;
+            }
+        }
+
+        final java.util.List<Long> ids = collegeStudentIds;
+
+        stats.put("pending", this.count(buildStatsWrapper(ids, "pending", null, null)));
+        stats.put("processing", this.count(buildStatsWrapper(ids, "processing", null, null)));
+        stats.put("resolved", this.count(buildStatsWrapper(ids, "resolved", null, null)));
+        stats.put("competition", this.count(buildStatsWrapper(ids, null, "competition", null)));
+        stats.put("volunteer", this.count(buildStatsWrapper(ids, null, "volunteer", null)));
+        stats.put("overdue", this.count(buildStatsWrapper(ids, "pending", null, true)));
         return stats;
+    }
+
+    private LambdaQueryWrapper<ReviewTask> buildStatsWrapper(
+            java.util.List<Long> studentIds, String status, String activityType, Boolean overdue) {
+        LambdaQueryWrapper<ReviewTask> w = new LambdaQueryWrapper<>();
+        if (studentIds != null) {
+            w.in(ReviewTask::getSubmitterId, studentIds);
+        }
+        if (status != null) w.eq(ReviewTask::getStatus, status);
+        if (activityType != null) w.eq(ReviewTask::getActivityType, activityType);
+        if (Boolean.TRUE.equals(overdue)) w.lt(ReviewTask::getDeadline, LocalDateTime.now());
+        return w;
     }
 
     @Override

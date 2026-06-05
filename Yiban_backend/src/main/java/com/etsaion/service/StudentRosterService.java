@@ -21,6 +21,17 @@ public interface StudentRosterService extends IService<StudentRoster> {
     Map<String, Object> lookupByStudentNo(String studentNo);
 
     /**
+     * 判断学号是否存在于花名册（未注册状态）
+     */
+    boolean existsByStudentNo(String studentNo);
+
+    /**
+     * 查询学号注册状态（脱敏，不返回个人信息）
+     * 返回 found 和 registered 状态
+     */
+    Map<String, Object> lookupStudentStatus(String studentNo);
+
+    /**
      * 添加单条花名册记录
      */
     StudentRoster addRecord(String studentNo, String realName, String college, Long majorId, Long classId, String grade);
