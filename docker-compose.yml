@@ -42,6 +42,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: "${MYSQL_ROOT_PASSWORD:-etsaion2024}"
       SPRING_DATA_REDIS_HOST: "redis"
       JWT_SECRET: "${JWT_SECRET:-etsaion2024JwtSecretKey256BitsSecure!!}"
+      QINIU_ACCESS_KEY: "5mVX0PjPeiyN1PCjQzX_uoO2_9pJSFlX6RprpnkG"
+      QINIU_SECRET_KEY: "48HRqX-6186oOsaPeGqxtbd5KTB0SU9Ib0opYkXm"
+      QINIU_BUCKET: "competive123"
+      QINIU_DOMAIN: "http://tfnb602dp.hn-bkt.clouddn.com"
+      QINIU_UPLOAD_URL: "https://up-z2.qiniup.com"
     depends_on:
       mysql:
         condition: service_healthy
