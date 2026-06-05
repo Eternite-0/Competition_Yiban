@@ -387,6 +387,21 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateSubmissionFile(Long submissionId, String fileName, String fileUrl, Long fileSize) {
+        validateFileUrl(fileUrl);
+        Submission sub = this.getById(submissionId);
+        if (sub == null) {
+            throw new BusinessException("成果附件记录不存在");
+        }
+        sub.setFileName(fileName);
+        sub.setFileUrl(fileUrl);
+        sub.setFileSize(fileSize != null ? fileSize : 0L);
+        sub.setUploadDate(LocalDateTime.now());
+        this.updateById(sub);
+    }
+
+    @Override
     @Transactional
     public Submission adminCreateExcellent(Long competitionId, String fileName, String fileUrl, Long fileSize, String reviewNote) {
         Competition comp = competitionService.getById(competitionId);

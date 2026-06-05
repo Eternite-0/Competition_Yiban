@@ -45,6 +45,21 @@ function FilePreview({ fileUrl, fileName }: { fileUrl: string; fileName: string 
       setLoading(false);
       return;
     }
+
+    // Local files need auth header → fetch as blob
+    if (fileUrl.startsWith('/api/file/serve/')) {
+      const token = localStorage.getItem('token');
+      fetch(fileUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+        .then((res) => {
+          if (!res.ok) throw new Error('fetch failed');
+          return res.blob();
+        })
+        .then((blob) => setSignedUrl(URL.createObjectURL(blob)))
+        .catch(() => setError(true))
+        .finally(() => setLoading(false));
+      return;
+    }
+
     getSignedDownloadUrl(fileUrl)
       .then((url) => setSignedUrl(url))
       .catch(() => setError(true))

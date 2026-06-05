@@ -45,6 +45,10 @@ public class QiniuServiceImpl implements QiniuService {
         if (fileUrl == null || fileUrl.isEmpty()) {
             return fileUrl;
         }
+        // Local file URLs don't need Qiniu signing
+        if (fileUrl.startsWith("/api/file/serve/")) {
+            return fileUrl;
+        }
         // Accept either a full URL or a bare key/path — prepend the configured domain if missing
         String fullUrl = fileUrl;
         if (!fileUrl.startsWith("http://") && !fileUrl.startsWith("https://")) {

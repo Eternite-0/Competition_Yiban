@@ -186,6 +186,18 @@ public class SubmissionController {
         return Result.success();
     }
 
+    @Operation(summary = "管理员替换作品附件文件")
+    @PostMapping("/admin/update-file")
+    @RequireRole("admin")
+    public Result<Void> updateSubmissionFile(
+            @RequestParam Long submissionId,
+            @RequestParam String fileName,
+            @RequestParam String fileUrl,
+            @RequestParam(required = false) Long fileSize) {
+        submissionService.updateSubmissionFile(submissionId, fileName, fileUrl, fileSize);
+        return Result.success();
+    }
+
     @Operation(summary = "管理员手动录入优秀作品（直接创建已审核的展示作品）")
     @PostMapping("/admin/create-excellent")
     @RequireRole("admin")

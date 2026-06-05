@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import apiClient from '../../api/client';
-import { getSignedDownloadUrl } from '../../api/qiniu';
+import { downloadFile } from '../../api/qiniu';
 import PageHero from '../../components/PageHero';
 import Pagination from '../../components/Pagination';
 import { pageVariants, pageTransition, listContainer, listItem } from '../../lib/motion';
@@ -121,14 +122,13 @@ export default function ExcellentWorks() {
   // Reset page when filters change
   useEffect(() => { setPage(1); }, [search, filterLevel]);
 
-  const handleDownload = async (fileUrl: string) => {
+  const handleDownload = async (fileUrl: string, fileName?: string) => {
     try {
       setDownloading(true);
-      const signedUrl = await getSignedDownloadUrl(fileUrl);
-      window.open(signedUrl, '_blank');
+      await downloadFile(fileUrl, fileName);
     } catch (err) {
       console.error(err);
-      window.open(fileUrl, '_blank');
+      toast.error('下载失败');
     } finally {
       setDownloading(false);
     }
@@ -317,7 +317,7 @@ export default function ExcellentWorks() {
                   <div className="pt-3 border-t border-hairline">
                     <button
                       className="btn-primary w-full !py-2.5 !text-[13px] flex items-center justify-center gap-2"
-                      onClick={() => handleDownload(detailWork.fileUrl!)}
+                      onClick={() => handleDownload(detailWork.fileUrl!, detailWork.fileName)}
                       disabled={downloading}
                     >
                       {downloading ? (

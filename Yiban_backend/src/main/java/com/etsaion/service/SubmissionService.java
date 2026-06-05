@@ -16,6 +16,7 @@ public interface SubmissionService extends IService<Submission> {
     Page<SubmissionVO> listExcellentPage(int current, int size);
     void toggleDisplay(Long submissionId, Boolean displayed);
     void updateReviewNote(Long submissionId, String reviewNote);
+    void updateSubmissionFile(Long submissionId, String fileName, String fileUrl, Long fileSize);
     Submission adminCreateExcellent(Long competitionId, String fileName, String fileUrl, Long fileSize, String reviewNote);
 
     List<Submission> submitTeamSubmission(Long submitterId, Long competitionId, String fileName, String fileUrl, Long fileSize, List<Long> studentIds);

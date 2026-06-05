@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { listContainer, listItem } from '../../lib/motion';
 import apiClient from '../../api/client';
-import { uploadToQiniu, getSignedDownloadUrl } from '../../api/qiniu';
+import { uploadToQiniu, downloadFile } from '../../api/qiniu';
 import PageHero from '../../components/PageHero';
 import Pagination from '../../components/Pagination';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -91,6 +91,9 @@ export default function ExcellentWorks() {
   const [editWork, setEditWork] = useState<Work | null>(null);
   const [editNote, setEditNote] = useState('');
   const [editSaving, setEditSaving] = useState(false);
+  const [editFile, setEditFile] = useState<File | null>(null);
+  const [editFileUploading, setEditFileUploading] = useState(false);
+  const [editFileProgress, setEditFileProgress] = useState(0);
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -230,12 +233,41 @@ export default function ExcellentWorks() {
   const openEdit = (work: Work) => {
     setEditWork(work);
     setEditNote(rawById[work.id]?.reviewNote || '');
+    setEditFile(null);
+    setEditFileUploading(false);
+    setEditFileProgress(0);
   };
 
   const saveEdit = async () => {
     if (!editWork) return;
     try {
       setEditSaving(true);
+
+      // Replace file if a new one was selected
+      if (editFile) {
+        setEditFileUploading(true);
+        setEditFileProgress(0);
+        const result = await uploadToQiniu(editFile, setEditFileProgress);
+        await apiClient.post('/submission/admin/update-file', null, {
+          params: {
+            submissionId: editWork.id,
+            fileName: editFile.name,
+            fileUrl: result.url,
+            fileSize: result.fsize,
+          },
+        });
+        setEditFileUploading(false);
+        // Update local state
+        setAllWorks((prev) =>
+          prev.map((w) =>
+            w.id === editWork.id
+              ? { ...w, title: editFile.name, fileUrl: result.url, attachments: 1 }
+              : w
+          )
+        );
+      }
+
+      // Update review note
       await apiClient.post('/submission/admin/update-note', null, {
         params: { submissionId: editWork.id, reviewNote: editNote },
       });
@@ -243,12 +275,14 @@ export default function ExcellentWorks() {
         ...prev,
         [editWork.id]: { ...(prev[editWork.id] || {}), reviewNote: editNote },
       }));
-      toast.success('已保存');
+      toast.success(editFile ? '附件和评语已更新' : '已保存');
       setEditWork(null);
     } catch (err: any) {
       toast.error(err?.message || '保存失败');
     } finally {
       setEditSaving(false);
+      setEditFileUploading(false);
+      setEditFileProgress(0);
     }
   };
 
@@ -665,11 +699,10 @@ export default function ExcellentWorks() {
                       className="text-[13px] text-primary hover:text-primary-focus inline-flex items-center gap-1.5 break-all"
                       onClick={async () => {
                         try {
-                          const signedUrl = await getSignedDownloadUrl(detailWork.fileUrl);
-                          window.open(signedUrl, '_blank');
+                          await downloadFile(detailWork.fileUrl, detailWork.title);
                         } catch (err) {
                           console.error(err);
-                          toast.error('获取下载链接失败');
+                          toast.error('下载失败');
                         }
                       }}
                     >
@@ -844,6 +877,79 @@ export default function ExcellentWorks() {
                   <DetailRow label="所属赛事" value={editWork.competition} span={2} />
                   <DetailRow label="学生" value={editWork.author} />
                   <DetailRow label="学年" value={editWork.year} />
+                </div>
+
+                {/* File replacement */}
+                <div>
+                  <label className="text-[14px] font-medium text-body-muted block mb-1.5">
+                    替换附件（选填）
+                  </label>
+                  {editFile ? (
+                    <div className="flex items-center gap-3 rounded-md border border-hairline p-3 bg-canvas">
+                      <span className="material-symbols-outlined text-primary icon-fill">description</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-ink truncate">{editFile.name}</p>
+                        <p className="text-[11px] text-ink-muted-48">
+                          {editFile.size < 1024 * 1024
+                            ? `${(editFile.size / 1024).toFixed(0)} KB`
+                            : `${(editFile.size / (1024 * 1024)).toFixed(1)} MB`}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setEditFile(null)}
+                        className="text-ink-muted-48 hover:text-primary"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">close</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className="rounded-md border-2 border-dashed border-hairline p-4 flex items-center gap-3 cursor-pointer hover:border-primary/50 hover:bg-primary/3 transition"
+                      onClick={() => document.getElementById('edit-file-input')?.click()}
+                    >
+                      <span className="material-symbols-outlined text-[20px] text-ink-muted-48">cloud_upload</span>
+                      <div>
+                        <p className="text-[13px] text-ink-muted-80">点击选择新文件替换当前附件</p>
+                        <p className="text-[11px] text-ink-muted-48">支持图片、PDF、文档等 · 限 50 MB</p>
+                      </div>
+                      <input
+                        id="edit-file-input"
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.zip,.jpg,.jpeg,.png,.gif,.webp"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) {
+                            if (f.size > 50 * 1024 * 1024) {
+                              toast.error('文件大小不能超过50MB');
+                            } else {
+                              setEditFile(f);
+                            }
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                    </div>
+                  )}
+                  {editFileUploading && (
+                    <div className="mt-2">
+                      <div className="flex justify-between text-[11px] text-ink-muted-48 mb-1">
+                        <span>上传中…</span>
+                        <span className="tabular-nums">{editFileProgress}%</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-primary/8 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all duration-300"
+                          style={{ width: `${editFileProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {editWork.fileUrl && !editFile && (
+                    <p className="text-[11px] text-ink-muted-48 mt-1.5">
+                      当前附件：{editWork.title}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="text-[14px] font-medium text-body-muted block mb-1.5">

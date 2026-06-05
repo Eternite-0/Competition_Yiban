@@ -74,5 +74,40 @@ export async function uploadToQiniu(
 }
 
 export async function getSignedDownloadUrl(fileUrl: string): Promise<string> {
+  if (!fileUrl) return fileUrl;
+  // 本地文件直接返回，不走七牛签名
+  if (fileUrl.startsWith('/api/file/serve/')) {
+    return fileUrl;
+  }
   return apiClient.get('/upload/sign-url', { params: { fileUrl } });
+}
+
+/**
+ * 下载文件 — 本地文件带 auth 头 fetch+blob，七牛文件走签名后 window.open
+ */
+export async function downloadFile(fileUrl: string, fileName?: string): Promise<void> {
+  if (!fileUrl) throw new Error('文件链接为空');
+
+  // 本地文件需要带 Authorization 头
+  if (fileUrl.startsWith('/api/file/serve/')) {
+    const token = localStorage.getItem('token');
+    const response = await fetch(fileUrl, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!response.ok) throw new Error(`下载失败 (${response.status})`);
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = fileName || 'download';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+    return;
+  }
+
+  // 七牛文件: 签名后新标签页打开
+  const signedUrl = await getSignedDownloadUrl(fileUrl);
+  window.open(signedUrl, '_blank');
 }
