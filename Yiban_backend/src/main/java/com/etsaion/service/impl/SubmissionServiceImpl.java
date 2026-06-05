@@ -23,6 +23,7 @@ import com.etsaion.service.ReviewTaskService;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.SubmissionStudentService;
 import com.etsaion.service.UserService;
+import com.etsaion.config.QiniuConfig;
 import com.etsaion.vo.SubmissionVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,6 +64,9 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     @Autowired
     @Lazy
     private ReviewTaskService reviewTaskService;
+
+    @Autowired
+    private QiniuConfig qiniuConfig;
 
     @Override
     @Transactional
@@ -458,9 +462,16 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         if (fileUrl.startsWith("/api/file/serve/")) return;
         // 拒绝明显的外部 URL（非本地路径）
         if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
-            if (!fileUrl.contains("qiniu") && !fileUrl.contains("qnssl")) {
-                throw new BusinessException("不支持的外部文件链接，请通过上传接口提交文件");
+            // 允许配置的七牛域名
+            String domain = qiniuConfig.getDomain();
+            if (domain != null && !domain.isEmpty() && fileUrl.startsWith(domain)) {
+                return;
             }
+            // 兼容旧逻辑：URL 中包含 qiniu/qnssl 关键词
+            if (fileUrl.contains("qiniu") || fileUrl.contains("qnssl")) {
+                return;
+            }
+            throw new BusinessException("不支持的外部文件链接，请通过上传接口提交文件");
         }
     }
 
