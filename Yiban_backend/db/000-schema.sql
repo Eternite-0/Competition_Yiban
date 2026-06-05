@@ -2,6 +2,10 @@
 CREATE DATABASE IF NOT EXISTS `etsaion` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE `etsaion`;
 
+-- 强制客户端使用 utf8mb4，防止中文乱码
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
 -- ----------------------------
 -- Table structure for user
 -- ----------------------------

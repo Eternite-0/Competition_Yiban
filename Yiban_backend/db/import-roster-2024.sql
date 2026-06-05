@@ -3,6 +3,8 @@
 -- 生成时间: 2026-05-30
 -- 学生总数: 874
 -- =============================================
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
 
 USE `etsaion`;
 

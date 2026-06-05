@@ -1,4 +1,6 @@
 USE `etsaion`;
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
 
 -- 清理旧数据，保证重新导入时的干净状态
 SET FOREIGN_KEY_CHECKS = 0;
