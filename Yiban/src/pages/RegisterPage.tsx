@@ -71,8 +71,10 @@ export default function RegisterPage() {
       if (res.found) {
         setStudentLookup(res.data);
         setStudentName(''); // 清空姓名，让用户输入
+      } else if (res.registered) {
+        setLookupError('该学号已注册，请直接登录');
       } else {
-        setLookupError(res.message || '查询失败');
+        setLookupError(res.message || '未找到该学号，请确认学号是否正确');
       }
     } catch (err: any) {
       setLookupError(err.message || '查询失败，请稍后重试');
@@ -91,8 +93,12 @@ export default function RegisterPage() {
       toast.error('请输入真实姓名');
       return;
     }
-    if (!studentPassword || studentPassword.length < 6) {
-      toast.error('密码长度不能少于6位');
+    if (!studentPassword || studentPassword.length < 8) {
+      toast.error('密码长度不能少于8位');
+      return;
+    }
+    if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(studentPassword)) {
+      toast.error('密码必须包含字母和数字');
       return;
     }
     if (studentPassword !== studentConfirmPwd) {
@@ -146,8 +152,12 @@ export default function RegisterPage() {
       toast.error('请选择所属学院');
       return;
     }
-    if (!teacherPassword || teacherPassword.length < 6) {
-      toast.error('密码长度不能少于6位');
+    if (!teacherPassword || teacherPassword.length < 8) {
+      toast.error('密码长度不能少于8位');
+      return;
+    }
+    if (!/(?=.*[a-zA-Z])(?=.*\d)/.test(teacherPassword)) {
+      toast.error('密码必须包含字母和数字');
       return;
     }
     if (teacherPassword !== teacherConfirmPwd) {
@@ -299,7 +309,7 @@ export default function RegisterPage() {
                   <>
                     <input
                       className="input-glass h-[48px] px-4 text-[15px]"
-                      placeholder="设置密码（至少6位）"
+                      placeholder="设置密码（至少8位，包含字母和数字）"
                       type="password"
                       value={studentPassword}
                       aria-label="密码"
@@ -382,7 +392,7 @@ export default function RegisterPage() {
                 </select>
                 <input
                   className="input-glass h-[48px] px-4 text-[15px]"
-                  placeholder="设置密码（至少6位）"
+                  placeholder="设置密码（至少8位，包含字母和数字）"
                   type="password"
                   value={teacherPassword}
                   aria-label="密码"

@@ -83,6 +83,7 @@ public class StudentRosterServiceImpl extends ServiceImpl<StudentRosterMapper, S
         Map<String, Object> result = new HashMap<>();
         if (studentNo == null || studentNo.isBlank()) {
             result.put("found", false);
+            result.put("message", "请输入学号");
             return result;
         }
 
@@ -91,12 +92,14 @@ public class StudentRosterServiceImpl extends ServiceImpl<StudentRosterMapper, S
 
         if (roster == null) {
             result.put("found", false);
+            result.put("message", "未找到该学号，请确认学号是否正确");
             return result;
         }
 
         if ("registered".equals(roster.getStatus())) {
             result.put("found", false);
             result.put("registered", true);
+            result.put("message", "该学号已注册，请直接登录");
             return result;
         }
 
