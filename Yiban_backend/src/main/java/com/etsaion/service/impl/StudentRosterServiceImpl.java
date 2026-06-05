@@ -101,6 +101,21 @@ public class StudentRosterServiceImpl extends ServiceImpl<StudentRosterMapper, S
         }
 
         result.put("found", true);
+        Map<String, Object> data = new HashMap<>();
+        data.put("realName", roster.getRealName());
+        data.put("college", roster.getCollege());
+        data.put("grade", roster.getGrade());
+        // 查询专业名称
+        if (roster.getMajorId() != null) {
+            Major major = majorService.getById(roster.getMajorId());
+            data.put("majorName", major != null ? major.getName() : "");
+        }
+        // 查询班级名称
+        if (roster.getClassId() != null) {
+            ClassInfo classInfo = classInfoService.getById(roster.getClassId());
+            data.put("className", classInfo != null ? classInfo.getName() : "");
+        }
+        result.put("data", data);
         return result;
     }
 
