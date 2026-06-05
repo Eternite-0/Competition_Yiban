@@ -31,6 +31,16 @@ public class JwtUtil {
             throw new IllegalStateException("JWT_SECRET 环境变量未配置，应用启动中止");
         }
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+        // 如果密钥不足 256 bits (32 bytes)，用 SHA-256 哈希补齐
+        if (keyBytes.length < 32) {
+            java.security.MessageDigest digest;
+            try {
+                digest = java.security.MessageDigest.getInstance("SHA-256");
+            } catch (java.security.NoSuchAlgorithmException e) {
+                throw new IllegalStateException("SHA-256 not available", e);
+            }
+            keyBytes = digest.digest(keyBytes);
+        }
         key = Keys.hmacShaKeyFor(keyBytes);
         staticExpire = jwtExpire;
     }
