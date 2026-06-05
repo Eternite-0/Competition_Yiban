@@ -1,0 +1,58 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: etsaion-backend
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/etsaion?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/**/*.xml
+  global-config:
+    db-config:
+      id-type: auto
+  configuration:
+    # Use SLF4J for MyBatis logging so it flows through Logback (structured JSON in prod)
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    map-underscore-to-camel-case: true
+
+logging:
+  level:
+    com.etsaion: INFO
+
+jwt:
+  # Secret key for HS256 algorithm (must be at least 256 bits, i.e., 32 characters/bytes)
+  # IMPORTANT: Must be set via JWT_SECRET environment variable in production!
+  secret: ${JWT_SECRET:ZXRzYWlvbjIwMjRKd3RTZWNyZXRLZXkyNTZCaXRzU2VjdXJlISE=}
+  expire: ${JWT_EXPIRE:86400000} # 24 hours in milliseconds
+
+file:
+  upload-path: ./uploads # relative path to current directory
+
+oss:
+  qiniu:
+    access-key: ${QINIU_ACCESS_KEY:}
+    secret-key: ${QINIU_SECRET_KEY:}
+    bucket: ${QINIU_BUCKET:}
+    domain: ${QINIU_DOMAIN:${QINIU_FILE_BASE_URL:}}
+    upload-url: ${QINIU_UPLOAD_URL:https://up-z2.qiniup.com}
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui/index.html
+    tags-sorter: alpha
+    operations-sorter: alpha
