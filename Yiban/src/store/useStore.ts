@@ -43,7 +43,7 @@ export const useStore = create<AppState>((set) => ({
     set({ currentUser: null });
   },
 
-  theme: (localStorage.getItem('theme') as Theme) || 'system',
+  theme: (localStorage.getItem('theme') as Theme) || 'light',
   setTheme: (theme) => {
     localStorage.setItem('theme', theme);
     applyThemeClass(theme, true);
