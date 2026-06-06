@@ -26,10 +26,10 @@ const promptsByRole: Record<UserRole, QuickPrompt[]> = {
   teacher: [
     { label: '待审核', icon: 'fact_check', prompt: '当前有哪些待审核的任务？帮我按优先级排序。' },
     { label: '学院总览', icon: 'account_balance', prompt: '学院整体参赛率和获奖率怎么样？有什么异常？' },
-    { label: '学生监控', icon: 'monitoring', prompt: '哪些学生报名了但还没提交成果？' },
+    { label: '查学生', icon: 'person_search', prompt: '查一下张三同学的参赛和个人情况。' },
+    { label: '查专业', icon: 'school', prompt: '计算机科学与技术专业有多少人？参赛情况如何？' },
     { label: '获奖审核', icon: 'verified', prompt: '有待审核的获奖证明吗？AI 识别置信度如何？' },
-    { label: '参赛趋势', icon: 'trending_up', prompt: '本学期的参赛人数趋势有什么变化？' },
-    { label: '班级对比', icon: 'bar_chart', prompt: '各班级的参赛情况对比如何？' },
+    { label: '未参赛', icon: 'person_off', prompt: '哪些学生报名了但还没提交成果？' },
   ],
   admin: [
     { label: '待办任务', icon: 'task_alt', prompt: '当前有哪些待处理的审核任务？' },

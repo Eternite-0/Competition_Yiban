@@ -10,6 +10,7 @@ import PageHero from '../../components/PageHero';
 import ConfirmModal from '../../components/ConfirmModal';
 import LazyImage from '../../components/LazyImage';
 import { useConfirmModal } from '../../hooks/useConfirmModal';
+import AiImportPanel, { aiDraftToPublishForm } from './components/AiImportPanel';
 
 interface PublishFormState {
   title: string;
@@ -104,6 +105,7 @@ export default function CompetitionPublish() {
   const [pageLoading, setPageLoading] = useState(isEdit);
   const [coverDisplayUrl, setCoverDisplayUrl] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [activeTab, setActiveTab] = useState<'manual' | 'ai-import'>('manual');
 
   // Resolve cover URL for display — try direct first, fall back to signed URL on error
   useEffect(() => {
@@ -280,6 +282,31 @@ export default function CompetitionPublish() {
         description={isEdit ? '修改赛事信息，保存后立即生效。' : '填写赛事基本信息，右侧预览即时反映你的修改。'}
       />
 
+      {/* Tab bar — only shown when creating new competition */}
+      {!isEdit && (
+        <div className="flex rounded-sm border border-hairline bg-canvas-parchment p-1 self-start">
+          {([
+            { key: 'manual', icon: 'edit', label: '手动创建' },
+            { key: 'ai-import', icon: 'auto_awesome', label: 'AI 导入' },
+          ] as const).map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex h-9 items-center gap-1.5 rounded-sm px-4 text-[13px] font-medium transition ${
+                activeTab === tab.key
+                  ? 'bg-canvas text-primary shadow-sm'
+                  : 'text-body-muted hover:text-ink'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {(isEdit || activeTab === 'manual') && (
       <div className="flex flex-col lg:flex-row gap-lg">
         {/* Left: Form */}
         <motion.div className="flex-1 flex flex-col gap-md min-w-0" variants={listContainer} initial="hidden" animate="visible">

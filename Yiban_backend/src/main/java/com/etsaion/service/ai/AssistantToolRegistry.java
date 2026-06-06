@@ -65,7 +65,7 @@ public class AssistantToolRegistry {
         if ("student".equalsIgnoreCase(role)) {
             buildStudentContext(context, userId, role);
         } else if ("teacher".equalsIgnoreCase(role)) {
-            buildTeacherContext(context, userId, role);
+            buildTeacherContext(context, userId, role, message);
         } else if ("admin".equalsIgnoreCase(role)) {
             buildAdminContext(context, userId, role);
         }
@@ -91,7 +91,7 @@ public class AssistantToolRegistry {
 
     // ────────────── 教师上下文 ──────────────
 
-    private void buildTeacherContext(Map<String, Object> context, Long userId, String role) {
+    private void buildTeacherContext(Map<String, Object> context, Long userId, String role, String message) {
         // 原有
         context.put("reviewSummary", getReviewSummary(role));
         // 新增
@@ -99,6 +99,10 @@ public class AssistantToolRegistry {
         context.put("awardProofAudit", getAwardProofAuditList());
         context.put("collegeOverview", getCollegeOverview());
         context.put("dashboard", getTeacherDashboard());
+        // 学生查询能力
+        context.put("colleges", getColleges());
+        context.put("studentSearch", searchStudents(message));
+        context.put("studentDetail", getStudentDetailFromMessage(message));
     }
 
     // ────────────── 管理员上下文 ──────────────
@@ -312,6 +316,89 @@ public class AssistantToolRegistry {
             return Map.of();
         }
     }
+
+    private List<String> getColleges() {
+        try {
+            return teacherService.listColleges();
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    /**
+     * 根据用户消息中的关键词搜索学生。
+     * 从消息中提取可能的姓名/学号关键词，搜索匹配的学生。
+     */
+    private List<Map<String, Object>> searchStudents(String message) {
+        try {
+            String keyword = extractStudentKeyword(message);
+            if (keyword == null || keyword.isBlank()) return List.of();
+            return teacherService.listStudentsPage(1, 5, keyword, null, null, null, null)
+                    .getRecords().stream().map(student -> {
+                        Map<String, Object> item = new LinkedHashMap<>();
+                        item.put("id", student.getId());
+                        item.put("realName", student.getRealName());
+                        item.put("username", student.getUsername());
+                        item.put("college", student.getCollege());
+                        item.put("major", student.getMajor());
+                        item.put("className", student.getClassName());
+                        item.put("grade", student.getGrade());
+                        return item;
+                    }).collect(Collectors.toList());
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    /**
+     * 如果消息中包含具体学生姓名，直接返回该学生的详细信息。
+     */
+    private Map<String, Object> getStudentDetailFromMessage(String message) {
+        try {
+            String keyword = extractStudentKeyword(message);
+            if (keyword == null || keyword.isBlank()) return null;
+            Page<UserVO> page = teacherService.listStudentsPage(1, 1, keyword, null, null, null, null);
+            if (page.getRecords().isEmpty()) return null;
+            UserVO student = page.getRecords().get(0);
+            Map<String, Object> detail = teacherService.getStudentDetail(student.getId());
+            if (detail == null) return null;
+            // 简化返回，去掉过长的字段
+            detail.remove("registrations");
+            detail.remove("submissions");
+            return detail;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * 从用户消息中提取学生姓名或学号关键词。
+     * 优先匹配 8-12 位数字（学号），否则尝试提取中文姓名（2-4字）。
+     */
+    private String extractStudentKeyword(String message) {
+        if (message == null || message.isBlank()) return null;
+        // 优先匹配学号（连续数字）
+        java.util.regex.Matcher numMatcher = java.util.regex.Pattern.compile("\\d{8,12}").matcher(message);
+        if (numMatcher.find()) return numMatcher.group();
+        // 如果消息里有 2-4 个连续中文字符，作为关键词搜索
+        java.util.regex.Matcher simple = java.util.regex.Pattern.compile("[\\u4e00-\\u9fa5]{2,4}").matcher(message);
+        List<String> candidates = new ArrayList<>();
+        while (simple.find()) {
+            String word = simple.group();
+            if (!STOP_WORDS.contains(word)) {
+                candidates.add(word);
+            }
+        }
+        return candidates.isEmpty() ? null : candidates.get(0);
+    }
+
+    private static final Set<String> STOP_WORDS = Set.of(
+            "同学", "学生", "老师", "教师", "查看", "查询", "搜索", "帮我", "一下",
+            "什么", "怎么", "哪些", "多少", "人数", "情况", "信息", "详情",
+            "学院", "专业", "班级", "年级", "参赛", "报名", "成果", "审核",
+            "这个", "那个", "有没有", "可以", "告诉", "请问", "想问",
+            "的人", "有几", "几个", "一共", "总共", "目前", "现在"
+    );
 
     // ────────────── 管理员数据方法 ──────────────
 
