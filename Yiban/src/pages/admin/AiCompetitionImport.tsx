@@ -200,7 +200,7 @@ export default function AiCompetitionImport() {
                     <span className="text-[15px] font-medium text-ink">
                       {file ? file.name : '点击选择或拖拽赛事通知'}
                     </span>
-                    <span className="mt-2 block w-full max-w-md text-[12px] leading-5 text-placeholder">
+                    <span className="mt-2 max-w-[400px] text-[12px] leading-5 text-placeholder" style={{ textWrap: 'pretty' }}>
                       {file
                         ? `${(file.size / 1024 / 1024).toFixed(2)} MB · 点击可重新选择`
                         : '支持 PDF、Word、TXT、Markdown 与常见图片格式，最大 20MB'}

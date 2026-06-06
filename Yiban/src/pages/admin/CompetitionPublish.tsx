@@ -2,7 +2,7 @@ import { toast } from 'sonner';
 import { useRef, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
-import { pageVariants, pageTransition, listContainer, listItem, smoothEase } from '../../lib/motion';
+import { listContainer, listItem, smoothEase } from '../../lib/motion';
 import apiClient from '../../api/client';
 import { uploadToQiniu, getSignedDownloadUrl } from '../../api/qiniu';
 import type { CompetitionLevel, CompetitionCategory } from '../../types';
@@ -273,14 +273,7 @@ export default function CompetitionPublish() {
   }
 
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      transition={pageTransition}
-      className="py-lg flex flex-col gap-lg pb-32"
-    >
+    <div className="py-lg flex flex-col gap-lg pb-32">
       <PageHero
         eyebrow={isEdit ? 'Edit' : 'Publish'}
         title={isEdit ? '编辑赛事' : '发布新赛事'}
@@ -547,7 +540,7 @@ export default function CompetitionPublish() {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 

@@ -16,19 +16,28 @@ interface QuickPromptChipsProps {
 
 const promptsByRole: Record<UserRole, QuickPrompt[]> = {
   student: [
-    { label: '报名', icon: 'how_to_reg', prompt: '我该如何报名当前适合我的赛事？' },
-    { label: '成果', icon: 'upload_file', prompt: '成果提交需要准备哪些材料？' },
-    { label: '推荐', icon: 'travel_explore', prompt: '根据我的能力推荐近期赛事。' },
+    { label: '我的报名', icon: 'how_to_reg', prompt: '查看我当前的报名状态和审核进度。' },
+    { label: '成长档案', icon: 'radar', prompt: '分析我的成长雷达数据，指出能力短板和提升建议。' },
+    { label: '活动参与', icon: 'event', prompt: '我参加了哪些活动？审核状态如何？' },
+    { label: '赛事推荐', icon: 'travel_explore', prompt: '根据我的能力水平，推荐适合我参加的赛事。' },
+    { label: '消息通知', icon: 'mail', prompt: '我有哪些未读消息和最新通知？' },
+    { label: '获奖证明', icon: 'emoji_events', prompt: '我的获奖证明审核情况如何？' },
   ],
   teacher: [
-    { label: '审核', icon: 'fact_check', prompt: '帮我梳理待审核成果的优先级。' },
-    { label: '学院', icon: 'account_balance', prompt: '学院参赛情况有哪些异常？' },
-    { label: '学生成长', icon: 'monitoring', prompt: '分析学生成长雷达的薄弱项。' },
+    { label: '待审核', icon: 'fact_check', prompt: '当前有哪些待审核的任务？帮我按优先级排序。' },
+    { label: '学院总览', icon: 'account_balance', prompt: '学院整体参赛率和获奖率怎么样？有什么异常？' },
+    { label: '学生监控', icon: 'monitoring', prompt: '哪些学生报名了但还没提交成果？' },
+    { label: '获奖审核', icon: 'verified', prompt: '有待审核的获奖证明吗？AI 识别置信度如何？' },
+    { label: '参赛趋势', icon: 'trending_up', prompt: '本学期的参赛人数趋势有什么变化？' },
+    { label: '班级对比', icon: 'bar_chart', prompt: '各班级的参赛情况对比如何？' },
   ],
   admin: [
-    { label: '草稿', icon: 'edit_note', prompt: '有哪些赛事草稿需要补齐信息？' },
-    { label: '任务', icon: 'task_alt', prompt: '近期审核任务和发布任务怎么排？' },
-    { label: '赛事统计', icon: 'query_stats', prompt: '汇总本周赛事统计亮点。' },
+    { label: '待办任务', icon: 'task_alt', prompt: '当前有哪些待处理的审核任务？' },
+    { label: '赛事草稿', icon: 'edit_note', prompt: '有哪些赛事草稿待审核？来源是什么？' },
+    { label: 'AI 任务', icon: 'smart_toy', prompt: '最近 AI 任务的执行情况如何？有失败的吗？' },
+    { label: '用户统计', icon: 'group', prompt: '平台用户的角色分布和注册情况怎么样？' },
+    { label: '赛事统计', icon: 'query_stats', prompt: '汇总本周赛事发布和报名统计亮点。' },
+    { label: '公告管理', icon: 'campaign', prompt: '最近发了哪些公告？有需要更新的吗？' },
   ],
 };
 

@@ -143,7 +143,7 @@ function formToPayload(form: DraftFormState): Partial<AiCompetitionDraftVO> {
 
 function StatusChip({ status }: { status?: string }) {
   const meta = statusMeta[status || ''] || { label: status || '未知', className: '' };
-  return <span className={`chip ${meta.className}`}>{meta.label}</span>;
+  return <span className={`chip shrink-0 ${meta.className}`}>{meta.label}</span>;
 }
 
 export default function AiCompetitionDrafts() {
