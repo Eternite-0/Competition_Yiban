@@ -1,139 +1,165 @@
 package com.etsaion.service.ai;
 
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etsaion.entity.*;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.service.*;
-import com.etsaion.service.ai.AiCompetitionDraftService;
-import com.etsaion.service.ai.AiTaskService;
 import com.etsaion.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * AI 工具注册中心。
+ * 负责：1) 向模型声明可用工具定义  2) 根据模型请求执行对应工具
+ */
 @Service
 public class AssistantToolRegistry {
 
-    @Autowired
-    private CompetitionService competitionService;
+    @Autowired private CompetitionService competitionService;
+    @Autowired private RegistrationService registrationService;
+    @Autowired private SubmissionService submissionService;
+    @Autowired private AwardProofService awardProofService;
+    @Autowired private ReviewTaskService reviewTaskService;
+    @Autowired private GrowthRecordService growthRecordService;
+    @Autowired private UserService userService;
+    @Autowired private AiTaskService aiTaskService;
+    @Autowired private AiCompetitionDraftService aiCompetitionDraftService;
+    @Autowired private ActivityService activityService;
+    @Autowired private MessageService messageService;
+    @Autowired private AnnouncementService announcementService;
+    @Autowired private TeacherService teacherService;
 
-    @Autowired
-    private RegistrationService registrationService;
+    // ────────────── 工具定义 ──────────────
 
-    @Autowired
-    private SubmissionService submissionService;
-
-    @Autowired
-    private AwardProofService awardProofService;
-
-    @Autowired
-    private ReviewTaskService reviewTaskService;
-
-    @Autowired
-    private GrowthRecordService growthRecordService;
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private AiTaskService aiTaskService;
-
-    @Autowired
-    private AiCompetitionDraftService aiCompetitionDraftService;
-
-    @Autowired
-    private ActivityService activityService;
-
-    @Autowired
-    private MessageService messageService;
-
-    @Autowired
-    private AnnouncementService announcementService;
-
-    @Autowired
-    private TeacherService teacherService;
-
-    public Map<String, Object> buildToolContext(Long userId, String role, String message) {
-        Map<String, Object> context = new LinkedHashMap<>();
-        context.put("updatedAt", LocalDateTime.now().toString());
-        context.put("competitions", searchCompetitions(message, role));
+    /**
+     * 根据当前用户角色返回可用工具定义列表（OpenAI function calling 格式）。
+     */
+    public List<Map<String, Object>> getToolDefinitions(Long userId, String role) {
+        List<Map<String, Object>> tools = new ArrayList<>();
+        tools.add(tool("search_competitions", "搜索赛事列表", Map.of(
+                "type", "object",
+                "properties", Map.of("keyword", Map.of("type", "string", "description", "搜索关键词，如赛事名称、类别")),
+                "required", List.of()
+        )));
+        tools.add(tool("get_competition_detail", "获取某个赛事的详细信息", Map.of(
+                "type", "object",
+                "properties", Map.of("competition_id", Map.of("type", "integer", "description", "赛事ID")),
+                "required", List.of("competition_id")
+        )));
 
         if ("student".equalsIgnoreCase(role)) {
-            buildStudentContext(context, userId, role);
-        } else if ("teacher".equalsIgnoreCase(role)) {
-            buildTeacherContext(context, userId, role, message);
-        } else if ("admin".equalsIgnoreCase(role)) {
-            buildAdminContext(context, userId, role);
+            tools.add(tool("get_my_registrations", "查看当前学生的报名记录", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("get_my_submissions", "查看当前学生的成果提交记录", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("get_my_award_proofs", "查看当前学生的获奖证明", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("get_my_growth", "查看当前学生的成长雷达数据和档案", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("get_my_participations", "查看当前学生参与的活动记录", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("get_my_messages", "查看当前学生的站内消息", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("get_announcements", "查看平台最新公告", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
         }
 
-        return context;
+        if ("teacher".equalsIgnoreCase(role)) {
+            tools.add(tool("search_students", "按姓名或学号搜索学生", Map.of(
+                    "type", "object",
+                    "properties", Map.of("keyword", Map.of("type", "string", "description", "学生姓名或学号")),
+                    "required", List.of("keyword")
+            )));
+            tools.add(tool("get_student_detail", "获取某个学生的详细信息（参赛、成绩、个人资料）", Map.of(
+                    "type", "object",
+                    "properties", Map.of("student_id", Map.of("type", "integer", "description", "学生ID")),
+                    "required", List.of("student_id")
+            )));
+            tools.add(tool("get_pending_reviews", "查看待审核的任务列表", Map.of(
+                    "type", "object",
+                    "properties", Map.of("limit", Map.of("type", "integer", "description", "返回条数，默认5")),
+                    "required", List.of()
+            )));
+            tools.add(tool("get_college_overview", "查看学院参赛总览数据", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("get_award_proof_audit", "查看待审核的获奖证明", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
+        }
+
+        if ("admin".equalsIgnoreCase(role)) {
+            tools.add(tool("get_pending_reviews", "查看待审核的任务列表", Map.of(
+                    "type", "object",
+                    "properties", Map.of("limit", Map.of("type", "integer", "description", "返回条数，默认5")),
+                    "required", List.of()
+            )));
+            tools.add(tool("get_pending_drafts", "查看待审核的赛事草稿", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("get_ai_task_stats", "查看 AI 任务执行统计", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("get_user_stats", "查看平台用户统计", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("get_announcements", "查看平台最新公告", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
+        }
+
+        return tools;
     }
 
-    // ────────────── 学生上下文 ──────────────
+    // ────────────── 工具执行 ──────────────
 
-    private void buildStudentContext(Map<String, Object> context, Long userId, String role) {
-        // 原有
-        context.put("registrations", getMyRegistrations(userId, role));
-        context.put("submissions", getMySubmissions(userId, role));
-        context.put("awardProofs", getMyAwardProofs(userId, role));
-        context.put("growth", getStudentGrowth(userId, role, userId));
-        // 新增
-        context.put("growthTimeline", getGrowthTimeline(userId));
-        context.put("participations", getMyParticipations(userId));
-        context.put("messages", getMyMessages(userId));
-        context.put("unreadCount", getUnreadCount(userId));
-        context.put("announcements", getRecentAnnouncements());
+    /**
+     * 根据工具名称执行对应操作，返回 JSON 字符串结果。
+     */
+    public String executeTool(String name, String argsJson, Long userId, String role) {
+        try {
+            Map<String, Object> args = parseArgs(argsJson);
+            return switch (name) {
+                case "search_competitions" -> toJson(searchCompetitions(
+                        (String) args.getOrDefault("keyword", ""), role));
+                case "get_competition_detail" -> toJson(getCompetitionDetail(
+                        toLong(args.get("competition_id")), role));
+                case "get_my_registrations" -> toJson(getMyRegistrations(userId, role));
+                case "get_my_submissions" -> toJson(getMySubmissions(userId, role));
+                case "get_my_award_proofs" -> toJson(getMyAwardProofs(userId, role));
+                case "get_my_growth" -> toJson(getMyGrowth(userId, role));
+                case "get_my_participations" -> toJson(getMyParticipations(userId));
+                case "get_my_messages" -> toJson(getMyMessages(userId));
+                case "get_announcements" -> toJson(getRecentAnnouncements());
+                case "search_students" -> toJson(searchStudents(
+                        (String) args.getOrDefault("keyword", "")));
+                case "get_student_detail" -> toJson(getStudentDetailById(toLong(args.get("student_id")), userId));
+                case "get_pending_reviews" -> toJson(getPendingReviews(
+                        toInt(args.getOrDefault("limit", 5))));
+                case "get_college_overview" -> toJson(getCollegeOverview());
+                case "get_award_proof_audit" -> toJson(getAwardProofAuditList());
+                case "get_pending_drafts" -> toJson(getPendingDrafts());
+                case "get_ai_task_stats" -> toJson(getAiTaskStats());
+                case "get_user_stats" -> toJson(getUserStats());
+                default -> toJson(Map.of("error", "未知工具: " + name));
+            };
+        } catch (Exception e) {
+            return toJson(Map.of("error", e.getMessage()));
+        }
     }
 
-    // ────────────── 教师上下文 ──────────────
+    // ────────────── 工具实现 ──────────────
 
-    private void buildTeacherContext(Map<String, Object> context, Long userId, String role, String message) {
-        // 原有
-        context.put("reviewSummary", getReviewSummary(role));
-        // 新增
-        context.put("pendingReviews", getPendingReviews());
-        context.put("awardProofAudit", getAwardProofAuditList());
-        context.put("collegeOverview", getCollegeOverview());
-        context.put("dashboard", getTeacherDashboard());
-        // 学生查询能力
-        context.put("colleges", getColleges());
-        context.put("studentSearch", searchStudents(message));
-        context.put("studentDetail", getStudentDetailFromMessage(message));
-    }
-
-    // ────────────── 管理员上下文 ──────────────
-
-    private void buildAdminContext(Map<String, Object> context, Long userId, String role) {
-        // 原有
-        context.put("reviewSummary", getReviewSummary(role));
-        context.put("draftCompetitionSummary", getDraftCompetitionSummary(role));
-        // 新增
-        context.put("pendingDrafts", getPendingDrafts());
-        context.put("aiTaskStats", getAiTaskStats());
-        context.put("userStats", getUserStats());
-        context.put("announcements", getRecentAnnouncements());
-        context.put("pendingReviews", getPendingReviews());
-    }
-
-    // ────────────── 赛事搜索 ──────────────
-
-    public List<Map<String, Object>> searchCompetitions(String keyword, String role) {
+    private List<Map<String, Object>> searchCompetitions(String keyword, String role) {
         Page<Competition> page = competitionService.getCompetitionsPage(1, 5, keyword, null, null,
                 "admin".equalsIgnoreCase(role) ? null : "published");
         return page.getRecords().stream().map(this::competitionSummary).collect(Collectors.toList());
     }
 
-    public Map<String, Object> getCompetitionDetail(Long competitionId, String role) {
+    private Map<String, Object> getCompetitionDetail(Long competitionId, String role) {
         Competition competition = competitionService.getById(competitionId);
-        if (competition == null) {
-            throw new BusinessException("赛事不存在");
-        }
+        if (competition == null) return Map.of("error", "赛事不存在");
         if (!"admin".equalsIgnoreCase(role) && !"published".equals(competition.getStatus())) {
-            throw new BusinessException(403, "无权查看未发布赛事");
+            return Map.of("error", "无权查看未发布赛事");
         }
         CompetitionVO vo = competitionService.toVO(competition);
         Map<String, Object> result = new LinkedHashMap<>();
@@ -142,63 +168,37 @@ public class AssistantToolRegistry {
         result.put("level", vo.getLevel());
         result.put("category", vo.getCategory());
         result.put("organizer", vo.getOrganizer());
+        result.put("startTime", vo.getStartTime());
         result.put("endTime", vo.getEndTime());
         result.put("status", vo.getStatus());
+        result.put("maxTeamSize", vo.getMaxTeamSize());
+        result.put("tags", vo.getTags());
         return result;
     }
 
-    // ────────────── 学生数据方法 ──────────────
-
-    public Object getMyRegistrations(Long userId, String role) {
+    private List<?> getMyRegistrations(Long userId, String role) {
         requireRole(role, "student");
-        return registrationService.getMyList(userId).stream().limit(8).collect(Collectors.toList());
+        return registrationService.getMyList(userId).stream().limit(10).collect(Collectors.toList());
     }
 
-    public Object getMySubmissions(Long userId, String role) {
+    private List<?> getMySubmissions(Long userId, String role) {
         requireRole(role, "student");
-        return submissionService.listMySubmissions(userId).stream().limit(8).collect(Collectors.toList());
+        return submissionService.listMySubmissions(userId).stream().limit(10).collect(Collectors.toList());
     }
 
-    public Object getMyAwardProofs(Long userId, String role) {
+    private List<?> getMyAwardProofs(Long userId, String role) {
         requireRole(role, "student");
-        return awardProofService.listMyAwardProofs(userId, 1, 8).getRecords();
+        return awardProofService.listMyAwardProofs(userId, 1, 10).getRecords();
     }
 
-    public StudentGrowthVO getStudentGrowth(Long currentUserId, String role, Long studentId) {
-        Long targetId = studentId == null ? currentUserId : studentId;
-        if ("student".equalsIgnoreCase(role) && !currentUserId.equals(targetId)) {
-            throw new BusinessException(403, "学生只能查看自己的成长档案");
-        }
-        if ("teacher".equalsIgnoreCase(role)) {
-            User teacher = userService.getById(currentUserId);
-            User student = userService.getById(targetId);
-            if (teacher == null || student == null || teacher.getCollege() == null
-                    || !teacher.getCollege().equals(student.getCollege())) {
-                throw new BusinessException(403, "无权查看其他学院学生的成长档案");
-            }
-        }
-        return growthRecordService.getStudentGrowth(targetId);
-    }
-
-    private List<Map<String, Object>> getGrowthTimeline(Long userId) {
-        try {
-            return growthRecordService.getTimelinePage(userId, 1, 5).getRecords().stream()
-                    .map(record -> {
-                        Map<String, Object> item = new LinkedHashMap<>();
-                        item.put("id", record.getId());
-                        item.put("title", record.getTitle());
-                        item.put("recordType", record.getRecordType());
-                        item.put("happenTime", record.getHappenTime());
-                        return item;
-                    }).collect(Collectors.toList());
-        } catch (Exception e) {
-            return List.of();
-        }
+    private Object getMyGrowth(Long userId, String role) {
+        requireRole(role, "student");
+        return growthRecordService.getStudentGrowth(userId);
     }
 
     private List<Map<String, Object>> getMyParticipations(Long userId) {
         try {
-            return activityService.listMyParticipations(userId).stream().limit(5)
+            return activityService.listMyParticipations(userId).stream().limit(10)
                     .map(p -> {
                         Map<String, Object> item = new LinkedHashMap<>();
                         item.put("id", p.getId());
@@ -208,41 +208,27 @@ public class AssistantToolRegistry {
                         item.put("submitDate", p.getSubmitDate());
                         return item;
                     }).collect(Collectors.toList());
-        } catch (Exception e) {
-            return List.of();
-        }
+        } catch (Exception e) { return List.of(); }
     }
 
     private List<Map<String, Object>> getMyMessages(Long userId) {
         try {
-            return messageService.getMyMessagesPage(userId, 1, 5).getRecords().stream()
+            return messageService.getMyMessagesPage(userId, 1, 10).getRecords().stream()
                     .map(msg -> {
                         Map<String, Object> item = new LinkedHashMap<>();
                         item.put("id", msg.getId());
                         item.put("title", msg.getTitle());
-                        item.put("content", truncate(msg.getContent(), 80));
+                        item.put("content", truncate(msg.getContent(), 100));
                         item.put("isRead", msg.getIsRead());
                         item.put("createTime", msg.getCreateTime());
                         return item;
                     }).collect(Collectors.toList());
-        } catch (Exception e) {
-            return List.of();
-        }
-    }
-
-    private int getUnreadCount(Long userId) {
-        try {
-            return (int) messageService.getMyMessages(userId).stream()
-                    .filter(m -> m.getIsRead() == null || m.getIsRead() == 0)
-                    .count();
-        } catch (Exception e) {
-            return 0;
-        }
+        } catch (Exception e) { return List.of(); }
     }
 
     private List<Map<String, Object>> getRecentAnnouncements() {
         try {
-            return announcementService.listAnnouncements(1, 3, null, null).getRecords().stream()
+            return announcementService.listAnnouncements(1, 5, null, null).getRecords().stream()
                     .map(a -> {
                         Map<String, Object> item = new LinkedHashMap<>();
                         item.put("id", a.get("id"));
@@ -251,23 +237,45 @@ public class AssistantToolRegistry {
                         item.put("createTime", a.get("createTime"));
                         return item;
                     }).collect(Collectors.toList());
-        } catch (Exception e) {
-            return List.of();
-        }
+        } catch (Exception e) { return List.of(); }
     }
 
-    // ────────────── 教师数据方法 ──────────────
-
-    public Map<String, Object> getReviewSummary(String role) {
-        if (!"teacher".equalsIgnoreCase(role) && !"admin".equalsIgnoreCase(role)) {
-            throw new BusinessException(403, "无权查看审核统计");
-        }
-        return reviewTaskService.getStats();
-    }
-
-    private List<Map<String, Object>> getPendingReviews() {
+    private List<Map<String, Object>> searchStudents(String keyword) {
+        if (keyword == null || keyword.isBlank()) return List.of();
         try {
-            return reviewTaskService.listTasks(1, 5, "pending", null, null, null)
+            return teacherService.listStudentsPage(1, 8, keyword, null, null, null, null)
+                    .getRecords().stream().map(student -> {
+                        Map<String, Object> item = new LinkedHashMap<>();
+                        item.put("id", student.getId());
+                        item.put("realName", student.getRealName());
+                        item.put("username", student.getUsername());
+                        item.put("college", student.getCollege());
+                        item.put("major", student.getMajor());
+                        item.put("className", student.getClassName());
+                        item.put("grade", student.getGrade());
+                        return item;
+                    }).collect(Collectors.toList());
+        } catch (Exception e) { return List.of(); }
+    }
+
+    private Map<String, Object> getStudentDetailById(Long studentId, Long teacherId) {
+        if (studentId == null) return Map.of("error", "缺少 student_id");
+        try {
+            // 验证教师权限（同学院）
+            User teacher = userService.getById(teacherId);
+            User student = userService.getById(studentId);
+            if (teacher == null || student == null) return Map.of("error", "用户不存在");
+            if (teacher.getCollege() != null && !teacher.getCollege().equals(student.getCollege())) {
+                return Map.of("error", "无权查看其他学院学生");
+            }
+            Map<String, Object> detail = teacherService.getStudentDetail(studentId);
+            return detail != null ? detail : Map.of("error", "未找到学生详情");
+        } catch (Exception e) { return Map.of("error", e.getMessage()); }
+    }
+
+    private List<Map<String, Object>> getPendingReviews(int limit) {
+        try {
+            return reviewTaskService.listTasks(1, Math.min(limit, 10), "pending", null, null, null)
                     .getRecords().stream().map(task -> {
                         Map<String, Object> item = new LinkedHashMap<>();
                         item.put("id", task.getId());
@@ -278,9 +286,12 @@ public class AssistantToolRegistry {
                         item.put("createTime", task.getCreateTime());
                         return item;
                     }).collect(Collectors.toList());
-        } catch (Exception e) {
-            return List.of();
-        }
+        } catch (Exception e) { return List.of(); }
+    }
+
+    private Map<String, Object> getCollegeOverview() {
+        try { return teacherService.getCollegeOverview(null, null, null); }
+        catch (Exception e) { return Map.of(); }
     }
 
     private List<Map<String, Object>> getAwardProofAuditList() {
@@ -293,128 +304,9 @@ public class AssistantToolRegistry {
                         item.put("awardLevel", proof.getAwardLevel());
                         item.put("submitterName", proof.getSubmitterName());
                         item.put("confidence", proof.getConfidence());
-                        item.put("status", proof.getStatus());
                         return item;
                     }).collect(Collectors.toList());
-        } catch (Exception e) {
-            return List.of();
-        }
-    }
-
-    private Map<String, Object> getCollegeOverview() {
-        try {
-            return teacherService.getCollegeOverview(null, null, null);
-        } catch (Exception e) {
-            return Map.of();
-        }
-    }
-
-    private Map<String, Object> getTeacherDashboard() {
-        try {
-            return teacherService.getDashboardStats(null, null, null, null);
-        } catch (Exception e) {
-            return Map.of();
-        }
-    }
-
-    private List<String> getColleges() {
-        try {
-            return teacherService.listColleges();
-        } catch (Exception e) {
-            return List.of();
-        }
-    }
-
-    /**
-     * 根据用户消息中的关键词搜索学生。
-     * 从消息中提取可能的姓名/学号关键词，搜索匹配的学生。
-     */
-    private List<Map<String, Object>> searchStudents(String message) {
-        try {
-            String keyword = extractStudentKeyword(message);
-            if (keyword == null || keyword.isBlank()) return List.of();
-            return teacherService.listStudentsPage(1, 5, keyword, null, null, null, null)
-                    .getRecords().stream().map(student -> {
-                        Map<String, Object> item = new LinkedHashMap<>();
-                        item.put("id", student.getId());
-                        item.put("realName", student.getRealName());
-                        item.put("username", student.getUsername());
-                        item.put("college", student.getCollege());
-                        item.put("major", student.getMajor());
-                        item.put("className", student.getClassName());
-                        item.put("grade", student.getGrade());
-                        return item;
-                    }).collect(Collectors.toList());
-        } catch (Exception e) {
-            return List.of();
-        }
-    }
-
-    /**
-     * 如果消息中包含具体学生姓名，直接返回该学生的详细信息。
-     */
-    private Map<String, Object> getStudentDetailFromMessage(String message) {
-        try {
-            String keyword = extractStudentKeyword(message);
-            if (keyword == null || keyword.isBlank()) return null;
-            Page<UserVO> page = teacherService.listStudentsPage(1, 1, keyword, null, null, null, null);
-            if (page.getRecords().isEmpty()) return null;
-            UserVO student = page.getRecords().get(0);
-            Map<String, Object> detail = teacherService.getStudentDetail(student.getId());
-            if (detail == null) return null;
-            // 简化返回，去掉过长的字段
-            detail.remove("registrations");
-            detail.remove("submissions");
-            return detail;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    /**
-     * 从用户消息中提取学生姓名或学号关键词。
-     * 优先匹配 8-12 位数字（学号），否则尝试提取中文姓名（2-4字）。
-     */
-    private String extractStudentKeyword(String message) {
-        if (message == null || message.isBlank()) return null;
-        // 优先匹配学号（连续数字）
-        java.util.regex.Matcher numMatcher = java.util.regex.Pattern.compile("\\d{8,12}").matcher(message);
-        if (numMatcher.find()) return numMatcher.group();
-        // 如果消息里有 2-4 个连续中文字符，作为关键词搜索
-        java.util.regex.Matcher simple = java.util.regex.Pattern.compile("[\\u4e00-\\u9fa5]{2,4}").matcher(message);
-        List<String> candidates = new ArrayList<>();
-        while (simple.find()) {
-            String word = simple.group();
-            if (!STOP_WORDS.contains(word)) {
-                candidates.add(word);
-            }
-        }
-        return candidates.isEmpty() ? null : candidates.get(0);
-    }
-
-    private static final Set<String> STOP_WORDS = Set.of(
-            "同学", "学生", "老师", "教师", "查看", "查询", "搜索", "帮我", "一下",
-            "什么", "怎么", "哪些", "多少", "人数", "情况", "信息", "详情",
-            "学院", "专业", "班级", "年级", "参赛", "报名", "成果", "审核",
-            "这个", "那个", "有没有", "可以", "告诉", "请问", "想问",
-            "的人", "有几", "几个", "一共", "总共", "目前", "现在"
-    );
-
-    // ────────────── 管理员数据方法 ──────────────
-
-    public Map<String, Object> getDraftCompetitionSummary(String role) {
-        requireRole(role, "admin");
-        Map<String, Object> summary = new LinkedHashMap<>();
-        summary.put("pendingReview", aiCompetitionDraftService.count(
-                new LambdaQueryWrapper<AiCompetitionDraft>()
-                        .eq(AiCompetitionDraft::getStatus, "pending_review")));
-        summary.put("confirmed", aiCompetitionDraftService.count(
-                new LambdaQueryWrapper<AiCompetitionDraft>()
-                        .eq(AiCompetitionDraft::getStatus, "confirmed")));
-        summary.put("ignored", aiCompetitionDraftService.count(
-                new LambdaQueryWrapper<AiCompetitionDraft>()
-                        .eq(AiCompetitionDraft::getStatus, "ignored")));
-        return summary;
+        } catch (Exception e) { return List.of(); }
     }
 
     private List<Map<String, Object>> getPendingDrafts() {
@@ -428,66 +320,82 @@ public class AssistantToolRegistry {
                 item.put("name", draft.getName());
                 item.put("level", draft.getLevel());
                 item.put("sourceType", draft.getSourceType());
-                item.put("createTime", draft.getCreateTime());
                 return item;
             }).collect(Collectors.toList());
-        } catch (Exception e) {
-            return List.of();
-        }
+        } catch (Exception e) { return List.of(); }
     }
 
     private Map<String, Object> getAiTaskStats() {
         try {
-            long running = aiTaskService.count(new LambdaQueryWrapper<AiTask>()
-                    .eq(AiTask::getStatus, "running"));
-            long failed = aiTaskService.count(new LambdaQueryWrapper<AiTask>()
-                    .eq(AiTask::getStatus, "failed"));
-            long succeeded = aiTaskService.count(new LambdaQueryWrapper<AiTask>()
-                    .eq(AiTask::getStatus, "succeeded"));
             Map<String, Object> stats = new LinkedHashMap<>();
-            stats.put("running", running);
-            stats.put("failed", failed);
-            stats.put("succeeded", succeeded);
+            stats.put("running", aiTaskService.count(new LambdaQueryWrapper<AiTask>().eq(AiTask::getStatus, "running")));
+            stats.put("failed", aiTaskService.count(new LambdaQueryWrapper<AiTask>().eq(AiTask::getStatus, "failed")));
+            stats.put("succeeded", aiTaskService.count(new LambdaQueryWrapper<AiTask>().eq(AiTask::getStatus, "succeeded")));
             return stats;
-        } catch (Exception e) {
-            return Map.of();
-        }
+        } catch (Exception e) { return Map.of(); }
     }
 
     private Map<String, Object> getUserStats() {
-        try {
-            return userService.getUserStats();
-        } catch (Exception e) {
-            return Map.of();
-        }
-    }
-
-    public Object getAiTaskStatus(Long userId, String role, Long taskId) {
-        return aiTaskService.getVisibleTask(taskId, userId, role);
+        try { return userService.getUserStats(); }
+        catch (Exception e) { return Map.of(); }
     }
 
     // ────────────── 工具方法 ──────────────
 
-    private Map<String, Object> competitionSummary(Competition competition) {
+    private Map<String, Object> tool(String name, String description, Map<String, Object> parameters) {
+        Map<String, Object> function = new LinkedHashMap<>();
+        function.put("name", name);
+        function.put("description", description);
+        function.put("parameters", parameters);
+        Map<String, Object> tool = new LinkedHashMap<>();
+        tool.put("type", "function");
+        tool.put("function", function);
+        return tool;
+    }
+
+    private Map<String, Object> competitionSummary(Competition c) {
         Map<String, Object> item = new LinkedHashMap<>();
-        item.put("id", competition.getId());
-        item.put("name", competition.getName());
-        item.put("level", competition.getLevel());
-        item.put("category", competition.getCategory());
-        item.put("organizer", competition.getOrganizer());
-        item.put("endTime", competition.getEndTime());
-        item.put("status", competition.getStatus());
+        item.put("id", c.getId());
+        item.put("name", c.getName());
+        item.put("level", c.getLevel());
+        item.put("category", c.getCategory());
+        item.put("organizer", c.getOrganizer());
+        item.put("endTime", c.getEndTime());
+        item.put("status", c.getStatus());
         return item;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseArgs(String json) {
+        if (json == null || json.isBlank()) return Map.of();
+        try { return JSONUtil.toBean(json, Map.class); }
+        catch (Exception e) { return Map.of(); }
+    }
+
+    private String toJson(Object obj) {
+        return JSONUtil.toJsonStr(obj);
+    }
+
+    private Long toLong(Object value) {
+        if (value == null) return null;
+        if (value instanceof Number) return ((Number) value).longValue();
+        try { return Long.parseLong(value.toString()); } catch (Exception e) { return null; }
+    }
+
+    private int toInt(Object value) {
+        if (value == null) return 5;
+        if (value instanceof Number) return ((Number) value).intValue();
+        try { return Integer.parseInt(value.toString()); } catch (Exception e) { return 5; }
+    }
+
+    private String truncate(String text, int maxLen) {
+        if (text == null) return "";
+        return text.length() <= maxLen ? text : text.substring(0, maxLen) + "...";
     }
 
     private void requireRole(String actual, String expected) {
         if (!expected.equalsIgnoreCase(actual)) {
             throw new BusinessException(403, "当前角色无权使用该工具");
         }
-    }
-
-    private String truncate(String text, int maxLen) {
-        if (text == null) return "";
-        return text.length() <= maxLen ? text : text.substring(0, maxLen) + "...";
     }
 }

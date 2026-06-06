@@ -16,6 +16,7 @@ import com.etsaion.service.ai.MimoModelClient;
 import com.etsaion.vo.ai.AiChatResponseVO;
 import com.etsaion.vo.ai.AiConversationVO;
 import com.etsaion.vo.ai.AiModelResponseVO;
+import com.etsaion.vo.ai.ToolCallVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -35,9 +37,22 @@ public class AiChatServiceImpl implements AiChatService {
 
     private static final int MAX_IMAGE_COUNT = 4;
     private static final int MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+    private static final int MAX_TOOL_ROUNDS = 3;
     private static final Pattern IMAGE_DATA_URL = Pattern.compile(
             "^data:image/(png|jpe?g|webp|gif);base64,([A-Za-z0-9+/=\\r\\n]+)$",
             Pattern.CASE_INSENSITIVE);
+
+    private static final String SYSTEM_PROMPT = """
+            你是易赛通高校赛事报名管理平台的 AI 助手。
+            你的职责是帮助用户查询赛事、报名、成果、审核、学生信息等平台数据。
+
+            规则：
+            1. 必须基于工具返回的真实数据回答，不要编造。
+            2. 不执行任何写操作（发布、审核、提交、删除等）。
+            3. 回答简洁、结构化，必要时用列表或表格展示。
+            4. 如果工具返回空数据，如实告知用户。
+            5. 如果用户问题与平台无关，可以正常闲聊，但不要调用工具。
+            """;
 
     @Autowired
     private AiConversationService aiConversationService;
@@ -57,25 +72,76 @@ public class AiChatServiceImpl implements AiChatService {
         List<String> imageDataUrls = validateImageDataUrls(dto.getImageDataUrls());
         String userText = StrUtil.blankToDefault(StrUtil.trim(dto.getMessage()), "请分析图片附件。");
         AiConversation conversation = findOrCreateConversation(userId, role, dto);
+
+        // 保存用户消息
         String persistedMessage = imageDataUrls.isEmpty()
                 ? userText
                 : userText + "\n[图片附件 " + imageDataUrls.size() + " 张]";
         saveMessage(conversation.getId(), "user", persistedMessage, null);
-        Map<String, Object> toolContext = assistantToolRegistry.buildToolContext(userId, role, userText);
 
-        String answer = callModel(role, userText, toolContext, imageDataUrls);
-        saveMessage(conversation.getId(), "assistant", answer, JSONUtil.toJsonStr(toolContext));
+        // 构建对话历史
+        List<Map<String, Object>> messages = buildConversationHistory(conversation.getId(), userText, imageDataUrls);
 
+        // 获取工具定义
+        List<Map<String, Object>> tools = assistantToolRegistry.getToolDefinitions(userId, role);
+
+        // Function Calling 循环
+        String finalAnswer = "";
+        Map<String, Object> usedToolContext = new LinkedHashMap<>();
+        for (int round = 0; round < MAX_TOOL_ROUNDS; round++) {
+            AiModelResponseVO response = callModel(messages, tools, imageDataUrls, round == 0);
+
+            if (!response.isSuccess()) {
+                finalAnswer = "AI 模型暂不可用：" + response.getErrorMessage();
+                break;
+            }
+
+            // 模型没有调用工具，直接返回文本回答
+            if (!response.hasToolCalls()) {
+                finalAnswer = StrUtil.blankToDefault(response.getContent(), "暂无回复");
+                break;
+            }
+
+            // 模型请求调用工具
+            // 把 assistant 的 tool_calls 消息加入历史
+            Map<String, Object> assistantMsg = new LinkedHashMap<>();
+            assistantMsg.put("role", "assistant");
+            assistantMsg.put("content", response.getContent() != null ? response.getContent() : "");
+            assistantMsg.put("tool_calls", response.getToolCalls().stream().map(tc -> {
+                Map<String, Object> tcMap = new LinkedHashMap<>();
+                tcMap.put("id", tc.getId());
+                tcMap.put("type", "function");
+                tcMap.put("function", Map.of("name", tc.getFunctionName(), "arguments", tc.getArguments()));
+                return tcMap;
+            }).collect(Collectors.toList()));
+            messages.add(assistantMsg);
+
+            // 执行每个 tool_call，把结果作为 tool message 追加
+            for (ToolCallVO toolCall : response.getToolCalls()) {
+                String result = assistantToolRegistry.executeTool(
+                        toolCall.getFunctionName(), toolCall.getArguments(), userId, role);
+                usedToolContext.put(toolCall.getFunctionName(), JSONUtil.parse(result));
+
+                Map<String, Object> toolMsg = new LinkedHashMap<>();
+                toolMsg.put("role", "tool");
+                toolMsg.put("tool_call_id", toolCall.getId());
+                toolMsg.put("content", result);
+                messages.add(toolMsg);
+            }
+        }
+
+        // 保存助手消息
+        saveMessage(conversation.getId(), "assistant", finalAnswer, JSONUtil.toJsonStr(usedToolContext));
         conversation.setLastMessageAt(LocalDateTime.now());
         conversation.setUpdateTime(LocalDateTime.now());
         aiConversationService.updateById(conversation);
 
-        AiChatResponseVO response = new AiChatResponseVO();
-        response.setConversationId(conversation.getId());
-        response.setAnswer(answer);
-        response.setToolContext(toolContext);
-        response.setCreateTime(LocalDateTime.now());
-        return response;
+        AiChatResponseVO vo = new AiChatResponseVO();
+        vo.setConversationId(conversation.getId());
+        vo.setAnswer(finalAnswer);
+        vo.setToolContext(usedToolContext);
+        vo.setCreateTime(LocalDateTime.now());
+        return vo;
     }
 
     @Override
@@ -104,6 +170,70 @@ public class AiChatServiceImpl implements AiChatService {
         aiMessageService.remove(new LambdaQueryWrapper<AiMessage>().eq(AiMessage::getConversationId, conversationId));
         aiConversationService.removeById(conversationId);
     }
+
+    // ────────────── 对话历史构建 ──────────────
+
+    private List<Map<String, Object>> buildConversationHistory(Long conversationId, String currentMessage,
+                                                                List<String> imageDataUrls) {
+        List<Map<String, Object>> messages = new ArrayList<>();
+
+        // 加载历史消息（最近 20 条，排除当前这条）
+        List<AiMessage> history = aiMessageService.list(new LambdaQueryWrapper<AiMessage>()
+                .eq(AiMessage::getConversationId, conversationId)
+                .ne(AiMessage::getContent, currentMessage)
+                .orderByDesc(AiMessage::getCreateTime)
+                .last("LIMIT 20"));
+
+        // 反转为时间正序
+        for (int i = history.size() - 1; i >= 0; i--) {
+            AiMessage msg = history.get(i);
+            Map<String, Object> msgMap = new LinkedHashMap<>();
+            msgMap.put("role", msg.getRole());
+            msgMap.put("content", msg.getContent() != null ? msg.getContent() : "");
+            messages.add(msgMap);
+        }
+
+        // 添加当前用户消息（带图片）
+        if (imageDataUrls.isEmpty()) {
+            messages.add(Map.of("role", "user", "content", currentMessage));
+        } else {
+            List<Object> content = new ArrayList<>();
+            content.add(Map.of("type", "text", "text", currentMessage));
+            for (String url : imageDataUrls) {
+                content.add(Map.of("type", "image_url", "image_url", Map.of("url", url)));
+            }
+            Map<String, Object> userMsg = new LinkedHashMap<>();
+            userMsg.put("role", "user");
+            userMsg.put("content", content);
+            messages.add(userMsg);
+        }
+
+        return messages;
+    }
+
+    // ────────────── 模型调用 ──────────────
+
+    private AiModelResponseVO callModel(List<Map<String, Object>> messages,
+                                         List<Map<String, Object>> tools,
+                                         List<String> imageDataUrls,
+                                         boolean isFirstRound) {
+        // 如果有图片，第一轮用 vision 调用（不带 tools）
+        if (isFirstRound && !imageDataUrls.isEmpty()) {
+            String userText = extractUserText(messages);
+            return mimoModelClient.chatVisionText(SYSTEM_PROMPT, userText, imageDataUrls);
+        }
+        return mimoModelClient.chatWithTools(SYSTEM_PROMPT, messages, tools);
+    }
+
+    private String extractUserText(List<Map<String, Object>> messages) {
+        for (int i = messages.size() - 1; i >= 0; i--) {
+            Object content = messages.get(i).get("content");
+            if (content instanceof String) return (String) content;
+        }
+        return "";
+    }
+
+    // ────────────── 会话管理 ──────────────
 
     private AiConversation findOrCreateConversation(Long userId, String role, AiChatRequestDTO dto) {
         if (dto.getConversationId() != null) {
@@ -139,30 +269,10 @@ public class AiChatServiceImpl implements AiChatService {
         aiMessageService.save(message);
     }
 
-    private String callModel(String role, String userMessage, Map<String, Object> toolContext,
-                             List<String> imageDataUrls) {
-        String systemPrompt = "你是易赛通平台助手。必须基于工具数据回答，不越权，不直接执行发布、审核或提交等写操作。";
-        String prompt = "当前角色：" + role
-                + "\n工具数据：" + JSONUtil.toJsonStr(toolContext)
-                + "\n用户问题：" + userMessage;
-        AiModelResponseVO response;
-        if (imageDataUrls.isEmpty()) {
-            List<AiMessageDTO> messages = new ArrayList<>();
-            messages.add(new AiMessageDTO("user", prompt));
-            response = mimoModelClient.chatText(systemPrompt, messages);
-        } else {
-            response = mimoModelClient.chatVisionText(systemPrompt, prompt, imageDataUrls);
-        }
-        if (response.isSuccess()) {
-            return response.getContent();
-        }
-        return "AI 模型暂不可用，以下是平台实时数据摘要：" + JSONUtil.toJsonStr(toolContext);
-    }
+    // ────────────── 工具方法 ──────────────
 
     private List<String> validateImageDataUrls(List<String> values) {
-        if (values == null || values.isEmpty()) {
-            return List.of();
-        }
+        if (values == null || values.isEmpty()) return List.of();
         if (values.size() > MAX_IMAGE_COUNT) {
             throw new BusinessException("单次最多上传 " + MAX_IMAGE_COUNT + " 张图片");
         }

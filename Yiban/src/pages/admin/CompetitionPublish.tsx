@@ -546,6 +546,16 @@ export default function CompetitionPublish() {
           </div>
         </div>
       </div>
+      )}
+
+      {activeTab === 'ai-import' && !isEdit && (
+        <AiImportPanel onParsed={(draft) => {
+          const mapped = aiDraftToPublishForm(draft);
+          setForm((prev) => ({ ...prev, ...mapped }));
+          setActiveTab('manual');
+          toast.success('已将 AI 解析结果填入表单，请核对后保存');
+        }} />
+      )}
 
       {/* Bottom action bar */}
       <div className="fixed bottom-0 left-0 lg:left-[240px] right-0 z-40">

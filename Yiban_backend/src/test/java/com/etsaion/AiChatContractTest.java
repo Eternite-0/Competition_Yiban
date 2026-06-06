@@ -26,9 +26,7 @@ class AiChatContractTest {
         assertTrue(hasMethod(chatService, "deleteConversation"));
 
         Class<?> tools = Class.forName("com.etsaion.service.ai.AssistantToolRegistry");
-        for (String method : new String[]{"searchCompetitions", "getCompetitionDetail", "getMyRegistrations",
-                "getMySubmissions", "getMyAwardProofs", "getReviewSummary", "getStudentGrowth",
-                "getDraftCompetitionSummary", "getAiTaskStatus"}) {
+        for (String method : new String[]{"getToolDefinitions", "executeTool"}) {
             assertTrue(hasMethod(tools, method), method + " must exist");
         }
     }

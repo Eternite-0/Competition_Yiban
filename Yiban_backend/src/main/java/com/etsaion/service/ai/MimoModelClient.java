@@ -5,6 +5,7 @@ import com.etsaion.dto.ai.AiMessageDTO;
 import com.etsaion.vo.ai.AiModelResponseVO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.etsaion.vo.ai.ToolCallVO;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -63,6 +64,24 @@ public class MimoModelClient {
         return sendVisionRequest(systemPrompt, prompt, List.of(imageUrl), true);
     }
 
+    /**
+     * 支持 Function Calling 的对话方法。
+     * @param systemPrompt 系统提示
+     * @param messages     对话历史（含 user/assistant/tool 角色）
+     * @param tools        工具定义列表（OpenAI function calling 格式）
+     */
+    public AiModelResponseVO chatWithTools(String systemPrompt, List<Map<String, Object>> messages,
+                                           List<Map<String, Object>> tools) {
+        List<Map<String, Object>> requestMessages = new ArrayList<>();
+        if (StringUtils.hasText(systemPrompt)) {
+            requestMessages.add(textMessage("system", systemPrompt));
+        }
+        if (messages != null) {
+            requestMessages.addAll(messages);
+        }
+        return sendChatRequestWithTools(requestMessages, tools);
+    }
+
     private AiModelResponseVO sendVisionRequest(String systemPrompt, String userPrompt,
                                                 List<String> imageUrls, boolean jsonMode) {
         List<Map<String, Object>> requestMessages = new ArrayList<>();
@@ -105,6 +124,26 @@ public class MimoModelClient {
             body.put("response_format", Map.of("type", "json_object"));
         }
 
+        return executeWithRetry(body);
+    }
+
+    private AiModelResponseVO sendChatRequestWithTools(List<Map<String, Object>> messages,
+                                                       List<Map<String, Object>> tools) {
+        if (!properties.hasApiKey()) {
+            return AiModelResponseVO.error(MISSING_KEY_MESSAGE);
+        }
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("model", properties.getModel());
+        body.put("messages", messages);
+        if (tools != null && !tools.isEmpty()) {
+            body.put("tools", tools);
+        }
+
+        return executeWithRetry(body);
+    }
+
+    private AiModelResponseVO executeWithRetry(Map<String, Object> body) {
         String requestBody = toJson(body);
         int maxRetries = Math.max(properties.getMaxRetries(), 0);
         AiModelResponseVO lastFailure = null;
@@ -142,11 +181,32 @@ public class MimoModelClient {
 
     private AiModelResponseVO parseSuccess(String rawBody) throws Exception {
         JsonNode root = objectMapper.readTree(rawBody);
-        JsonNode content = root.path("choices").path(0).path("message").path("content");
-        if (content.isMissingNode() || content.isNull()) {
+        JsonNode message = root.path("choices").path(0).path("message");
+
+        String content = "";
+        JsonNode contentNode = message.path("content");
+        if (!contentNode.isMissingNode() && !contentNode.isNull()) {
+            content = contentNode.asText("");
+        }
+
+        // 解析 tool_calls
+        JsonNode toolCallsNode = message.path("tool_calls");
+        if (toolCallsNode.isArray() && toolCallsNode.size() > 0) {
+            List<ToolCallVO> toolCalls = new ArrayList<>();
+            for (JsonNode tc : toolCallsNode) {
+                ToolCallVO toolCall = new ToolCallVO();
+                toolCall.setId(tc.path("id").asText(""));
+                toolCall.setFunctionName(tc.path("function").path("name").asText(""));
+                toolCall.setArguments(tc.path("function").path("arguments").asText("{}"));
+                toolCalls.add(toolCall);
+            }
+            return AiModelResponseVO.withToolCalls(content, toolCalls, rawBody);
+        }
+
+        if (content.isEmpty()) {
             return AiModelResponseVO.error("AI 模型响应缺少 content", 200, rawBody);
         }
-        return AiModelResponseVO.success(content.asText(), rawBody);
+        return AiModelResponseVO.success(content, rawBody);
     }
 
     private Map<String, Object> textMessage(String role, String content) {
