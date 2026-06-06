@@ -8,9 +8,14 @@ import com.etsaion.entity.AiCompetitionDraft;
 import com.etsaion.vo.ai.AiCompetitionDraftVO;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
+import java.util.function.Consumer;
+
 public interface AiCompetitionDraftService extends IService<AiCompetitionDraft> {
     AiCompetitionDraftVO parseFile(Long adminId, MultipartFile file);
     AiCompetitionDraftVO parseUrl(Long adminId, CompetitionDraftParseUrlDTO dto);
+    AiCompetitionDraftVO parseUrlWithProgress(Long adminId, CompetitionDraftParseUrlDTO dto,
+                                              Consumer<Map<String, String>> onProgress);
     Page<AiCompetitionDraftVO> listDrafts(int current, int size, String status, String keyword);
     AiCompetitionDraftVO getDraftDetail(Long id);
     AiCompetitionDraftVO updateDraft(Long id, AiCompetitionDraftVO dto);

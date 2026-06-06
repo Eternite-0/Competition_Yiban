@@ -11,9 +11,15 @@ import com.etsaion.vo.ai.AiCompetitionDraftVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Tag(name = "AI赛事导入")
 @RestController
@@ -34,6 +40,33 @@ public class AiCompetitionController {
     @PostMapping("/parse-url")
     public Result<AiCompetitionDraftVO> parseUrl(@Validated @RequestBody CompetitionDraftParseUrlDTO dto) {
         return Result.success(aiCompetitionDraftService.parseUrl(UserContext.getUserId(), dto));
+    }
+
+    @Operation(summary = "SSE 实时进度解析 URL")
+    @PostMapping(value = "/parse-url-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter parseUrlStream(@Validated @RequestBody CompetitionDraftParseUrlDTO dto) {
+        SseEmitter emitter = new SseEmitter(180_000L);
+        Long adminId = UserContext.getUserId();
+        CompletableFuture.runAsync(() -> {
+            try {
+                AiCompetitionDraftVO result = aiCompetitionDraftService.parseUrlWithProgress(adminId, dto, event -> {
+                    try {
+                        emitter.send(SseEmitter.event().name("progress").data(event));
+                    } catch (IOException ignored) {
+                    }
+                });
+                emitter.send(SseEmitter.event().name("done").data(result));
+                emitter.complete();
+            } catch (Exception e) {
+                try {
+                    emitter.send(SseEmitter.event().name("error")
+                            .data(Map.of("message", e.getMessage() != null ? e.getMessage() : "解析失败")));
+                } catch (IOException ignored) {
+                }
+                emitter.completeWithError(e);
+            }
+        });
+        return emitter;
     }
 
     @Operation(summary = "AI 草稿箱列表")

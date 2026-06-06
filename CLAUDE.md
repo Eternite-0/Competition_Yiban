@@ -16,6 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```powershell
 cd D:\Project\Competition\Yiban_backend
+$env:AI_API_KEY = "your-api-key"  # AI 功能必须
 mvn clean install -DskipTests   # 首次或依赖变更
 mvn spring-boot:run             # 日常启动
 mvn compile                     # 仅编译检查
@@ -25,6 +26,7 @@ mvn test -Dtest=ContractBaselineTest  # 运行单个测试类
 ```
 
 数据库: MySQL `localhost:3306/etsaion`，用户名/密码在 `application.yml`。种子密码均为 `123456`。
+AI 配置: `AI_API_KEY`(必须), `AI_BASE_URL`, `AI_MODEL` 在 `application.yml` 的 `ai.*` 节点。
 
 停止后端: `Stop-Process -Name java -Force`
 
@@ -54,11 +56,13 @@ npm run lint                    # ESLint 检查
 ```
 controller/     → REST 端点，18 个控制器
 service/        → 业务逻辑
+service/ai/     → AI 子系统 (AssistantToolRegistry, MimoModelClient, AiChatService)
 mapper/         → MyBatis-Plus 数据访问
-entity/         → 数据库实体 (15 张表)
+entity/         → 数据库实体 (25 张表)
 dto/            → 请求 DTO
 vo/             → 响应视图对象
-config/         → 配置类 (WebMvc, MyBatis, Qiniu)
+vo/ai/          → AI 响应 VO (ToolCallVO, AiModelResponseVO 等)
+config/         → 配置类 (WebMvc, MyBatis, Qiniu, AiProperties)
 interceptor/    → AuthInterceptor + @RequireRole 注解
 exception/      → 全局异常处理 + BusinessException
 utils/          → JwtUtil, UserContext (ThreadLocal)
@@ -67,14 +71,56 @@ utils/          → JwtUtil, UserContext (ThreadLocal)
 ### 前端结构
 
 ```
-src/api/        → client.ts (axios 实例), qiniu.ts (七牛云上传)
+src/api/        → client.ts (axios 实例), qiniu.ts (七牛云上传), aiChat.ts
 src/store/      → useStore.ts (Zustand 全局状态)
 src/pages/      → 按角色分目录: admin/(5), student/(12), teacher/(7)
 src/components/ → 公共组件: Header, Sidebar, Layout, CascadeFilter, PageHero
+src/components/ai/ → AI 助手组件 (AIAssistantWidget, ChatMessageList, ChatInputBar, QuickPromptChips)
 src/router/     → 路由配置
 src/types/      → TypeScript 类型定义
 src/lib/        → motion.ts (Framer Motion 动画配置)
 ```
+
+### AI 助手架构 (Function Calling)
+
+AI 助手采用 OpenAI Function Calling 架构，模型按需调用工具获取数据：
+
+```
+用户消息 → MimoModelClient.chatWithTools(消息, 工具定义)
+         → 模型返回 tool_calls? (最多 3 轮循环)
+            ├─ 否 → 直接返回文本回答
+            └─ 是 → AssistantToolRegistry.executeTool() 执行工具
+                   → 结果作为 tool message 喂回模型 → 继续循环
+```
+
+**核心文件**：
+- `AssistantToolRegistry` — 工具注册中心，定义 15 个工具 + 执行分发
+- `MimoModelClient` — OpenAI 兼容 HTTP 客户端，支持 `tools` 参数
+- `AiChatServiceImpl` — 对话服务，管理 Function Calling 循环 + 对话历史
+
+**工具列表**（按角色动态分配）：
+
+| 工具名 | 角色 | 功能 |
+|--------|------|------|
+| `search_competitions` | all | 搜索赛事 |
+| `get_competition_detail` | all | 赛事详情 |
+| `get_my_registrations` | student | 我的报名 |
+| `get_my_submissions` | student | 我的成果 |
+| `get_my_award_proofs` | student | 我的获奖证明 |
+| `get_my_growth` | student | 成长雷达 |
+| `get_my_participations` | student | 活动参与 |
+| `get_my_messages` | student | 站内消息 |
+| `get_announcements` | student/admin | 最新公告 |
+| `search_students` | teacher | 搜索学生 |
+| `get_student_detail` | teacher | 学生详情 |
+| `get_pending_reviews` | teacher/admin | 待审核任务 |
+| `get_college_overview` | teacher | 学院总览 |
+| `get_award_proof_audit` | teacher | 获奖证明审核 |
+| `get_pending_drafts` | admin | 待审核草稿 |
+| `get_ai_task_stats` | admin | AI 任务统计 |
+| `get_user_stats` | admin | 用户统计 |
+
+**环境变量**：`AI_API_KEY` 必须配置，`AI_BASE_URL` / `AI_MODEL` 可选覆盖。
 
 ### 认证与权限
 
@@ -138,6 +184,11 @@ targetType: `registration` / `submission` / `participation`
 | 组队 | `GET /api/team/list` | 招募列表 |
 | 组队 | `POST /api/team/create` | 发布招募 |
 | 消息 | `GET /api/message/list` | 消息列表 |
+| AI 对话 | `POST /api/ai/chat` | AI 对话 (Function Calling) |
+| AI 对话 | `POST /api/ai/chat/stream` | AI 对话 (SSE) |
+| AI 对话 | `GET /api/ai/chat/conversations` | 会话列表 |
+| AI 对话 | `GET /api/ai/chat/conversations/{id}` | 会话详情 |
+| AI 对话 | `DELETE /api/ai/chat/conversations/{id}` | 删除会话 |
 
 ## 前端路由
 

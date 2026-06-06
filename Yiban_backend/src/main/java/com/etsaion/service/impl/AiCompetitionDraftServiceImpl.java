@@ -39,7 +39,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -84,6 +87,47 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
     public AiCompetitionDraftVO parseUrl(Long adminId, CompetitionDraftParseUrlDTO dto) {
         String text = documentContentService.readUrl(dto.getUrl());
         return parseText(adminId, "url", dto.getUrl(), dto.getUrl(), text);
+    }
+
+    @Override
+    @Transactional
+    public AiCompetitionDraftVO parseUrlWithProgress(Long adminId, CompetitionDraftParseUrlDTO dto,
+                                                     Consumer<Map<String, String>> onProgress) {
+        sendProgress(onProgress, "scraping", "正在抓取网页内容...");
+        String text = documentContentService.readUrl(dto.getUrl());
+
+        sendProgress(onProgress, "analyzing", "AI 正在分析赛事信息...");
+        String trimmedText = StrUtil.maxLength(text, 50000);
+        AiTask task = aiTaskService.createTask("competition_doc_parse", "url", dto.getUrl(),
+                SecureUtil.sha256(trimmedText), adminId, "admin", "competition_parse_v1");
+        aiTaskService.markRunning(task.getId());
+
+        AiModelResponseVO response = mimoModelClient.chatJson(
+                "你是高校赛事通知解析助手。只抽取文档中明确出现或可由上下文强推断的信息，必须返回严格 JSON。",
+                "请从以下赛事通知内容抽取赛事字段，返回 {\"competitions\":[...]}。\n\n" + trimmedText,
+                null);
+        if (!response.isSuccess()) {
+            aiTaskService.markFailed(task.getId(), response.getErrorMessage());
+            throw new BusinessException(response.getErrorMessage());
+        }
+
+        sendProgress(onProgress, "generating", "正在生成赛事草稿...");
+        JsonNode root = aiJsonSchemaService.validateCompetitionParseResult(response.getContent());
+        aiTaskService.markSucceeded(task.getId(), response.getRawResponse(), root.toString(), null);
+        JsonNode first = root.path("competitions").isArray() && root.path("competitions").size() > 0
+                ? root.path("competitions").get(0)
+                : root;
+        AiCompetitionDraft draft = createDraftFromJson(task.getId(), "url", dto.getUrl(), dto.getUrl(), first);
+        this.save(draft);
+        return toVO(draft);
+    }
+
+    private void sendProgress(Consumer<Map<String, String>> callback, String step, String message) {
+        if (callback == null) return;
+        Map<String, String> event = new HashMap<>();
+        event.put("step", step);
+        event.put("message", message);
+        callback.accept(event);
     }
 
     @Override
