@@ -6,18 +6,18 @@ import { smoothEase } from '../../lib/motion';
 import type { ChatImageAttachment } from './types';
 
 const thinkingVerbs = [
-  '烹饪中',
-  '酝酿中',
-  '构思中',
-  '编织中',
-  '炼丹中',
-  '推演中',
-  '发散中',
-  '聚焦中',
-  '灵感乍现',
-  '脑洞大开',
-  '高速运转',
-  '深度思考',
+  '匹配赛事中',
+  '梳理数据中',
+  '分析战绩中',
+  '评估能力中',
+  '生成推荐中',
+  '洞察趋势中',
+  '整合资源中',
+  '推演策略中',
+  '扫描赛事雷达',
+  '绘制成长图谱',
+  '挖掘潜力赛事',
+  '智能研判中',
 ];
 
 function ThinkingIndicator() {
