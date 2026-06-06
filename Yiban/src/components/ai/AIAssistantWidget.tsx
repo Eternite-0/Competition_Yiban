@@ -398,7 +398,7 @@ export default function AIAssistantWidget() {
             aria-modal="false"
             aria-label="AI 助手"
           >
-            <header className="relative flex h-12 shrink-0 items-center border-b border-slate-200/50 bg-white/80 px-3 backdrop-blur-md">
+            <header className="relative z-10 flex h-12 shrink-0 items-center border-b border-slate-200/50 bg-white/80 px-3 backdrop-blur-md">
               <button
                 type="button"
                 onClick={() => setConversationMenuOpen((value) => !value)}
@@ -412,27 +412,25 @@ export default function AIAssistantWidget() {
                   keyboard_arrow_down
                 </span>
               </button>
+            </header>
 
-              <AnimatePresence>
-                {conversationMenuOpen && (
-                  <>
-                    <motion.button
-                      type="button"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.12 }}
-                      className="fixed inset-0 z-10 cursor-default bg-transparent"
-                      onClick={() => setConversationMenuOpen(false)}
-                      aria-label="关闭对话菜单"
-                    />
-                    <motion.div
-                      initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                      transition={{ duration: 0.14, ease: [0.23, 1, 0.32, 1] }}
-                      className="absolute left-3 top-10 z-20 w-[260px] overflow-hidden rounded-[14px] border border-slate-200/70 bg-white py-1.5 shadow-[0_16px_48px_rgba(15,23,42,0.14)]"
-                    >
+            {/* Conversation dropdown - positioned outside header to escape overflow-hidden */}
+            <AnimatePresence>
+              {conversationMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                  transition={{ duration: 0.14, ease: [0.23, 1, 0.32, 1] }}
+                  className="absolute left-3 top-12 z-30 w-[260px] overflow-hidden rounded-[14px] border border-slate-200/70 bg-white py-1.5 shadow-[0_16px_48px_rgba(15,23,42,0.14)]"
+                >
+                  {/* Invisible backdrop to close menu on outside click */}
+                  <button
+                    type="button"
+                    className="fixed inset-0 z-[-1] cursor-default"
+                    onClick={() => setConversationMenuOpen(false)}
+                    aria-label="关闭对话菜单"
+                  />
                     <button
                       type="button"
                       onClick={handleReset}
@@ -479,11 +477,9 @@ export default function AIAssistantWidget() {
                         })
                       )}
                     </div>
-                  </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </header>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div className="relative min-h-0 flex-1 overflow-hidden">
               {customizing && typeof document !== 'undefined' && createPortal(
