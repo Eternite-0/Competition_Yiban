@@ -1,10 +1,19 @@
 import { toast } from 'sonner';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import { uploadToQiniu } from '../../api/qiniu';
+import {
+  formatConfidence,
+  normalizeConfidence,
+  recognizeCertificate,
+  submitAwardProof,
+  toDisplayList,
+  toFieldConfidenceItems,
+  type AwardProofVO,
+} from '../../api/awardProof';
 import PageHero from '../../components/PageHero';
 import { useStore } from '../../store/useStore';
 
@@ -27,6 +36,28 @@ interface SelectedFile {
   file: File;
   id: string;
 }
+
+interface AwardProofForm {
+  competitionName: string;
+  awardLevel: string;
+  awardTime: string;
+  organizer: string;
+  winnerName: string;
+  certificateNo: string;
+  sealText: string;
+}
+
+const EMPTY_AWARD_FORM: AwardProofForm = {
+  competitionName: '',
+  awardLevel: '',
+  awardTime: '',
+  organizer: '',
+  winnerName: '',
+  certificateNo: '',
+  sealText: '',
+};
+
+const LOW_CONFIDENCE_THRESHOLD = 0.75;
 
 function PortalDropdown({ anchorRef, open, onClose, children }: {
   anchorRef: React.RefObject<HTMLElement | null>;
@@ -75,6 +106,38 @@ function PortalDropdown({ anchorRef, open, onClose, children }: {
   );
 }
 
+function AwardField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  required = false,
+  type = 'text',
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+  type?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="block text-[12px] font-medium text-ink-muted-80 mb-1.5">
+        {required && <span className="text-error mr-1">*</span>}
+        {label}
+      </span>
+      <input
+        className="input-glass h-10 text-[13px]"
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </label>
+  );
+}
+
 export default function AchievementUpload() {
   const navigate = useNavigate();
 
@@ -98,6 +161,13 @@ export default function AchievementUpload() {
   // Files
   const [files, setFiles] = useState<SelectedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+
+  // AI certificate recognition
+  const [awardProof, setAwardProof] = useState<AwardProofVO | null>(null);
+  const [awardForm, setAwardForm] = useState<AwardProofForm>(EMPTY_AWARD_FORM);
+  const [recognizing, setRecognizing] = useState(false);
+  const [recognizeProgress, setRecognizeProgress] = useState(0);
+  const [isCertDragging, setIsCertDragging] = useState(false);
 
   // Submit
   const [submitting, setSubmitting] = useState(false);
@@ -221,6 +291,85 @@ export default function AchievementUpload() {
     if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
   };
 
+  const updateAwardField = (field: keyof AwardProofForm, value: string) => {
+    setAwardForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const buildAwardForm = (proof: AwardProofVO): AwardProofForm => ({
+    competitionName: proof.competitionName || selectedComp?.name || '',
+    awardLevel: proof.awardLevel || '',
+    awardTime: proof.awardTime || '',
+    organizer: proof.organizer || '',
+    winnerName: proof.winnerName || currentUser?.name || '',
+    certificateNo: proof.certificateNo || '',
+    sealText: proof.sealText || '',
+  });
+
+  const matchRecognizedCompetition = (competitionName?: string) => {
+    if (!competitionName || selectedComp) return;
+    const normalized = competitionName.trim();
+    const matched = competitions.find((item) => {
+      const name = item.name?.trim() || '';
+      if (!name) return false;
+      return name === normalized || name.includes(normalized) || normalized.includes(name);
+    });
+    if (matched) setSelectedComp(matched);
+  };
+
+  const handleCertificateFile = async (file: File) => {
+    const maxSize = 50 * 1024 * 1024;
+    const allowedExt = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'bmp'];
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+    if (!allowedExt.includes(ext)) {
+      toast.error('证书识别支持 PDF、JPG、PNG、WEBP 等图片文件');
+      return;
+    }
+    if (file.size > maxSize) {
+      toast.error(`文件大小不能超过50MB（当前: ${(file.size / (1024 * 1024)).toFixed(1)}MB）`);
+      return;
+    }
+
+    try {
+      setRecognizing(true);
+      setRecognizeProgress(0);
+      setAwardProof(null);
+      const uploadResult = await uploadToQiniu(file, (percent) => {
+        setRecognizeProgress(Math.min(60, Math.round(percent * 0.6)));
+      });
+      setRecognizeProgress(72);
+      const recognized = await recognizeCertificate({
+        fileName: file.name,
+        fileUrl: uploadResult.url,
+        fileHash: uploadResult.hash,
+      });
+      const proof: AwardProofVO = {
+        ...recognized,
+        fileName: recognized.fileName || file.name,
+        fileUrl: recognized.fileUrl || uploadResult.url,
+        fileHash: recognized.fileHash || uploadResult.hash,
+      };
+      const nextForm = buildAwardForm(proof);
+      setAwardProof(proof);
+      setAwardForm(nextForm);
+      matchRecognizedCompetition(nextForm.competitionName);
+      setRecognizeProgress(100);
+      toast.success('证书识别完成，请核对后提交');
+    } catch (err: any) {
+      console.error('Certificate recognition failed', err);
+      toast.error(err.message || '证书识别失败，请稍后重试');
+    } finally {
+      setRecognizing(false);
+      window.setTimeout(() => setRecognizeProgress(0), 700);
+    }
+  };
+
+  const handleCertificateDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsCertDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleCertificateFile(file);
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -231,8 +380,84 @@ export default function AchievementUpload() {
     ? competitions.filter(c => c.name.includes(compSearch) || c.level.includes(compSearch) || c.category.includes(compSearch))
     : competitions;
 
+  const confidenceItems = useMemo(
+    () => toFieldConfidenceItems(awardProof?.fieldConfidenceJson),
+    [awardProof?.fieldConfidenceJson]
+  );
+  const lowConfidenceItems = confidenceItems.filter(item => item.confidence < LOW_CONFIDENCE_THRESHOLD);
+  const evidenceItems = useMemo(
+    () => toDisplayList(awardProof?.evidenceJson),
+    [awardProof?.evidenceJson]
+  );
+  const riskItems = useMemo(
+    () => toDisplayList(awardProof?.riskFlagsJson),
+    [awardProof?.riskFlagsJson]
+  );
+  const overallConfidence = normalizeConfidence(awardProof?.confidence);
+  const confidenceChipClass =
+    overallConfidence !== null && overallConfidence < LOW_CONFIDENCE_THRESHOLD
+      ? 'chip chip-warning'
+      : 'chip chip-success';
+  const canSubmitAwardProof = Boolean(
+    awardProof?.fileUrl &&
+    awardForm.competitionName.trim() &&
+    awardForm.awardLevel.trim() &&
+    selectedMembers.length > 0
+  );
+  const canSubmitLegacy = Boolean(selectedComp && files.length > 0 && selectedMembers.length > 0);
+  const submitChecks = awardProof
+    ? [
+        { done: true, label: '上传并识别证书' },
+        { done: !!awardForm.competitionName.trim(), label: '确认比赛名称' },
+        { done: !!awardForm.awardLevel.trim(), label: '确认获奖等级' },
+        { done: selectedMembers.length > 0, label: `关联成员 (${selectedMembers.length}人)` },
+      ]
+    : [
+        { done: !!selectedComp, label: '选择关联赛事' },
+        { done: selectedMembers.length > 0, label: `添加关联成员 (${selectedMembers.length}人)` },
+        { done: files.length > 0, label: `上传附件 (${files.length}个)` },
+      ];
+
   // Submit
   const handleSubmit = async () => {
+    if (awardProof) {
+      if (!canSubmitAwardProof) {
+        toast.error('请先核对并补全证书识别字段');
+        return;
+      }
+
+      try {
+        setSubmitting(true);
+        await submitAwardProof({
+          aiTaskId: awardProof.aiTaskId,
+          competitionId: selectedComp?.id,
+          competitionName: awardForm.competitionName.trim(),
+          awardLevel: awardForm.awardLevel.trim(),
+          awardTime: awardForm.awardTime || undefined,
+          organizer: awardForm.organizer.trim() || undefined,
+          winnerName: awardForm.winnerName.trim() || undefined,
+          certificateNo: awardForm.certificateNo.trim() || undefined,
+          sealText: awardForm.sealText.trim() || undefined,
+          fileName: awardProof.fileName || '获奖证书',
+          fileUrl: awardProof.fileUrl || '',
+          fileHash: awardProof.fileHash,
+          confidence: awardProof.confidence,
+          fieldConfidenceJson: awardProof.fieldConfidenceJson,
+          evidenceJson: awardProof.evidenceJson,
+          riskFlagsJson: awardProof.riskFlagsJson,
+          studentIds: selectedMembers.map(m => m.id),
+        });
+        toast.success('获奖证明已提交审核');
+        navigate('/student/registrations');
+      } catch (err: any) {
+        console.error('Award proof submit failed', err);
+        toast.error(err.message || '提交失败，请重试');
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     if (!selectedComp) {
       toast.error('请选择关联赛事');
       return;
@@ -294,7 +519,7 @@ export default function AchievementUpload() {
       {/* Header */}
       <PageHero
         title="上传获奖凭证"
-        description="为团队成员一起上传获奖凭证，队长上传后其他成员无需重复提交。"
+        description="上传证书后由 AI 自动识别关键信息，核对修正后可为团队成员一起提交获奖证明审核。"
         prefix={(
           <nav className="flex items-center gap-1 text-[13px] text-ink-muted-48 mb-1">
             <button onClick={() => navigate(-1)} className="hover:text-ink transition">返回</button>
@@ -307,7 +532,7 @@ export default function AchievementUpload() {
             <button className="btn-secondary" onClick={() => navigate(-1)}>取消</button>
             <button
               onClick={handleSubmit}
-              disabled={!selectedComp || files.length === 0 || selectedMembers.length === 0 || submitting}
+              disabled={submitting || (!canSubmitAwardProof && !canSubmitLegacy)}
               className="btn-primary"
             >
               {submitting && <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>}
@@ -367,7 +592,12 @@ export default function AchievementUpload() {
               {filteredCompetitions.map(c => (
                 <button
                   key={c.id}
-                  onClick={() => { setSelectedComp(c); setShowCompDropdown(false); setCompSearch(''); }}
+                  onClick={() => {
+                    setSelectedComp(c);
+                    setAwardForm(prev => ({ ...prev, competitionName: c.name }));
+                    setShowCompDropdown(false);
+                    setCompSearch('');
+                  }}
                   className="w-full text-left px-4 py-3 hover:bg-primary/5 transition flex items-center justify-between border-b border-hairline last:border-0"
                 >
                   <div>
@@ -378,6 +608,196 @@ export default function AchievementUpload() {
                 </button>
               ))}
             </PortalDropdown>
+          </section>
+
+          {/* AI certificate recognition */}
+          <section className="glass p-xl">
+            <div className="flex items-center justify-between mb-md pb-md border-b border-hairline">
+              <h3 className="text-[19px] font-semibold tracking-tight text-ink flex items-center gap-2">
+                <span className="material-symbols-outlined text-[21px] text-primary">document_scanner</span>
+                AI 识别证书
+              </h3>
+              {awardProof ? (
+                <span className={confidenceChipClass}>置信度 {formatConfidence(awardProof.confidence)}</span>
+              ) : (
+                <span className="chip">推荐先上传证书</span>
+              )}
+            </div>
+
+            <div
+              className={`rounded-md border-2 border-dashed flex flex-col items-center justify-center text-center transition-all cursor-pointer group ${
+                awardProof ? 'py-5' : 'py-9'
+              } ${
+                isCertDragging
+                  ? 'border-primary bg-primary/5'
+                  : 'border-hairline bg-canvas hover:border-primary/50 hover:bg-primary/3'
+              }`}
+              onDrop={handleCertificateDrop}
+              onDragOver={(e) => { e.preventDefault(); setIsCertDragging(true); }}
+              onDragLeave={() => setIsCertDragging(false)}
+              onClick={() => document.getElementById('certificate-file-input')?.click()}
+            >
+              <div className={`w-12 h-12 rounded-full grid place-items-center mb-2 transition ${
+                isCertDragging ? 'bg-primary/15' : 'bg-canvas-parchment group-hover:bg-primary/10'
+              }`}>
+                <span className={`material-symbols-outlined text-[24px] ${
+                  isCertDragging ? 'text-primary' : 'text-ink-muted-48 group-hover:text-primary'
+                }`}>{recognizing ? 'progress_activity' : 'upload_file'}</span>
+              </div>
+              <p className="text-[14px] font-semibold text-ink mb-1">
+                {awardProof ? awardProof.fileName || '已上传证书' : '点击或拖拽证书到这里'}
+              </p>
+              <p className="text-[12px] text-ink-muted-48">
+                支持 PDF、JPG、PNG、WEBP · 上传后自动识别比赛、奖项、姓名、编号和印章
+              </p>
+              <input
+                id="certificate-file-input"
+                type="file"
+                className="hidden"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.bmp"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleCertificateFile(file);
+                  e.target.value = '';
+                }}
+              />
+            </div>
+
+            {(recognizing || recognizeProgress > 0) && (
+              <div className="mt-3">
+                <div className="flex justify-between text-[11px] text-ink-muted-48 mb-1">
+                  <span>{recognizing ? '正在上传并识别证书…' : '识别完成'}</span>
+                  <span className="tabular-nums">{recognizeProgress}%</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-primary/8 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all duration-300"
+                    style={{ width: `${recognizeProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {awardProof && (
+              <div className="mt-lg flex flex-col gap-lg">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-[15px] font-semibold text-ink flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px] text-primary">fact_check</span>
+                      核对识别字段
+                    </h4>
+                    <span className="text-[12px] text-ink-muted-48">可直接编辑后提交审核</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <AwardField
+                      label="比赛名称"
+                      required
+                      value={awardForm.competitionName}
+                      onChange={(value) => updateAwardField('competitionName', value)}
+                      placeholder="请输入比赛名称"
+                    />
+                    <AwardField
+                      label="获奖等级"
+                      required
+                      value={awardForm.awardLevel}
+                      onChange={(value) => updateAwardField('awardLevel', value)}
+                      placeholder="如 国家级一等奖"
+                    />
+                    <AwardField
+                      label="获奖时间"
+                      value={awardForm.awardTime}
+                      onChange={(value) => updateAwardField('awardTime', value)}
+                      placeholder="如 2026-05-01 或 2026年5月"
+                    />
+                    <AwardField
+                      label="主办单位"
+                      value={awardForm.organizer}
+                      onChange={(value) => updateAwardField('organizer', value)}
+                      placeholder="请输入主办单位"
+                    />
+                    <AwardField
+                      label="获奖人"
+                      value={awardForm.winnerName}
+                      onChange={(value) => updateAwardField('winnerName', value)}
+                      placeholder="请输入证书上的获奖人"
+                    />
+                    <AwardField
+                      label="证书编号"
+                      value={awardForm.certificateNo}
+                      onChange={(value) => updateAwardField('certificateNo', value)}
+                      placeholder="没有编号可留空"
+                    />
+                    <div className="md:col-span-2">
+                      <AwardField
+                        label="印章文字"
+                        value={awardForm.sealText}
+                        onChange={(value) => updateAwardField('sealText', value)}
+                        placeholder="AI 识别到的印章或落款文字"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {(lowConfidenceItems.length > 0 || riskItems.length > 0) && (
+                  <div className="rounded-md border border-error/20 bg-error/5 p-md">
+                    <h4 className="text-[14px] font-semibold text-error mb-2 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[18px]">warning</span>
+                      需要重点核对
+                    </h4>
+                    <div className="flex flex-col gap-2">
+                      {lowConfidenceItems.length > 0 && (
+                        <p className="text-[12px] text-ink-muted-80 leading-relaxed">
+                          低置信度字段：{lowConfidenceItems.map(item => `${item.label} ${formatConfidence(item.confidence)}`).join('、')}
+                        </p>
+                      )}
+                      {riskItems.map((item, index) => (
+                        <p key={`${item}-${index}`} className="text-[12px] text-ink-muted-80 leading-relaxed flex items-start gap-1.5">
+                          <span className="material-symbols-outlined text-[14px] text-error mt-0.5 shrink-0">report</span>
+                          <span>{item}</span>
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {confidenceItems.length > 0 && (
+                  <div>
+                    <h4 className="text-[14px] font-semibold text-ink mb-2">字段置信度</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {confidenceItems.map(item => (
+                        <div key={item.field} className="rounded-md border border-hairline bg-canvas p-3">
+                          <div className="flex items-center justify-between text-[12px] mb-2">
+                            <span className="font-medium text-ink">{item.label}</span>
+                            <span className={item.confidence < LOW_CONFIDENCE_THRESHOLD ? 'text-error' : 'text-primary'}>
+                              {formatConfidence(item.confidence)}
+                            </span>
+                          </div>
+                          <div className="h-1.5 rounded-full bg-primary/8 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${item.confidence < LOW_CONFIDENCE_THRESHOLD ? 'bg-error' : 'bg-primary'}`}
+                              style={{ width: `${Math.round(item.confidence * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {evidenceItems.length > 0 && (
+                  <div>
+                    <h4 className="text-[14px] font-semibold text-ink mb-2">识别证据</h4>
+                    <div className="flex flex-col gap-2">
+                      {evidenceItems.map((item, index) => (
+                        <div key={`${item}-${index}`} className="rounded-md border border-hairline bg-canvas p-3 text-[12px] text-ink-muted-80 leading-relaxed">
+                          {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
 
           {/* Team members */}
@@ -630,11 +1050,7 @@ export default function AchievementUpload() {
               提交检查
             </h3>
             <ul className="flex flex-col gap-3 p-4 bg-slate-50 rounded-xl">
-              {[
-                { done: !!selectedComp, label: '选择关联赛事' },
-                { done: selectedMembers.length > 0, label: `添加关联成员 (${selectedMembers.length}人)` },
-                { done: files.length > 0, label: `上传附件 (${files.length}个)` },
-              ].map(it => (
+              {submitChecks.map(it => (
                 <li key={it.label} className={`flex items-center gap-2 text-sm ${it.done ? 'text-green-700' : 'text-slate-400'}`}>
                   <span className={it.done ? 'text-green-500' : 'text-slate-400'}>
                     {it.done ? '✓' : '○'}

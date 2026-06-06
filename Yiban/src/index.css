@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 @import "./styles/design-tokens.css";
 
 @layer base {
@@ -276,6 +277,136 @@ h1, h2, h3, h4, h5, h6 {
   .chip-warning { background: var(--color-badge-review-bg); color: var(--color-badge-review-text); }
   .chip-error { background: var(--color-danger-bg); color: var(--color-error); }
 
+  .ai-avatar-stage {
+    position: relative;
+    width: 82px;
+    height: 82px;
+    transform-origin: center;
+    animation: ai-avatar-breathe 4.8s ease-in-out infinite;
+  }
+
+  .ai-avatar-preview {
+    width: 112px;
+    height: 112px;
+  }
+
+  .ai-avatar-stage[data-motion="active"] {
+    animation-duration: 2.8s;
+  }
+
+  .ai-avatar-stage[data-motion="still"] {
+    animation: none;
+  }
+
+  .ai-avatar-shadow {
+    position: absolute;
+    inset: 14px 9px 4px 11px;
+    border-radius: 48% 52% 45% 55% / 54% 44% 56% 46%;
+    background: rgba(15, 23, 42, 0.18);
+    filter: blur(7px);
+    transform: translateY(8px);
+  }
+
+  .ai-avatar-core {
+    position: absolute;
+    inset: 10px 8px 5px 8px;
+    border: 2px solid #222222;
+    border-radius: 48% 52% 45% 55% / 54% 44% 56% 46%;
+    background: #f7f7f5;
+    color: #20201f;
+    box-shadow:
+      inset 7px 8px 0 rgba(255, 255, 255, 0.72),
+      inset -8px -10px 0 rgba(15, 23, 42, 0.06);
+    transform: rotate(-3deg);
+  }
+
+  .ai-avatar-stage[data-style="blue"] .ai-avatar-core {
+    background: #eaf3ff;
+    border-color: #1d4f91;
+  }
+
+  .ai-avatar-stage[data-style="warm"] .ai-avatar-core {
+    background: #fff1e9;
+    border-color: #9a3f24;
+  }
+
+  .ai-avatar-eye {
+    position: absolute;
+    top: 35%;
+    width: 7px;
+    height: 7px;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .ai-avatar-eye-left { left: 28%; }
+  .ai-avatar-eye-right { right: 28%; }
+
+  .ai-avatar-nose {
+    position: absolute;
+    left: 50%;
+    top: 39%;
+    width: 3px;
+    height: 25%;
+    border-radius: 4px;
+    background: currentColor;
+    transform: translateX(-50%) rotate(9deg);
+    transform-origin: top;
+  }
+
+  .ai-avatar-mouth {
+    position: absolute;
+    left: 50%;
+    top: 68%;
+    width: 19%;
+    height: 8%;
+    border-bottom: 2px solid currentColor;
+    border-radius: 0 0 50% 50%;
+    transform: translateX(-45%) rotate(-5deg);
+  }
+
+  .ai-avatar-charm {
+    position: absolute;
+    right: 4px;
+    top: 0;
+    display: grid !important;
+    width: 31%;
+    height: 31%;
+    place-items: center;
+    border: 2px solid #222;
+    border-radius: 45% 55% 48% 52%;
+    background: #fff;
+    color: #222;
+    font-size: 16px !important;
+    box-shadow: 0 3px 0 rgba(15, 23, 42, 0.12);
+    transform: rotate(9deg);
+    animation: ai-spark-drift 2.8s ease-in-out infinite;
+  }
+
+  .ai-avatar-stage[data-style="blue"] .ai-avatar-charm {
+    border-color: #1d4f91;
+    color: #1d4f91;
+  }
+
+  .ai-avatar-stage[data-style="warm"] .ai-avatar-charm {
+    border-color: #9a3f24;
+    color: #9a3f24;
+  }
+
+  .ai-avatar-stage[data-motion="still"] .ai-avatar-charm {
+    animation: none;
+  }
+
+  .ai-model-mark {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background:
+      conic-gradient(from 0deg, #ff7a45, #f2b04d, #ff7a45);
+    animation: ai-avatar-orbit 1.9s linear infinite;
+  }
+
   .page-hero {
     position: relative;
     overflow: hidden;
@@ -333,6 +464,20 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 16px !important;
   }
 
+}
+
+@keyframes ai-avatar-breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-3px) scale(1.025); }
+}
+
+@keyframes ai-avatar-orbit {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ai-spark-drift {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.85; }
+  50% { transform: translateY(4px) rotate(12deg); opacity: 1; }
 }
 
 @layer utilities {
@@ -504,4 +649,45 @@ h1, h2, h3, h4, h5, h6 {
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* The AI workspace intentionally stays paper-white, independent of the app theme. */
+.ai-assistant-launcher,
+.dark .ai-assistant-launcher,
+.ai-assistant-panel,
+.dark .ai-assistant-panel {
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.dark .ai-assistant-panel header,
+.dark .ai-assistant-panel form {
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.dark .ai-assistant-panel .bg-white {
+  background-color: #ffffff !important;
+}
+
+.dark .ai-assistant-panel .bg-slate-50,
+.dark .ai-assistant-panel .bg-slate-100 {
+  background-color: #f8fafc !important;
+}
+
+.dark .ai-assistant-panel .text-slate-900,
+.dark .ai-assistant-panel .text-slate-800 {
+  color: #0f172a !important;
+}
+
+.dark .ai-assistant-panel .text-slate-700,
+.dark .ai-assistant-panel .text-slate-600 {
+  color: #475569 !important;
+}
+
+.dark .ai-assistant-panel .text-slate-500,
+.dark .ai-assistant-panel .text-slate-400 {
+  color: #64748b !important;
 }

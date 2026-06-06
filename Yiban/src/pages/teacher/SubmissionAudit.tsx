@@ -3,6 +3,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
 import { getSignedDownloadUrl } from '../../api/qiniu';
+import {
+  formatConfidence,
+  getAwardProof,
+  listAwardProofAudit,
+  normalizeConfidence,
+  reviewAwardProof,
+  toDisplayList,
+  toFieldConfidenceItems,
+  type AwardProofVO,
+} from '../../api/awardProof';
 import PageHero from '../../components/PageHero';
 import { useStore } from '../../store/useStore';
 import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
@@ -17,11 +27,25 @@ interface Submission {
   uploadDate: string;
   status: string;
   reviewNote?: string;
-  source: 'registration' | 'submission' | 'task'; // to pick the right audit API
+  source: 'registration' | 'submission' | 'task' | 'awardProof'; // to pick the right audit API
   targetType?: string;
   targetId?: number | string;
   teamMembers?: { studentId: number; studentName: string; studentNo: string }[];
+  awardProof?: AwardProofVO;
+  awardLevel?: string;
+  awardTime?: string;
+  organizer?: string;
+  winnerName?: string;
+  certificateNo?: string;
+  sealText?: string;
+  confidence?: number;
+  fieldConfidenceJson?: unknown;
+  evidenceJson?: unknown;
+  riskFlagsJson?: unknown;
+  detailLoaded?: boolean;
 }
+
+const LOW_CONFIDENCE_THRESHOLD = 0.75;
 
 function getFileType(fileName: string): 'image' | 'pdf' | 'word' | 'other' {
   const ext = fileName.split('.').pop()?.toLowerCase() ?? '';
@@ -29,6 +53,56 @@ function getFileType(fileName: string): 'image' | 'pdf' | 'word' | 'other' {
   if (ext === 'pdf') return 'pdf';
   if (['doc', 'docx'].includes(ext)) return 'word';
   return 'other';
+}
+
+function getAwardProofRecords(data: AwardProofVO[] | { records?: AwardProofVO[] } | null): AwardProofVO[] {
+  if (Array.isArray(data)) return data;
+  return data?.records ?? [];
+}
+
+function mapAwardProof(item: AwardProofVO, detailLoaded = false): Submission {
+  const students = item.students ?? item.studentList ?? [];
+  const teamMembers = students.map((student, index) => {
+    const rawId = student.studentId ?? student.id ?? index;
+    return {
+      studentId: Number(rawId) || index,
+      studentName: student.studentName ?? student.realName ?? '未知学生',
+      studentNo: student.studentNo ?? student.username ?? '',
+    };
+  });
+  const studentName =
+    item.submitterName ??
+    item.studentName ??
+    item.winnerName ??
+    teamMembers[0]?.studentName ??
+    '未知学生';
+
+  return {
+    id: `award-${item.id}`,
+    targetType: 'award_proof',
+    targetId: item.id,
+    studentName,
+    competitionTitle: item.competitionName ?? '获奖证明',
+    fileName: item.fileName ?? '获奖证书',
+    fileUrl: item.fileUrl ?? '',
+    uploadDate: item.createTime ?? item.submitTime ?? item.updateTime ?? '',
+    status: '待审核',
+    reviewNote: item.reviewNote,
+    source: 'awardProof',
+    teamMembers,
+    awardProof: item,
+    awardLevel: item.awardLevel,
+    awardTime: item.awardTime,
+    organizer: item.organizer,
+    winnerName: item.winnerName,
+    certificateNo: item.certificateNo,
+    sealText: item.sealText,
+    confidence: item.confidence,
+    fieldConfidenceJson: item.fieldConfidenceJson,
+    evidenceJson: item.evidenceJson,
+    riskFlagsJson: item.riskFlagsJson,
+    detailLoaded,
+  };
 }
 
 function FilePreview({ fileUrl, fileName }: { fileUrl: string; fileName: string }) {
@@ -199,23 +273,25 @@ export default function SubmissionAudit() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterTab, setFilterTab] = useState<'全部' | '待审核'>('全部');
+  const [filterTab, setFilterTab] = useState<'全部' | '成果材料' | '获奖证明'>('全部');
   const [previewFile, setPreviewFile] = useState<{ fileName: string; fileUrl: string } | null>(null);
   const [showHistory, setShowHistory] = useState(false);
 
   const fetchPending = async () => {
     setLoading(true);
     try {
-      // Fetch both sources in parallel
-      const [taskData, regData, subData] = await Promise.all([
+      // Fetch all audit sources in parallel
+      const [taskData, regData, subData, awardData] = await Promise.all([
         apiClient.get(`${workbenchBase}/tasks`, { params: { current: 1, size: 100, status: 'pending' } }).catch(() => null),
         apiClient.get('/registration/pending', { params: { current: 1, size: 50 } }).catch(() => null),
         apiClient.get('/submission/list', { params: { status: '待审核', current: 1, size: 50 } }).catch(() => null),
+        listAwardProofAudit('pending').catch(() => null),
       ]);
 
       const taskRecords: any[] = Array.isArray(taskData) ? taskData : taskData?.records ?? [];
       const regRecords: any[] = Array.isArray(regData) ? regData : regData?.records ?? [];
       const subRecords: any[] = Array.isArray(subData) ? subData : subData?.records ?? [];
+      const awardRecords = getAwardProofRecords(awardData);
 
       const taskTargets = new Set(taskRecords.map((item: any) => `${item.targetType}-${item.targetId}`));
 
@@ -274,7 +350,9 @@ export default function SubmissionAudit() {
           teamMembers: item.teamMembers,
         }));
 
-      setPendingSubmissions([...fromTasks, ...fromRegs, ...fromSubs]);
+      const fromAwards = awardRecords.map(item => mapAwardProof(item, false));
+
+      setPendingSubmissions([...fromTasks, ...fromRegs, ...fromSubs, ...fromAwards]);
     } catch (error: any) {
       console.error('Failed to fetch pending submissions:', error);
       toast.error(error?.message || '加载待审核列表失败');
@@ -289,20 +367,45 @@ export default function SubmissionAudit() {
 
   const filteredPending = useMemo(() => {
     let list = pendingSubmissions;
-    if (filterTab === '待审核') list = pendingSubmissions.filter(s => s.status === '待审核');
+    if (filterTab === '成果材料') list = pendingSubmissions.filter(s => s.source !== 'awardProof');
+    if (filterTab === '获奖证明') list = pendingSubmissions.filter(s => s.source === 'awardProof');
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       list = list.filter(
         (s) =>
           (s.studentName && s.studentName.toLowerCase().includes(q)) ||
           (s.competitionTitle && s.competitionTitle.toLowerCase().includes(q)) ||
-          (s.fileName && s.fileName.toLowerCase().includes(q))
+          (s.fileName && s.fileName.toLowerCase().includes(q)) ||
+          (s.winnerName && s.winnerName.toLowerCase().includes(q)) ||
+          (s.awardLevel && s.awardLevel.toLowerCase().includes(q))
       );
     }
     return list;
   }, [pendingSubmissions, filterTab, searchQuery]);
 
   const selected = selectedId ? pendingSubmissions.find((s) => s.id === selectedId) : null;
+
+  useEffect(() => {
+    if (!selected || selected.source !== 'awardProof' || selected.detailLoaded || !selected.targetId) return;
+    let cancelled = false;
+    getAwardProof(selected.targetId)
+      .then((detail) => {
+        if (cancelled) return;
+        const mapped = mapAwardProof(detail, true);
+        setPendingSubmissions(prev => prev.map(item => (
+          item.id === selected.id
+            ? { ...item, ...mapped, id: item.id, status: item.status, source: 'awardProof' as const }
+            : item
+        )));
+      })
+      .catch((error) => {
+        console.error('Failed to fetch award proof detail:', error);
+      });
+    return () => { cancelled = true; };
+  }, [selected?.id, selected?.source, selected?.targetId, selected?.detailLoaded]);
+
+  const materialCount = pendingSubmissions.filter(item => item.source !== 'awardProof').length;
+  const awardProofCount = pendingSubmissions.filter(item => item.source === 'awardProof').length;
 
   const handleAudit = async (approve: boolean, reviewNote: string) => {
     if (!selected) return;
@@ -321,6 +424,13 @@ export default function SubmissionAudit() {
           action: approve ? 'approve' : (reviewNote.startsWith('【退回补充】') ? 'return' : 'reject'),
           reviewNote: reviewNote.replace('【退回补充】', ''),
         });
+      } else if (selected.source === 'awardProof') {
+        const realId = selected.targetId ?? selected.id.replace(/^award-/, '');
+        await reviewAwardProof({
+          id: realId,
+          action: approve ? 'approve' : (reviewNote.startsWith('【退回补充】') ? 'return' : 'reject'),
+          reviewNote: reviewNote.replace('【退回补充】', ''),
+        });
       } else {
         // Standalone submission: use submission/review
         const realId = selected.id.replace(/^sub-/, '');
@@ -334,7 +444,7 @@ export default function SubmissionAudit() {
       setPendingSubmissions(prev => prev.filter(s => s.id !== selected.id));
       setSelectedId(null);
       setNote('');
-      toast.success(approve ? '审核通过' : '已驳回');
+      toast.success(approve ? '审核通过' : (isReturn ? '已退回补充' : '已驳回'));
     } catch (error: any) {
       console.error('Failed to audit submission:', error);
       toast.error(error?.message || '操作失败，请重试');
@@ -369,7 +479,7 @@ export default function SubmissionAudit() {
       <PageHero
         eyebrow="Review"
         title="成果审核工作台"
-        description="统一处理报名材料，保持审核口径一致并快速反馈结果。"
+        description="统一处理报名材料、成果附件与 AI 获奖证明，保持审核口径一致并快速反馈结果。"
       />
 
       {/* Three-column */}
@@ -388,17 +498,21 @@ export default function SubmissionAudit() {
               />
             </div>
             <div className="flex gap-1 p-0.5 bg-primary/6 rounded-pill w-fit">
-              {(['全部', '待审核'] as const).map(tab => (
+              {([
+                { key: '全部', label: `全部 ${pendingSubmissions.length}` },
+                { key: '成果材料', label: `成果 ${materialCount}` },
+                { key: '获奖证明', label: `获奖证明 ${awardProofCount}` },
+              ] as const).map(tab => (
                 <button
-                  key={tab}
-                  onClick={() => setFilterTab(tab)}
+                  key={tab.key}
+                  onClick={() => setFilterTab(tab.key)}
                   className={`px-3 py-1 rounded-pill text-[12px] transition-all ${
-                    filterTab === tab
+                    filterTab === tab.key
                       ? 'bg-canvas text-ink font-medium'
                       : 'text-ink-muted-80 hover:text-ink'
                   }`}
                 >
-                  {tab}
+                  {tab.label}
                 </button>
               ))}
             </div>
@@ -438,10 +552,15 @@ export default function SubmissionAudit() {
                   )}
                   <div className="flex justify-between items-start mb-1.5">
                     <span className="text-[14px] font-semibold text-ink">{s.studentName || '未知学生'}</span>
-                    <span className="chip chip-warning">待审核</span>
+                    <span className={s.source === 'awardProof' ? 'chip chip-success' : 'chip chip-warning'}>
+                      {s.source === 'awardProof' ? '获奖证明' : '待审核'}
+                    </span>
                   </div>
                   <p className="text-[12px] text-ink-muted-80 line-clamp-2 leading-snug">{s.competitionTitle || '未知赛事'}</p>
-                  <p className="text-[11px] text-ink-muted-48 mt-1">{s.fileName || '无文件'} · {s.uploadDate || '—'}</p>
+                  <p className="text-[11px] text-ink-muted-48 mt-1">
+                    {s.source === 'awardProof' && s.awardLevel ? `${s.awardLevel} · ` : ''}
+                    {s.fileName || '无文件'} · {s.uploadDate || '—'}
+                  </p>
                 </motion.button>
               ))}
               </motion.div>
@@ -467,6 +586,13 @@ export default function SubmissionAudit() {
                   <DetailItem label="学生姓名" value={selected.studentName} />
                   <DetailItem label="赛事名称" value={selected.competitionTitle} />
                   <DetailItem label="上传时间" value={selected.uploadDate} />
+                  {selected.source === 'awardProof' && (
+                    <>
+                      <DetailItem label="证明类型" value="AI 获奖证明" />
+                      <DetailItem label="获奖等级" value={selected.awardLevel || '—'} />
+                      <DetailItem label="获奖时间" value={selected.awardTime || '—'} />
+                    </>
+                  )}
                   {selected.source === 'submission' && (
                     <DetailItem label="提交方式" value="队长代传" />
                   )}
@@ -492,12 +618,16 @@ export default function SubmissionAudit() {
                 </div>
               </div>
 
+              {selected.source === 'awardProof' && (
+                <AwardProofInsightPanel submission={selected} />
+              )}
+
               {/* Attachment preview */}
               <div className="glass p-lg">
                 <div className="flex items-center justify-between pb-3 mb-md border-b border-hairline">
                   <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px] text-primary">attach_file</span>
-                    附件材料
+                    {selected.source === 'awardProof' ? '证书原图' : '附件材料'}
                   </h3>
                   {selected.fileUrl && (
                     <button
@@ -660,6 +790,141 @@ function DetailItem({ label, value }: { label: string; value: string }) {
     <div>
       <p className="text-[12px] text-ink-muted-48 mb-0.5">{label}</p>
       <p className="text-[13px] text-ink font-medium">{value}</p>
+    </div>
+  );
+}
+
+function AwardProofInsightPanel({ submission }: { submission: Submission }) {
+  const confidenceItems = toFieldConfidenceItems(submission.fieldConfidenceJson);
+  const evidenceItems = toDisplayList(submission.evidenceJson);
+  const riskItems = toDisplayList(submission.riskFlagsJson);
+  const overallConfidence = normalizeConfidence(submission.confidence);
+  const confidenceClass =
+    overallConfidence !== null && overallConfidence < LOW_CONFIDENCE_THRESHOLD
+      ? 'chip chip-warning'
+      : 'chip chip-success';
+  const rows = [
+    { field: 'competitionName', label: '比赛名称', value: submission.competitionTitle },
+    { field: 'awardLevel', label: '获奖等级', value: submission.awardLevel },
+    { field: 'awardTime', label: '获奖时间', value: submission.awardTime },
+    { field: 'organizer', label: '主办单位', value: submission.organizer },
+    { field: 'winnerName', label: '获奖人', value: submission.winnerName },
+    { field: 'certificateNo', label: '证书编号', value: submission.certificateNo },
+    { field: 'sealText', label: '印章文字', value: submission.sealText },
+  ];
+  const lowConfidenceItems = confidenceItems.filter(item => item.confidence < LOW_CONFIDENCE_THRESHOLD);
+
+  const getConfidence = (field: string, label: string) =>
+    confidenceItems.find(item => item.field === field || item.label === label);
+
+  return (
+    <div className="glass p-lg">
+      <div className="flex items-center justify-between pb-3 mb-md border-b border-hairline">
+        <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2">
+          <span className="material-symbols-outlined text-[18px] text-primary">verified</span>
+          获奖证明核验
+        </h3>
+        <div className="flex items-center gap-2">
+          {submission.awardProof?.aiTaskId && (
+            <span className="chip">AI任务 #{submission.awardProof.aiTaskId}</span>
+          )}
+          <span className={confidenceClass}>总置信度 {formatConfidence(submission.confidence)}</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-md">
+        <div>
+          <h4 className="text-[13px] font-semibold text-ink mb-2">学生提交字段</h4>
+          <div className="rounded-md border border-hairline overflow-hidden bg-canvas">
+            {rows.map(row => (
+              <ProofFieldRow key={row.field} label={row.label} value={row.value || '—'} />
+            ))}
+          </div>
+        </div>
+        <div>
+          <h4 className="text-[13px] font-semibold text-ink mb-2">AI 识别字段</h4>
+          <div className="rounded-md border border-hairline overflow-hidden bg-canvas">
+            {rows.map(row => {
+              const confidence = getConfidence(row.field, row.label);
+              return (
+                <ProofFieldRow
+                  key={row.field}
+                  label={row.label}
+                  value={row.value || '—'}
+                  aside={confidence ? formatConfidence(confidence.confidence) : '—'}
+                  warning={Boolean(confidence && confidence.confidence < LOW_CONFIDENCE_THRESHOLD)}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {submission.awardProof?.fileHash && (
+        <div className="mt-md rounded-md border border-hairline bg-canvas p-3">
+          <p className="text-[12px] text-ink-muted-48 mb-1">文件 Hash</p>
+          <p className="text-[12px] text-ink break-all">{submission.awardProof.fileHash}</p>
+        </div>
+      )}
+
+      {(lowConfidenceItems.length > 0 || riskItems.length > 0) && (
+        <div className="mt-md rounded-md border border-error/20 bg-error/5 p-md">
+          <h4 className="text-[13px] font-semibold text-error mb-2 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[17px]">warning</span>
+            风险与低置信度
+          </h4>
+          <div className="flex flex-col gap-2">
+            {lowConfidenceItems.length > 0 && (
+              <p className="text-[12px] text-ink-muted-80">
+                {lowConfidenceItems.map(item => `${item.label} ${formatConfidence(item.confidence)}`).join('、')}
+              </p>
+            )}
+            {riskItems.map((item, index) => (
+              <p key={`${item}-${index}`} className="text-[12px] text-ink-muted-80 flex items-start gap-1.5 leading-relaxed">
+                <span className="material-symbols-outlined text-[14px] text-error mt-0.5 shrink-0">report</span>
+                <span>{item}</span>
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {evidenceItems.length > 0 && (
+        <div className="mt-md">
+          <h4 className="text-[13px] font-semibold text-ink mb-2">证据片段</h4>
+          <div className="flex flex-col gap-2">
+            {evidenceItems.map((item, index) => (
+              <div key={`${item}-${index}`} className="rounded-md border border-hairline bg-canvas p-3 text-[12px] text-ink-muted-80 leading-relaxed">
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProofFieldRow({
+  label,
+  value,
+  aside,
+  warning = false,
+}: {
+  label: string;
+  value: string;
+  aside?: string;
+  warning?: boolean;
+}) {
+  return (
+    <div className="grid grid-cols-[96px_1fr_auto] gap-3 px-3 py-2.5 border-b border-hairline last:border-0 text-[12px] items-start">
+      <span className="text-ink-muted-48">{label}</span>
+      <span className="text-ink font-medium break-words">{value}</span>
+      {aside && (
+        <span className={warning ? 'text-error font-semibold' : 'text-ink-muted-48'}>
+          {aside}
+        </span>
+      )}
     </div>
   );
 }

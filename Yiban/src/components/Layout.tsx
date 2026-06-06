@@ -4,6 +4,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import Breadcrumb from './Breadcrumb';
 import ErrorState from './ErrorState';
+import AIAssistantWidget from './ai/AIAssistantWidget';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { pageTransition, pageVariants } from '../lib/motion';
@@ -62,6 +63,7 @@ export default function Layout() {
           </div>
         </main>
       </div>
+      <AIAssistantWidget />
     </div>
   );
 }

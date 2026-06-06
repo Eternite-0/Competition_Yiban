@@ -42,6 +42,9 @@ const MajorManagement = lazy(() => import('../pages/admin/MajorManagement'));
 const ClassManagement = lazy(() => import('../pages/admin/ClassManagement'));
 const StudentRosterManagement = lazy(() => import('../pages/admin/StudentRosterManagement'));
 const RegistrationAudit = lazy(() => import('../pages/admin/RegistrationAudit'));
+const AiCompetitionImport = lazy(() => import('../pages/admin/AiCompetitionImport'));
+const AiCompetitionDrafts = lazy(() => import('../pages/admin/AiCompetitionDrafts'));
+const CompetitionSourceManagement = lazy(() => import('../pages/admin/CompetitionSourceManagement'));
 
 // Loading fallback for lazy routes
 function PageLoader() {
@@ -117,6 +120,9 @@ export const router = createBrowserRouter([
       { path: 'competitions', element: <LazyPage><CompetitionsHub /></LazyPage> },
       { path: 'publish', element: <LazyPage><CompetitionPublish /></LazyPage> },
       { path: 'publish/:id', element: <LazyPage><CompetitionPublish /></LazyPage> },
+      { path: 'ai-import', element: <LazyPage><AiCompetitionImport /></LazyPage> },
+      { path: 'ai-drafts', element: <LazyPage><AiCompetitionDrafts /></LazyPage> },
+      { path: 'competition-sources', element: <LazyPage><CompetitionSourceManagement /></LazyPage> },
       { path: 'works', element: <LazyPage><ExcellentWorks /></LazyPage> },
       { path: 'audit', element: <LazyPage><SubmissionAudit /></LazyPage> },
       { path: 'users', element: <LazyPage><UserManagement /></LazyPage> },

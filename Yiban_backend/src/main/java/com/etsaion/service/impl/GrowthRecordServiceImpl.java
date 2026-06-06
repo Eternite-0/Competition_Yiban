@@ -102,6 +102,12 @@ public class GrowthRecordServiceImpl extends ServiceImpl<GrowthRecordMapper, Gro
                 ? competitionService.listByIds(compIds).stream()
                         .collect(Collectors.toMap(Competition::getId, c -> c, (a, b) -> a))
                 : Collections.emptyMap();
+        if (CollUtil.isNotEmpty(compIds) && compMap.isEmpty()) {
+            compMap = compIds.stream()
+                    .map(competitionService::getById)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(Competition::getId, c -> c, (a, b) -> a));
+        }
 
         for (Submission sub : approvedSubmissions) {
             Registration reg = regMap.get(sub.getRegistrationId());

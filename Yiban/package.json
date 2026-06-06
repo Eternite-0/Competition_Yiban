@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@sentry/react": "^10.55.0",
+    "@tailwindcss/typography": "^0.5.19",
     "@types/dompurify": "^3.0.5",
     "axios": "^1.16.1",
     "dompurify": "^3.4.7",
@@ -18,7 +19,9 @@
     "material-symbols": "^0.44.9",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.15.1",
+    "remark-gfm": "^4.0.1",
     "sonner": "^2.0.7",
     "zustand": "^5.0.13"
   },
