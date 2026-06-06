@@ -413,23 +413,26 @@ export default function AIAssistantWidget() {
                 </span>
               </button>
 
-              {conversationMenuOpen && (
-                <button
-                  type="button"
-                  className="fixed inset-0 z-10 cursor-default"
-                  onClick={() => setConversationMenuOpen(false)}
-                  aria-label="关闭对话菜单"
-                />
-              )}
               <AnimatePresence>
                 {conversationMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                    transition={{ duration: 0.14, ease: [0.23, 1, 0.32, 1] }}
-                    className="absolute left-3 top-10 z-20 w-[260px] overflow-hidden rounded-[14px] border border-slate-200/70 bg-white/95 py-1.5 shadow-[0_16px_48px_rgba(15,23,42,0.14)] backdrop-blur-xl"
-                  >
+                  <>
+                    <motion.button
+                      type="button"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.12 }}
+                      className="fixed inset-0 z-10 cursor-default bg-transparent"
+                      onClick={() => setConversationMenuOpen(false)}
+                      aria-label="关闭对话菜单"
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                      transition={{ duration: 0.14, ease: [0.23, 1, 0.32, 1] }}
+                      className="absolute left-3 top-10 z-20 w-[260px] overflow-hidden rounded-[14px] border border-slate-200/70 bg-white py-1.5 shadow-[0_16px_48px_rgba(15,23,42,0.14)]"
+                    >
                     <button
                       type="button"
                       onClick={handleReset}
@@ -477,6 +480,7 @@ export default function AIAssistantWidget() {
                       )}
                     </div>
                   </motion.div>
+                  </>
                 )}
               </AnimatePresence>
             </header>

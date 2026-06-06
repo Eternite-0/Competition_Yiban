@@ -83,7 +83,7 @@ export default function ChatMessageList({ messages, onRetry }: ChatMessageListPr
                   <span className="text-[12px]">思考中</span>
                 </span>
               ) : message.role === 'assistant' ? (
-                    <div className="prose prose-sm max-w-none break-words prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-pre:my-2 prose-pre:rounded-[10px] prose-pre:bg-slate-50 prose-pre:border prose-pre:border-slate-200/60 prose-code:before:content-none prose-code:after:content-none prose-code:bg-indigo-50 prose-code:text-indigo-700 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-[12px]">
+                    <div className="prose prose-sm max-w-none break-words prose-headings:font-semibold prose-headings:text-slate-800 prose-h1:text-[15px] prose-h1:mt-3 prose-h1:mb-1.5 prose-h2:text-[14px] prose-h2:mt-2.5 prose-h2:mb-1 prose-h3:text-[13px] prose-h3:mt-2 prose-h3:mb-0.5 prose-p:my-1 prose-p:leading-[1.75] prose-p:text-slate-700 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-li:text-slate-700 prose-li:leading-[1.7] prose-pre:my-2 prose-pre:rounded-[10px] prose-pre:bg-slate-50 prose-pre:border prose-pre:border-slate-200/60 prose-pre:text-[12px] prose-pre:leading-[1.6] prose-code:before:content-none prose-code:after:content-none prose-code:bg-indigo-50/80 prose-code:text-indigo-700 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-[12px] prose-code:font-normal prose-blockquote:my-2 prose-blockquote:border-l-indigo-300 prose-blockquote:bg-indigo-50/30 prose-blockquote:py-1 prose-blockquote:pr-2 prose-blockquote:rounded-r prose-blockquote:text-slate-600 prose-strong:text-slate-800 prose-strong:font-semibold prose-a:text-indigo-600 prose-a:underline prose-a:underline-offset-2 prose-hr:my-3 prose-hr:border-slate-200/60 prose-table:text-[12px] prose-th:bg-slate-50 prose-th:px-2 prose-th:py-1.5 prose-td:px-2 prose-td:py-1.5 prose-td:border-slate-200/60 prose-img:rounded-[10px]">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
                 </div>
               ) : (
@@ -98,13 +98,6 @@ export default function ChatMessageList({ messages, onRetry }: ChatMessageListPr
                     <span className="h-1 w-1 animate-bounce rounded-full bg-indigo-400 [animation-delay:300ms]" />
                   </span>
                   <span className="text-[11px]">生成中</span>
-                </span>
-              )}
-
-              {message.role === 'assistant' && message.toolContext !== undefined && message.status !== 'error' && (
-                      <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-indigo-50/80 px-2.5 py-1 text-[11px] text-indigo-600">
-                  <span className="material-symbols-outlined text-[13px]">data_object</span>
-                  已附加上下文
                 </span>
               )}
 
