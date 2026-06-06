@@ -43,8 +43,8 @@ const toneLabels: Record<AssistantTone, string> = {
 };
 
 const motionLabels: Record<AvatarMotion, string> = {
-  calm: '柔和',
-  active: '活跃',
+  calm: '轻柔',
+  active: '活泼',
   still: '静止',
 };
 
@@ -52,6 +52,8 @@ const avatarStyleLabels: Record<AvatarStyle, string> = {
   classic: '小星',
   blue: '学士帽',
   warm: '灵感花',
+  mint: '薄荷叶',
+  sunset: '晚霞',
 };
 
 const avatarStyles = Object.keys(avatarStyleLabels) as AvatarStyle[];
@@ -357,14 +359,14 @@ export default function AIAssistantWidget() {
     <>
       <motion.button
         type="button"
-        whileHover={{ y: -2, scale: 1.02 }}
-        whileTap={{ scale: 0.94 }}
+        whileHover={{ y: -2, scale: 1.05 }}
+        whileTap={{ scale: 0.92 }}
         onClick={() => setOpen((value) => !value)}
-        className="ai-assistant-launcher fixed bottom-5 right-4 z-50 grid h-12 w-12 place-items-center rounded-[16px] border border-slate-200 bg-white text-slate-800 shadow-[0_14px_38px_rgba(15,23,42,0.16)] transition hover:border-slate-300 hover:bg-slate-50 md:bottom-6 md:right-6"
+        className="ai-assistant-launcher fixed bottom-5 right-4 z-50 grid h-12 w-12 place-items-center rounded-full border border-slate-200/80 bg-white text-slate-700 shadow-[0_8px_30px_rgba(15,23,42,0.12),0_0_0_1px_rgba(15,23,42,0.05)] transition hover:shadow-[0_12px_40px_rgba(15,23,42,0.18)] md:bottom-6 md:right-6"
         aria-label={open ? '关闭 AI 助手' : '打开 AI 助手'}
         title="AI 助手"
       >
-        <span className="material-symbols-outlined text-[23px]">
+        <span className="material-symbols-outlined text-[22px]">
           {open ? 'close' : 'auto_awesome'}
         </span>
       </motion.button>
@@ -387,25 +389,26 @@ export default function AIAssistantWidget() {
       <AnimatePresence>
         {open && (
           <motion.aside
-            initial={{ opacity: 0, y: 24, scale: 0.98 }}
+            initial={{ opacity: 0, y: 24, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.98 }}
-            transition={{ duration: 0.2, ease: smoothEase }}
-            className="ai-assistant-panel fixed inset-x-2 bottom-0 z-50 flex h-[72svh] max-h-[590px] flex-col overflow-hidden rounded-b-none rounded-t-[24px] border border-slate-200 bg-white text-slate-900 shadow-[0_24px_70px_rgba(15,23,42,0.2)] md:inset-auto md:bottom-20 md:right-6 md:h-[min(580px,calc(100vh-150px))] md:w-[390px] md:rounded-[22px]"
+            exit={{ opacity: 0, y: 16, scale: 0.97 }}
+            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+            className="ai-assistant-panel fixed inset-x-2 bottom-0 z-50 flex h-[72svh] max-h-[590px] flex-col overflow-hidden rounded-b-none rounded-t-[22px] border border-slate-200/60 bg-white text-slate-900 shadow-[0_-4px_40px_rgba(15,23,42,0.08),0_0_0_1px_rgba(15,23,42,0.03)] md:inset-auto md:bottom-20 md:right-6 md:h-[min(600px,calc(100vh-140px))] md:w-[400px] md:rounded-[20px] md:shadow-[0_24px_80px_rgba(15,23,42,0.14),0_0_0_1px_rgba(15,23,42,0.04)]"
             role="dialog"
             aria-modal="false"
             aria-label="AI 助手"
           >
-            <header className="relative flex h-12 shrink-0 items-center border-b border-slate-200/70 bg-white px-3">
+            <header className="relative flex h-12 shrink-0 items-center border-b border-slate-200/50 bg-white/80 px-3 backdrop-blur-md">
               <button
                 type="button"
                 onClick={() => setConversationMenuOpen((value) => !value)}
-                className="inline-flex min-w-0 max-w-[250px] items-center gap-1.5 rounded-[9px] px-2 py-1.5 text-[14px] font-medium text-slate-800 transition hover:bg-slate-100"
+                className="inline-flex min-w-0 max-w-[250px] items-center gap-1.5 rounded-[10px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 transition hover:bg-slate-100/80"
                 aria-expanded={conversationMenuOpen}
                 aria-label="切换 AI 对话"
               >
+                <span className="material-symbols-outlined text-[18px] text-slate-400">chat_bubble</span>
                 <span className="truncate">{activeTitle}</span>
-                <span className={`material-symbols-outlined text-[17px] text-slate-400 transition-transform ${conversationMenuOpen ? 'rotate-180' : ''}`}>
+                <span className={`material-symbols-outlined text-[16px] text-slate-400 transition-transform ${conversationMenuOpen ? 'rotate-180' : ''}`}>
                   keyboard_arrow_down
                 </span>
               </button>
@@ -424,8 +427,8 @@ export default function AIAssistantWidget() {
                     initial={{ opacity: 0, y: -4, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                    transition={{ duration: 0.12 }}
-                    className="absolute left-3 top-10 z-20 w-[250px] overflow-hidden rounded-[14px] border border-slate-200 bg-white py-1.5 shadow-[0_12px_36px_rgba(15,23,42,0.16)]"
+                    transition={{ duration: 0.14, ease: [0.23, 1, 0.32, 1] }}
+                    className="absolute left-3 top-10 z-20 w-[260px] overflow-hidden rounded-[14px] border border-slate-200/70 bg-white/95 py-1.5 shadow-[0_16px_48px_rgba(15,23,42,0.14)] backdrop-blur-xl"
                   >
                     <button
                       type="button"
@@ -481,111 +484,139 @@ export default function AIAssistantWidget() {
             <div className="relative min-h-0 flex-1 overflow-hidden">
               {customizing && typeof document !== 'undefined' && createPortal(
                   <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={panelTransition}
-                    className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-[2px]"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
                     onMouseDown={(event) => {
                       if (event.target === event.currentTarget) setCustomizing(false);
                     }}
                   >
-                    <div
-                      className="relative w-full max-w-[560px] rounded-[18px] border border-slate-200 bg-white p-5 text-slate-900 shadow-[0_28px_90px_rgba(15,23,42,0.28)] sm:p-7"
+                    <motion.div
+                      initial={{ opacity: 0, y: 12, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                      transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
+                      className="relative w-full max-w-[440px] overflow-hidden rounded-[20px] border border-slate-200/70 bg-white text-slate-900 shadow-[0_32px_100px_rgba(15,23,42,0.25)]"
                       role="dialog"
                       aria-modal="true"
                       aria-label="个性化 AI 助手"
                     >
-                      <button
-                        type="button"
-                        onClick={() => setCustomizing(false)}
-                        className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
-                        aria-label="关闭个性化"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">close</span>
-                      </button>
+                      {/* Header gradient bar */}
+                      <div className="h-1.5 w-full bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400" />
 
-                      <h3 className="text-center text-[20px] font-semibold">个性化你的 AI 助手</h3>
-                      <div className="mt-5 flex items-center justify-center gap-5">
-                        <button
-                          type="button"
-                          onClick={() => setAvatarStyle(cycleAvatarStyle(avatarStyle, -1))}
-                          className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
-                          aria-label="上一个头像"
-                        >
-                          <span className="material-symbols-outlined text-[19px]">chevron_left</span>
-                        </button>
-                        <AvatarFace motion={avatarMotion} style={avatarStyle} preview />
-                        <button
-                          type="button"
-                          onClick={() => setAvatarStyle(cycleAvatarStyle(avatarStyle, 1))}
-                          className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
-                          aria-label="下一个头像"
-                        >
-                          <span className="material-symbols-outlined text-[19px]">chevron_right</span>
-                        </button>
-                      </div>
+                      <div className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-[17px] font-semibold text-slate-900">个性化你的 AI 助手</h3>
+                            <p className="mt-0.5 text-[12px] text-slate-400">选择头像风格和装饰</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setCustomizing(false)}
+                            className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
+                            aria-label="关闭个性化"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">close</span>
+                          </button>
+                        </div>
 
-                      <input
-                        value={assistantName}
-                        onChange={(event) => setAssistantName(event.target.value.slice(0, 12))}
-                        placeholder="输入名称"
-                        className="mx-auto mt-5 block h-10 w-[230px] rounded-[10px] border border-slate-200 bg-white px-3 text-center text-[14px] outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-                      />
+                        {/* Avatar preview with carousel */}
+                        <div className="mt-6 flex items-center justify-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => setAvatarStyle(cycleAvatarStyle(avatarStyle, -1))}
+                            className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 text-slate-400 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
+                            aria-label="上一个头像"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                          </button>
+                          <div className="relative">
+                            <AvatarFace motion={avatarMotion} style={avatarStyle} preview />
+                            <div className="mt-2 text-center text-[12px] font-medium text-slate-600">
+                              {avatarStyleLabels[avatarStyle]}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setAvatarStyle(cycleAvatarStyle(avatarStyle, 1))}
+                            className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 text-slate-400 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
+                            aria-label="下一个头像"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                          </button>
+                        </div>
 
-                      <div className="mt-6">
-                        <div className="mb-2 text-[12px] text-slate-500">头像装饰</div>
-                        <div className="grid grid-cols-3 gap-2">
-                          {avatarStyles.map((style) => (
-                            <button
-                              key={style}
-                              type="button"
-                              onClick={() => setAvatarStyle(style)}
-                              className={`flex h-11 items-center justify-center gap-2 rounded-[10px] border text-[13px] transition ${
-                                avatarStyle === style
-                                  ? 'border-primary bg-primary-soft text-primary'
-                                  : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-white hover:text-slate-900'
-                              }`}
-                            >
-                              <span className="material-symbols-outlined text-[18px]">
-                                {style === 'classic' ? 'auto_awesome' : style === 'blue' ? 'school' : 'local_florist'}
-                              </span>
-                              {avatarStyleLabels[style]}
-                            </button>
-                          ))}
+                        {/* Name input */}
+                        <div className="mt-5">
+                          <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-400">助手名称</label>
+                          <input
+                            value={assistantName}
+                            onChange={(event) => setAssistantName(event.target.value.slice(0, 12))}
+                            placeholder="给助手起个名字"
+                            className="block h-10 w-full rounded-[11px] border border-slate-200 bg-slate-50/50 px-3 text-[14px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                          />
+                        </div>
+
+                        {/* Avatar style grid */}
+                        <div className="mt-5">
+                          <label className="mb-2 block text-[11px] font-medium uppercase tracking-wider text-slate-400">头像装饰</label>
+                          <div className="grid grid-cols-5 gap-1.5">
+                            {avatarStyles.map((style) => (
+                              <button
+                                key={style}
+                                type="button"
+                                onClick={() => setAvatarStyle(style)}
+                                className={`flex h-12 flex-col items-center justify-center gap-0.5 rounded-[11px] border text-[11px] font-medium transition ${
+                                  avatarStyle === style
+                                    ? 'border-indigo-300 bg-indigo-50 text-indigo-700 shadow-sm'
+                                    : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50'
+                                }`}
+                              >
+                                <span className="material-symbols-outlined text-[17px]">
+                                  {style === 'classic' ? 'auto_awesome' : style === 'blue' ? 'school' : style === 'warm' ? 'local_florist' : style === 'mint' ? 'spa' : 'wb_twilight'}
+                                </span>
+                                <span className="text-[10px]">{avatarStyleLabels[style]}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Motion control */}
+                        <div className="mt-5">
+                          <SegmentedControl
+                            label="动态效果"
+                            value={avatarMotion}
+                            options={motionLabels}
+                            onChange={setAvatarMotion}
+                          />
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="mt-6 flex items-center justify-between">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAssistantName('易小助');
+                              setAvatarStyle('classic');
+                              setAvatarMotion('calm');
+                            }}
+                            className="inline-flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[13px] text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">restart_alt</span>
+                            重置
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCustomizing(false)}
+                            className="h-9 rounded-[10px] bg-gradient-to-r from-indigo-500 to-purple-500 px-5 text-[13px] font-medium text-white shadow-sm transition hover:from-indigo-600 hover:to-purple-600 hover:shadow-md"
+                          >
+                            完成
+                          </button>
                         </div>
                       </div>
-
-                      <div className="mt-5">
-                        <SegmentedControl
-                          label="动态强度"
-                          value={avatarMotion}
-                          options={motionLabels}
-                          onChange={setAvatarMotion}
-                        />
-                      </div>
-
-                      <div className="mt-6 flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAssistantName('易小助');
-                            setAvatarStyle('classic');
-                            setAvatarMotion('calm');
-                          }}
-                          className="h-9 rounded-[9px] px-3 text-[13px] text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
-                        >
-                          重置
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCustomizing(false)}
-                          className="h-9 rounded-[9px] bg-primary px-4 text-[13px] text-white transition hover:bg-primary-focus"
-                        >
-                          完成
-                        </button>
-                      </div>
-                    </div>
+                    </motion.div>
                   </motion.div>,
                   document.body,
                 )}
@@ -649,31 +680,34 @@ function AssistantWelcome({
   onCustomize,
 }: AssistantWelcomeProps) {
   return (
-    <section className="shrink-0 px-5 pb-1 pt-3">
-      <div className="relative h-[92px]">
+    <section className="shrink-0 px-5 pb-3 pt-4">
+      <div className="relative flex items-center gap-4">
         <button
           type="button"
           onClick={onCustomize}
-          className="group relative block rounded-full text-left"
+          className="group relative block shrink-0 rounded-full text-left"
           aria-label="个性化 AI 头像"
         >
           <AvatarFace motion={avatarMotion} style={avatarStyle} />
-          <span className="pointer-events-none absolute left-[64px] top-[45px] inline-flex h-7 translate-x-[-5px] items-center gap-1 whitespace-nowrap rounded-[9px] border border-slate-200 bg-white px-2 text-[11px] text-slate-600 opacity-0 shadow-sm transition group-hover:translate-x-0 group-hover:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:opacity-100">
-            <span className="material-symbols-outlined text-[14px]">edit</span>
-            个性化
+          <span className="pointer-events-none absolute -bottom-1 left-1/2 inline-flex h-6 -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full border border-slate-200/80 bg-white/90 px-2 text-[10px] text-slate-500 opacity-0 shadow-sm backdrop-blur-sm transition group-hover:opacity-100 group-focus-visible:opacity-100">
+            <span className="material-symbols-outlined text-[12px]">palette</span>
+            装扮
           </span>
         </button>
-      </div>
-
-      <div>
-        <div className="flex items-center gap-2 text-[12px] text-slate-400">
-          <span className={`h-1.5 w-1.5 rounded-full ${status === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`} />
-          <span>{statusText[status]}</span>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-[11px] text-slate-400">
+            <span className={`h-1.5 w-1.5 rounded-full ${status === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`} />
+            <span>{assistantName}</span>
+            <span className="text-slate-300">·</span>
+            <span>{statusText[status]}</span>
+          </div>
+          <h2 className="mt-0.5 text-[18px] font-semibold leading-snug tracking-tight text-slate-900">
+            你好，{displayName}
+          </h2>
+          <p className="mt-0.5 text-[13px] text-slate-500">
+            有什么我可以帮你的？
+          </p>
         </div>
-        <h2 className="mt-1 text-[20px] font-semibold leading-tight text-slate-900">
-          {displayName}，有什么要求？
-        </h2>
-        <span className="sr-only">当前助手：{assistantName}</span>
       </div>
     </section>
   );
@@ -696,15 +730,26 @@ function AvatarFace({ motion: avatarMotion, style: avatarStyle, preview = false 
       data-style={avatarStyle}
       aria-hidden="true"
     >
+      <div className="ai-avatar-glow" />
+      <div className="ai-avatar-particles">
+        <span className="ai-avatar-particle" />
+        <span className="ai-avatar-particle" />
+        <span className="ai-avatar-particle" />
+        <span className="ai-avatar-particle" />
+        <span className="ai-avatar-particle" />
+        <span className="ai-avatar-particle" />
+      </div>
       <div className="ai-avatar-shadow" />
       <div className="ai-avatar-core">
+        <span className="ai-avatar-cheek ai-avatar-cheek-left" />
+        <span className="ai-avatar-cheek ai-avatar-cheek-right" />
         <span className="ai-avatar-eye ai-avatar-eye-left" />
         <span className="ai-avatar-eye ai-avatar-eye-right" />
         <span className="ai-avatar-nose" />
         <span className="ai-avatar-mouth" />
       </div>
       <span className="ai-avatar-charm material-symbols-outlined">
-        {avatarStyle === 'classic' ? 'auto_awesome' : avatarStyle === 'blue' ? 'school' : 'local_florist'}
+        {avatarStyle === 'classic' ? 'auto_awesome' : avatarStyle === 'blue' ? 'school' : avatarStyle === 'warm' ? 'local_florist' : avatarStyle === 'mint' ? 'spa' : 'wb_twilight'}
       </span>
     </motion.div>
   );
@@ -725,17 +770,17 @@ function SegmentedControl<T extends string>({
 }: SegmentedControlProps<T>) {
   return (
     <div className="mb-3 last:mb-0">
-      <div className="mb-2 text-[12px] text-slate-400">{label}</div>
-      <div className="grid grid-cols-3 gap-1 rounded-[12px] bg-slate-100 p-1">
+      <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400">{label}</div>
+      <div className="grid grid-cols-3 gap-1 rounded-[11px] bg-slate-100/80 p-1">
         {(Object.keys(options) as T[]).map((key) => (
           <button
             key={key}
             type="button"
             onClick={() => onChange(key)}
-            className={`h-8 rounded-[9px] text-[12px] transition ${
+            className={`h-8 rounded-[9px] text-[12px] font-medium transition ${
               value === key
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:bg-white/70 hover:text-slate-900'
+                ? 'bg-white text-slate-800 shadow-sm'
+                : 'text-slate-500 hover:bg-white/60 hover:text-slate-800'
             }`}
           >
             {options[key]}

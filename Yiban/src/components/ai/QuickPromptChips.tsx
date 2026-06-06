@@ -43,21 +43,21 @@ export default function QuickPromptChips({
   if (variant === 'commands') {
     return (
       <div className="shrink-0 px-5 py-3" aria-label="快捷问题">
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           {prompts.map((item, index) => (
             <motion.button
               key={item.label}
               type="button"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.18, delay: index * 0.035 }}
+              transition={{ duration: 0.2, delay: index * 0.04 }}
               disabled={disabled}
               onClick={() => onSelect(item.prompt)}
-              className="group flex h-11 w-full items-center gap-3 rounded-[12px] px-3 text-left text-[15px] text-slate-700 transition hover:bg-slate-100 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+              className="group flex h-11 w-full items-center gap-3 rounded-[12px] px-3 text-left text-[14px] text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label={item.prompt}
               title={item.prompt}
             >
-                <span className="material-symbols-outlined text-[21px] text-slate-500 transition group-hover:text-slate-900">
+                <span className="material-symbols-outlined text-[19px] text-slate-400 transition group-hover:text-indigo-500">
                 {item.icon}
               </span>
               <span className="truncate">{item.prompt}</span>
@@ -69,7 +69,7 @@ export default function QuickPromptChips({
   }
 
   return (
-    <div className="flex shrink-0 gap-2 overflow-x-auto border-b border-slate-200/70 px-4 py-3 no-scrollbar" aria-label="快捷问题">
+    <div className="flex shrink-0 gap-1.5 overflow-x-auto border-b border-slate-200/40 px-4 py-2.5 no-scrollbar" aria-label="快捷问题">
       {prompts.map((item) => (
         <motion.button
           key={item.label}
@@ -77,11 +77,11 @@ export default function QuickPromptChips({
           whileTap={{ scale: 0.97 }}
           disabled={disabled}
           onClick={() => onSelect(item.prompt)}
-          className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-[10px] border border-slate-200 bg-slate-50 px-2.5 text-[12px] text-slate-600 transition hover:border-slate-300 hover:bg-white hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-7 shrink-0 cursor-pointer items-center gap-1 rounded-full border border-slate-200/60 bg-slate-50/50 px-2.5 text-[11px] text-slate-500 transition hover:border-slate-300/80 hover:bg-white hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label={item.prompt}
           title={item.prompt}
         >
-          <span className="material-symbols-outlined text-[15px]">{item.icon}</span>
+          <span className="material-symbols-outlined text-[14px]">{item.icon}</span>
           <span>{item.label}</span>
         </motion.button>
       ))}

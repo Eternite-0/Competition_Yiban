@@ -277,6 +277,7 @@ h1, h2, h3, h4, h5, h6 {
   .chip-warning { background: var(--color-badge-review-bg); color: var(--color-badge-review-text); }
   .chip-error { background: var(--color-danger-bg); color: var(--color-error); }
 
+  /* ── AI Avatar: Notion-inspired organic face ── */
   .ai-avatar-stage {
     position: relative;
     width: 82px;
@@ -286,8 +287,8 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .ai-avatar-preview {
-    width: 112px;
-    height: 112px;
+    width: 120px;
+    height: 120px;
   }
 
   .ai-avatar-stage[data-motion="active"] {
@@ -298,59 +299,209 @@ h1, h2, h3, h4, h5, h6 {
     animation: none;
   }
 
+  /* Glow ring behind avatar */
+  .ai-avatar-glow {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: conic-gradient(from 180deg, rgba(99,102,241,0.15), rgba(236,72,153,0.12), rgba(251,191,36,0.1), rgba(99,102,241,0.15));
+    filter: blur(10px);
+    opacity: 0.7;
+    animation: ai-glow-spin 8s linear infinite;
+  }
+
+  .ai-avatar-stage[data-style="blue"] .ai-avatar-glow {
+    background: conic-gradient(from 180deg, rgba(59,130,246,0.18), rgba(99,102,241,0.14), rgba(59,130,246,0.18));
+  }
+
+  .ai-avatar-stage[data-style="warm"] .ai-avatar-glow {
+    background: conic-gradient(from 180deg, rgba(234,88,12,0.16), rgba(251,146,60,0.12), rgba(234,88,12,0.16));
+  }
+
+  .ai-avatar-stage[data-style="mint"] .ai-avatar-glow {
+    background: conic-gradient(from 180deg, rgba(22,163,74,0.16), rgba(74,222,128,0.12), rgba(22,163,74,0.16));
+  }
+
+  .ai-avatar-stage[data-style="sunset"] .ai-avatar-glow {
+    background: conic-gradient(from 180deg, rgba(234,88,12,0.14), rgba(251,113,133,0.12), rgba(251,191,36,0.1), rgba(234,88,12,0.14));
+  }
+
+  .ai-avatar-stage[data-motion="still"] .ai-avatar-glow {
+    animation: none;
+  }
+
+  /* Floating particles around avatar */
+  .ai-avatar-particles {
+    position: absolute;
+    inset: -10px;
+    pointer-events: none;
+    color: rgba(99, 102, 241, 0.5);
+  }
+
+  .ai-avatar-stage[data-style="blue"] .ai-avatar-particles { color: rgba(59, 130, 246, 0.5); }
+  .ai-avatar-stage[data-style="warm"] .ai-avatar-particles { color: rgba(234, 88, 12, 0.45); }
+  .ai-avatar-stage[data-style="mint"] .ai-avatar-particles { color: rgba(22, 163, 74, 0.45); }
+  .ai-avatar-stage[data-style="sunset"] .ai-avatar-particles { color: rgba(251, 146, 60, 0.5); }
+
+  .ai-avatar-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0;
+    animation: ai-particle-float 3.6s ease-in-out infinite;
+  }
+
+  .ai-avatar-particle:nth-child(1) { top: 8%; left: 18%; animation-delay: 0s; }
+  .ai-avatar-particle:nth-child(2) { top: 15%; right: 12%; animation-delay: 0.6s; }
+  .ai-avatar-particle:nth-child(3) { bottom: 20%; left: 8%; animation-delay: 1.2s; }
+  .ai-avatar-particle:nth-child(4) { bottom: 12%; right: 18%; animation-delay: 1.8s; }
+  .ai-avatar-particle:nth-child(5) { top: 45%; left: -4%; animation-delay: 2.4s; }
+  .ai-avatar-particle:nth-child(6) { top: 40%; right: -2%; animation-delay: 3.0s; }
+
+  .ai-avatar-stage[data-motion="still"] .ai-avatar-particle {
+    animation: none;
+    opacity: 0;
+  }
+
   .ai-avatar-shadow {
     position: absolute;
     inset: 14px 9px 4px 11px;
     border-radius: 48% 52% 45% 55% / 54% 44% 56% 46%;
-    background: rgba(15, 23, 42, 0.18);
-    filter: blur(7px);
+    background: rgba(15, 23, 42, 0.15);
+    filter: blur(8px);
     transform: translateY(8px);
   }
 
   .ai-avatar-core {
     position: absolute;
-    inset: 10px 8px 5px 8px;
-    border: 2px solid #222222;
+    inset: 8px 6px 4px 6px;
     border-radius: 48% 52% 45% 55% / 54% 44% 56% 46%;
-    background: #f7f7f5;
-    color: #20201f;
+    background: #f8f7f4;
+    color: #1a1a1a;
     box-shadow:
-      inset 7px 8px 0 rgba(255, 255, 255, 0.72),
-      inset -8px -10px 0 rgba(15, 23, 42, 0.06);
+      inset 0 2px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -3px 0 rgba(0, 0, 0, 0.04),
+      0 1px 3px rgba(0, 0, 0, 0.06);
     transform: rotate(-3deg);
+    overflow: hidden;
+  }
+
+  .ai-avatar-stage[data-style="blue"] .ai-avatar-core { color: #1e3a5f; }
+  .ai-avatar-stage[data-style="warm"] .ai-avatar-core { color: #5c2d1a; }
+  .ai-avatar-stage[data-style="mint"] .ai-avatar-core { color: #1a4731; }
+  .ai-avatar-stage[data-style="sunset"] .ai-avatar-core { color: #5c3d1a; }
+
+  /* Cheek blush spots */
+  .ai-avatar-cheek {
+    position: absolute;
+    width: 14px;
+    height: 9px;
+    border-radius: 50%;
+    background: rgba(251, 113, 133, 0.25);
+    filter: blur(3px);
+    top: 48%;
+  }
+
+  .ai-avatar-cheek-left { left: 14%; }
+  .ai-avatar-cheek-right { right: 14%; }
+
+  /* Forehead highlight */
+  .ai-avatar-core::before {
+    content: '';
+    position: absolute;
+    top: 8%;
+    left: 25%;
+    width: 35%;
+    height: 18%;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.55);
+    filter: blur(2px);
   }
 
   .ai-avatar-stage[data-style="blue"] .ai-avatar-core {
-    background: #eaf3ff;
-    border-color: #1d4f91;
+    background: linear-gradient(165deg, #f0f6ff 0%, #dde9f9 100%);
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.85),
+      inset 0 -3px 0 rgba(29, 79, 145, 0.06),
+      0 1px 3px rgba(29, 79, 145, 0.1);
+  }
+
+  .ai-avatar-stage[data-style="blue"] .ai-avatar-cheek {
+    background: rgba(96, 165, 250, 0.2);
   }
 
   .ai-avatar-stage[data-style="warm"] .ai-avatar-core {
-    background: #fff1e9;
-    border-color: #9a3f24;
+    background: linear-gradient(165deg, #fff6f0 0%, #ffe8d9 100%);
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.85),
+      inset 0 -3px 0 rgba(154, 63, 36, 0.06),
+      0 1px 3px rgba(154, 63, 36, 0.1);
   }
 
+  .ai-avatar-stage[data-style="warm"] .ai-avatar-cheek {
+    background: rgba(251, 113, 36, 0.2);
+  }
+
+  .ai-avatar-stage[data-style="mint"] .ai-avatar-core {
+    background: linear-gradient(165deg, #f0fdf4 0%, #dcfce7 100%);
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.85),
+      inset 0 -3px 0 rgba(22, 163, 74, 0.06),
+      0 1px 3px rgba(22, 163, 74, 0.1);
+  }
+
+  .ai-avatar-stage[data-style="mint"] .ai-avatar-cheek {
+    background: rgba(74, 222, 128, 0.2);
+  }
+
+  .ai-avatar-stage[data-style="sunset"] .ai-avatar-core {
+    background: linear-gradient(165deg, #fff7ed 0%, #ffedd5 100%);
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.85),
+      inset 0 -3px 0 rgba(234, 88, 12, 0.06),
+      0 1px 3px rgba(234, 88, 12, 0.1);
+  }
+
+  .ai-avatar-stage[data-style="sunset"] .ai-avatar-cheek {
+    background: rgba(251, 146, 60, 0.25);
+  }
+
+  /* ── Eyes: Notion-style dot eyes with blink ── */
   .ai-avatar-eye {
     position: absolute;
-    top: 35%;
-    width: 7px;
-    height: 7px;
-    border: 2px solid currentColor;
+    top: 34%;
+    width: 8px;
+    height: 9px;
     border-radius: 50%;
     background: currentColor;
+    animation: ai-eye-blink 4.2s ease-in-out infinite;
   }
 
-  .ai-avatar-eye-left { left: 28%; }
-  .ai-avatar-eye-right { right: 28%; }
+  .ai-avatar-eye::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  .ai-avatar-eye-left { left: 26%; animation-delay: 0s; }
+  .ai-avatar-eye-right { right: 26%; animation-delay: 0.1s; }
 
   .ai-avatar-nose {
     position: absolute;
     left: 50%;
-    top: 39%;
+    top: 40%;
     width: 3px;
-    height: 25%;
+    height: 22%;
     border-radius: 4px;
     background: currentColor;
+    opacity: 0.35;
     transform: translateX(-50%) rotate(9deg);
     transform-origin: top;
   }
@@ -358,40 +509,64 @@ h1, h2, h3, h4, h5, h6 {
   .ai-avatar-mouth {
     position: absolute;
     left: 50%;
-    top: 68%;
-    width: 19%;
-    height: 8%;
-    border-bottom: 2px solid currentColor;
+    top: 66%;
+    width: 20%;
+    height: 9%;
+    border-bottom: 2.5px solid currentColor;
     border-radius: 0 0 50% 50%;
     transform: translateX(-45%) rotate(-5deg);
   }
 
+  /* ── Charm: floating decoration badge ── */
   .ai-avatar-charm {
     position: absolute;
-    right: 4px;
-    top: 0;
+    right: 2px;
+    top: -2px;
     display: grid !important;
-    width: 31%;
-    height: 31%;
+    width: 30px;
+    height: 30px;
     place-items: center;
-    border: 2px solid #222;
-    border-radius: 45% 55% 48% 52%;
-    background: #fff;
-    color: #222;
-    font-size: 16px !important;
-    box-shadow: 0 3px 0 rgba(15, 23, 42, 0.12);
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fff 0%, #f8f7f4 100%);
+    color: #555;
+    font-size: 15px !important;
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.1),
+      0 0 0 1.5px rgba(0, 0, 0, 0.08);
     transform: rotate(9deg);
     animation: ai-spark-drift 2.8s ease-in-out infinite;
   }
 
   .ai-avatar-stage[data-style="blue"] .ai-avatar-charm {
-    border-color: #1d4f91;
-    color: #1d4f91;
+    background: linear-gradient(135deg, #fff 0%, #eef4ff 100%);
+    color: #3b82f6;
+    box-shadow:
+      0 2px 8px rgba(59, 130, 246, 0.18),
+      0 0 0 1.5px rgba(59, 130, 246, 0.12);
   }
 
   .ai-avatar-stage[data-style="warm"] .ai-avatar-charm {
-    border-color: #9a3f24;
-    color: #9a3f24;
+    background: linear-gradient(135deg, #fff 0%, #fff1e9 100%);
+    color: #ea580c;
+    box-shadow:
+      0 2px 8px rgba(234, 88, 12, 0.18),
+      0 0 0 1.5px rgba(234, 88, 12, 0.12);
+  }
+
+  .ai-avatar-stage[data-style="mint"] .ai-avatar-charm {
+    background: linear-gradient(135deg, #fff 0%, #f0fdf4 100%);
+    color: #16a34a;
+    box-shadow:
+      0 2px 8px rgba(22, 163, 74, 0.18),
+      0 0 0 1.5px rgba(22, 163, 74, 0.12);
+  }
+
+  .ai-avatar-stage[data-style="sunset"] .ai-avatar-charm {
+    background: linear-gradient(135deg, #fff 0%, #fff7ed 100%);
+    color: #ea580c;
+    box-shadow:
+      0 2px 8px rgba(234, 88, 12, 0.18),
+      0 0 0 1.5px rgba(234, 88, 12, 0.12);
   }
 
   .ai-avatar-stage[data-motion="still"] .ai-avatar-charm {
@@ -478,6 +653,22 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes ai-spark-drift {
   0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.85; }
   50% { transform: translateY(4px) rotate(12deg); opacity: 1; }
+}
+
+@keyframes ai-glow-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ai-particle-float {
+  0%, 100% { opacity: 0; transform: translateY(0) scale(0.6); }
+  20% { opacity: 0.6; }
+  50% { opacity: 0.8; transform: translateY(-6px) scale(1); }
+  80% { opacity: 0.4; }
+}
+
+@keyframes ai-eye-blink {
+  0%, 42%, 48%, 100% { transform: scaleY(1); }
+  45% { transform: scaleY(0.08); }
 }
 
 @layer utilities {
