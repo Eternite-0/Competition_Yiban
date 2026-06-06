@@ -150,6 +150,7 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
         competition.setCompetitionEnd(draft.getCompetitionEnd());
         competition.setMaxTeamSize(draft.getMaxTeamSize() != null ? Math.max(draft.getMaxTeamSize(), 1) : 1);
         competition.setCoverUrl(draft.getCoverUrl());
+        competition.setSourceUrl(draft.getSourceUrl());
         competition.setContent(StrUtil.blankToDefault(draft.getContent(), ""));
         competition.setTags(normalizeJsonArray(draft.getTags()));
         competition.setTracks(normalizeJsonArray(draft.getTracks()));

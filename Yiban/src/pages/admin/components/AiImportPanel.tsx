@@ -45,6 +45,7 @@ export function aiDraftToPublishForm(draft: AiCompetitionDraftVO) {
     compEnd: draft.competitionEnd ? new Date(draft.competitionEnd).toISOString().slice(0, 10) : '',
     description: draft.content || '',
     tags: toStringList(draft.tags).join(', '),
+    sourceUrl: draft.sourceUrl || '',
     maxTeamSize: draft.maxTeamSize || 5,
     tracks: toStringList(draft.tracks),
   };

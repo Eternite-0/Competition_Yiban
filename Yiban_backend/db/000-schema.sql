@@ -107,6 +107,7 @@ CREATE TABLE `competition` (
   `competition_end` datetime DEFAULT NULL,
   `max_team_size` int DEFAULT '1',
   `cover_url` varchar(500) DEFAULT NULL,
+  `source_url` varchar(500) DEFAULT NULL COMMENT '赛事官网/公告链接',
   `content` text COMMENT '富文本赛事简介/要求',
   `organizer` varchar(200) DEFAULT NULL COMMENT '主办单位',
   `tags` varchar(500) DEFAULT NULL COMMENT 'JSON数组 - 赛事标签',

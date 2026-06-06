@@ -41,6 +41,7 @@ public class EventPublishDTO {
     private Integer maxTeamSize;
 
     private String coverUrl;
+    private String sourceUrl;
     private String content;
     @JsonDeserialize(using = FlexibleStringListDeserializer.class)
     private List<String> tags;

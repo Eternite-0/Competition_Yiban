@@ -22,6 +22,7 @@ public class Competition {
     private LocalDateTime competitionEnd;
     private Integer maxTeamSize;
     private String coverUrl;
+    private String sourceUrl; // 赛事官网/公告链接
     private String content; // 富文本赛事简介/要求
     private String organizer; // 主办单位
     private String tags; // JSON-encoded array of tag strings, e.g. ["AI","学科竞赛"]

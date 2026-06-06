@@ -26,6 +26,7 @@ interface PublishFormState {
   detailContent: string;
   tags: string;
   coverUrl: string;
+  sourceUrl: string;
   maxTeamSize: number;
   tracks: string[];
 }
@@ -41,6 +42,7 @@ const toPublishPayload = (form: PublishFormState, status: 'draft' | 'published' 
   competitionEnd: form.compEnd || null,
   maxTeamSize: form.maxTeamSize,
   coverUrl: form.coverUrl,
+  sourceUrl: form.sourceUrl || null,
   content: form.detailContent || form.description,
   tags: form.tags ? form.tags.split(/[,，]/).map((t) => t.trim()).filter(Boolean) : [],
   tracks: form.tracks,
@@ -74,6 +76,7 @@ const defaultForm: PublishFormState = {
   detailContent: '',
   tags: '',
   coverUrl: '',
+  sourceUrl: '',
   maxTeamSize: 5,
   tracks: [],
 };
@@ -153,6 +156,7 @@ export default function CompetitionPublish() {
           detailContent: '',
           tags: Array.isArray(data.tags) ? data.tags.join(', ') : '',
           coverUrl: data.coverUrl || '',
+          sourceUrl: data.sourceUrl || '',
           maxTeamSize: data.maxTeamSize || 5,
           tracks: Array.isArray(data.tracks) ? data.tracks : [],
         });
@@ -357,6 +361,10 @@ export default function CompetitionPublish() {
 
               <Field label="最大团队人数">
                 <input className="input-glass" type="number" min={1} value={form.maxTeamSize} onChange={(e) => updateField('maxTeamSize', Number(e.target.value) || 1)} />
+              </Field>
+
+              <Field label="赛事官网 / 公告链接" className="md:col-span-2">
+                <input className="input-glass" placeholder="https://example.edu.cn/competition（选填）" value={form.sourceUrl} onChange={(e) => updateField('sourceUrl', e.target.value)} />
               </Field>
 
               <Field label="赛事封面" className="md:col-span-2">

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import PageHero from '../../components/PageHero';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -15,6 +16,13 @@ import {
   type CompetitionSourceType,
   type CrawlFrequency,
 } from '../../api/competitionSource';
+import {
+  averageConfidence,
+  formatConfidence,
+  listAiCompetitionDrafts,
+  toDisplayItems,
+  type AiCompetitionDraftVO,
+} from '../../api/aiCompetition';
 import { listContainer, listItem, pageTransition, pageVariants } from '../../lib/motion';
 
 const sourceTypeOptions: Array<{ value: CompetitionSourceType; label: string }> = [
@@ -72,6 +80,8 @@ function crawlStatusMeta(status?: string) {
 }
 
 export default function CompetitionSourceManagement() {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'sources' | 'results'>('sources');
   const [sources, setSources] = useState<CompetitionSource[]>([]);
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState('');
@@ -82,6 +92,8 @@ export default function CompetitionSourceManagement() {
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<number | string | null>(null);
   const [crawlingIds, setCrawlingIds] = useState<Set<string>>(new Set());
+  const [crawlDrafts, setCrawlDrafts] = useState<AiCompetitionDraftVO[]>([]);
+  const [crawlLoading, setCrawlLoading] = useState(false);
   const {
     isOpen,
     title,
@@ -111,6 +123,24 @@ export default function CompetitionSourceManagement() {
   useEffect(() => {
     loadSources();
   }, [loadSources]);
+
+  const loadCrawlResults = useCallback(async () => {
+    setCrawlLoading(true);
+    try {
+      const result = await listAiCompetitionDrafts({ current: 1, size: 100 });
+      const records = Array.isArray(result) ? result : (result.records || []);
+      setCrawlDrafts(records.filter((d) => d.sourceType === 'crawler' || d.sourceType === 'crawl' || d.sourceType === 'url'));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '加载采集结果失败');
+      setCrawlDrafts([]);
+    } finally {
+      setCrawlLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'results') loadCrawlResults();
+  }, [activeTab, loadCrawlResults]);
 
   const filteredSources = useMemo(() => {
     const normalizedKeyword = keyword.trim().toLowerCase();
@@ -250,6 +280,30 @@ export default function CompetitionSourceManagement() {
         )}
       />
 
+      {/* Tab bar */}
+      <div className="flex rounded-sm border border-hairline bg-canvas-parchment p-1 self-start">
+        {([
+          { key: 'sources', icon: 'hub', label: '来源管理' },
+          { key: 'results', icon: 'analytics', label: `采集结果 (${crawlDrafts.length})` },
+        ] as const).map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key)}
+            className={`flex h-9 items-center gap-1.5 rounded-sm px-4 text-[13px] font-medium transition ${
+              activeTab === tab.key
+                ? 'bg-canvas text-primary shadow-sm'
+                : 'text-body-muted hover:text-ink'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'sources' && (
+      <>
       <section className="grid grid-cols-1 divide-y divide-hairline overflow-hidden rounded-md border border-hairline bg-canvas sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {[
           { label: '来源总数', value: sources.length, icon: 'hub', tone: 'text-primary' },
@@ -423,6 +477,73 @@ export default function CompetitionSourceManagement() {
           </div>
         )}
       </section>
+      </>
+      )}
+
+      {/* Crawl Results Tab */}
+      {activeTab === 'results' && (
+        <section className="glass overflow-hidden">
+          {crawlLoading ? (
+            <div className="grid min-h-[320px] place-items-center text-placeholder">
+              <span className="material-symbols-outlined animate-spin text-[28px]">progress_activity</span>
+            </div>
+          ) : crawlDrafts.length === 0 ? (
+            <div className="flex min-h-[360px] flex-col items-center justify-center px-lg text-center">
+              <span className="material-symbols-outlined text-[46px] text-placeholder">analytics</span>
+              <p className="mt-3 text-[14px] text-ink">暂无采集结果</p>
+              <p className="mt-1 text-[12px] text-placeholder">触发采集后，抓取到的赛事将显示在这里</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 divide-y divide-hairline">
+              {crawlDrafts.map((draft) => {
+                const avg = averageConfidence(draft.fieldConfidenceJson);
+                const risky = Boolean(draft.duplicateCompetitionId) || toDisplayItems(draft.riskFlagsJson).length > 0;
+                const statusLabel = draft.status === 'confirmed' ? '已确认' : draft.status === 'ignored' ? '已忽略' : '待审核';
+                const statusClass = draft.status === 'confirmed' ? 'chip-success' : draft.status === 'ignored' ? 'chip-closed' : 'chip-warning';
+                return (
+                  <div key={draft.id} className="flex items-center gap-lg px-lg py-md transition hover:bg-canvas-parchment/70">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-[14px] font-medium text-ink">{draft.name || '未命名赛事'}</h3>
+                        <span className={`chip shrink-0 ${statusClass}`}>{statusLabel}</span>
+                        {risky && (
+                          <span className="flex items-center gap-1 chip shrink-0 chip-warning">
+                            <span className="material-symbols-outlined text-[13px]">warning</span>
+                            风险
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-placeholder">
+                        {draft.sourceUrl && (
+                          <a href={draft.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-primary truncate max-w-[300px]">
+                            <span className="material-symbols-outlined text-[14px]">link</span>
+                            {draft.sourceUrl}
+                          </a>
+                        )}
+                        <span>{draft.createTime ? new Date(draft.createTime).toLocaleString('zh-CN') : '—'}</span>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2 text-[12px]">
+                      {avg !== null && (
+                        <span className={`tabular-nums ${avg < 0.7 ? 'text-warning' : 'text-placeholder'}`}>
+                          置信度 {formatConfidence(avg)}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        className="btn-secondary !py-1.5 !text-[12px]"
+                        onClick={() => navigate(`/admin/drafts?draft=${draft.id}&source=ai`)}
+                      >
+                        查看
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
 
       <AnimatePresence>
         {showForm && (

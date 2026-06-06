@@ -22,6 +22,7 @@ type BackendCompetition = {
   competitionEnd?: string;
   maxTeamSize?: number;
   coverUrl?: string;
+  sourceUrl?: string;
   content?: string;
   stages?: any[];
 };
@@ -188,6 +189,23 @@ export default function CompetitionDetail() {
           </div>
         </div>
       </div>
+
+      {/* Official link */}
+      {comp.sourceUrl && (
+        <a
+          href={comp.sourceUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="glass flex items-center gap-3 px-lg py-md transition hover:bg-canvas-parchment"
+        >
+          <span className="material-symbols-outlined text-[20px] text-primary">open_in_new</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-[13px] font-medium text-ink">访问赛事官网 / 查看原始公告</p>
+            <p className="mt-0.5 truncate text-[12px] text-placeholder">{comp.sourceUrl}</p>
+          </div>
+          <span className="material-symbols-outlined text-[18px] text-placeholder">arrow_forward</span>
+        </a>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg">
         {/* Main */}

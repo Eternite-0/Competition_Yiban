@@ -81,6 +81,7 @@ public class CompetitionController {
         result.put("competitionEnd", vo.getCompetitionEnd());
         result.put("maxTeamSize", vo.getMaxTeamSize());
         result.put("coverUrl", vo.getCoverUrl());
+        result.put("sourceUrl", comp.getSourceUrl());
         result.put("content", vo.getContent());
         result.put("tags", vo.getTags());
         result.put("tracks", vo.getTracks());
@@ -138,6 +139,7 @@ public class CompetitionController {
         if (dto.getCompetitionEnd() != null) comp.setCompetitionEnd(dto.getCompetitionEnd());
         if (dto.getMaxTeamSize() != null) comp.setMaxTeamSize(dto.getMaxTeamSize());
         if (dto.getCoverUrl() != null) comp.setCoverUrl(dto.getCoverUrl());
+        if (dto.getSourceUrl() != null) comp.setSourceUrl(dto.getSourceUrl());
         if (dto.getContent() != null) comp.setContent(dto.getContent());
         if (CollUtil.isNotEmpty(dto.getTags())) {
             comp.setTags(JSONUtil.toJsonStr(dto.getTags()));
