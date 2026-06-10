@@ -10,12 +10,15 @@ import com.etsaion.vo.ai.AiConversationVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Tag(name = "AI智能体对话")
 @RestController
@@ -33,12 +36,31 @@ public class AiChatController {
     }
 
     @Operation(summary = "SSE 智能体对话")
-    @PostMapping("/stream")
-    public SseEmitter stream(@Validated @RequestBody AiChatRequestDTO dto) throws IOException {
+    @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter stream(@Validated @RequestBody AiChatRequestDTO dto) {
         SseEmitter emitter = new SseEmitter(120000L);
-        AiChatResponseVO response = aiChatService.chat(UserContext.getUserId(), UserContext.getUserRole(), dto);
-        emitter.send(SseEmitter.event().name("message").data(response));
-        emitter.complete();
+        Long userId = UserContext.getUserId();
+        String role = UserContext.getUserRole();
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                AiChatResponseVO response = aiChatService.chat(userId, role, dto, message -> {
+                    try {
+                        emitter.send(SseEmitter.event().name("progress").data(Map.of("message", message)));
+                    } catch (IOException ignored) {
+                    }
+                });
+                emitter.send(SseEmitter.event().name("message").data(response));
+                emitter.complete();
+            } catch (Exception e) {
+                try {
+                    emitter.send(SseEmitter.event().name("error")
+                            .data(Map.of("message", e.getMessage() != null ? e.getMessage() : "AI 助手暂时不可用")));
+                } catch (IOException ignored) {
+                }
+                emitter.completeWithError(e);
+            }
+        });
         return emitter;
     }
 

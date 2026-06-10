@@ -36,6 +36,7 @@ export interface AiChatConversationDetail extends AiChatConversationSummary {
 interface StreamHandlers {
   signal?: AbortSignal;
   onToken?: (token: string, answer: string) => void;
+  onProgress?: (message: string) => void;
   onConversationId?: (conversationId: string) => void;
   onToolContext?: (toolContext: unknown) => void;
   onCreateTime?: (createTime: string) => void;
@@ -89,6 +90,14 @@ export async function streamAiChatMessage(
 
     const parsed = parseEventData(event.data);
     const data = unwrapResult(parsed);
+    if (event.eventName === 'progress') {
+      const message = isRecord(data)
+        ? valueToString(data.message ?? data.text ?? data.status)
+        : valueToString(data);
+      if (message) handlers.onProgress?.(message);
+      return;
+    }
+
     if (event.eventName === 'error') {
       const message = typeof data === 'object' && data && 'message' in data
         ? String((data as { message?: unknown }).message ?? 'AI stream failed')

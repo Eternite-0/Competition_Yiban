@@ -346,11 +346,19 @@ public class AssistantToolRegistry {
         Map<String, Object> function = new LinkedHashMap<>();
         function.put("name", name);
         function.put("description", description);
-        function.put("parameters", parameters);
+        function.put("parameters", withStrictObjectParameters(parameters));
         Map<String, Object> tool = new LinkedHashMap<>();
         tool.put("type", "function");
         tool.put("function", function);
         return tool;
+    }
+
+    private Map<String, Object> withStrictObjectParameters(Map<String, Object> parameters) {
+        Map<String, Object> strict = new LinkedHashMap<>(parameters);
+        if ("object".equals(strict.get("type"))) {
+            strict.putIfAbsent("additionalProperties", false);
+        }
+        return strict;
     }
 
     private Map<String, Object> competitionSummary(Competition c) {

@@ -196,6 +196,12 @@ export default function AIAssistantWidget() {
         {
           signal: controller.signal,
           onConversationId: (id) => setConversationId(id),
+          onProgress: (message) => {
+            updateAssistantMessage(assistantMessage.id, {
+              progress: { message, createTime: new Date().toISOString() },
+              status: 'sending',
+            });
+          },
           onToken: (_token, answer) => {
             setStatus('streaming');
             updateAssistantMessage(assistantMessage.id, {
@@ -212,6 +218,7 @@ export default function AIAssistantWidget() {
         status: 'done',
         toolContext: streamResponse.toolContext,
         createTime: streamResponse.createTime,
+        progress: undefined,
       });
       setStatus('idle');
       void refreshConversations();

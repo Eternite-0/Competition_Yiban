@@ -16,28 +16,22 @@ interface QuickPromptChipsProps {
 
 const promptsByRole: Record<UserRole, QuickPrompt[]> = {
   student: [
-    { label: '我的报名', icon: 'how_to_reg', prompt: '查看我当前的报名状态和审核进度。' },
-    { label: '成长档案', icon: 'radar', prompt: '分析我的成长雷达数据，指出能力短板和提升建议。' },
-    { label: '活动参与', icon: 'event', prompt: '我参加了哪些活动？审核状态如何？' },
-    { label: '赛事推荐', icon: 'travel_explore', prompt: '根据我的能力水平，推荐适合我参加的赛事。' },
-    { label: '消息通知', icon: 'mail', prompt: '我有哪些未读消息和最新通知？' },
-    { label: '获奖证明', icon: 'emoji_events', prompt: '我的获奖证明审核情况如何？' },
+    { label: '查报名', icon: 'how_to_reg', prompt: '查看我当前的报名状态和下一步要做的事。' },
+    { label: '看截止', icon: 'event', prompt: '帮我看看最近有哪些赛事或任务快截止。' },
+    { label: '成果材料', icon: 'upload_file', prompt: '根据我的参赛情况，整理需要提交的成果材料清单。' },
+    { label: '成长建议', icon: 'radar', prompt: '分析我的成长档案，给出简短提升建议。' },
   ],
   teacher: [
-    { label: '待审核', icon: 'fact_check', prompt: '当前有哪些待审核的任务？帮我按优先级排序。' },
-    { label: '学院总览', icon: 'account_balance', prompt: '学院整体参赛率和获奖率怎么样？有什么异常？' },
-    { label: '查学生', icon: 'person_search', prompt: '查一下张三同学的参赛和个人情况。' },
-    { label: '查专业', icon: 'school', prompt: '计算机科学与技术专业有多少人？参赛情况如何？' },
-    { label: '获奖审核', icon: 'verified', prompt: '有待审核的获奖证明吗？AI 识别置信度如何？' },
-    { label: '未参赛', icon: 'person_off', prompt: '哪些学生报名了但还没提交成果？' },
+    { label: '待审核', icon: 'fact_check', prompt: '列出我当前需要处理的待审核任务。' },
+    { label: '查学生', icon: 'person_search', prompt: '查一下张三同学的参赛和成果情况。' },
+    { label: '学院概览', icon: 'account_balance', prompt: '概览学院近期参赛、获奖和待审核情况。' },
+    { label: '审核意见', icon: 'edit_note', prompt: '帮我草拟一段简洁、规范的审核意见。' },
   ],
   admin: [
-    { label: '待办任务', icon: 'task_alt', prompt: '当前有哪些待处理的审核任务？' },
-    { label: '赛事草稿', icon: 'edit_note', prompt: '有哪些赛事草稿待审核？来源是什么？' },
-    { label: 'AI 任务', icon: 'smart_toy', prompt: '最近 AI 任务的执行情况如何？有失败的吗？' },
-    { label: '用户统计', icon: 'group', prompt: '平台用户的角色分布和注册情况怎么样？' },
-    { label: '赛事统计', icon: 'query_stats', prompt: '汇总本周赛事发布和报名统计亮点。' },
-    { label: '公告管理', icon: 'campaign', prompt: '最近发了哪些公告？有需要更新的吗？' },
+    { label: '待办', icon: 'task_alt', prompt: '汇总当前需要管理员处理的待办事项。' },
+    { label: 'AI任务', icon: 'smart_toy', prompt: '查看最近 AI 任务执行情况和失败项。' },
+    { label: '赛事草稿', icon: 'edit_note', prompt: '列出待审核的赛事草稿和主要风险。' },
+    { label: '公告草稿', icon: 'campaign', prompt: '帮我草拟一条简洁的赛事通知公告。' },
   ],
 };
 
@@ -62,11 +56,11 @@ export default function QuickPromptChips({
               transition={{ duration: 0.2, delay: index * 0.04 }}
               disabled={disabled}
               onClick={() => onSelect(item.prompt)}
-              className="group flex h-11 w-full items-center gap-3 rounded-[12px] px-3 text-left text-[14px] text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+              className="group flex h-10 w-full items-center gap-2.5 rounded-[10px] px-3 text-left text-[13px] text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
               aria-label={item.prompt}
               title={item.prompt}
             >
-                <span className="material-symbols-outlined text-[19px] text-slate-400 transition group-hover:text-indigo-500">
+                <span className="material-symbols-outlined text-[18px] text-slate-400 transition group-hover:text-indigo-500">
                 {item.icon}
               </span>
               <span className="truncate">{item.prompt}</span>

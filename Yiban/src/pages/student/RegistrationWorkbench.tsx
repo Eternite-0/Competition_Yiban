@@ -22,11 +22,24 @@ type BackendCompetition = {
   tracks?: string[];
 };
 
+type RegistrationSummary = {
+  id: number | string;
+  competitionId: number | string;
+  status: string;
+  teamName?: string;
+};
+
 function formatDate(value?: string) {
   if (!value) return '—';
   const d = new Date(value);
   if (isNaN(d.getTime())) return value;
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function parseDate(value?: string) {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
 }
 
 export default function RegistrationWorkbench() {
@@ -36,11 +49,12 @@ export default function RegistrationWorkbench() {
   const [comp, setComp] = useState<BackendCompetition | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+  const [existingRegistration, setExistingRegistration] = useState<RegistrationSummary | null>(null);
 
   const [teamName, setTeamName] = useState('');
   const [members, setMembers] = useState<string[]>(['']);
   const [selectedTrack, setSelectedTrack] = useState('');
+  const [memberError, setMemberError] = useState('');
 
   useEffect(() => {
     if (!competitionId) return;
@@ -57,55 +71,16 @@ export default function RegistrationWorkbench() {
       }
       try {
         const regs: any = await apiClient.get('/registration/my');
-        const list: Array<{ competitionId: number | string; status: string }> = Array.isArray(regs) ? regs : [];
-        const activeStatuses = ['待完善', '已提交', '审核中', '审核通过'];
-        if (list.some((r) => String(r.competitionId) === String(competitionId) && activeStatuses.includes(r.status))) {
-          setAlreadyRegistered(true);
-        }
+        const list: RegistrationSummary[] = Array.isArray(regs) ? regs : [];
+        const activeStatuses = ['待完善', '已提交', '审核中', '审核通过', '退回补充'];
+        const found = list.find((r) => String(r.competitionId) === String(competitionId) && activeStatuses.includes(r.status));
+        setExistingRegistration(found || null);
       } catch (err) {
         console.error(err);
       }
     };
     load();
   }, [competitionId]);
-
-  const addMember = () => setMembers([...members, '']);
-  const updateMember = (index: number, value: string) => {
-    const updated = [...members];
-    updated[index] = value;
-    setMembers(updated);
-  };
-  const removeMember = (index: number) => {
-    if (members.length > 1) {
-      setMembers(members.filter((_, i) => i !== index));
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!comp) return;
-    if (!teamName.trim()) {
-      toast.error('请填写队伍名称');
-      return;
-    }
-    const memberStudentIds = members
-      .map((m) => Number(m.trim()))
-      .filter((id) => Number.isFinite(id) && id > 0);
-    try {
-      setSubmitting(true);
-      await apiClient.post('/registration/submit', {
-        competitionId: Number(comp.id),
-        teamName: teamName.trim(),
-        track: selectedTrack || undefined,
-        memberStudentIds,
-      });
-      toast.success('报名成功');
-      navigate('/student/registrations');
-    } catch (err: any) {
-      toast.error(err.message || '报名失败');
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -125,17 +100,103 @@ export default function RegistrationWorkbench() {
     );
   }
 
+  const maxTeamSize = Math.max(1, Number(comp.maxTeamSize || 1));
+  const isSoloCompetition = maxTeamSize <= 1;
+  const maxMemberCount = Math.max(0, maxTeamSize - 1);
+  const now = new Date();
+  const startTime = parseDate(comp.startTime);
+  const endTime = parseDate(comp.endTime);
+  const isNotOpen = comp.status === 'draft' || (startTime ? now < startTime : false);
+  const isClosed = comp.status === 'closed' || (endTime ? now > endTime : false);
+
+  const validateMembers = () => {
+    if (isSoloCompetition) return [];
+    const rawMembers = members.map((m) => m.trim()).filter(Boolean);
+    if (rawMembers.length > maxMemberCount) {
+      setMemberError(`最多只能添加 ${maxMemberCount} 名队友`);
+      return null;
+    }
+    const invalid = rawMembers.find((m) => !/^\d+$/.test(m));
+    if (invalid) {
+      setMemberError(`队友学号「${invalid}」格式不正确`);
+      return null;
+    }
+    const repeated = rawMembers.find((m, index) => rawMembers.indexOf(m) !== index);
+    if (repeated) {
+      setMemberError(`队友学号「${repeated}」重复`);
+      return null;
+    }
+    setMemberError('');
+    return rawMembers.map(Number);
+  };
+
+  const addMember = () => {
+    if (members.length >= maxMemberCount) {
+      toast.error(`本赛事最多 ${maxTeamSize} 人，最多添加 ${maxMemberCount} 名队友`);
+      return;
+    }
+    setMembers([...members, '']);
+    setMemberError('');
+  };
+
+  const updateMember = (index: number, value: string) => {
+    const updated = [...members];
+    updated[index] = value;
+    setMembers(updated);
+    setMemberError('');
+  };
+
+  const removeMember = (index: number) => {
+    if (members.length > 1) {
+      setMembers(members.filter((_, i) => i !== index));
+      setMemberError('');
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (existingRegistration) {
+      toast.info('您已报名该赛事，请前往我的报名查看进度');
+      return;
+    }
+    if (isNotOpen || isClosed) {
+      toast.error(isNotOpen ? '报名尚未开始' : '报名已截止');
+      return;
+    }
+    if (!isSoloCompetition && !teamName.trim()) {
+      toast.error('请填写队伍名称');
+      return;
+    }
+    const memberStudentIds = validateMembers();
+    if (memberStudentIds === null) return;
+    try {
+      setSubmitting(true);
+      await apiClient.post('/registration/submit', {
+        competitionId: Number(comp.id),
+        teamName: isSoloCompetition ? (teamName.trim() || '个人报名') : teamName.trim(),
+        track: selectedTrack || undefined,
+        memberStudentIds,
+      });
+      toast.success('报名成功');
+      navigate('/student/registrations');
+    } catch (err: any) {
+      toast.error(err.message || '报名失败');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const steps = [
-    { label: '查看通知', done: true },
-    { label: '下载附件', done: true },
-    { label: '准备材料', done: false, active: true },
-    { label: 'AI 解析', done: false },
-    { label: '提交报名', done: false },
+    { label: '查看要求', done: true },
+    { label: '填写信息', done: false, active: !existingRegistration },
+    { label: '提交报名', done: Boolean(existingRegistration) },
+    { label: '等待审核', done: existingRegistration?.status === '审核通过', active: existingRegistration && existingRegistration.status !== '审核通过' },
+    { label: '上传成果', done: false },
   ];
 
   const trackList: string[] = Array.isArray(comp.tracks) && comp.tracks.length > 0
     ? comp.tracks
     : ['软件开发', 'AI 大模型', '数字媒体'];
+  const validMembers = isSoloCompetition ? [] : members.map((m) => m.trim()).filter(Boolean);
 
   return (
     <motion.div
@@ -145,10 +206,9 @@ export default function RegistrationWorkbench() {
       transition={pageTransition}
       className="py-lg flex flex-col gap-lg"
     >
-      {/* Header */}
       <PageHero
         title="报名材料填写"
-        description="根据赛事要求完成团队信息与赛道选择，确认后提交报名。"
+        description="根据赛事要求完成参赛信息与赛道选择，确认后提交报名。"
         prefix={(
           <nav className="flex items-center gap-1 text-[13px] text-ink-muted-48 mb-1">
             <button onClick={() => navigate('/student/competitions')} className="hover:text-ink transition">赛事大厅</button>
@@ -160,7 +220,6 @@ export default function RegistrationWorkbench() {
         )}
       />
 
-      {/* Stepper */}
       <div className="glass p-lg">
         <motion.div variants={listContainer} initial="hidden" animate="visible" className="relative grid grid-cols-5">
           <div className="absolute left-[10%] right-[10%] top-5 h-[2px] bg-hairline" />
@@ -170,15 +229,11 @@ export default function RegistrationWorkbench() {
               <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full grid place-items-center text-[12px] sm:text-[14px] font-semibold relative z-10 ${
                 step.done
                   ? 'bg-primary text-on-primary'
-                : step.active
+                  : step.active
                     ? 'bg-canvas border-2 border-primary text-primary'
                     : 'bg-surface-chip text-placeholder'
               }`}>
-                {step.done ? (
-                  <span className="material-symbols-outlined text-[18px]">check</span>
-                ) : (
-                  idx + 1
-                )}
+                {step.done ? <span className="material-symbols-outlined text-[18px]">check</span> : idx + 1}
               </div>
               <span className={`mt-3 text-[13px] hidden sm:block ${
                 step.active ? 'text-primary font-medium' : step.done ? 'text-ink' : 'text-placeholder'
@@ -190,25 +245,24 @@ export default function RegistrationWorkbench() {
         </motion.div>
       </div>
 
-      {alreadyRegistered && (
-        <div className="glass p-md flex items-center gap-3 border border-primary/20">
-          <span className="material-symbols-outlined text-[20px] text-primary">info</span>
-          <div>
-            <p className="text-[14px] font-medium text-ink">您已报名该赛事</p>
-            <p className="text-[12px] text-ink-muted-80 mt-0.5">可前往我的报名页面查看进度。</p>
+      {existingRegistration && (
+        <div className="glass p-lg flex flex-col md:flex-row md:items-center gap-4 border border-primary/20">
+          <span className="material-symbols-outlined text-[24px] text-primary">task_alt</span>
+          <div className="flex-1">
+            <p className="text-[15px] font-semibold text-ink">您已报名该赛事</p>
+            <p className="text-[13px] text-ink-muted-80 mt-0.5">当前状态：{existingRegistration.status}。请在我的报名中查看审核进度和下一步操作。</p>
           </div>
-          <button
-            onClick={() => navigate('/student/registrations')}
-            className="ml-auto btn-secondary !py-1.5 !text-[13px]"
-          >
-            查看我的报名
-          </button>
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => navigate('/student/registrations')} className="btn-primary !py-2 !text-[13px]">查看我的报名</button>
+            <button onClick={() => navigate('/student/progress')} className="btn-secondary !py-2 !text-[13px]">查看进度</button>
+            {(existingRegistration.status === '待完善' || existingRegistration.status === '退回补充') && (
+              <button onClick={() => navigate(`/student/upload/${existingRegistration.id}`)} className="btn-secondary !py-2 !text-[13px]">上传/补充材料</button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* 3-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg">
-        {/* Left: Attachments */}
         <div className="lg:col-span-3 glass p-lg h-fit">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-[15px] font-semibold text-ink flex items-center gap-2">
@@ -217,30 +271,14 @@ export default function RegistrationWorkbench() {
             </h2>
           </div>
           <ul className="flex flex-col gap-2 text-[13px]">
-            <li className="flex justify-between border-b border-hairline py-2">
-              <span className="text-ink-muted-48">级别</span>
-              <span className="text-ink">{comp.level}</span>
-            </li>
-            <li className="flex justify-between border-b border-hairline py-2">
-              <span className="text-ink-muted-48">类别</span>
-              <span className="text-ink">{comp.category} 类</span>
-            </li>
-            <li className="flex justify-between border-b border-hairline py-2">
-              <span className="text-ink-muted-48">报名截止</span>
-              <span className="text-ink tabular-nums">{formatDate(comp.endTime)}</span>
-            </li>
-            <li className="flex justify-between border-b border-hairline py-2">
-              <span className="text-ink-muted-48">赛事开始</span>
-              <span className="text-ink tabular-nums">{formatDate(comp.competitionStart)}</span>
-            </li>
-            <li className="flex justify-between py-2">
-              <span className="text-ink-muted-48">最大人数</span>
-              <span className="text-ink">{comp.maxTeamSize ?? '—'} 人</span>
-            </li>
+            <li className="flex justify-between border-b border-hairline py-2"><span className="text-ink-muted-48">级别</span><span className="text-ink">{comp.level}</span></li>
+            <li className="flex justify-between border-b border-hairline py-2"><span className="text-ink-muted-48">类别</span><span className="text-ink">{comp.category} 类</span></li>
+            <li className="flex justify-between border-b border-hairline py-2"><span className="text-ink-muted-48">报名截止</span><span className="text-ink tabular-nums">{formatDate(comp.endTime)}</span></li>
+            <li className="flex justify-between border-b border-hairline py-2"><span className="text-ink-muted-48">赛事开始</span><span className="text-ink tabular-nums">{formatDate(comp.competitionStart)}</span></li>
+            <li className="flex justify-between py-2"><span className="text-ink-muted-48">最大人数</span><span className="text-ink">{maxTeamSize} 人</span></li>
           </ul>
         </div>
 
-        {/* Center: Form */}
         <div className="lg:col-span-6 glass p-xl">
           <div className="mb-lg pb-md border-b border-hairline">
             <h2 className="text-[21px] font-semibold tracking-tight text-ink">报名材料</h2>
@@ -248,85 +286,78 @@ export default function RegistrationWorkbench() {
           </div>
 
           <div className="flex flex-col gap-md">
-            {/* Team Name */}
             <div className="flex flex-col gap-2">
               <label className="text-[13px] font-medium text-ink">
-                <span className="text-error mr-1">*</span>队伍名称
+                {!isSoloCompetition && <span className="text-error mr-1">*</span>}{isSoloCompetition ? '报名名称（选填）' : '队伍名称'}
               </label>
               <input
                 className="input-glass"
-                placeholder="请输入队伍名称"
+                placeholder={isSoloCompetition ? '个人报名可不填写' : '请输入队伍名称'}
                 value={teamName}
+                disabled={Boolean(existingRegistration)}
                 onChange={(e) => setTeamName(e.target.value)}
               />
             </div>
 
-            {/* Members */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <label className="text-[13px] font-medium text-ink">
-                  团队成员（仅供参考）
-                </label>
-                <button
-                  onClick={addMember}
-                  className="flex items-center gap-1 text-primary hover:text-primary-focus text-[12px] font-medium transition"
-                >
-                  <span className="material-symbols-outlined text-[16px]">group_add</span>
-                  添加成员
-                </button>
-              </div>
-              <div className="rounded-md border border-hairline overflow-hidden">
-                <div className="grid grid-cols-[60px_1fr_60px] text-[11px] uppercase tracking-wider text-ink-muted-48 bg-canvas-parchment/60 px-3 py-2">
-                  <span className="text-center">序号</span>
-                  <span>学生ID</span>
-                  <span className="text-center">操作</span>
+            {!isSoloCompetition && (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[13px] font-medium text-ink">团队成员（队友学号）</label>
+                  <button
+                    type="button"
+                    onClick={addMember}
+                    disabled={Boolean(existingRegistration)}
+                    className="flex items-center gap-1 text-primary hover:text-primary-focus text-[12px] font-medium transition disabled:opacity-50"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">group_add</span>
+                    添加成员
+                  </button>
                 </div>
-                {members.map((member, idx) => (
-                  <div key={idx} className="grid grid-cols-[60px_1fr_60px] items-center px-3 py-2 border-t border-hairline">
-                    <span className="text-center text-[13px] text-ink-muted-48 tabular-nums">{idx + 1}</span>
-                    <input
-                      className="h-8 px-2 rounded-sm border border-hairline bg-canvas/60 text-[13px] text-ink focus:border-primary-focus focus:outline-none transition"
-                      placeholder="输入队友学号"
-                      value={member}
-                      onChange={(e) => updateMember(idx, e.target.value)}
-                    />
-                    <div className="text-center">
-                      {members.length > 1 && (
-                        <button
-                          onClick={() => removeMember(idx)}
-                          className="text-ink-muted-48 hover:text-primary transition"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">delete</span>
-                        </button>
-                      )}
-                    </div>
+                <p className="text-[12px] text-ink-muted-48">本赛事最多 {maxTeamSize} 人，除本人外最多添加 {maxMemberCount} 名队友。</p>
+                <div className="rounded-md border border-hairline overflow-hidden">
+                  <div className="grid grid-cols-[60px_1fr_60px] text-[11px] uppercase tracking-wider text-ink-muted-48 bg-canvas-parchment/60 px-3 py-2">
+                    <span className="text-center">序号</span><span>学号</span><span className="text-center">操作</span>
                   </div>
-                ))}
+                  {members.map((member, idx) => (
+                    <div key={idx} className="grid grid-cols-[60px_1fr_60px] items-center px-3 py-2 border-t border-hairline">
+                      <span className="text-center text-[13px] text-ink-muted-48 tabular-nums">{idx + 1}</span>
+                      <input
+                        className="h-8 px-2 rounded-sm border border-hairline bg-canvas/60 text-[13px] text-ink focus:border-primary-focus focus:outline-none transition"
+                        placeholder="输入队友学号"
+                        value={member}
+                        disabled={Boolean(existingRegistration)}
+                        onChange={(e) => updateMember(idx, e.target.value)}
+                      />
+                      <div className="text-center">
+                        {members.length > 1 && (
+                          <button type="button" onClick={() => removeMember(idx)} className="text-ink-muted-48 hover:text-primary transition" disabled={Boolean(existingRegistration)}>
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {memberError && <p className="text-[12px] text-error">{memberError}</p>}
               </div>
-            </div>
+            )}
 
-            {/* Track */}
             <div className="flex flex-col gap-2">
-              <label className="text-[13px] font-medium text-ink">
-                选择赛道
-              </label>
+              <label className="text-[13px] font-medium text-ink">选择赛道</label>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {trackList.map((track) => (
                   <motion.button
                     key={track}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
+                    whileHover={{ scale: existingRegistration ? 1 : 1.03 }}
+                    whileTap={{ scale: existingRegistration ? 1 : 0.97 }}
                     transition={pageTransition}
-                    onClick={() => setSelectedTrack(track)}
-                    className={`text-left rounded-md p-md border transition ${
-                      selectedTrack === track
-                        ? 'border-primary bg-primary/5'
-                        : 'border-hairline bg-canvas hover:border-primary/40'
+                    onClick={() => !existingRegistration && setSelectedTrack(track)}
+                    disabled={Boolean(existingRegistration)}
+                    className={`text-left rounded-md p-md border transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-70 ${
+                      selectedTrack === track ? 'border-primary bg-primary/5' : 'border-hairline bg-canvas hover:border-primary/40'
                     }`}
                   >
-                    <span className={`material-symbols-outlined text-[22px] ${
-                      selectedTrack === track ? 'text-primary icon-fill' : 'text-ink-muted-48'
-                    }`}>flag</span>
+                    <span className={`material-symbols-outlined text-[22px] ${selectedTrack === track ? 'text-primary icon-fill' : 'text-ink-muted-48'}`}>flag</span>
                     <h3 className="text-[14px] font-semibold text-ink mt-2">{track}</h3>
                   </motion.button>
                 ))}
@@ -335,59 +366,36 @@ export default function RegistrationWorkbench() {
           </div>
         </div>
 
-        {/* Right: AI Assistant */}
         <div className="lg:col-span-3 flex flex-col gap-md">
           <div className="glass-strong p-lg">
             <div className="flex items-center justify-between mb-md">
               <h2 className="text-[15px] font-semibold text-ink flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-primary icon-fill">auto_awesome</span>
-                AI 助手
+                <span className="material-symbols-outlined text-[18px] text-primary icon-fill">fact_check</span>
+                报名提示
               </h2>
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-              </span>
             </div>
-            <p className="text-[12px] text-ink-muted-80 leading-relaxed mb-3">
-              助手已阅读官方通知，为您提取关键信息。
-            </p>
+            <p className="text-[12px] text-ink-muted-80 leading-relaxed mb-3">请核对截止时间、组队人数和赛道后再提交。</p>
 
             <div className="rounded-md bg-canvas p-3 border border-hairline mb-3">
-              <h3 className="text-[12px] font-semibold text-ink mb-2 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[14px] text-primary">key</span> 关键信息
-              </h3>
+              <h3 className="text-[12px] font-semibold text-ink mb-2 flex items-center gap-1.5"><span className="material-symbols-outlined text-[14px] text-primary">key</span> 关键信息</h3>
               <div className="flex flex-col gap-2">
-                <div className="flex items-start gap-2">
-                  <span className="material-symbols-outlined text-[14px] text-primary mt-0.5">event_busy</span>
-                  <div>
-                    <p className="text-[11px] font-semibold text-ink">报名截止</p>
-                    <p className="text-[11px] text-ink-muted-80">{formatDate(comp.endTime)}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="material-symbols-outlined text-[14px] text-primary mt-0.5">group</span>
-                  <div>
-                    <p className="text-[11px] font-semibold text-ink">团队要求</p>
-                    <p className="text-[11px] text-ink-muted-80">最多 {comp.maxTeamSize ?? '—'} 人</p>
-                  </div>
-                </div>
+                <InfoLine icon="event_busy" label="报名截止" value={formatDate(comp.endTime)} />
+                <InfoLine icon="group" label="团队要求" value={isSoloCompetition ? '个人赛' : `最多 ${maxTeamSize} 人`} />
+                <InfoLine icon="flag" label="赛道选择" value={selectedTrack || '未选择'} />
               </div>
             </div>
 
             <div className="rounded-md bg-canvas p-3 border border-hairline">
-              <h3 className="text-[12px] font-semibold text-ink mb-2 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[14px] text-primary">fact_check</span> 检查清单
-              </h3>
+              <h3 className="text-[12px] font-semibold text-ink mb-2 flex items-center gap-1.5"><span className="material-symbols-outlined text-[14px] text-primary">checklist</span> 检查清单</h3>
               <ul className="flex flex-col gap-1.5">
                 {[
-                  { done: !!teamName.trim(), label: '填写队伍信息' },
+                  { done: isSoloCompetition || !!teamName.trim(), label: isSoloCompetition ? '个人报名' : '填写队伍名称' },
                   { done: !!selectedTrack, label: '选择参赛赛道' },
-                  { done: members.some((m) => m.trim()), label: '添加团队成员' },
+                  { done: isSoloCompetition || validMembers.length <= maxMemberCount, label: '成员数量未超限' },
+                  { done: !isClosed && !isNotOpen, label: '当前处于报名期' },
                 ].map((it) => (
                   <li key={it.label} className="flex items-center gap-2 text-[12px]">
-                    <span className={`material-symbols-outlined text-[16px] ${it.done ? 'text-primary icon-fill' : 'text-ink-muted-48'}`}>
-                      {it.done ? 'check_circle' : 'radio_button_unchecked'}
-                    </span>
+                    <span className={`material-symbols-outlined text-[16px] ${it.done ? 'text-primary icon-fill' : 'text-ink-muted-48'}`}>{it.done ? 'check_circle' : 'radio_button_unchecked'}</span>
                     <span className={it.done ? 'text-ink-muted-48 line-through' : 'text-ink'}>{it.label}</span>
                   </li>
                 ))}
@@ -401,30 +409,37 @@ export default function RegistrationWorkbench() {
             </div>
             <div>
               <p className="text-[13px] font-semibold text-ink">遇到报名问题？</p>
-              <p className="text-[12px] text-ink-muted-48 mt-0.5 mb-2">查看常见问题或联系组委会。</p>
-              <button className="text-[12px] text-primary hover:text-primary-focus font-medium flex items-center gap-1">
-                联系客服 <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-              </button>
+              <p className="text-[12px] text-ink-muted-48 mt-0.5 mb-2">请先查看赛事原始通知，必要时联系组委会。</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom Actions */}
       <div className="flex justify-end gap-2">
-        <motion.button whileTap={{ scale: 0.97 }} className="btn-secondary" onClick={() => navigate(-1)}>
-          返回
-        </motion.button>
-        <motion.button whileTap={{ scale: 0.97 }}
+        <motion.button whileTap={{ scale: 0.97 }} className="btn-secondary" onClick={() => navigate(-1)}>返回</motion.button>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
           onClick={handleSubmit}
-          disabled={submitting || alreadyRegistered || !teamName.trim()}
+          disabled={submitting || Boolean(existingRegistration) || isNotOpen || isClosed || (!isSoloCompetition && !teamName.trim())}
           className="btn-primary"
         >
           {submitting && <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>}
           <span className="material-symbols-outlined text-[18px]">send</span>
-          {alreadyRegistered ? '已报名' : '提交报名'}
+          {existingRegistration ? '已报名' : isClosed ? '报名已截止' : isNotOpen ? '暂不可报名' : '提交报名'}
         </motion.button>
       </div>
     </motion.div>
+  );
+}
+
+function InfoLine({ icon, label, value }: { icon: string; label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-2">
+      <span className="material-symbols-outlined text-[14px] text-primary mt-0.5">{icon}</span>
+      <div>
+        <p className="text-[11px] font-semibold text-ink">{label}</p>
+        <p className="text-[11px] text-ink-muted-80">{value}</p>
+      </div>
+    </div>
   );
 }

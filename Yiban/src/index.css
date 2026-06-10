@@ -821,7 +821,6 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid rgba(148, 163, 184, 0.22);
   background: var(--color-canvas);
 }
-
 /* ── Dark mode: 按钮冰蓝渐变 ── */
 .dark .btn-primary {
   background: linear-gradient(135deg, #2563EB, #38BDF8);

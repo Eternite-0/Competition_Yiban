@@ -60,6 +60,20 @@ function getAwardProofRecords(data: AwardProofVO[] | { records?: AwardProofVO[] 
   return data?.records ?? [];
 }
 
+function auditTypeLabel(item: Pick<Submission, 'source' | 'targetType'>) {
+  if (item.source === 'awardProof' || item.targetType === 'award_proof') return '获奖证明';
+  if (item.targetType === 'registration') return '报名审核';
+  if (item.targetType === 'participation') return '活动审核';
+  return '成果审核';
+}
+
+function auditTypeChip(item: Pick<Submission, 'source' | 'targetType'>) {
+  if (item.source === 'awardProof' || item.targetType === 'award_proof') return 'chip chip-success';
+  if (item.targetType === 'registration') return 'chip chip-warning';
+  if (item.targetType === 'participation') return 'chip';
+  return 'chip chip-primary';
+}
+
 function mapAwardProof(item: AwardProofVO, detailLoaded = false): Submission {
   const students = item.students ?? item.studentList ?? [];
   const teamMembers = students.map((student, index) => {
@@ -273,7 +287,7 @@ export default function SubmissionAudit() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterTab, setFilterTab] = useState<'全部' | '成果材料' | '获奖证明'>('全部');
+  const [filterTab, setFilterTab] = useState<'全部' | '报名' | '成果' | '获奖证明' | '活动'>('全部');
   const [previewFile, setPreviewFile] = useState<{ fileName: string; fileUrl: string } | null>(null);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -367,8 +381,10 @@ export default function SubmissionAudit() {
 
   const filteredPending = useMemo(() => {
     let list = pendingSubmissions;
-    if (filterTab === '成果材料') list = pendingSubmissions.filter(s => s.source !== 'awardProof');
-    if (filterTab === '获奖证明') list = pendingSubmissions.filter(s => s.source === 'awardProof');
+    if (filterTab === '报名') list = pendingSubmissions.filter(s => s.targetType === 'registration');
+    if (filterTab === '成果') list = pendingSubmissions.filter(s => s.targetType === 'submission' || s.source === 'submission');
+    if (filterTab === '获奖证明') list = pendingSubmissions.filter(s => s.source === 'awardProof' || s.targetType === 'award_proof');
+    if (filterTab === '活动') list = pendingSubmissions.filter(s => s.targetType === 'participation');
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       list = list.filter(
@@ -404,8 +420,10 @@ export default function SubmissionAudit() {
     return () => { cancelled = true; };
   }, [selected?.id, selected?.source, selected?.targetId, selected?.detailLoaded]);
 
-  const materialCount = pendingSubmissions.filter(item => item.source !== 'awardProof').length;
-  const awardProofCount = pendingSubmissions.filter(item => item.source === 'awardProof').length;
+  const registrationCount = pendingSubmissions.filter(item => item.targetType === 'registration').length;
+  const submissionCount = pendingSubmissions.filter(item => item.targetType === 'submission' || item.source === 'submission').length;
+  const awardProofCount = pendingSubmissions.filter(item => item.source === 'awardProof' || item.targetType === 'award_proof').length;
+  const participationCount = pendingSubmissions.filter(item => item.targetType === 'participation').length;
 
   const handleAudit = async (approve: boolean, reviewNote: string) => {
     if (!selected) return;
@@ -478,8 +496,8 @@ export default function SubmissionAudit() {
       {/* Header */}
       <PageHero
         eyebrow="Review"
-        title="成果审核工作台"
-        description="统一处理报名材料、成果附件与 AI 获奖证明，保持审核口径一致并快速反馈结果。"
+        title="统一审核中心"
+        description="统一处理报名审核、成果附件、活动材料与 AI 获奖证明，保持审核口径一致并快速反馈结果。"
       />
 
       {/* Three-column */}
@@ -500,8 +518,10 @@ export default function SubmissionAudit() {
             <div className="flex gap-1 p-0.5 bg-primary/6 rounded-pill w-fit">
               {([
                 { key: '全部', label: `全部 ${pendingSubmissions.length}` },
-                { key: '成果材料', label: `成果 ${materialCount}` },
-                { key: '获奖证明', label: `获奖证明 ${awardProofCount}` },
+                { key: '报名', label: `报名 ${registrationCount}` },
+                { key: '成果', label: `成果 ${submissionCount}` },
+                { key: '获奖证明', label: `获奖 ${awardProofCount}` },
+                { key: '活动', label: `活动 ${participationCount}` },
               ] as const).map(tab => (
                 <button
                   key={tab.key}
@@ -552,8 +572,8 @@ export default function SubmissionAudit() {
                   )}
                   <div className="flex justify-between items-start mb-1.5">
                     <span className="text-[14px] font-semibold text-ink">{s.studentName || '未知学生'}</span>
-                    <span className={s.source === 'awardProof' ? 'chip chip-success' : 'chip chip-warning'}>
-                      {s.source === 'awardProof' ? '获奖证明' : '待审核'}
+                    <span className={auditTypeChip(s)}>
+                      {auditTypeLabel(s)}
                     </span>
                   </div>
                   <p className="text-[12px] text-ink-muted-80 line-clamp-2 leading-snug">{s.competitionTitle || '未知赛事'}</p>
@@ -586,6 +606,15 @@ export default function SubmissionAudit() {
                   <DetailItem label="学生姓名" value={selected.studentName} />
                   <DetailItem label="赛事名称" value={selected.competitionTitle} />
                   <DetailItem label="上传时间" value={selected.uploadDate} />
+                  {selected.targetType === 'registration' && (
+                    <>
+                      <DetailItem label="审核类型" value="报名审核" />
+                      <DetailItem label="队伍/赛道" value={selected.fileName || '—'} />
+                    </>
+                  )}
+                  {selected.targetType === 'participation' && (
+                    <DetailItem label="审核类型" value="活动参与审核" />
+                  )}
                   {selected.source === 'awardProof' && (
                     <>
                       <DetailItem label="证明类型" value="AI 获奖证明" />

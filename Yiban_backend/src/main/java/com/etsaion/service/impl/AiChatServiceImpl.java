@@ -28,6 +28,7 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -49,9 +50,11 @@ public class AiChatServiceImpl implements AiChatService {
             规则：
             1. 必须基于工具返回的真实数据回答，不要编造。
             2. 不执行任何写操作（发布、审核、提交、删除等）。
-            3. 回答简洁、结构化，必要时用列表或表格展示。
-            4. 如果工具返回空数据，如实告知用户。
-            5. 如果用户问题与平台无关，可以正常闲聊，但不要调用工具。
+            3. 回答要简洁、清爽，优先使用短段落和项目符号。
+            4. 不要使用 Emoji、颜文字或夸张语气。
+            5. 尽量不要使用 Markdown 表格；小面板里表格不易阅读，改用分组列表。
+            6. 如果工具返回空数据，如实告知用户。
+            7. 如果用户问题与平台无关，可以正常闲聊，但不要调用工具。
             """;
 
     @Autowired
@@ -69,6 +72,13 @@ public class AiChatServiceImpl implements AiChatService {
     @Override
     @Transactional
     public AiChatResponseVO chat(Long userId, String role, AiChatRequestDTO dto) {
+        return chat(userId, role, dto, null);
+    }
+
+    @Override
+    @Transactional
+    public AiChatResponseVO chat(Long userId, String role, AiChatRequestDTO dto, Consumer<String> progress) {
+        emitProgress(progress, "正在理解问题");
         List<String> imageDataUrls = validateImageDataUrls(dto.getImageDataUrls());
         String userText = StrUtil.blankToDefault(StrUtil.trim(dto.getMessage()), "请分析图片附件。");
         AiConversation conversation = findOrCreateConversation(userId, role, dto);
@@ -85,6 +95,7 @@ public class AiChatServiceImpl implements AiChatService {
         // 获取工具定义
         List<Map<String, Object>> tools = assistantToolRegistry.getToolDefinitions(userId, role);
 
+        emitProgress(progress, "正在判断是否需要查询数据");
         // Function Calling 循环
         String finalAnswer = "";
         Map<String, Object> usedToolContext = new LinkedHashMap<>();
@@ -118,9 +129,11 @@ public class AiChatServiceImpl implements AiChatService {
 
             // 执行每个 tool_call，把结果作为 tool message 追加
             for (ToolCallVO toolCall : response.getToolCalls()) {
+                emitProgress(progress, toolProgressMessage(toolCall.getFunctionName(), true));
                 String result = assistantToolRegistry.executeTool(
                         toolCall.getFunctionName(), toolCall.getArguments(), userId, role);
                 usedToolContext.put(toolCall.getFunctionName(), JSONUtil.parse(result));
+                emitProgress(progress, toolProgressMessage(toolCall.getFunctionName(), false));
 
                 Map<String, Object> toolMsg = new LinkedHashMap<>();
                 toolMsg.put("role", "tool");
@@ -130,6 +143,18 @@ public class AiChatServiceImpl implements AiChatService {
             }
         }
 
+        if (StrUtil.isBlank(finalAnswer) && !usedToolContext.isEmpty()) {
+            emitProgress(progress, "正在根据已读取数据生成回复");
+            messages.add(Map.of("role", "user", "content", "请基于以上工具结果直接用中文回答，不要再调用工具。"));
+            AiModelResponseVO summaryResponse = mimoModelClient.chatWithTools(SYSTEM_PROMPT, messages, List.of());
+            if (summaryResponse.isSuccess() && StrUtil.isNotBlank(summaryResponse.getContent())) {
+                finalAnswer = summaryResponse.getContent();
+            } else {
+                finalAnswer = "已读取相关平台数据，但暂时未能整理成完整回复。你可以换个更具体的问题再试一次。";
+            }
+        }
+
+        emitProgress(progress, "正在整理回答");
         // 保存助手消息
         saveMessage(conversation.getId(), "assistant", finalAnswer, JSONUtil.toJsonStr(usedToolContext));
         conversation.setLastMessageAt(LocalDateTime.now());
@@ -169,6 +194,32 @@ public class AiChatServiceImpl implements AiChatService {
         requireConversation(userId, conversationId);
         aiMessageService.remove(new LambdaQueryWrapper<AiMessage>().eq(AiMessage::getConversationId, conversationId));
         aiConversationService.removeById(conversationId);
+    }
+
+    private void emitProgress(Consumer<String> progress, String message) {
+        if (progress == null || StrUtil.isBlank(message)) return;
+        progress.accept(message);
+    }
+
+    private String toolProgressMessage(String toolName, boolean start) {
+        String target = switch (toolName) {
+            case "search_competitions", "get_competition_detail" -> "赛事信息";
+            case "get_my_registrations" -> "报名记录";
+            case "get_my_submissions" -> "成果记录";
+            case "get_my_award_proofs", "get_award_proof_audit" -> "获奖证明";
+            case "get_my_growth" -> "成长档案";
+            case "get_my_participations" -> "活动记录";
+            case "get_my_messages" -> "站内消息";
+            case "get_announcements" -> "公告";
+            case "search_students", "get_student_detail" -> "学生信息";
+            case "get_pending_reviews" -> "待审核任务";
+            case "get_college_overview" -> "学院总览";
+            case "get_pending_drafts" -> "赛事草稿";
+            case "get_ai_task_stats" -> "AI 任务";
+            case "get_user_stats" -> "用户统计";
+            default -> "平台数据";
+        };
+        return start ? "正在查询" + target : "已读取" + target;
     }
 
     // ────────────── 对话历史构建 ──────────────

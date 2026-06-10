@@ -4,12 +4,20 @@ import { useStore } from '../store/useStore';
 import { softSpring } from '../lib/motion';
 
 interface NavItem {
+  type?: 'item';
   icon: string;
   label: string;
   path: string;
 }
 
-const studentNav: NavItem[] = [
+interface NavGroup {
+  type: 'group';
+  label: string;
+}
+
+type NavEntry = NavItem | NavGroup;
+
+const studentNav: NavEntry[] = [
   { icon: 'space_dashboard', label: '工作台', path: '/student' },
   { icon: 'emoji_events', label: '赛事大厅', path: '/student/competitions' },
   { icon: 'timeline', label: '我的进度', path: '/student/progress' },
@@ -21,38 +29,46 @@ const studentNav: NavItem[] = [
   { icon: 'upload_file', label: '上传成果', path: '/student/achievements/upload' },
 ];
 
-const teacherNav: NavItem[] = [
+const teacherNav: NavEntry[] = [
   { icon: 'space_dashboard', label: '工作台', path: '/teacher' },
   { icon: 'analytics', label: '学院总览', path: '/teacher/college-overview' },
   { icon: 'emoji_events', label: '赛事大厅', path: '/teacher/competitions' },
-  { icon: 'fact_check', label: '成果审批', path: '/teacher/audit' },
+  { icon: 'fact_check', label: '学院审核中心', path: '/teacher/audit' },
   { icon: 'school', label: '学生看板', path: '/teacher/student-competitions' },
   { icon: 'trending_up', label: '学情分析', path: '/teacher/student-growth' },
 ];
 
-const adminNav: NavItem[] = [
+const adminNav: NavEntry[] = [
+  { type: 'group', label: '工作台' },
   { icon: 'space_dashboard', label: '工作台', path: '/admin' },
+  { type: 'group', label: '赛事运营' },
   { icon: 'emoji_events', label: '赛事管理', path: '/admin/competitions' },
   { icon: 'add_circle', label: '赛事发布', path: '/admin/publish' },
   { icon: 'draft', label: '草稿箱', path: '/admin/drafts' },
   { icon: 'travel_explore', label: '赛事来源', path: '/admin/competition-sources' },
   { icon: 'campaign', label: '公告管理', path: '/admin/announcements' },
-  { icon: 'auto_awesome', label: '作品库', path: '/admin/works' },
-  { icon: 'fact_check', label: '系统审核', path: '/admin/audit' },
+  { type: 'group', label: '审核与成果' },
+  { icon: 'fact_check', label: '统一审核中心', path: '/admin/audit' },
+  { icon: 'how_to_reg', label: '教师注册审核', path: '/admin/registration-audit' },
+  { icon: 'auto_awesome', label: '优秀作品库', path: '/admin/works' },
+  { type: 'group', label: '用户与基础数据' },
   { icon: 'manage_accounts', label: '用户管理', path: '/admin/users' },
   { icon: 'school', label: '专业管理', path: '/admin/majors' },
   { icon: 'class', label: '班级管理', path: '/admin/classes' },
   { icon: 'group', label: '花名册管理', path: '/admin/roster' },
-  { icon: 'how_to_reg', label: '注册审核', path: '/admin/registration-audit' },
 ];
 
-const navMap: Record<string, NavItem[]> = { student: studentNav, teacher: teacherNav, admin: adminNav };
+const navMap: Record<string, NavEntry[]> = { student: studentNav, teacher: teacherNav, admin: adminNav };
 
 const roleLabel: Record<string, string> = {
   student: '学生',
   teacher: '教师',
   admin: '管理员',
 };
+
+function isGroup(item: NavEntry): item is NavGroup {
+  return item.type === 'group';
+}
 
 interface SidebarProps {
   mobileOpen: boolean;
@@ -101,51 +117,60 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
           主导航
         </p>
         <ul className="flex flex-col gap-1">
-          {items.map((item) => (
-            <li key={item.path}>
-              <NavLink
-                to={item.path}
-                onClick={onClose}
-                end={item.path.split('/').length <= 2}
-                className={({ isActive }) =>
-                  `group relative flex h-10 items-center gap-3 overflow-hidden rounded-sm border-l-2 px-3 text-[14px] font-normal transition-colors ${
-                    isActive ? 'border-primary bg-primary-soft text-primary' : 'border-transparent text-body-muted hover:bg-canvas-parchment hover:text-ink'
-                  }`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive ? (
-                      <motion.span
-                        layoutId="dock-active-item"
-                        className="absolute inset-0 rounded-sm bg-primary-soft"
-                        transition={softSpring}
-                      />
-                    ) : (
-                      <span className="absolute inset-0 rounded-sm opacity-0 transition group-hover:bg-canvas-parchment group-hover:opacity-100" />
-                    )}
-                    {isActive && (
-                      <motion.span
-                        layoutId="dock-active-mark"
-                        className="absolute left-0 top-0 bottom-0 w-[2px] bg-primary"
-                        transition={softSpring}
-                      />
-                    )}
-                    <span
-                      className={`material-symbols-outlined relative z-10 text-[19px] transition ${
-                        isActive ? 'icon-fill text-primary' : 'text-placeholder group-hover:text-body-muted'
-                      }`}
-                    >
-                      {item.icon}
-                    </span>
-                    <span className="relative z-10 truncate">
-                      {item.label}
-                    </span>
-                  </>
-                )}
-              </NavLink>
-            </li>
-          ))}
+          {items.map((item, index) => {
+            if (isGroup(item)) {
+              return (
+                <li key={`${item.label}-${index}`} className="px-3 pb-1 pt-3 first:pt-0 text-[11px] font-semibold tracking-wide text-placeholder">
+                  {item.label}
+                </li>
+              );
+            }
+            return (
+              <li key={item.path}>
+                <NavLink
+                  to={item.path}
+                  onClick={onClose}
+                  end={item.path.split('/').length <= 2}
+                  className={({ isActive }) =>
+                    `group relative flex h-10 items-center gap-3 overflow-hidden rounded-sm border-l-2 px-3 text-[14px] font-normal transition-colors ${
+                      isActive ? 'border-primary bg-primary-soft text-primary' : 'border-transparent text-body-muted hover:bg-canvas-parchment hover:text-ink'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive ? (
+                        <motion.span
+                          layoutId="dock-active-item"
+                          className="absolute inset-0 rounded-sm bg-primary-soft"
+                          transition={softSpring}
+                        />
+                      ) : (
+                        <span className="absolute inset-0 rounded-sm opacity-0 transition group-hover:bg-canvas-parchment group-hover:opacity-100" />
+                      )}
+                      {isActive && (
+                        <motion.span
+                          layoutId="dock-active-mark"
+                          className="absolute left-0 top-0 bottom-0 w-[2px] bg-primary"
+                          transition={softSpring}
+                        />
+                      )}
+                      <span
+                        className={`material-symbols-outlined relative z-10 text-[19px] transition ${
+                          isActive ? 'icon-fill text-primary' : 'text-placeholder group-hover:text-body-muted'
+                        }`}
+                      >
+                        {item.icon}
+                      </span>
+                      <span className="relative z-10 truncate">
+                        {item.label}
+                      </span>
+                    </>
+                  )}
+                </NavLink>
+              </li>
+            );
+          })}
         </ul>
       </nav>
 

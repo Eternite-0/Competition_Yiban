@@ -9,3 +9,13 @@ export interface ChatImageAttachment {
   size: number;
   type: string;
 }
+
+export interface AiSourceSummary {
+  label: string;
+  count?: number;
+}
+
+export interface AiToolProgress {
+  message: string;
+  createTime?: string;
+}

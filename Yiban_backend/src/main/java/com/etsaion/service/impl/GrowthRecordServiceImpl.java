@@ -9,11 +9,13 @@ import com.etsaion.entity.Competition;
 import com.etsaion.entity.GrowthRecord;
 import com.etsaion.entity.Registration;
 import com.etsaion.entity.Submission;
+import com.etsaion.entity.SubmissionStudent;
 import com.etsaion.mapper.GrowthRecordMapper;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.GrowthRecordService;
 import com.etsaion.service.RegistrationService;
 import com.etsaion.service.SubmissionService;
+import com.etsaion.service.SubmissionStudentService;
 import com.etsaion.vo.StudentGrowthVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,6 +42,10 @@ public class GrowthRecordServiceImpl extends ServiceImpl<GrowthRecordMapper, Gro
     @Autowired
     @Lazy
     private SubmissionService submissionService;
+
+    @Autowired
+    @Lazy
+    private SubmissionStudentService submissionStudentService;
 
     @Override
     public List<GrowthRecord> getTimeline(Long studentId) {
@@ -64,16 +71,36 @@ public class GrowthRecordServiceImpl extends ServiceImpl<GrowthRecordMapper, Gro
         // 2. Fetch approved submissions count (awards)
         List<Long> registrationIds = registrations.stream().map(Registration::getId).collect(Collectors.toList());
         
-        List<Submission> approvedSubmissions = new ArrayList<>();
+        List<Submission> registrationSubmissions = new ArrayList<>();
         if (CollUtil.isNotEmpty(registrationIds)) {
-            approvedSubmissions = submissionService.list(new LambdaQueryWrapper<Submission>()
+            registrationSubmissions = submissionService.list(new LambdaQueryWrapper<Submission>()
                     .in(Submission::getRegistrationId, registrationIds)
                     .eq(Submission::getStatus, "已审核")
-                    .eq(Submission::getApproved, true))
-                    .stream()
-                    .filter(s -> "已审核".equals(s.getStatus()) && Boolean.TRUE.equals(s.getApproved()))
-                    .collect(Collectors.toList());
+                    .eq(Submission::getApproved, true));
         }
+
+        List<Long> linkedSubmissionIds = submissionStudentService.list(new LambdaQueryWrapper<SubmissionStudent>()
+                        .eq(SubmissionStudent::getStudentId, studentId))
+                .stream()
+                .map(SubmissionStudent::getSubmissionId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        List<Submission> linkedSubmissions = CollUtil.isNotEmpty(linkedSubmissionIds)
+                ? submissionService.list(new LambdaQueryWrapper<Submission>()
+                        .in(Submission::getId, linkedSubmissionIds)
+                        .eq(Submission::getStatus, "已审核")
+                        .eq(Submission::getApproved, true))
+                : Collections.emptyList();
+
+        Map<Long, Submission> approvedSubmissionMap = new HashMap<>();
+        registrationSubmissions.stream()
+                .filter(s -> s.getId() != null)
+                .forEach(s -> approvedSubmissionMap.put(s.getId(), s));
+        linkedSubmissions.stream()
+                .filter(s -> s.getId() != null)
+                .forEach(s -> approvedSubmissionMap.put(s.getId(), s));
+        List<Submission> approvedSubmissions = new ArrayList<>(approvedSubmissionMap.values());
         int awards = approvedSubmissions.size();
 
         // Base ability points (students start with a baseline of 60)
