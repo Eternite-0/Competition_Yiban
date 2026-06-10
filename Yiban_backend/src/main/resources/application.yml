@@ -44,10 +44,11 @@ file:
 ai:
   base-url: ${AI_BASE_URL:https://token-plan-cn.xiaomimimo.com/v1}
   api-key: ${AI_API_KEY:}
-  model: ${AI_MODEL:mimo-v2.5}
+  model: ${AI_MODEL:mimo-v2.5-pro}
+  vision-model: ${AI_VISION_MODEL:mimo-v2-omni}
   context-window: ${AI_CONTEXT_WINDOW:1000000}
-  timeout-seconds: ${AI_TIMEOUT_SECONDS:120}
-  max-retries: ${AI_MAX_RETRIES:2}
+  timeout-seconds: ${AI_TIMEOUT_SECONDS:25}
+  max-retries: ${AI_MAX_RETRIES:0}
 
 oss:
   qiniu:

@@ -1,5 +1,5 @@
 export type UserRole = 'student' | 'teacher' | 'admin';
-export type ActivityType = 'competition' | 'volunteer';
+export type ActivityType = 'competition' | 'volunteer' | 'other';
 export type ActivityStatus = 'draft' | 'published' | 'closed' | 'archived';
 export type ParticipationStatus = 'submitted' | 'in_review' | 'approved' | 'rejected' | 'returned' | 'cancelled';
 export type ReviewTaskStatus = 'pending' | 'processing' | 'resolved';
@@ -14,7 +14,7 @@ export interface User {
 }
 
 export type CompetitionLevel = '国家级' | '省级' | '校级' | '院级';
-export type CompetitionCategory = 'A' | 'B' | 'C';
+export type CompetitionCategory = string;
 export type CompetitionStatus = '报名中' | '进行中' | '已结束' | '即将截止';
 
 export interface Competition {
@@ -88,14 +88,33 @@ export interface Activity {
   type: ActivityType;
   title: string;
   status: ActivityStatus;
+  level?: string;
+  category?: string;
+  organizer?: string;
   startTime?: string;
   endTime?: string;
   activityStart?: string;
   activityEnd?: string;
+  maxTeamSize?: number;
+  maxParticipants?: number;
+  coverUrl?: string;
+  content?: string;
   tracks?: string[];
   tags?: string[];
   location?: string;
   serviceHours?: number;
+}
+
+export interface ActivityCategory {
+  id: number;
+  type: ActivityType;
+  code: string;
+  name: string;
+  icon?: string;
+  sortOrder?: number;
+  status?: 'active' | 'disabled';
+  createTime?: string;
+  updateTime?: string;
 }
 
 export interface Participation {

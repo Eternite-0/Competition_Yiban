@@ -9,10 +9,11 @@ import org.springframework.util.StringUtils;
 public class AiProperties {
     private String baseUrl = "https://token-plan-cn.xiaomimimo.com/v1";
     private String apiKey = "";
-    private String model = "mimo-v2.5";
+    private String model = "mimo-v2.5-pro";
+    private String visionModel = "mimo-v2-omni";
     private int contextWindow = 1000000;
-    private int timeoutSeconds = 120;
-    private int maxRetries = 2;
+    private int timeoutSeconds = 25;
+    private int maxRetries = 0;
 
     public boolean hasApiKey() {
         return StringUtils.hasText(apiKey);
@@ -40,6 +41,14 @@ public class AiProperties {
 
     public void setModel(String model) {
         this.model = model;
+    }
+
+    public String getVisionModel() {
+        return visionModel;
+    }
+
+    public void setVisionModel(String visionModel) {
+        this.visionModel = visionModel;
     }
 
     public int getContextWindow() {

@@ -47,7 +47,13 @@ public class FileServeController {
         // 设置响应头
         String contentType = Files.probeContentType(file.toPath());
         if (contentType == null) {
-            contentType = "application/octet-stream";
+            if (filename.toLowerCase().endsWith(".xlsx")) {
+                contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            } else if (filename.toLowerCase().endsWith(".docx")) {
+                contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            } else {
+                contentType = "application/octet-stream";
+            }
         }
         response.setContentType(contentType);
         response.setContentLengthLong(file.length());

@@ -19,6 +19,8 @@ class AiChatContractTest {
         assertNotNull(Class.forName("com.etsaion.mapper.AiMessageMapper"));
         assertNotNull(Class.forName("com.etsaion.service.ai.AiConversationService"));
         assertNotNull(Class.forName("com.etsaion.service.ai.AiMessageService"));
+        assertNotNull(Class.forName("com.etsaion.service.ai.AiArtifactService"));
+        assertNotNull(Class.forName("com.etsaion.vo.ai.AiArtifactVO"));
         Class<?> chatService = Class.forName("com.etsaion.service.ai.AiChatService");
         assertTrue(hasMethod(chatService, "chat"));
         assertTrue(hasMethod(chatService, "listConversations"));

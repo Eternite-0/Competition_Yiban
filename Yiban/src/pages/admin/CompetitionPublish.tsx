@@ -5,49 +5,44 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { listContainer, listItem, smoothEase } from '../../lib/motion';
 import apiClient from '../../api/client';
 import { uploadToQiniu, getSignedDownloadUrl } from '../../api/qiniu';
-import type { CompetitionLevel, CompetitionCategory } from '../../types';
+import { createActivityCategory, listActivityCategories } from '../../api/activityCategories';
+import type { ActivityCategory, ActivityType, CompetitionLevel } from '../../types';
 import PageHero from '../../components/PageHero';
 import ConfirmModal from '../../components/ConfirmModal';
 import LazyImage from '../../components/LazyImage';
 import { useConfirmModal } from '../../hooks/useConfirmModal';
 import AiImportPanel, { aiDraftToPublishForm } from './components/AiImportPanel';
 
+type PublishStatus = 'draft' | 'published' | 'closed';
+
 interface PublishFormState {
+  activityType: ActivityType;
   title: string;
   level: CompetitionLevel | '';
-  category: CompetitionCategory | '';
-  status: 'draft' | 'published' | 'closed' | '';
+  category: string;
+  status: PublishStatus | '';
   organizer: string;
   regStart: string;
   regEnd: string;
-  compStart: string;
-  compEnd: string;
+  activityStart: string;
+  activityEnd: string;
   description: string;
   detailContent: string;
   tags: string;
   coverUrl: string;
   sourceUrl: string;
   maxTeamSize: number;
+  maxParticipants: number;
+  location: string;
+  serviceHours: string;
   tracks: string[];
 }
 
-const toPublishPayload = (form: PublishFormState, status: 'draft' | 'published' | 'closed') => ({
-  name: form.title,
-  level: form.level || '校级',
-  category: form.category || 'A',
-  organizer: form.organizer,
-  startTime: form.regStart || null,
-  endTime: form.regEnd || null,
-  competitionStart: form.compStart || null,
-  competitionEnd: form.compEnd || null,
-  maxTeamSize: form.maxTeamSize,
-  coverUrl: form.coverUrl,
-  sourceUrl: form.sourceUrl || null,
-  content: form.detailContent || form.description,
-  tags: form.tags ? form.tags.split(/[,，]/).map((t) => t.trim()).filter(Boolean) : [],
-  tracks: form.tracks,
-  status,
-});
+const activityTypes: { value: ActivityType; label: string; icon: string; hint: string }[] = [
+  { value: 'competition', label: '竞赛赛事', icon: 'emoji_events', hint: '保留参赛报名、组队、成果提交等完整赛事流程' },
+  { value: 'volunteer', label: '志愿服务', icon: 'volunteer_activism', hint: '用于志愿活动报名、岗位选择和服务时长记录' },
+  { value: 'other', label: '其他活动', icon: 'event_available', hint: '用于讲座、培训、实践项目等通用活动' },
+];
 
 const levelOptions: { value: CompetitionLevel; label: string }[] = [
   { value: '国家级', label: '国家级' },
@@ -56,13 +51,8 @@ const levelOptions: { value: CompetitionLevel; label: string }[] = [
   { value: '院级', label: '院级' },
 ];
 
-const categoryOptions: { value: CompetitionCategory; label: string }[] = [
-  { value: 'A', label: '科技创新' },
-  { value: 'B', label: '商业创业' },
-  { value: 'C', label: '文化艺术' },
-];
-
 const defaultForm: PublishFormState = {
+  activityType: 'competition',
   title: '',
   level: '',
   category: '',
@@ -70,24 +60,41 @@ const defaultForm: PublishFormState = {
   organizer: '',
   regStart: '',
   regEnd: '',
-  compStart: '',
-  compEnd: '',
+  activityStart: '',
+  activityEnd: '',
   description: '',
   detailContent: '',
   tags: '',
   coverUrl: '',
   sourceUrl: '',
   maxTeamSize: 5,
+  maxParticipants: 0,
+  location: '',
+  serviceHours: '',
   tracks: [],
 };
 
-const defaultTracks = ['软件开发', 'AI 大模型', '数字媒体', '硬件创新', '学术论文', '创业实践'];
+const defaultTracks: Record<ActivityType, string[]> = {
+  competition: ['软件开发', 'AI 大模型', '数字媒体', '硬件创新', '学术论文', '创业实践'],
+  volunteer: ['秩序维护', '场馆引导', '资料整理', '宣传服务', '社区走访', '活动保障'],
+  other: ['讲座', '培训', '实践', '调研', '展示', '交流'],
+};
+
+const typeText: Record<ActivityType, { noun: string; title: string; stage: string; track: string; trackHint: string }> = {
+  competition: { noun: '赛事', title: '赛事名称', stage: '比赛时间', track: '参赛赛道', trackHint: '选择该赛事开放的赛道，学生报名时可从中选择。' },
+  volunteer: { noun: '志愿活动', title: '活动名称', stage: '服务时间', track: '服务岗位', trackHint: '选择该志愿活动开放的岗位，学生报名时可从中选择。' },
+  other: { noun: '活动', title: '活动名称', stage: '活动时间', track: '活动方向', trackHint: '选择活动方向或场次，学生报名时可从中选择。' },
+};
 
 const levelChipClass = (level?: string) => {
   if (level === '国家级') return 'chip chip-national';
   if (level === '省级') return 'chip chip-province';
   return 'chip chip-school';
 };
+
+function splitTags(value: string) {
+  return value ? value.split(/[,，]/).map((t) => t.trim()).filter(Boolean) : [];
+}
 
 function formatDateForInput(value?: string) {
   if (!value) return '';
@@ -96,13 +103,70 @@ function formatDateForInput(value?: string) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function formatDateOffset(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function toCompetitionPayload(form: PublishFormState, status: PublishStatus) {
+  return {
+    name: form.title,
+    level: form.level || '校级',
+    category: form.category || 'A',
+    organizer: form.organizer,
+    startTime: form.regStart || null,
+    endTime: form.regEnd || null,
+    competitionStart: form.activityStart || null,
+    competitionEnd: form.activityEnd || null,
+    maxTeamSize: form.maxTeamSize,
+    coverUrl: form.coverUrl,
+    sourceUrl: form.sourceUrl || null,
+    content: form.detailContent || form.description,
+    tags: splitTags(form.tags),
+    tracks: form.tracks,
+    status,
+  };
+}
+
+function toActivityPayload(form: PublishFormState, status: PublishStatus) {
+  return {
+    type: form.activityType,
+    title: form.title,
+    level: form.level || null,
+    category: form.category,
+    organizer: form.organizer,
+    startTime: form.regStart || null,
+    endTime: form.regEnd || null,
+    activityStart: form.activityStart || null,
+    activityEnd: form.activityEnd || null,
+    maxTeamSize: form.maxTeamSize,
+    maxParticipants: form.maxParticipants > 0 ? form.maxParticipants : null,
+    coverUrl: form.coverUrl,
+    content: form.detailContent || form.description,
+    tags: splitTags(form.tags),
+    tracks: form.tracks,
+    location: form.location || null,
+    serviceHours: form.serviceHours ? Number(form.serviceHours) : null,
+    status,
+    config: {
+      sourceUrl: form.sourceUrl || null,
+    },
+  };
+}
+
 export default function CompetitionPublish() {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
-  const isEdit = !!id;
+  const { id, activityId } = useParams<{ id?: string; activityId?: string }>();
+  const isCompetitionEdit = !!id;
+  const isActivityEdit = !!activityId;
+  const isEdit = isCompetitionEdit || isActivityEdit;
 
   const [form, setForm] = useState<PublishFormState>({ ...defaultForm });
   const [errors, setErrors] = useState<Partial<Record<keyof PublishFormState, string>>>({});
+  const [categories, setCategories] = useState<ActivityCategory[]>([]);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [categoryLoading, setCategoryLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [pageLoading, setPageLoading] = useState(isEdit);
@@ -110,7 +174,9 @@ export default function CompetitionPublish() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [activeTab, setActiveTab] = useState<'manual' | 'ai-import'>('manual');
 
-  // Resolve cover URL for display — try direct first, fall back to signed URL on error
+  const text = typeText[form.activityType];
+  const categoryLabel = categories.find((c) => c.code === form.category)?.name || form.category;
+
   useEffect(() => {
     if (!form.coverUrl) {
       setCoverDisplayUrl('');
@@ -118,6 +184,31 @@ export default function CompetitionPublish() {
     }
     setCoverDisplayUrl(form.coverUrl);
   }, [form.coverUrl]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadCategories = async () => {
+      try {
+        setCategoryLoading(true);
+        const list = await listActivityCategories(form.activityType);
+        if (cancelled) return;
+        setCategories(list);
+        setForm((prev) => {
+          if (!prev.category) return prev;
+          return list.some((item) => item.code === prev.category || item.name === prev.category) ? prev : prev;
+        });
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) toast.error('活动分类加载失败');
+      } finally {
+        if (!cancelled) setCategoryLoading(false);
+      }
+    };
+    loadCategories();
+    return () => {
+      cancelled = true;
+    };
+  }, [form.activityType]);
 
   const handleCoverLoadError = async () => {
     if (!form.coverUrl || coverDisplayUrl !== form.coverUrl) return;
@@ -130,7 +221,6 @@ export default function CompetitionPublish() {
     }
   };
 
-  // Load existing competition data when editing
   useEffect(() => {
     if (!id) return;
     const load = async () => {
@@ -143,6 +233,8 @@ export default function CompetitionPublish() {
           return;
         }
         setForm({
+          ...defaultForm,
+          activityType: 'competition',
           title: data.name || '',
           level: data.level || '',
           category: data.category || '',
@@ -150,8 +242,8 @@ export default function CompetitionPublish() {
           organizer: data.organizer || '',
           regStart: formatDateForInput(data.startTime),
           regEnd: formatDateForInput(data.endTime),
-          compStart: formatDateForInput(data.competitionStart),
-          compEnd: formatDateForInput(data.competitionEnd),
+          activityStart: formatDateForInput(data.competitionStart),
+          activityEnd: formatDateForInput(data.competitionEnd),
           description: data.content || '',
           detailContent: '',
           tags: Array.isArray(data.tags) ? data.tags.join(', ') : '',
@@ -171,6 +263,51 @@ export default function CompetitionPublish() {
     load();
   }, [id, navigate]);
 
+  useEffect(() => {
+    if (!activityId) return;
+    const load = async () => {
+      try {
+        setPageLoading(true);
+        const data: any = await apiClient.get(`/activities/${activityId}`);
+        if (!data) {
+          toast.error('活动不存在');
+          navigate('/admin/competitions');
+          return;
+        }
+        setForm({
+          ...defaultForm,
+          activityType: data.type || 'other',
+          title: data.title || '',
+          level: data.level || '',
+          category: data.category || '',
+          status: data.status || 'draft',
+          organizer: data.organizer || '',
+          regStart: formatDateForInput(data.startTime),
+          regEnd: formatDateForInput(data.endTime),
+          activityStart: formatDateForInput(data.activityStart),
+          activityEnd: formatDateForInput(data.activityEnd),
+          description: data.content || '',
+          detailContent: '',
+          tags: Array.isArray(data.tags) ? data.tags.join(', ') : '',
+          coverUrl: data.coverUrl || '',
+          sourceUrl: data.config?.sourceUrl || '',
+          maxTeamSize: data.maxTeamSize || 1,
+          maxParticipants: data.maxParticipants || 0,
+          location: data.location || '',
+          serviceHours: data.serviceHours != null ? String(data.serviceHours) : '',
+          tracks: Array.isArray(data.tracks) ? data.tracks : [],
+        });
+      } catch (err) {
+        console.error('Failed to load activity', err);
+        toast.error('加载活动信息失败');
+        navigate('/admin/competitions');
+      } finally {
+        setPageLoading(false);
+      }
+    };
+    load();
+  }, [activityId, navigate]);
+
   const updateField = <K extends keyof PublishFormState>(field: K, value: PublishFormState[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -182,6 +319,19 @@ export default function CompetitionPublish() {
     }
   };
 
+  const handleTypeChange = (type: ActivityType) => {
+    setForm((prev) => ({
+      ...prev,
+      activityType: type,
+      category: '',
+      level: type === 'competition' ? prev.level : prev.level || '校级',
+      maxTeamSize: type === 'competition' ? prev.maxTeamSize : Math.max(prev.maxTeamSize, 1),
+      tracks: [],
+    }));
+    setNewCategoryName('');
+    setErrors({});
+  };
+
   const toggleTrack = (track: string) => {
     setForm((prev) => ({
       ...prev,
@@ -191,41 +341,90 @@ export default function CompetitionPublish() {
     }));
   };
 
-  const validate = (): boolean => {
+  const handleCreateCategory = async () => {
+    const name = newCategoryName.trim();
+    if (!name) {
+      toast.error('请输入分类名称');
+      return;
+    }
+    try {
+      setCategoryLoading(true);
+      const created = await createActivityCategory({
+        type: form.activityType,
+        name,
+      });
+      setCategories((prev) => [...prev.filter((item) => item.code !== created.code), created]);
+      updateField('category', created.code);
+      setNewCategoryName('');
+      toast.success('分类已创建');
+    } catch (err: any) {
+      toast.error(err?.message || '创建分类失败');
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+
+  const validate = (status: PublishStatus): boolean => {
     const errs: Partial<Record<keyof PublishFormState, string>> = {};
-    if (!form.title.trim()) errs.title = '请输入赛事名称';
-    if (!form.level) errs.level = '请选择赛事级别';
-    if (!form.category) errs.category = '请选择赛事分类';
-    if (!form.organizer.trim()) errs.organizer = '请输入主办单位';
-    if (!form.regStart || !form.regEnd) errs.regStart = '请填写报名时间';
-    if (!form.compStart || !form.compEnd) errs.compStart = '请填写比赛时间';
-    if (!form.description.trim()) errs.description = '请输入赛事简介';
+    if (status === 'published') {
+      if (!form.title.trim()) errs.title = `请输入${text.title}`;
+      if (!form.category) errs.category = '请选择或创建分类';
+      if (!form.organizer.trim()) errs.organizer = '请输入主办单位';
+      if (!form.level) errs.level = '请选择级别';
+      if (!form.regStart || !form.regEnd) errs.regStart = '请填写报名时间';
+      if (!form.activityStart || !form.activityEnd) errs.activityStart = `请填写${text.stage}`;
+      if (!form.description.trim() && !form.detailContent.trim()) errs.description = `请输入${text.noun}简介`;
+      if (form.activityType === 'volunteer' && !form.location.trim()) errs.location = '请输入服务地点';
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const handleSubmit = async (status: 'draft' | 'published') => {
-    if (status === 'published' && !validate()) return;
+    if (!validate(status)) return;
     setLoading(true);
     try {
-      const payloadStatus = isEdit
-        ? (status === 'draft' ? 'draft' : form.status || 'published')
-        : status;
-      const payload = toPublishPayload(
-        status === 'draft' ? { ...form, title: form.title || '未命名赛事', level: form.level || '校级', category: form.category || 'A' } : form,
-        payloadStatus as 'draft' | 'published' | 'closed'
-      );
-      if (isEdit) {
-        await apiClient.put(`/competition/admin/update/${id}`, payload);
-        toast.success('更新成功');
+      const fallbackForm = status === 'draft'
+        ? {
+            ...form,
+            title: form.title || `未命名${text.noun}`,
+            level: form.level || '校级',
+            category: form.category || categories[0]?.code || 'A',
+            organizer: form.organizer || '待补充',
+            regStart: form.regStart || formatDateOffset(0),
+            regEnd: form.regEnd || formatDateOffset(30),
+            activityStart: form.activityStart || formatDateOffset(31),
+            activityEnd: form.activityEnd || formatDateOffset(32),
+            maxTeamSize: form.maxTeamSize > 0 ? form.maxTeamSize : 1,
+          }
+        : form;
+      const payloadStatus = status === 'draft'
+        ? 'draft'
+        : (isEdit && form.status && form.status !== 'draft' ? form.status : 'published');
+
+      if (fallbackForm.activityType === 'competition') {
+        const payload = toCompetitionPayload(fallbackForm, payloadStatus as PublishStatus);
+        if (isCompetitionEdit) {
+          await apiClient.put(`/competition/admin/update/${id}`, payload);
+          toast.success('更新成功');
+        } else {
+          await apiClient.post('/competition/admin/publish', payload);
+          toast.success(status === 'draft' ? '已保存为草稿' : '发布成功');
+        }
       } else {
-        await apiClient.post('/competition/admin/publish', payload);
-        toast.success(status === 'draft' ? '已保存为草稿' : '发布成功');
+        const payload = toActivityPayload(fallbackForm, payloadStatus as PublishStatus);
+        if (isActivityEdit) {
+          await apiClient.put(`/activities/${activityId}`, payload);
+          toast.success('更新成功');
+        } else {
+          await apiClient.post('/activities', payload);
+          toast.success(status === 'draft' ? '活动草稿已保存' : '活动已上架');
+        }
       }
-      navigate('/admin');
-    } catch (error) {
+      navigate('/admin/competitions');
+    } catch (error: any) {
       console.error('Submit error:', error);
-      toast.error(isEdit ? '更新失败' : '发布失败');
+      toast.error(error?.message || (isEdit ? '更新失败' : '发布失败'));
     } finally {
       setLoading(false);
     }
@@ -282,25 +481,22 @@ export default function CompetitionPublish() {
     <div className="py-lg flex flex-col gap-lg pb-32">
       <PageHero
         eyebrow={isEdit ? 'Edit' : 'Publish'}
-        title={isEdit ? '编辑赛事' : '发布新赛事'}
-        description={isEdit ? '修改赛事信息，保存后立即生效。' : '填写赛事基本信息，右侧预览即时反映你的修改。'}
+        title={isEdit ? `编辑${text.noun}` : '发布新活动'}
+        description={isEdit ? `修改${text.noun}信息，保存后立即生效。` : '发布竞赛、志愿服务或其他校内活动，并维护可复用的活动分类。'}
       />
 
-      {/* Tab bar — only shown when creating new competition */}
       {!isEdit && (
         <div className="flex rounded-sm border border-hairline bg-canvas-parchment p-1 self-start">
           {([
             { key: 'manual', icon: 'edit', label: '手动创建' },
-            { key: 'ai-import', icon: 'auto_awesome', label: 'AI 导入' },
+            { key: 'ai-import', icon: 'auto_awesome', label: 'AI 导入赛事' },
           ] as const).map((tab) => (
             <button
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
               className={`flex h-9 items-center gap-1.5 rounded-sm px-4 text-[13px] font-medium transition ${
-                activeTab === tab.key
-                  ? 'bg-canvas text-primary shadow-sm'
-                  : 'text-body-muted hover:text-ink'
+                activeTab === tab.key ? 'bg-canvas text-primary shadow-sm' : 'text-body-muted hover:text-ink'
               }`}
             >
               <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
@@ -311,275 +507,318 @@ export default function CompetitionPublish() {
       )}
 
       {(isEdit || activeTab === 'manual') && (
-      <div className="flex flex-col lg:flex-row gap-lg">
-        {/* Left: Form */}
-        <motion.div className="flex-1 flex flex-col gap-md min-w-0" variants={listContainer} initial="hidden" animate="visible">
-          {/* Basic info */}
-          <motion.section variants={listItem} className="glass p-lg">
-            <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
-              <span className="material-symbols-outlined text-[20px] text-primary">info</span>
-              <h2 className="text-[17px] font-semibold tracking-tight text-ink">基本信息</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-              <Field label="赛事名称" required error={errors.title} className="md:col-span-2">
-                <input className="input-glass" placeholder="输入完整的赛事名称" value={form.title} onChange={(e) => updateField('title', e.target.value)} />
-              </Field>
-
-              <Field label="赛事分类" required error={errors.category}>
-                <select className="input-glass" value={form.category} onChange={(e) => updateField('category', e.target.value as CompetitionCategory)}>
-                  <option value="">请选择分类</option>
-                  {categoryOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              </Field>
-
-              <Field label="赛事级别" required error={errors.level}>
-                <select className="input-glass" value={form.level} onChange={(e) => updateField('level', e.target.value as CompetitionLevel)}>
-                  <option value="">请选择级别</option>
-                  {levelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              </Field>
-
-              <Field label="主办单位" required error={errors.organizer} className="md:col-span-2">
-                <input className="input-glass" placeholder="输入主办单位名称" value={form.organizer} onChange={(e) => updateField('organizer', e.target.value)} />
-              </Field>
-
-              <Field label="报名时间" required error={errors.regStart}>
-                <div className="flex items-center gap-2">
-                  <input className="input-glass" type="date" value={form.regStart} onChange={(e) => updateField('regStart', e.target.value)} />
-                  <span className="text-ink-muted-48">→</span>
-                  <input className="input-glass" type="date" value={form.regEnd} onChange={(e) => updateField('regEnd', e.target.value)} />
+        <div className="flex flex-col lg:flex-row gap-lg">
+          <motion.div className="flex-1 flex flex-col gap-md min-w-0" variants={listContainer} initial="hidden" animate="visible">
+            {!isEdit && (
+              <motion.section variants={listItem} className="glass p-lg">
+                <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
+                  <span className="material-symbols-outlined text-[20px] text-primary">category</span>
+                  <h2 className="text-[17px] font-semibold tracking-tight text-ink">活动类型</h2>
                 </div>
-              </Field>
-
-              <Field label="比赛时间" required error={errors.compStart}>
-                <div className="flex items-center gap-2">
-                  <input className="input-glass" type="date" value={form.compStart} onChange={(e) => updateField('compStart', e.target.value)} />
-                  <span className="text-ink-muted-48">→</span>
-                  <input className="input-glass" type="date" value={form.compEnd} onChange={(e) => updateField('compEnd', e.target.value)} />
-                </div>
-              </Field>
-
-              <Field label="最大团队人数">
-                <input className="input-glass" type="number" min={1} value={form.maxTeamSize} onChange={(e) => updateField('maxTeamSize', Number(e.target.value) || 1)} />
-              </Field>
-
-              <Field label="赛事官网 / 公告链接" className="md:col-span-2">
-                <input className="input-glass" placeholder="https://example.edu.cn/competition（选填）" value={form.sourceUrl} onChange={(e) => updateField('sourceUrl', e.target.value)} />
-              </Field>
-
-              <Field label="赛事封面" className="md:col-span-2">
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={onCoverDrop}
-                  className="rounded-lg border border-dashed border-hairline bg-canvas p-8 flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-primary/3 transition group relative overflow-hidden"
-                >
-                  {form.coverUrl ? (
-                    <>
-                      <LazyImage
-                        src={coverDisplayUrl || form.coverUrl}
-                        alt="封面预览"
-                        className="absolute inset-0 w-full h-full object-cover"
-                        onError={handleCoverLoadError}
-                      />
-                      <div className="relative z-10 bg-canvas border border-hairline px-3 py-1.5 rounded-pill text-ink text-[12px]">点击或拖拽以替换封面</div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-12 h-12 rounded-full bg-primary-soft grid place-items-center text-primary mb-3 group-hover:scale-110 transition">
-                        <span className="material-symbols-outlined">{uploading ? 'hourglass_top' : 'add_photo_alternate'}</span>
-                      </div>
-                      <p className="text-[14px] text-ink">{uploading ? '上传中…' : '点击或拖拽上传图片'}</p>
-                      <p className="text-[12px] text-ink-muted-48 mt-1">推荐 16:9，JPG / PNG，最大 5MB</p>
-                    </>
-                  )}
-                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onCoverInputChange} />
-                </div>
-              </Field>
-            </div>
-          </motion.section>
-
-          {/* Content */}
-          <motion.section variants={listItem} className="glass p-lg">
-            <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
-              <span className="material-symbols-outlined text-[20px] text-primary">description</span>
-              <h2 className="text-[17px] font-semibold tracking-tight text-ink">赛事内容</h2>
-            </div>
-            <div className="flex flex-col gap-md">
-              <Field label="赛事简介" required error={errors.description}>
-                <textarea className="input-glass !h-auto py-2.5 resize-none" rows={3} placeholder="简要描述赛事背景和目的…" value={form.description} onChange={(e) => updateField('description', e.target.value)} />
-              </Field>
-
-              <Field label="详细要求与流程">
-                <textarea className="input-glass !h-auto py-3 resize-none" rows={8} placeholder="在此编辑赛事详细内容…" value={form.detailContent} onChange={(e) => updateField('detailContent', e.target.value)} />
-              </Field>
-
-              <Field label="标签">
-                <input className="input-glass" placeholder="输入标签，用逗号分隔，如：IT/计算机, 创新创业" value={form.tags} onChange={(e) => updateField('tags', e.target.value)} />
-              </Field>
-            </div>
-          </motion.section>
-
-          {/* Settings */}
-          <motion.section variants={listItem} className="glass p-lg">
-            <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
-              <span className="material-symbols-outlined text-[20px] text-primary">settings</span>
-              <h2 className="text-[17px] font-semibold tracking-tight text-ink">参赛赛道</h2>
-            </div>
-            <p className="text-[13px] text-ink-muted-80 mb-4">选择该赛事开放的赛道，学生报名时可从中选择。</p>
-
-            {/* Preset tracks */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {defaultTracks.map((track) => {
-                const selected = form.tracks.includes(track);
-                return (
-                  <motion.button
-                    key={track}
-                    type="button"
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => toggleTrack(track)}
-                    className={`group relative flex items-center gap-2 pl-3 pr-4 py-2 rounded-lg border text-[13px] font-medium transition-all ${
-                      selected
-                        ? 'bg-primary text-on-primary border-primary'
-                        : 'bg-canvas border-hairline text-ink-muted-80 hover:border-primary/40 hover:text-ink'
-                    }`}
-                  >
-                    <span className={`material-symbols-outlined text-[18px] transition-transform ${selected ? 'scale-110' : 'group-hover:scale-105'}`}>
-                      {selected ? 'check_circle' : 'add_circle_outline'}
-                    </span>
-                    {track}
-                  </motion.button>
-                );
-              })}
-            </div>
-
-            {/* Custom track input */}
-            <div className="flex items-center gap-2 mb-4">
-              <div className="relative flex-1">
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-ink-muted-48">edit</span>
-                <input
-                  className="input-glass !pl-10"
-                  placeholder="输入自定义赛道名称…"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const val = (e.target as HTMLInputElement).value.trim();
-                      if (val && !form.tracks.includes(val)) {
-                        updateField('tracks', [...form.tracks, val]);
-                        (e.target as HTMLInputElement).value = '';
-                      }
-                    }
-                  }}
-                />
-              </div>
-              <span className="text-[12px] text-ink-muted-48">按回车添加</span>
-            </div>
-
-            {/* Selected tracks */}
-            {form.tracks.length > 0 && (
-              <div className="p-3 rounded-lg bg-canvas-parchment/60 border border-hairline">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="material-symbols-outlined text-[16px] text-primary">flag</span>
-                  <span className="text-[12px] font-medium text-ink-muted-80">已选赛道 ({form.tracks.length})</span>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {form.tracks.map((t) => (
-                    <span key={t} className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-md bg-primary/8 border border-primary/20 text-[13px] text-primary font-medium group">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      {t}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {activityTypes.map((type) => {
+                    const active = form.activityType === type.value;
+                    return (
                       <button
+                        key={type.value}
                         type="button"
-                        onClick={() => toggleTrack(t)}
-                        className="ml-1 p-0.5 rounded-full hover:bg-primary-soft text-primary hover:text-primary-focus transition"
+                        onClick={() => handleTypeChange(type.value)}
+                        className={`rounded-sm border p-4 text-left transition ${
+                          active ? 'border-primary bg-primary-soft text-primary' : 'border-hairline bg-canvas hover:border-primary/40'
+                        }`}
                       >
-                        <span className="material-symbols-outlined text-[14px]">close</span>
+                        <div className="flex items-center gap-2 text-[14px] font-semibold">
+                          <span className={`material-symbols-outlined text-[20px] ${active ? 'icon-fill' : 'text-placeholder'}`}>{type.icon}</span>
+                          {type.label}
+                        </div>
+                        <p className={`mt-2 text-[12px] leading-5 ${active ? 'text-primary' : 'text-ink-muted-48'}`}>{type.hint}</p>
                       </button>
-                    </span>
-                  ))}
+                    );
+                  })}
                 </div>
-              </div>
+              </motion.section>
             )}
-          </motion.section>
 
-          {/* Stages Management (edit mode only) */}
-          {isEdit && (
-            <motion.section variants={listItem} className="glass p-xl">
-              <h3 className="text-[17px] font-semibold tracking-tight text-ink mb-1 flex items-center gap-2">
-                <span className="material-symbols-outlined text-[20px] text-primary">route</span>
-                赛事阶段管理
-              </h3>
-              <p className="text-[13px] text-ink-muted-48 mb-4">按需添加赛事阶段，如院赛、校赛、省赛等。不添加阶段则使用默认报名流程。</p>
-              <StageManager competitionId={Number(id)} />
-            </motion.section>
-          )}
-        </motion.div>
-
-        {/* Right: Preview */}
-        <div className="w-full lg:w-[380px] shrink-0">
-          <div className="sticky top-[88px] flex flex-col gap-3">
-            <h3 className="text-[12px] text-ink-muted-48 px-1 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[14px]">visibility</span>
-              发布效果预览
-            </h3>
-            <div className="glass-strong overflow-hidden rounded-lg">
-              <div className="aspect-video bg-canvas-parchment relative overflow-hidden">
-                <LazyImage
-                  src={form.coverUrl ? (coverDisplayUrl || form.coverUrl) : ''}
-                  alt="封面预览"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  onError={handleCoverLoadError}
-                />
-                <div className="absolute top-3 left-3 chip chip-success">
-                  <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
-                  <span>报名中</span>
-                </div>
+            <motion.section variants={listItem} className="glass p-lg">
+              <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
+                <span className="material-symbols-outlined text-[20px] text-primary">info</span>
+                <h2 className="text-[17px] font-semibold tracking-tight text-ink">基本信息</h2>
               </div>
-              <div className="p-md">
-                <h4 className="font-display font-semibold text-[17px] leading-snug text-ink mb-2">
-                  {form.title || '赛事名称将在这里显示…'}
-                </h4>
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {form.category && <span className="chip chip-primary">{categoryOptions.find((o) => o.value === form.category)?.label}</span>}
-                  {form.level && <span className={levelChipClass(form.level)}>{form.level}</span>}
-                  {form.tracks.length > 0 && <span className="chip">{form.tracks.length} 个赛道</span>}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+                <Field label={text.title} required error={errors.title} className="md:col-span-2">
+                  <input className="input-glass" placeholder={`输入完整的${text.title}`} value={form.title} onChange={(e) => updateField('title', e.target.value)} />
+                </Field>
+
+                <Field label={`${text.noun}分类`} required error={errors.category}>
+                  <div className="flex flex-col gap-2">
+                    <select className="input-glass" value={form.category} onChange={(e) => updateField('category', e.target.value)}>
+                      <option value="">{categoryLoading ? '分类加载中…' : '请选择分类'}</option>
+                      {categories.map((o) => <option key={o.code} value={o.code}>{o.name}</option>)}
+                    </select>
+                    <div className="flex gap-2">
+                      <input
+                        className="input-glass !h-9 text-[13px]"
+                        placeholder="新建分类，如：机器人、社区公益"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleCreateCategory();
+                          }
+                        }}
+                      />
+                      <button type="button" onClick={handleCreateCategory} disabled={categoryLoading} className="btn-secondary !h-9 !px-3 !text-[12px] disabled:opacity-60">
+                        新建
+                      </button>
+                    </div>
+                  </div>
+                </Field>
+
+                <Field label="级别" required error={errors.level}>
+                  <select className="input-glass" value={form.level} onChange={(e) => updateField('level', e.target.value as CompetitionLevel)}>
+                    <option value="">请选择级别</option>
+                    {levelOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </Field>
+
+                <Field label="主办单位" required error={errors.organizer} className="md:col-span-2">
+                  <input className="input-glass" placeholder="输入主办单位名称" value={form.organizer} onChange={(e) => updateField('organizer', e.target.value)} />
+                </Field>
+
+                <Field label="报名时间" required error={errors.regStart}>
+                  <div className="flex items-center gap-2">
+                    <input className="input-glass" type="date" value={form.regStart} onChange={(e) => updateField('regStart', e.target.value)} />
+                    <span className="text-ink-muted-48">→</span>
+                    <input className="input-glass" type="date" value={form.regEnd} onChange={(e) => updateField('regEnd', e.target.value)} />
+                  </div>
+                </Field>
+
+                <Field label={text.stage} required error={errors.activityStart}>
+                  <div className="flex items-center gap-2">
+                    <input className="input-glass" type="date" value={form.activityStart} onChange={(e) => updateField('activityStart', e.target.value)} />
+                    <span className="text-ink-muted-48">→</span>
+                    <input className="input-glass" type="date" value={form.activityEnd} onChange={(e) => updateField('activityEnd', e.target.value)} />
+                  </div>
+                </Field>
+
+                <Field label={form.activityType === 'competition' ? '最大团队人数' : '每组最多人数'}>
+                  <input className="input-glass" type="number" min={1} value={form.maxTeamSize} onChange={(e) => updateField('maxTeamSize', Number(e.target.value) || 1)} />
+                </Field>
+
+                {form.activityType !== 'competition' && (
+                  <Field label="人数上限">
+                    <input className="input-glass" type="number" min={0} value={form.maxParticipants} onChange={(e) => updateField('maxParticipants', Number(e.target.value) || 0)} />
+                  </Field>
+                )}
+
+                {form.activityType !== 'competition' && (
+                  <Field label={form.activityType === 'volunteer' ? '服务地点' : '活动地点'} required={form.activityType === 'volunteer'} error={errors.location}>
+                    <input className="input-glass" placeholder="如：图书馆一楼、社区服务中心" value={form.location} onChange={(e) => updateField('location', e.target.value)} />
+                  </Field>
+                )}
+
+                {form.activityType === 'volunteer' && (
+                  <Field label="服务时长">
+                    <input className="input-glass" type="number" min={0} step={0.5} placeholder="小时" value={form.serviceHours} onChange={(e) => updateField('serviceHours', e.target.value)} />
+                  </Field>
+                )}
+
+                <Field label="官网 / 公告链接" className="md:col-span-2">
+                  <input className="input-glass" placeholder="https://example.edu.cn/notice（选填）" value={form.sourceUrl} onChange={(e) => updateField('sourceUrl', e.target.value)} />
+                </Field>
+
+                <Field label={`${text.noun}封面`} className="md:col-span-2">
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={onCoverDrop}
+                    className="rounded-lg border border-dashed border-hairline bg-canvas p-8 flex flex-col items-center justify-center cursor-pointer hover:border-primary/40 hover:bg-primary/3 transition group relative overflow-hidden"
+                  >
+                    {form.coverUrl ? (
+                      <>
+                        <LazyImage src={coverDisplayUrl || form.coverUrl} alt="封面预览" className="absolute inset-0 w-full h-full object-cover" onError={handleCoverLoadError} />
+                        <div className="relative z-10 bg-canvas border border-hairline px-3 py-1.5 rounded-pill text-ink text-[12px]">点击或拖拽以替换封面</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 rounded-full bg-primary-soft grid place-items-center text-primary mb-3 group-hover:scale-110 transition">
+                          <span className="material-symbols-outlined">{uploading ? 'hourglass_top' : 'add_photo_alternate'}</span>
+                        </div>
+                        <p className="text-[14px] text-ink">{uploading ? '上传中…' : '点击或拖拽上传图片'}</p>
+                        <p className="text-[12px] text-ink-muted-48 mt-1">推荐 16:9，JPG / PNG，最大 5MB</p>
+                      </>
+                    )}
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onCoverInputChange} />
+                  </div>
+                </Field>
+              </div>
+            </motion.section>
+
+            <motion.section variants={listItem} className="glass p-lg">
+              <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
+                <span className="material-symbols-outlined text-[20px] text-primary">description</span>
+                <h2 className="text-[17px] font-semibold tracking-tight text-ink">{text.noun}内容</h2>
+              </div>
+              <div className="flex flex-col gap-md">
+                <Field label={`${text.noun}简介`} required error={errors.description}>
+                  <textarea className="input-glass !h-auto py-2.5 resize-none" rows={3} placeholder={`简要描述${text.noun}背景、目标和参与方式…`} value={form.description} onChange={(e) => updateField('description', e.target.value)} />
+                </Field>
+
+                <Field label="详细要求与流程">
+                  <textarea className="input-glass !h-auto py-3 resize-none" rows={8} placeholder="在此编辑详细内容、流程安排、材料要求…" value={form.detailContent} onChange={(e) => updateField('detailContent', e.target.value)} />
+                </Field>
+
+                <Field label="标签">
+                  <input className="input-glass" placeholder="输入标签，用逗号分隔，如：IT/计算机, 公益服务" value={form.tags} onChange={(e) => updateField('tags', e.target.value)} />
+                </Field>
+              </div>
+            </motion.section>
+
+            <motion.section variants={listItem} className="glass p-lg">
+              <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
+                <span className="material-symbols-outlined text-[20px] text-primary">settings</span>
+                <h2 className="text-[17px] font-semibold tracking-tight text-ink">{text.track}</h2>
+              </div>
+              <p className="text-[13px] text-ink-muted-80 mb-4">{text.trackHint}</p>
+
+              <div className="flex flex-wrap gap-2 mb-4">
+                {defaultTracks[form.activityType].map((track) => {
+                  const selected = form.tracks.includes(track);
+                  return (
+                    <motion.button
+                      key={track}
+                      type="button"
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => toggleTrack(track)}
+                      className={`group relative flex items-center gap-2 pl-3 pr-4 py-2 rounded-lg border text-[13px] font-medium transition-all ${
+                        selected ? 'bg-primary text-on-primary border-primary' : 'bg-canvas border-hairline text-ink-muted-80 hover:border-primary/40 hover:text-ink'
+                      }`}
+                    >
+                      <span className={`material-symbols-outlined text-[18px] transition-transform ${selected ? 'scale-110' : 'group-hover:scale-105'}`}>
+                        {selected ? 'check_circle' : 'add_circle_outline'}
+                      </span>
+                      {track}
+                    </motion.button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-2 mb-4">
+                <div className="relative flex-1">
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-ink-muted-48">edit</span>
+                  <input
+                    className="input-glass !pl-10"
+                    placeholder={`输入自定义${text.track}…`}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const val = (e.target as HTMLInputElement).value.trim();
+                        if (val && !form.tracks.includes(val)) {
+                          updateField('tracks', [...form.tracks, val]);
+                          (e.target as HTMLInputElement).value = '';
+                        }
+                      }
+                    }}
+                  />
                 </div>
-                <div className="flex flex-col gap-2 mb-4 text-[12px]">
-                  <PreviewLine icon="apartment" label="主办" value={form.organizer || '主办单位名称'} />
-                  <PreviewLine icon="how_to_reg" label="报名" value={form.regStart && form.regEnd ? `${form.regStart} ~ ${form.regEnd}` : 'YYYY/MM/DD - YYYY/MM/DD'} />
-                  <PreviewLine icon="event" label="比赛" value={form.compStart && form.compEnd ? `${form.compStart} ~ ${form.compEnd}` : 'YYYY/MM/DD - YYYY/MM/DD'} />
+                <span className="text-[12px] text-ink-muted-48">按回车添加</span>
+              </div>
+
+              {form.tracks.length > 0 && (
+                <div className="p-3 rounded-lg bg-canvas-parchment/60 border border-hairline">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="material-symbols-outlined text-[16px] text-primary">flag</span>
+                    <span className="text-[12px] font-medium text-ink-muted-80">已选 {form.tracks.length} 项</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {form.tracks.map((t) => (
+                      <span key={t} className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-md bg-primary/8 border border-primary/20 text-[13px] text-primary font-medium group">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                        {t}
+                        <button type="button" onClick={() => toggleTrack(t)} className="ml-1 p-0.5 rounded-full hover:bg-primary-soft text-primary hover:text-primary-focus transition">
+                          <span className="material-symbols-outlined text-[14px]">close</span>
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.section>
+
+            {isCompetitionEdit && (
+              <motion.section variants={listItem} className="glass p-xl">
+                <h3 className="text-[17px] font-semibold tracking-tight text-ink mb-1 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[20px] text-primary">route</span>
+                  赛事阶段管理
+                </h3>
+                <p className="text-[13px] text-ink-muted-48 mb-4">按需添加赛事阶段，如院赛、校赛、省赛等。不添加阶段则使用默认报名流程。</p>
+                <StageManager competitionId={Number(id)} />
+              </motion.section>
+            )}
+          </motion.div>
+
+          <div className="w-full lg:w-[380px] shrink-0">
+            <div className="sticky top-[88px] flex flex-col gap-3">
+              <h3 className="text-[12px] text-ink-muted-48 px-1 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[14px]">visibility</span>
+                发布效果预览
+              </h3>
+              <div className="glass-strong overflow-hidden rounded-lg">
+                <div className="aspect-video bg-canvas-parchment relative overflow-hidden">
+                  <LazyImage src={form.coverUrl ? (coverDisplayUrl || form.coverUrl) : ''} alt="封面预览" className="absolute inset-0 w-full h-full object-cover" onError={handleCoverLoadError} />
+                  <div className="absolute top-3 left-3 chip chip-success">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                    <span>{form.activityType === 'competition' ? '报名中' : '招募中'}</span>
+                  </div>
+                </div>
+                <div className="p-md">
+                  <h4 className="font-display font-semibold text-[17px] leading-snug text-ink mb-2">
+                    {form.title || `${text.noun}名称将在这里显示…`}
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    <span className="chip chip-primary">{activityTypes.find((o) => o.value === form.activityType)?.label}</span>
+                    {form.category && <span className="chip">{categoryLabel}</span>}
+                    {form.level && <span className={levelChipClass(form.level)}>{form.level}</span>}
+                    {form.tracks.length > 0 && <span className="chip">{form.tracks.length} 项{form.activityType === 'competition' ? '赛道' : '岗位'}</span>}
+                  </div>
+                  <div className="flex flex-col gap-2 mb-4 text-[12px]">
+                    <PreviewLine icon="apartment" label="主办" value={form.organizer || '主办单位名称'} />
+                    <PreviewLine icon="how_to_reg" label="报名" value={form.regStart && form.regEnd ? `${form.regStart} ~ ${form.regEnd}` : 'YYYY/MM/DD - YYYY/MM/DD'} />
+                    <PreviewLine icon="event" label={text.stage.replace('时间', '')} value={form.activityStart && form.activityEnd ? `${form.activityStart} ~ ${form.activityEnd}` : 'YYYY/MM/DD - YYYY/MM/DD'} />
+                    {form.location && <PreviewLine icon="place" label="地点" value={form.location} />}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
       )}
 
       {activeTab === 'ai-import' && !isEdit && (
         <AiImportPanel onParsed={(draft) => {
           const mapped = aiDraftToPublishForm(draft);
-          setForm((prev) => ({ ...prev, ...mapped }));
+          setForm((prev) => ({ ...prev, ...mapped, activityType: 'competition' }));
           setActiveTab('manual');
-          toast.success('已将 AI 解析结果填入表单，请核对后保存');
+          toast.success('已将 AI 解析结果填入赛事表单，请核对后保存');
         }} />
       )}
 
-      {/* Bottom action bar */}
       <div className="fixed bottom-0 left-0 lg:left-[240px] right-0 z-40">
         <div className="bg-canvas border-t border-hairline px-lg py-3">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <motion.button whileTap={{ scale: 0.97 }} type="button" onClick={() => navigate('/admin')} className="btn-secondary">
+            <motion.button whileTap={{ scale: 0.97 }} type="button" onClick={() => navigate('/admin/competitions')} className="btn-secondary">
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
               返回
             </motion.button>
             <div className="flex items-center gap-2">
               <motion.button whileTap={{ scale: 0.97 }} type="button" onClick={() => handleSubmit('draft')} disabled={loading || uploading} className="btn-secondary disabled:opacity-60">
-                保存草稿
+                {isEdit && form.status && form.status !== 'draft' ? '转为草稿' : '保存草稿'}
               </motion.button>
               <motion.button whileTap={{ scale: 0.97 }} type="button" onClick={() => handleSubmit('published')} disabled={loading || uploading} className="btn-primary disabled:opacity-60">
                 <span className="material-symbols-outlined text-[18px]">publish</span>
-                {loading ? '提交中…' : isEdit ? '保存修改' : '发布赛事'}
+                {loading ? '提交中…' : isEdit && form.status !== 'draft' ? '保存修改' : form.activityType === 'competition' ? '发布赛事' : '上架活动'}
               </motion.button>
             </div>
           </div>
@@ -656,11 +895,7 @@ function StageManager({ competitionId }: { competitionId: number }) {
               </span>
             )}
           </div>
-          <select
-            value={stage.status}
-            onChange={(e) => handleStatusChange(stage.id, e.target.value)}
-            className="input-glass !w-auto !h-8 !text-[12px] !px-2"
-          >
+          <select value={stage.status} onChange={(e) => handleStatusChange(stage.id, e.target.value)} className="input-glass !w-auto !h-8 !text-[12px] !px-2">
             <option value="upcoming">未开始</option>
             <option value="active">进行中</option>
             <option value="closed">已结束</option>
@@ -695,29 +930,14 @@ function StageManager({ competitionId }: { competitionId: number }) {
             </div>
           </motion.div>
         ) : (
-          <motion.button
-            key="add-btn"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            type="button"
-            onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 text-[13px] text-primary hover:text-primary-focus font-medium"
-          >
+          <motion.button key="add-btn" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} type="button" onClick={() => setShowAdd(true)} className="flex items-center gap-2 text-[13px] text-primary hover:text-primary-focus font-medium">
             <span className="material-symbols-outlined text-[18px]">add_circle</span>
             添加阶段
           </motion.button>
         )}
       </AnimatePresence>
 
-      <ConfirmModal
-        isOpen={isOpen}
-        onClose={close}
-        onConfirm={() => {}}
-        title={title}
-        message={message}
-        variant={variant}
-      />
+      <ConfirmModal isOpen={isOpen} onClose={close} onConfirm={() => {}} title={title} message={message} variant={variant} />
     </div>
   );
 }

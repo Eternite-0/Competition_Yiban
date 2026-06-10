@@ -6,10 +6,20 @@ export interface AiChatPayload {
   imageDataUrls?: string[];
 }
 
+export interface AiArtifact {
+  id: string;
+  name: string;
+  type: 'docx' | 'xlsx';
+  url: string;
+  description?: string;
+  createTime?: string;
+}
+
 export interface AiChatResponse {
   conversationId: string;
   answer: string;
   toolContext?: unknown;
+  artifacts?: AiArtifact[];
   createTime?: string;
 }
 
@@ -19,6 +29,7 @@ export interface AiChatConversationMessage {
   content: string;
   createTime?: string;
   toolContext?: unknown;
+  artifacts?: AiArtifact[];
 }
 
 export interface AiChatConversationSummary {
@@ -39,6 +50,7 @@ interface StreamHandlers {
   onProgress?: (message: string) => void;
   onConversationId?: (conversationId: string) => void;
   onToolContext?: (toolContext: unknown) => void;
+  onArtifacts?: (artifacts: AiArtifact[]) => void;
   onCreateTime?: (createTime: string) => void;
 }
 
@@ -81,6 +93,7 @@ export async function streamAiChatMessage(
   let answer = '';
   let conversationId = payload.conversationId ?? '';
   let toolContext: unknown;
+  let artifacts: AiArtifact[] = [];
   let createTime = '';
   let received = false;
 
@@ -115,6 +128,11 @@ export async function streamAiChatMessage(
       if (data.toolContext !== undefined) {
         toolContext = data.toolContext;
         handlers.onToolContext?.(toolContext);
+      }
+
+      if (data.artifacts !== undefined) {
+        artifacts = normalizeArtifacts(data.artifacts);
+        handlers.onArtifacts?.(artifacts);
       }
 
       const nextCreateTime = valueToString(data.createTime);
@@ -164,6 +182,7 @@ export async function streamAiChatMessage(
     conversationId,
     answer,
     toolContext,
+    artifacts,
     createTime,
   });
 }
@@ -186,6 +205,7 @@ function normalizeAiChatResponse(value: unknown): AiChatResponse {
     return {
       conversationId: '',
       answer: valueToString(data),
+      artifacts: [],
       createTime: new Date().toISOString(),
     };
   }
@@ -194,8 +214,30 @@ function normalizeAiChatResponse(value: unknown): AiChatResponse {
     conversationId: valueToString(data.conversationId ?? data.id),
     answer: valueToString(data.answer ?? data.content ?? data.text),
     toolContext: data.toolContext,
+    artifacts: normalizeArtifacts(data.artifacts),
     createTime: valueToString(data.createTime) || new Date().toISOString(),
   };
+}
+
+function normalizeArtifacts(value: unknown): AiArtifact[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (!isRecord(item)) return null;
+      const type = valueToString(item.type).toLowerCase();
+      const url = valueToString(item.url);
+      if (!url || (type !== 'docx' && type !== 'xlsx')) return null;
+      const artifact: AiArtifact = {
+        id: valueToString(item.id) || url,
+        name: valueToString(item.name) || (type === 'xlsx' ? 'AI 生成表格.xlsx' : 'AI 生成文档.docx'),
+        type,
+        url,
+        description: valueToString(item.description),
+        createTime: valueToString(item.createTime),
+      };
+      return artifact;
+    })
+    .filter((item): item is AiArtifact => Boolean(item));
 }
 
 function parseSseEvent(raw: string): ParsedStreamEvent {

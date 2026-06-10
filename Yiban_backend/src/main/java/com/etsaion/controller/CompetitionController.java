@@ -9,6 +9,7 @@ import com.etsaion.dto.Result;
 import com.etsaion.entity.Competition;
 import com.etsaion.entity.Registration;
 import com.etsaion.interceptor.RequireRole;
+import com.etsaion.service.ActivityCategoryService;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.CompetitionStageService;
 import com.etsaion.service.RegistrationService;
@@ -37,6 +38,9 @@ public class CompetitionController {
 
     @Autowired
     private CompetitionStageService competitionStageService;
+
+    @Autowired
+    private ActivityCategoryService activityCategoryService;
 
     @Operation(summary = "查询赛事分页列表 (公开)")
     @GetMapping("/list")
@@ -96,6 +100,7 @@ public class CompetitionController {
     public Result<CompetitionVO> publishCompetition(@Validated @RequestBody EventPublishDTO dto) {
         Competition comp = new Competition();
         BeanUtils.copyProperties(dto, comp, "tags", "tracks");
+        comp.setCategory(activityCategoryService.resolveOrCreate("competition", dto.getCategory()));
 
         if (CollUtil.isNotEmpty(dto.getTags())) {
             comp.setTags(JSONUtil.toJsonStr(dto.getTags()));
@@ -131,7 +136,7 @@ public class CompetitionController {
         // Copy only non-null fields to avoid overwriting with nulls
         if (dto.getName() != null) comp.setName(dto.getName());
         if (dto.getLevel() != null) comp.setLevel(dto.getLevel());
-        if (dto.getCategory() != null) comp.setCategory(dto.getCategory());
+        if (dto.getCategory() != null) comp.setCategory(activityCategoryService.resolveOrCreate("competition", dto.getCategory()));
         if (dto.getOrganizer() != null) comp.setOrganizer(dto.getOrganizer());
         if (dto.getStartTime() != null) comp.setStartTime(dto.getStartTime());
         if (dto.getEndTime() != null) comp.setEndTime(dto.getEndTime());

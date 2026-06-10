@@ -1,15 +1,12 @@
-import { useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import type { AssistantTone, ChatImageAttachment } from './types';
+import { useEffect, useRef, type ClipboardEvent, type FormEvent, type KeyboardEvent } from 'react';
+import { motion } from 'framer-motion';
+import type { ChatImageAttachment } from './types';
 
 interface ChatInputBarProps {
   value: string;
   disabled?: boolean;
-  tone: AssistantTone;
-  toneOptions: Record<AssistantTone, string>;
   attachments: ChatImageAttachment[];
   onChange: (value: string) => void;
-  onToneChange: (value: AssistantTone) => void;
   onAddImages: (files: File[]) => void;
   onRemoveAttachment: (id: string) => void;
   onSubmit: () => void;
@@ -18,18 +15,14 @@ interface ChatInputBarProps {
 export default function ChatInputBar({
   value,
   disabled = false,
-  tone,
-  toneOptions,
   attachments,
   onChange,
-  onToneChange,
   onAddImages,
   onRemoveAttachment,
   onSubmit,
 }: ChatInputBarProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [modeOpen, setModeOpen] = useState(false);
   const canSubmit = (value.trim().length > 0 || attachments.length > 0) && !disabled;
 
   useEffect(() => {
@@ -109,7 +102,7 @@ export default function ChatInputBar({
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           className="max-h-24 min-h-9 w-full resize-none bg-transparent px-1.5 py-1 text-[14px] leading-relaxed text-slate-800 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed"
-          placeholder={disabled ? '正在回复...' : '问问赛事、报名、审核…'}
+          placeholder={disabled ? '正在处理...' : '说出你要完成的任务，查询、整理、导出都可以…'}
           aria-label="输入问题"
         />
 
@@ -135,47 +128,6 @@ export default function ChatInputBar({
           </div>
 
           <div className="relative flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setModeOpen((value) => !value)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-[10px] border border-slate-200/60 bg-white px-2.5 text-[12px] text-slate-500 transition hover:bg-slate-50 hover:text-slate-800"
-              aria-label="切换回答模式"
-              title="切换模式"
-            >
-              <span className="ai-model-mark" />
-              {toneOptions[tone]}
-            </button>
-            <AnimatePresence>
-              {modeOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: 4, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 4, scale: 0.97 }}
-                  transition={{ duration: 0.14, ease: [0.23, 1, 0.32, 1] }}
-                  className="absolute bottom-10 right-0 z-20 w-32 overflow-hidden rounded-[12px] border border-slate-200/70 bg-white/95 py-1 shadow-[0_12px_36px_rgba(15,23,42,0.12)] backdrop-blur-xl"
-                >
-                  {(Object.keys(toneOptions) as AssistantTone[]).map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => {
-                        onToneChange(key);
-                        setModeOpen(false);
-                      }}
-                      className={`flex h-9 w-full items-center justify-between px-3 text-left text-[12px] transition ${
-                        tone === key
-                          ? 'bg-indigo-50 text-indigo-700'
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                      }`}
-                    >
-                      {toneOptions[key]}
-                      {tone === key && <span className="material-symbols-outlined text-[14px] text-indigo-500">check</span>}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             <motion.button
               type="submit"
               whileTap={{ scale: 0.88 }}

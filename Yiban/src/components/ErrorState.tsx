@@ -62,15 +62,15 @@ export default function ErrorState({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={pageTransition}
-      className={`flex flex-col items-center justify-center py-16 px-4 text-center ${className}`}
+      className={`flex w-full min-w-0 flex-col items-center justify-center py-16 px-4 text-center ${className}`}
     >
       <span className="material-symbols-outlined text-[48px] text-ink-muted-48 mb-4">
         {config.icon}
       </span>
-      <h3 className="text-[16px] font-medium text-ink mb-1">
+      <h3 className="empty-state-copy text-[16px] font-medium text-ink mb-1">
         {title || config.title}
       </h3>
-      <p className="text-[14px] text-body-subtle max-w-sm mb-6">
+      <p className="empty-state-copy text-[14px] text-body-subtle mb-6">
         {message || config.message}
       </p>
       {onRetry && (

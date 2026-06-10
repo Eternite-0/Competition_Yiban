@@ -12,7 +12,7 @@ import com.etsaion.vo.ParticipationVO;
 import java.util.List;
 
 public interface ActivityService extends IService<Activity> {
-    Page<ActivityVO> listActivities(int current, int size, String type, String status, String keyword, boolean includePrivate);
+    Page<ActivityVO> listActivities(int current, int size, String type, String category, String status, String keyword, boolean includePrivate);
     ActivityVO getActivityDetail(Long id, boolean includePrivate);
     ActivityVO saveActivity(Long id, ActivitySaveDTO dto);
     Participation createParticipation(Long studentId, Long activityId, ParticipationCreateDTO dto);

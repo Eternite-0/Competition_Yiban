@@ -18,6 +18,7 @@ TRUNCATE TABLE `team_application`;
 TRUNCATE TABLE `team_post`;
 TRUNCATE TABLE `registration`;
 TRUNCATE TABLE `competition`;
+TRUNCATE TABLE `activity_category`;
 TRUNCATE TABLE `user`;
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -56,7 +57,22 @@ INSERT INTO `user` (`id`, `username`, `password`, `real_name`, `role`, `college`
 (18, '20240401', '$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO', '孟十七', 'student', '设计学院', '视觉传达设计', '视传2401', '2024');
 
 -- ----------------------------
--- 2. 赛事/竞赛表数据 (Competition)
+-- 2. 活动分类字典表数据 (ActivityCategory)
+-- ----------------------------
+INSERT INTO `activity_category` (`type`, `code`, `name`, `icon`, `sort_order`, `status`) VALUES
+('competition', 'A', '科技创新', 'psychology', 10, 'active'),
+('competition', 'B', '商业创业', 'business_center', 20, 'active'),
+('competition', 'C', '文化艺术', 'palette', 30, 'active'),
+('competition', 'algorithm', '算法编程', 'code', 40, 'active'),
+('competition', 'design', '设计创作', 'draw', 50, 'active'),
+('volunteer', 'campus_service', '校园服务', 'volunteer_activism', 10, 'active'),
+('volunteer', 'community', '社区公益', 'diversity_1', 20, 'active'),
+('volunteer', 'event_support', '赛会保障', 'support_agent', 30, 'active'),
+('other', 'lecture', '讲座培训', 'co_present', 10, 'active'),
+('other', 'practice', '实践项目', 'fact_check', 20, 'active');
+
+-- ----------------------------
+-- 3. 赛事/竞赛表数据 (Competition)
 -- ----------------------------
 INSERT INTO `competition` (`id`, `name`, `level`, `category`, `start_time`, `end_time`, `competition_start`, `competition_end`, `max_team_size`, `cover_url`, `content`, `organizer`, `tags`, `status`) VALUES
 (1, '第十届”互联网+”大学生创新创业大赛', '国家级', 'A', '2026-05-01 00:00:00', '2026-06-30 23:59:59', '2026-07-10 09:00:00', '2026-07-15 18:00:00', 5, NULL, '<p>旨在激发大学生创造力，培育具有双创精神的青年领袖，项目涵盖高教主赛道、”青年红色筑梦之旅”赛道等。</p>', '教育部高等教育司', '[“创新创业”,”双创”,”商业计划”]', 'published'),

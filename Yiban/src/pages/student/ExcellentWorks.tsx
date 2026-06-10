@@ -211,19 +211,19 @@ export default function ExcellentWorks() {
 
       {/* Cards grid */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
+        <div className="flex w-full min-w-0 flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
           <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
-          <span className="text-[14px]">加载中…</span>
+          <span className="empty-state-copy text-[14px]">加载中…</span>
         </div>
       ) : error ? (
-        <div className="flex flex-col items-center justify-center py-section gap-2 text-primary">
+        <div className="flex w-full min-w-0 flex-col items-center justify-center py-section gap-2 text-primary">
           <span className="material-symbols-outlined text-[32px]">error_outline</span>
-          <span className="text-[14px]">{error}</span>
+          <span className="empty-state-copy text-[14px]">{error}</span>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
+        <div className="flex w-full min-w-0 flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
           <span className="material-symbols-outlined text-[36px]">workspace_premium</span>
-          <span className="text-[14px]">
+          <span className="empty-state-copy text-[14px]">
             {works.length === 0 ? '暂无优秀作品展示' : '暂无符合条件的作品'}
           </span>
         </div>

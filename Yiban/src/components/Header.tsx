@@ -17,7 +17,7 @@ interface Message {
 
 const titleMap: Record<string, string> = {
   '/student': '工作台',
-  '/student/competitions': '赛事大厅',
+  '/student/competitions': '活动大厅',
   '/student/calendar': '赛事日历',
   '/student/teams': '招募大厅',
   '/student/works': '光荣榜',
@@ -27,13 +27,13 @@ const titleMap: Record<string, string> = {
   '/student/progress': '我的进度',
   '/teacher': '工作台',
   '/teacher/college-overview': '学院总览',
-  '/teacher/competitions': '赛事大厅',
+  '/teacher/competitions': '活动大厅',
   '/teacher/audit': '成果审批',
   '/teacher/student-competitions': '学生看板',
   '/teacher/student-growth': '学情分析',
   '/admin': '工作台',
-  '/admin/competitions': '赛事管理',
-  '/admin/publish': '赛事发布',
+  '/admin/competitions': '活动管理',
+  '/admin/publish': '活动发布',
   '/admin/works': '作品库',
   '/admin/audit': '系统审核',
   '/admin/announcements': '公告管理',
@@ -51,6 +51,7 @@ function resolveTitle(path: string): string {
   if (/^\/student\/competitions\/.+/.test(path)) return '赛事详情';
   if (/^\/student\/registrations\/workbench\/.+/.test(path)) return '报名工作台';
   if (/^\/student\/upload\/.+/.test(path)) return '提交作品';
+  if (/^\/admin\/publish\/activity\/.+/.test(path)) return '编辑活动';
   if (/^\/admin\/publish\/.+/.test(path)) return '编辑赛事';
   return '易赛通';
 }
@@ -281,7 +282,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
   }
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-30 flex h-[52px] items-center justify-between border-b border-hairline bg-canvas-parchment px-lg sm:px-page md:left-[200px]">
+    <header className="app-header fixed left-0 right-0 top-0 z-30 flex h-[52px] items-center justify-between border-b border-hairline bg-canvas-parchment px-lg sm:px-page md:left-[200px]">
       <div className="flex items-center gap-3 min-w-0">
         <button
           type="button"

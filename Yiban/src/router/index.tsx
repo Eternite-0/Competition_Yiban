@@ -119,6 +119,7 @@ export const router = createBrowserRouter([
       { path: 'competitions', element: <LazyPage><CompetitionsHub /></LazyPage> },
       { path: 'publish', element: <LazyPage><CompetitionPublish /></LazyPage> },
       { path: 'publish/:id', element: <LazyPage><CompetitionPublish /></LazyPage> },
+      { path: 'publish/activity/:activityId', element: <LazyPage><CompetitionPublish /></LazyPage> },
       { path: 'ai-import', element: <Navigate to="/admin/publish" replace /> },
       { path: 'ai-drafts', element: <Navigate to="/admin/drafts" replace /> },
       { path: 'drafts', element: <LazyPage><DraftsBox /></LazyPage> },

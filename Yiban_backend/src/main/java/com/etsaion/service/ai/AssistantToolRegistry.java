@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etsaion.entity.*;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.service.*;
+import com.etsaion.vo.ai.AiArtifactVO;
 import com.etsaion.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class AssistantToolRegistry {
     @Autowired private MessageService messageService;
     @Autowired private AnnouncementService announcementService;
     @Autowired private TeacherService teacherService;
+    @Autowired private AiArtifactService aiArtifactService;
 
     // ────────────── 工具定义 ──────────────
 
@@ -107,6 +109,50 @@ public class AssistantToolRegistry {
                     "type", "object", "properties", Map.of(), "required", List.of())));
         }
 
+        tools.add(tool("create_excel_artifact", "生成可下载的 Excel 文件。仅用于把已查询或用户提供的数据导出为临时文件，不修改平台业务数据。", Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "title", Map.of("type", "string", "description", "文件标题，如 报名记录导出"),
+                        "description", Map.of("type", "string", "description", "文件说明，简短描述数据来源和用途"),
+                        "sheet_name", Map.of("type", "string", "description", "工作表名称"),
+                        "columns", Map.of(
+                                "type", "array",
+                                "items", Map.of("type", "string"),
+                                "description", "表头列名"),
+                        "rows", Map.of(
+                                "type", "array",
+                                "items", Map.of(
+                                        "type", "array",
+                                        "items", Map.of("type", "string")
+                                ),
+                                "description", "二维数组，每个子数组是一行，顺序与 columns 对齐")
+                ),
+                "required", List.of("title", "columns", "rows")
+        )));
+        tools.add(tool("create_docx_artifact", "生成可下载的 DOCX 文件。仅用于报告、通知、汇总、说明等临时文档，不修改平台业务数据。", Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "title", Map.of("type", "string", "description", "文档标题"),
+                        "description", Map.of("type", "string", "description", "文档说明，简短描述生成目的"),
+                        "paragraphs", Map.of(
+                                "type", "array",
+                                "items", Map.of("type", "string"),
+                                "description", "正文段落，按阅读顺序排列"),
+                        "table_columns", Map.of(
+                                "type", "array",
+                                "items", Map.of("type", "string"),
+                                "description", "可选表格表头"),
+                        "table_rows", Map.of(
+                                "type", "array",
+                                "items", Map.of(
+                                        "type", "array",
+                                        "items", Map.of("type", "string")
+                                ),
+                                "description", "可选表格行，顺序与 table_columns 对齐")
+                ),
+                "required", List.of("title", "paragraphs")
+        )));
+
         return tools;
     }
 
@@ -140,6 +186,8 @@ public class AssistantToolRegistry {
                 case "get_pending_drafts" -> toJson(getPendingDrafts());
                 case "get_ai_task_stats" -> toJson(getAiTaskStats());
                 case "get_user_stats" -> toJson(getUserStats());
+                case "create_excel_artifact" -> toJson(createExcelArtifact(args));
+                case "create_docx_artifact" -> toJson(createDocxArtifact(args));
                 default -> toJson(Map.of("error", "未知工具: " + name));
             };
         } catch (Exception e) {
@@ -340,6 +388,34 @@ public class AssistantToolRegistry {
         catch (Exception e) { return Map.of(); }
     }
 
+    private Map<String, Object> createExcelArtifact(Map<String, Object> args) {
+        AiArtifactVO artifact = aiArtifactService.createExcelArtifact(
+                toText(args.get("title")),
+                toText(args.get("description")),
+                toStringList(args.get("columns")),
+                toRows(args.get("rows")),
+                toText(args.get("sheet_name"))
+        );
+        return Map.of(
+                "artifact", artifact,
+                "message", "Excel 文件已生成，可通过 artifact.url 下载"
+        );
+    }
+
+    private Map<String, Object> createDocxArtifact(Map<String, Object> args) {
+        AiArtifactVO artifact = aiArtifactService.createDocxArtifact(
+                toText(args.get("title")),
+                toText(args.get("description")),
+                toStringList(args.get("paragraphs")),
+                toStringList(args.get("table_columns")),
+                toRows(args.get("table_rows"))
+        );
+        return Map.of(
+                "artifact", artifact,
+                "message", "DOCX 文件已生成，可通过 artifact.url 下载"
+        );
+    }
+
     // ────────────── 工具方法 ──────────────
 
     private Map<String, Object> tool(String name, String description, Map<String, Object> parameters) {
@@ -394,6 +470,23 @@ public class AssistantToolRegistry {
         if (value == null) return 5;
         if (value instanceof Number) return ((Number) value).intValue();
         try { return Integer.parseInt(value.toString()); } catch (Exception e) { return 5; }
+    }
+
+    private String toText(Object value) {
+        return value == null ? "" : String.valueOf(value);
+    }
+
+    private List<String> toStringList(Object value) {
+        if (!(value instanceof List<?> list)) return List.of();
+        return list.stream().map(this::toText).collect(Collectors.toList());
+    }
+
+    private List<List<String>> toRows(Object value) {
+        if (!(value instanceof List<?> rows)) return List.of();
+        return rows.stream()
+                .filter(item -> item instanceof List<?>)
+                .map(item -> ((List<?>) item).stream().map(this::toText).collect(Collectors.toList()))
+                .collect(Collectors.toList());
     }
 
     private String truncate(String text, int maxLen) {

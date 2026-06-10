@@ -133,10 +133,10 @@ export default function MyProgress() {
       />
 
       {progressList.length === 0 ? (
-        <div className="glass p-xl text-center">
+        <div className="glass flex w-full min-w-0 flex-col items-center p-xl text-center">
           <span className="material-symbols-outlined text-[48px] text-ink-muted-48">timeline</span>
-          <p className="text-[15px] text-ink-muted-80 mt-3">暂无赛事进度</p>
-          <p className="text-[13px] text-ink-muted-48 mt-1">报名赛事后，你的阶段进度将在这里展示。</p>
+          <p className="empty-state-copy mt-3 text-[15px] text-ink-muted-80">暂无赛事进度</p>
+          <p className="empty-state-copy mt-1 text-[13px] text-ink-muted-48">报名赛事后，你的阶段进度将在这里展示。</p>
           <button onClick={() => navigate('/student/competitions')} className="btn-primary mt-4">
             去报名赛事
           </button>

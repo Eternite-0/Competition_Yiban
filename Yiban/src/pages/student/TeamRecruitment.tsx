@@ -318,19 +318,19 @@ export default function TeamRecruitment() {
           </div>
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
+            <div className="flex w-full min-w-0 flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
               <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
-              <span className="text-[14px]">加载中…</span>
+              <span className="empty-state-copy text-[14px]">加载中…</span>
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center justify-center py-section gap-2 text-primary">
+            <div className="flex w-full min-w-0 flex-col items-center justify-center py-section gap-2 text-primary">
               <span className="material-symbols-outlined text-[32px]">error_outline</span>
-              <span className="text-[14px]">{error}</span>
+              <span className="empty-state-copy text-[14px]">{error}</span>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
+            <div className="flex w-full min-w-0 flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
               <span className="material-symbols-outlined text-[32px]">search_off</span>
-              <span className="text-[14px]">暂无招募信息</span>
+              <span className="empty-state-copy text-[14px]">暂无招募信息</span>
             </div>
           ) : (
             <motion.div variants={listContainer} initial="hidden" animate="visible" className="flex flex-col gap-md">
@@ -462,7 +462,7 @@ export default function TeamRecruitment() {
                 <span className="material-symbols-outlined animate-spin text-[20px] text-ink-muted-48">progress_activity</span>
               </div>
             ) : myApplications.length === 0 ? (
-              <p className="text-[12px] text-ink-muted-48 py-4 text-center">暂无申请记录</p>
+              <p className="empty-state-copy mx-auto py-4 text-center text-[12px] text-ink-muted-48">暂无申请记录</p>
             ) : (
               <div className="flex flex-col gap-2">
                 {myApplications.slice(0, 5).map((app) => (
@@ -759,9 +759,9 @@ export default function TeamRecruitment() {
                   <span className="material-symbols-outlined animate-spin text-[24px] text-ink-muted-48">progress_activity</span>
                 </div>
               ) : teamApplications.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 gap-2 text-ink-muted-48">
+                <div className="flex w-full min-w-0 flex-col items-center justify-center py-8 gap-2 text-ink-muted-48">
                   <span className="material-symbols-outlined text-[28px]">inbox</span>
-                  <span className="text-[13px]">暂无申请</span>
+                  <span className="empty-state-copy text-[13px]">暂无申请</span>
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">

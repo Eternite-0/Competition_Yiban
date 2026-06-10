@@ -347,9 +347,9 @@ export default function CompetitionCalendar() {
                     })}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="flex w-full min-w-0 flex-col items-center justify-center py-12 text-center">
                     <span className="material-symbols-outlined text-[40px] text-ink-muted-48">event_busy</span>
-                    <p className="text-[14px] text-ink-muted-48 mt-3">当日暂无赛事安排</p>
+                    <p className="empty-state-copy mt-3 text-[14px] text-ink-muted-48">当日暂无赛事安排</p>
                   </div>
                 )}
               </motion.div>
@@ -358,10 +358,10 @@ export default function CompetitionCalendar() {
                 key="empty"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex-1 flex flex-col items-center justify-center text-center"
+                className="flex flex-1 min-w-0 flex-col items-center justify-center text-center"
               >
                 <span className="material-symbols-outlined text-[48px] text-ink-muted-48/50">calendar_month</span>
-                <p className="text-[14px] text-ink-muted-48 mt-3">点击日历中的日期<br />查看当天赛事</p>
+                <p className="empty-state-copy mt-3 text-[14px] text-ink-muted-48">点击日历中的日期<br />查看当天赛事</p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -426,9 +426,9 @@ export default function CompetitionCalendar() {
               })}
             </motion.div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="flex w-full min-w-0 flex-col items-center justify-center py-12 text-center">
               <span className="material-symbols-outlined text-[40px] text-ink-muted-48">emoji_events</span>
-              <p className="text-[14px] text-ink-muted-48 mt-3">本月暂无赛事</p>
+              <p className="empty-state-copy mt-3 text-[14px] text-ink-muted-48">本月暂无赛事</p>
             </div>
           );
         })()}

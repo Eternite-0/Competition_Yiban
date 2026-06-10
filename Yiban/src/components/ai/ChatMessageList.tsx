@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import type { AiArtifact } from '../../api/aiChat';
 import { smoothEase } from '../../lib/motion';
 import type { AiSourceSummary, AiToolProgress, ChatImageAttachment } from './types';
 
@@ -30,6 +31,8 @@ const toolLabels: Record<string, string> = {
   get_pending_drafts: '赛事草稿',
   get_ai_task_stats: 'AI 任务',
   get_user_stats: '用户统计',
+  create_excel_artifact: 'Excel 文件',
+  create_docx_artifact: 'DOCX 文件',
 };
 
 function ThinkingIndicator({ progress }: { progress?: AiToolProgress }) {
@@ -61,6 +64,7 @@ export interface AssistantChatMessage {
   createTime?: string;
   error?: string;
   toolContext?: unknown;
+  artifacts?: AiArtifact[];
   progress?: AiToolProgress;
   attachments?: ChatImageAttachment[];
 }
@@ -82,7 +86,7 @@ export default function ChatMessageList({ messages, onRetry }: ChatMessageListPr
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
       <AnimatePresence initial={false}>
         {messages.map((message, index) => (
           <motion.div
@@ -91,7 +95,7 @@ export default function ChatMessageList({ messages, onRetry }: ChatMessageListPr
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 6 }}
             transition={{ duration: 0.2, ease: smoothEase, delay: Math.min(index * 0.015, 0.08) }}
-            className={`mb-3 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`mb-5 flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <MessageBubble message={message} onRetry={onRetry} />
           </motion.div>
@@ -105,17 +109,17 @@ export default function ChatMessageList({ messages, onRetry }: ChatMessageListPr
 function MessageBubble({ message, onRetry }: { message: AssistantChatMessage; onRetry?: () => void }) {
   const sources = useMemo(() => summarizeToolContext(message.toolContext), [message.toolContext]);
   const isUser = message.role === 'user';
+  const assistantContent = message.artifacts?.length
+    ? stripArtifactDownloadLinks(message.content)
+    : message.content;
+  const containerClassName = isUser
+    ? 'max-w-[82%] rounded-[18px] rounded-br-[6px] bg-slate-100 px-3.5 py-2 text-[13px] leading-[1.65] text-slate-900'
+    : message.status === 'error'
+      ? 'max-w-[88%] rounded-[15px] rounded-bl-[5px] border border-red-200/80 bg-red-50/80 px-3.5 py-2.5 text-[13px] leading-[1.68] text-red-700'
+      : 'w-full max-w-none text-[13px] leading-[1.75] text-slate-800';
 
   return (
-    <div
-      className={`max-w-[88%] text-[13px] leading-[1.68] ${
-        isUser
-          ? 'rounded-[15px] rounded-br-[5px] bg-slate-900 px-3.5 py-2.5 text-white shadow-sm'
-          : message.status === 'error'
-            ? 'rounded-[15px] rounded-bl-[5px] border border-red-200/80 bg-red-50/80 px-3.5 py-2.5 text-red-700'
-            : 'rounded-[15px] rounded-bl-[5px] border border-slate-200/70 bg-white/90 px-3.5 py-2.5 text-slate-800'
-      }`}
-    >
+    <div className={containerClassName}>
       {message.attachments && message.attachments.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2">
           {message.attachments.map((attachment) => (
@@ -138,7 +142,7 @@ function MessageBubble({ message, onRetry }: { message: AssistantChatMessage; on
       ) : isUser ? (
         <p className="whitespace-pre-wrap break-words">{message.content}</p>
       ) : (
-        <div className="ai-chat-markdown prose prose-sm max-w-none break-words prose-headings:font-semibold prose-headings:text-slate-800 prose-h1:text-[15px] prose-h1:mt-2.5 prose-h1:mb-1 prose-h2:text-[14px] prose-h2:mt-2 prose-h2:mb-1 prose-h3:text-[13px] prose-h3:mt-1.5 prose-h3:mb-0.5 prose-p:my-1 prose-p:leading-[1.7] prose-p:text-slate-700 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5 prose-li:text-slate-700 prose-li:leading-[1.65] prose-pre:my-2 prose-pre:rounded-[9px] prose-pre:bg-slate-50 prose-pre:border prose-pre:border-slate-200/70 prose-pre:text-[12px] prose-pre:leading-[1.55] prose-code:before:content-none prose-code:after:content-none prose-code:bg-slate-100 prose-code:text-slate-700 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-[12px] prose-code:font-normal prose-blockquote:my-2 prose-blockquote:border-l-slate-200 prose-blockquote:bg-slate-50/70 prose-blockquote:py-1 prose-blockquote:pr-2 prose-blockquote:rounded-r prose-blockquote:text-slate-600 prose-strong:text-slate-800 prose-strong:font-semibold prose-a:text-indigo-600 prose-a:underline prose-a:underline-offset-2 prose-hr:my-3 prose-hr:border-slate-200/60 prose-img:rounded-[10px]">
+        <div className="ai-chat-markdown prose prose-sm max-w-none break-words prose-headings:font-semibold prose-headings:text-slate-900 prose-h1:text-[15px] prose-h1:mt-3 prose-h1:mb-1.5 prose-h2:text-[14px] prose-h2:mt-3 prose-h2:mb-1.5 prose-h3:text-[13px] prose-h3:mt-2 prose-h3:mb-1 prose-p:my-1.5 prose-p:leading-[1.75] prose-p:text-slate-800 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-li:text-slate-800 prose-li:leading-[1.7] prose-pre:my-2.5 prose-pre:rounded-[9px] prose-pre:bg-slate-50 prose-pre:border prose-pre:border-slate-200/70 prose-pre:text-[12px] prose-pre:leading-[1.55] prose-code:before:content-none prose-code:after:content-none prose-code:bg-slate-100 prose-code:text-slate-700 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-[12px] prose-code:font-normal prose-blockquote:my-2 prose-blockquote:border-l-slate-200 prose-blockquote:bg-slate-50/70 prose-blockquote:py-1 prose-blockquote:pr-2 prose-blockquote:rounded-r prose-blockquote:text-slate-600 prose-strong:text-slate-900 prose-strong:font-semibold prose-a:text-slate-900 prose-a:underline prose-a:decoration-slate-300 prose-a:underline-offset-2 prose-hr:my-4 prose-hr:border-slate-200/80 prose-img:rounded-[10px]">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
@@ -160,17 +164,41 @@ function MessageBubble({ message, onRetry }: { message: AssistantChatMessage; on
                   {children}
                 </blockquote>
               ),
+              a: ({ href, children }) => {
+                const url = typeof href === 'string' ? href : '';
+                if (url.startsWith('/api/file/serve/')) {
+                  const label = textFromChildren(children) || '下载文件';
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => void downloadUrl(url, label)}
+                      className="inline-flex items-center gap-1 text-indigo-600 underline underline-offset-2"
+                    >
+                      {children}
+                    </button>
+                  );
+                }
+                return (
+                  <a href={href} target="_blank" rel="noreferrer">
+                    {children}
+                  </a>
+                );
+              },
             }}
           >
-            {stripEmoji(message.content)}
+            {stripEmoji(assistantContent)}
           </ReactMarkdown>
         </div>
       )}
 
       {message.role === 'assistant' && (message.status === 'streaming' || Boolean(message.content && message.progress?.message)) && (
-        <div className="mt-2 border-t border-slate-100 pt-1.5">
+        <div className="mt-2">
           <ThinkingIndicator progress={message.progress ?? { message: '生成中' }} />
         </div>
+      )}
+
+      {message.role === 'assistant' && message.artifacts && message.artifacts.length > 0 && (
+        <ArtifactList artifacts={message.artifacts} />
       )}
 
       {message.role === 'assistant' && sources.length > 0 && message.status === 'done' && (
@@ -196,6 +224,70 @@ function MessageBubble({ message, onRetry }: { message: AssistantChatMessage; on
   );
 }
 
+function ArtifactList({ artifacts }: { artifacts: AiArtifact[] }) {
+  return (
+    <div className="mt-2 space-y-2 border-t border-slate-100 pt-2">
+      {artifacts.map((artifact) => (
+        <div
+          key={`${artifact.type}-${artifact.url}`}
+          className="flex items-center gap-2 rounded-[12px] border border-slate-200/70 bg-slate-50/80 p-2"
+        >
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-white text-slate-600 shadow-sm">
+            <span className="material-symbols-outlined text-[19px]">
+              {artifact.type === 'xlsx' ? 'table_view' : 'description'}
+            </span>
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[12px] font-medium text-slate-800">{artifact.name}</div>
+            <div className="truncate text-[11px] text-slate-400">
+              {artifact.description || (artifact.type === 'xlsx' ? 'AI 生成表格' : 'AI 生成文档')}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => void downloadArtifact(artifact)}
+            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-[9px] bg-slate-900 px-2.5 text-[11px] font-medium text-white transition hover:bg-slate-700"
+            aria-label={`下载 ${artifact.name}`}
+            title="下载文件"
+          >
+            <span className="material-symbols-outlined text-[14px]">download</span>
+            下载
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+async function downloadArtifact(artifact: AiArtifact) {
+  await downloadUrl(artifact.url, artifact.name);
+}
+
+async function downloadUrl(url: string, filename: string) {
+  const token = localStorage.getItem('token');
+  const response = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!response.ok) {
+    throw new Error('文件下载失败');
+  }
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+}
+
+function textFromChildren(children: ReactNode): string {
+  if (typeof children === 'string' || typeof children === 'number') return String(children);
+  if (Array.isArray(children)) return children.map(textFromChildren).join('');
+  return '';
+}
+
 function SourceSummary({ sources }: { sources: AiSourceSummary[] }) {
   const visible = sources.slice(0, 3);
   const overflow = sources.length - visible.length;
@@ -218,6 +310,15 @@ function stripEmoji(text: string): string {
     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/ {2,}/g, ' ')
+    .trim();
+}
+
+function stripArtifactDownloadLinks(text: string): string {
+  return text
+    .replace(/^\s*(?:[-*]\s*)?(?:\*\*)?(?:下载链接|下载地址|文件链接|生成文件)[:：]?(?:\*\*)?\s*\[[^\]]+\]\(\/api\/file\/serve\/[^)]+\)\s*$/gm, '')
+    .replace(/^\s*[-*]\s*\[[^\]]+\]\(\/api\/file\/serve\/[^)]+\)\s*$/gm, '')
+    .replace(/^\s*(?:\*\*)?(?:下载链接|下载地址|文件链接|生成文件)[:：]?(?:\*\*)?\s*$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 

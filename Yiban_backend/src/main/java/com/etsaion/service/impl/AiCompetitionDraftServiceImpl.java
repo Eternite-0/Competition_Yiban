@@ -14,6 +14,7 @@ import com.etsaion.entity.Competition;
 import com.etsaion.entity.CompetitionStage;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.mapper.AiCompetitionDraftMapper;
+import com.etsaion.service.ActivityCategoryService;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.CompetitionStageService;
 import com.etsaion.service.ai.AiCompetitionDraftService;
@@ -76,6 +77,9 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
 
     @Autowired
     private CompetitionStageService competitionStageService;
+
+    @Autowired
+    private ActivityCategoryService activityCategoryService;
 
     @Override
     @Transactional
@@ -320,7 +324,7 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
         Competition competition = new Competition();
         competition.setName(draft.getName());
         competition.setLevel(StrUtil.blankToDefault(draft.getLevel(), "校级"));
-        competition.setCategory(StrUtil.blankToDefault(draft.getCategory(), "A"));
+        competition.setCategory(activityCategoryService.resolveOrCreate("competition", StrUtil.blankToDefault(draft.getCategory(), "A")));
         competition.setOrganizer(draft.getOrganizer());
         competition.setStartTime(draft.getStartTime());
         competition.setEndTime(draft.getEndTime());

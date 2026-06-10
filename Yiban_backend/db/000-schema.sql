@@ -93,6 +93,26 @@ CREATE TABLE `student_roster` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='学生花名册表';
 
 -- ----------------------------
+-- Table structure for activity_category
+-- ----------------------------
+DROP TABLE IF EXISTS `activity_category`;
+CREATE TABLE `activity_category` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `type` varchar(30) NOT NULL DEFAULT 'competition' COMMENT 'competition/volunteer/other',
+  `code` varchar(50) NOT NULL COMMENT '分类编码，活动表 category 存此值',
+  `name` varchar(50) NOT NULL COMMENT '分类名称',
+  `icon` varchar(50) DEFAULT 'category' COMMENT 'Material Symbols 图标名',
+  `sort_order` int DEFAULT '100',
+  `status` varchar(20) DEFAULT 'active' COMMENT 'active/disabled',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_type_code` (`type`, `code`),
+  UNIQUE KEY `uk_type_name` (`type`, `name`),
+  KEY `idx_type_status` (`type`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='活动分类字典表';
+
+-- ----------------------------
 -- Table structure for competition
 -- ----------------------------
 DROP TABLE IF EXISTS `competition`;
@@ -203,6 +223,7 @@ CREATE TABLE `activity` (
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_type_status` (`type`, `status`),
+  KEY `idx_type_category` (`type`, `category`),
   KEY `idx_end_time` (`end_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='统一活动表';
 

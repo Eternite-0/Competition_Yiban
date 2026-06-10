@@ -44,6 +44,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root {
+  --ai-assistant-width: clamp(380px, 30vw, 460px);
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   font-weight: 500;
@@ -277,7 +281,51 @@ h1, h2, h3, h4, h5, h6 {
   .chip-warning { background: var(--color-badge-review-bg); color: var(--color-badge-review-text); }
   .chip-error { background: var(--color-danger-bg); color: var(--color-error); }
 
+  .empty-state-copy {
+    display: block;
+    width: min(100%, 24rem);
+    min-width: min(100%, 12em);
+    text-align: center;
+    word-break: normal;
+    overflow-wrap: anywhere;
+    text-wrap: pretty;
+  }
+
+  .flex.flex-col.items-center.justify-center.text-center > :is(p, span):not(.material-symbols-outlined),
+  .flex.flex-col.items-center.justify-center > :is(p, span):not(.material-symbols-outlined) {
+    min-width: min(100%, 12em);
+    max-width: 24rem;
+    text-align: center;
+    word-break: normal;
+    overflow-wrap: anywhere;
+    text-wrap: pretty;
+  }
+
   /* ── AI Avatar: Notion-inspired organic face ── */
+  .ai-launcher-avatar {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    user-select: none;
+    pointer-events: none;
+    filter: drop-shadow(0 5px 9px rgba(15, 23, 42, 0.12));
+  }
+
+  .ai-launcher-close {
+    position: absolute;
+    right: -3px;
+    top: -3px;
+    display: grid !important;
+    width: 18px;
+    height: 18px;
+    place-items: center;
+    border-radius: 999px;
+    background: #111827;
+    color: #ffffff;
+    font-size: 12px !important;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+  }
+
   .ai-avatar-stage {
     position: relative;
     width: 82px;
@@ -367,11 +415,24 @@ h1, h2, h3, h4, h5, h6 {
 
   .ai-avatar-shadow {
     position: absolute;
-    inset: 14px 9px 4px 11px;
-    border-radius: 48% 52% 45% 55% / 54% 44% 56% 46%;
+    inset: auto 18px 5px 18px;
+    height: 12px;
+    border-radius: 999px;
     background: rgba(15, 23, 42, 0.15);
-    filter: blur(8px);
-    transform: translateY(8px);
+    filter: blur(7px);
+    transform: translateY(7px);
+  }
+
+  .ai-avatar-image {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    user-select: none;
+    pointer-events: none;
+    filter: drop-shadow(0 8px 14px rgba(15, 23, 42, 0.12));
   }
 
   .ai-avatar-core {
@@ -838,6 +899,50 @@ h1, h2, h3, h4, h5, h6 {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .app-content-shell {
+    padding-right: 0;
+    transition: padding-right 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: padding-right;
+  }
+
+  .app-header {
+    transition: right 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: right;
+  }
+
+  .ai-workspace-expanded .app-content-shell {
+    padding-right: var(--ai-assistant-width);
+  }
+
+  .ai-workspace-expanded .app-header {
+    right: var(--ai-assistant-width);
+  }
+
+  .ai-assistant-panel {
+    transition:
+      width 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+      height 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+      max-height 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+      right 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+      bottom 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+      border-radius 0.34s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.24s ease;
+  }
+
+  .ai-assistant-panel.ai-assistant-dock {
+    width: var(--ai-assistant-width);
+  }
+
+  .ai-workspace-expanded .ai-assistant-launcher {
+    right: calc(var(--ai-assistant-width) + 24px);
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: none !important;
   }
 }
 

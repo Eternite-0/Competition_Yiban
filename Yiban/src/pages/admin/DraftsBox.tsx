@@ -359,11 +359,11 @@ function QualityPanel({
 
 function EmptyQuality({ text, positive = false }: { text: string; positive?: boolean }) {
   return (
-    <div className="flex flex-col items-center py-xl text-center">
+    <div className="flex w-full min-w-0 flex-col items-center py-xl text-center">
       <span className={`material-symbols-outlined text-[34px] ${positive ? 'text-success' : 'text-placeholder'}`}>
         {positive ? 'verified' : 'data_info_alert'}
       </span>
-      <p className="mt-2 text-[12px] text-placeholder">{text}</p>
+      <p className="empty-state-copy mt-2 text-[12px] text-placeholder">{text}</p>
     </div>
   );
 }
@@ -762,10 +762,10 @@ export default function DraftsBox() {
                 <span className="material-symbols-outlined animate-spin text-[26px]">progress_activity</span>
               </div>
             ) : unifiedDrafts.length === 0 ? (
-              <div className="flex min-h-[280px] flex-col items-center justify-center px-lg text-center">
+              <div className="flex min-h-[280px] w-full min-w-0 flex-col items-center justify-center px-lg text-center">
                 <span className="material-symbols-outlined text-[42px] text-placeholder">draft</span>
-                <p className="mt-3 text-[14px] text-ink">暂无匹配草稿</p>
-                <p className="mt-1 text-[12px] text-placeholder">尝试调整筛选条件或新建赛事</p>
+                <p className="empty-state-copy mt-3 text-[14px] text-ink">暂无匹配草稿</p>
+                <p className="empty-state-copy mt-1 text-[12px] text-placeholder">尝试调整筛选条件或新建赛事</p>
               </div>
             ) : (
               <motion.div variants={listContainer} initial="hidden" animate="visible">

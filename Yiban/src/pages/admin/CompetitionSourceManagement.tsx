@@ -375,10 +375,10 @@ export default function CompetitionSourceManagement() {
             <span className="material-symbols-outlined animate-spin text-[28px]">progress_activity</span>
           </div>
         ) : filteredSources.length === 0 ? (
-          <div className="flex min-h-[360px] flex-col items-center justify-center px-lg text-center">
+          <div className="flex min-h-[360px] w-full min-w-0 flex-col items-center justify-center px-lg text-center">
             <span className="material-symbols-outlined text-[46px] text-placeholder">travel_explore</span>
-            <p className="mt-3 text-[14px] text-ink">暂无赛事来源</p>
-            <p className="mt-1 text-[12px] text-placeholder">新增公开网页来源后即可触发采集</p>
+            <p className="empty-state-copy mt-3 text-[14px] text-ink">暂无赛事来源</p>
+            <p className="empty-state-copy mt-1 text-[12px] text-placeholder">新增公开网页来源后即可触发采集</p>
             {!keyword && enabledFilter === 'all' && (
               <button type="button" className="btn-primary mt-md" onClick={openCreate}>
                 <span className="material-symbols-outlined text-[18px]">add</span>
@@ -512,10 +512,10 @@ export default function CompetitionSourceManagement() {
               <span className="material-symbols-outlined animate-spin text-[28px]">progress_activity</span>
             </div>
           ) : crawlDrafts.length === 0 ? (
-            <div className="flex min-h-[360px] flex-col items-center justify-center px-lg text-center">
+            <div className="flex min-h-[360px] w-full min-w-0 flex-col items-center justify-center px-lg text-center">
               <span className="material-symbols-outlined text-[46px] text-placeholder">analytics</span>
-              <p className="mt-3 text-[14px] text-ink">暂无采集结果</p>
-              <p className="mt-1 text-[12px] text-placeholder">触发采集后，抓取到的赛事将显示在这里</p>
+              <p className="empty-state-copy mt-3 text-[14px] text-ink">暂无采集结果</p>
+              <p className="empty-state-copy mt-1 text-[12px] text-placeholder">触发采集后，抓取到的赛事将显示在这里</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 divide-y divide-hairline">

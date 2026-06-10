@@ -13,16 +13,26 @@ import {
 } from '../../api/aiChat';
 import { panelTransition, smoothEase } from '../../lib/motion';
 import { useStore } from '../../store/useStore';
+import avatarBlue from '../../assets/ai/avatar-blue.svg';
+import avatarClassic from '../../assets/ai/avatar-classic.svg';
+import avatarMint from '../../assets/ai/avatar-mint.svg';
+import avatarSunset from '../../assets/ai/avatar-sunset.svg';
+import avatarWarm from '../../assets/ai/avatar-warm.svg';
 import ChatInputBar from './ChatInputBar';
 import ChatMessageList, { type AssistantChatMessage } from './ChatMessageList';
 import QuickPromptChips from './QuickPromptChips';
-import type { AssistantTone, AvatarMotion, AvatarStyle, ChatImageAttachment } from './types';
+import type { AvatarMotion, AvatarStyle, ChatImageAttachment } from './types';
 
 type RequestStatus = 'idle' | 'loading' | 'streaming' | 'error';
+export type AssistantPanelMode = 'floating' | 'sidebar';
 
 interface FailedTurn {
   raw: string;
   attachments: ChatImageAttachment[];
+}
+
+interface AIAssistantWidgetProps {
+  onWorkspaceChange?: (state: { open: boolean; mode: AssistantPanelMode }) => void;
 }
 
 const MAX_IMAGE_COUNT = 4;
@@ -34,12 +44,6 @@ const statusText: Record<RequestStatus, string> = {
   loading: '思考中',
   streaming: '生成中',
   error: '异常',
-};
-
-const toneLabels: Record<AssistantTone, string> = {
-  precise: '严谨',
-  warm: '陪伴',
-  fast: '极速',
 };
 
 const motionLabels: Record<AvatarMotion, string> = {
@@ -57,14 +61,20 @@ const avatarStyleLabels: Record<AvatarStyle, string> = {
 };
 
 const avatarStyles = Object.keys(avatarStyleLabels) as AvatarStyle[];
-
-const tonePrompt: Record<AssistantTone, string> = {
-  precise: '请用严谨、可核查的方式回答，先给结论，再列关键依据。',
-  warm: '请用自然友好的方式回答，兼顾行动建议和必要提醒。',
-  fast: '请优先给出短答案和下一步操作，避免展开过长解释。',
+const avatarAssets: Record<AvatarStyle, string> = {
+  classic: avatarClassic,
+  blue: avatarBlue,
+  warm: avatarWarm,
+  mint: avatarMint,
+  sunset: avatarSunset,
 };
 
-export default function AIAssistantWidget() {
+const panelModeLabels: Record<AssistantPanelMode, string> = {
+  floating: '浮层',
+  sidebar: '侧栏',
+};
+
+export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidgetProps) {
   const user = useStore((state) => state.currentUser);
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -77,10 +87,12 @@ export default function AIAssistantWidget() {
   const [status, setStatus] = useState<RequestStatus>('idle');
   const [failedTurn, setFailedTurn] = useState<FailedTurn | null>(null);
   const [customizing, setCustomizing] = useState(false);
+  const [panelMode, setPanelMode] = useState<AssistantPanelMode>(() => (
+    readStoredOption('yiban.ai.panel-mode', 'floating', panelModeLabels)
+  ));
   const [assistantName, setAssistantName] = useState(() => (
     typeof localStorage === 'undefined' ? '易小助' : localStorage.getItem('yiban.ai.name') || '易小助'
   ));
-  const [tone, setTone] = useState<AssistantTone>(() => readStoredOption('yiban.ai.tone', 'precise', toneLabels));
   const [avatarMotion, setAvatarMotion] = useState<AvatarMotion>(() => (
     readStoredOption('yiban.ai.motion', 'calm', motionLabels)
   ));
@@ -90,6 +102,28 @@ export default function AIAssistantWidget() {
   const abortRef = useRef<AbortController | null>(null);
   const isBusy = status === 'loading' || status === 'streaming';
   const hasMessages = messages.length > 0;
+
+  const openAssistant = useCallback(() => {
+    setOpen(true);
+    onWorkspaceChange?.({ open: true, mode: panelMode });
+  }, [onWorkspaceChange, panelMode]);
+
+  const closeAssistant = useCallback(() => {
+    setOpen(false);
+    onWorkspaceChange?.({ open: false, mode: panelMode });
+  }, [onWorkspaceChange, panelMode]);
+
+  const toggleAssistant = useCallback(() => {
+    const nextOpen = !open;
+    setOpen(nextOpen);
+    onWorkspaceChange?.({ open: nextOpen, mode: panelMode });
+  }, [onWorkspaceChange, open, panelMode]);
+
+  const togglePanelMode = useCallback(() => {
+    const nextMode = panelMode === 'sidebar' ? 'floating' : 'sidebar';
+    setPanelMode(nextMode);
+    onWorkspaceChange?.({ open: true, mode: nextMode });
+  }, [onWorkspaceChange, panelMode]);
 
   const refreshConversations = useCallback(async () => {
     try {
@@ -105,12 +139,12 @@ export default function AIAssistantWidget() {
       if (event.key === 'Escape') {
         setConversationMenuOpen(false);
         setCustomizing(false);
-        setOpen(false);
+        closeAssistant();
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [closeAssistant]);
 
   useEffect(() => {
     if (!open) return;
@@ -124,8 +158,12 @@ export default function AIAssistantWidget() {
   }, [open, refreshConversations]);
 
   useEffect(() => {
-    localStorage.setItem('yiban.ai.tone', tone);
-  }, [tone]);
+    localStorage.setItem('yiban.ai.panel-mode', panelMode);
+  }, [panelMode]);
+
+  useEffect(() => {
+    onWorkspaceChange?.({ open, mode: panelMode });
+  }, [onWorkspaceChange, open, panelMode]);
 
   useEffect(() => {
     localStorage.setItem('yiban.ai.motion', avatarMotion);
@@ -154,10 +192,10 @@ export default function AIAssistantWidget() {
     if ((!raw && selectedAttachments.length === 0) || isBusy) return;
 
     const displayText = raw || '请分析图片附件';
-    const message = `${displayText}\n\n${tonePrompt[tone]}`;
+    const message = displayText;
     const imageDataUrls = selectedAttachments.map((attachment) => attachment.dataUrl);
 
-    setOpen(true);
+    openAssistant();
     setInput('');
     setAttachments([]);
     setCustomizing(false);
@@ -209,6 +247,11 @@ export default function AIAssistantWidget() {
               status: 'streaming',
             });
           },
+          onArtifacts: (artifacts) => {
+            updateAssistantMessage(assistantMessage.id, {
+              artifacts,
+            });
+          },
         },
       );
 
@@ -217,6 +260,7 @@ export default function AIAssistantWidget() {
         content: streamResponse.answer || '暂无回复',
         status: 'done',
         toolContext: streamResponse.toolContext,
+        artifacts: streamResponse.artifacts,
         createTime: streamResponse.createTime,
         progress: undefined,
       });
@@ -240,6 +284,7 @@ export default function AIAssistantWidget() {
         content: response.answer || '暂无回复',
         status: 'done',
         toolContext: response.toolContext,
+        artifacts: response.artifacts,
         createTime: response.createTime,
       });
       setStatus('idle');
@@ -361,6 +406,22 @@ export default function AIAssistantWidget() {
 
   const activeConversation = conversations.find((item) => String(item.id) === String(conversationId));
   const activeTitle = activeConversation?.title?.trim() || '新建 AI 对话';
+  const panelClassName = panelMode === 'sidebar'
+    ? 'ai-assistant-panel ai-assistant-dock fixed inset-x-2 bottom-0 z-50 flex h-[72svh] max-h-[590px] flex-col overflow-hidden rounded-b-none rounded-t-[22px] border border-slate-200/60 bg-white text-slate-900 shadow-[0_-4px_40px_rgba(15,23,42,0.08),0_0_0_1px_rgba(15,23,42,0.03)] md:inset-y-0 md:left-auto md:right-0 md:h-screen md:max-h-none md:rounded-none md:border-y-0 md:border-r-0 md:shadow-none'
+    : 'ai-assistant-panel ai-assistant-float fixed inset-x-2 bottom-0 z-50 flex h-[72svh] max-h-[590px] flex-col overflow-hidden rounded-b-none rounded-t-[22px] border border-slate-200/60 bg-white text-slate-900 shadow-[0_-4px_40px_rgba(15,23,42,0.08),0_0_0_1px_rgba(15,23,42,0.03)] md:inset-auto md:bottom-20 md:right-6 md:h-[min(600px,calc(100vh-140px))] md:w-[400px] md:rounded-[20px] md:shadow-[0_24px_80px_rgba(15,23,42,0.14),0_0_0_1px_rgba(15,23,42,0.04)]';
+  const panelMotion = panelMode === 'sidebar'
+    ? {
+        initial: { opacity: 0, x: 36 },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: 36 },
+        transition: { duration: 0.34, ease: smoothEase },
+      }
+    : {
+        initial: { opacity: 0, y: 24, scale: 0.97 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: 16, scale: 0.97 },
+        transition: { duration: 0.25, ease: smoothEase },
+      };
 
   return (
     <>
@@ -368,14 +429,22 @@ export default function AIAssistantWidget() {
         type="button"
         whileHover={{ y: -2, scale: 1.05 }}
         whileTap={{ scale: 0.92 }}
-        onClick={() => setOpen((value) => !value)}
+        onClick={toggleAssistant}
         className="ai-assistant-launcher fixed bottom-5 right-4 z-50 grid h-12 w-12 place-items-center rounded-full border border-slate-200/80 bg-white text-slate-700 shadow-[0_8px_30px_rgba(15,23,42,0.12),0_0_0_1px_rgba(15,23,42,0.05)] transition hover:shadow-[0_12px_40px_rgba(15,23,42,0.18)] md:bottom-6 md:right-6"
         aria-label={open ? '关闭 AI 助手' : '打开 AI 助手'}
         title="AI 助手"
       >
-        <span className="material-symbols-outlined text-[22px]">
-          {open ? 'close' : 'auto_awesome'}
-        </span>
+        <img
+          className="ai-launcher-avatar"
+          src={avatarAssets[avatarStyle]}
+          alt=""
+          draggable={false}
+        />
+        {open && (
+          <span className="ai-launcher-close material-symbols-outlined" aria-hidden="true">
+            close
+          </span>
+        )}
       </motion.button>
 
       <AnimatePresence>
@@ -386,7 +455,7 @@ export default function AIAssistantWidget() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={panelTransition}
-            onClick={() => setOpen(false)}
+            onClick={closeAssistant}
             className="fixed inset-0 z-40 bg-slate-950/25 backdrop-blur-[2px] md:hidden dark:bg-black/35"
             aria-label="关闭 AI 助手"
           />
@@ -396,16 +465,20 @@ export default function AIAssistantWidget() {
       <AnimatePresence>
         {open && (
           <motion.aside
-            initial={{ opacity: 0, y: 24, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.97 }}
-            transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-            className="ai-assistant-panel fixed inset-x-2 bottom-0 z-50 flex h-[72svh] max-h-[590px] flex-col overflow-hidden rounded-b-none rounded-t-[22px] border border-slate-200/60 bg-white text-slate-900 shadow-[0_-4px_40px_rgba(15,23,42,0.08),0_0_0_1px_rgba(15,23,42,0.03)] md:inset-auto md:bottom-20 md:right-6 md:h-[min(600px,calc(100vh-140px))] md:w-[400px] md:rounded-[20px] md:shadow-[0_24px_80px_rgba(15,23,42,0.14),0_0_0_1px_rgba(15,23,42,0.04)]"
+            layout
+            initial={panelMotion.initial}
+            animate={panelMotion.animate}
+            exit={panelMotion.exit}
+            transition={{
+              ...panelMotion.transition,
+              layout: { duration: 0.34, ease: smoothEase },
+            }}
+            className={panelClassName}
             role="dialog"
             aria-modal="false"
             aria-label="AI 助手"
           >
-            <header className="relative z-10 flex h-12 shrink-0 items-center border-b border-slate-200/50 bg-white/80 px-3 backdrop-blur-md">
+            <header className="relative z-10 flex h-12 shrink-0 items-center justify-between gap-2 border-b border-slate-200/50 bg-white/80 px-3 backdrop-blur-md">
               <button
                 type="button"
                 onClick={() => setConversationMenuOpen((value) => !value)}
@@ -419,6 +492,28 @@ export default function AIAssistantWidget() {
                   keyboard_arrow_down
                 </span>
               </button>
+              <div className="ml-auto hidden items-center gap-1 md:flex">
+                <button
+                  type="button"
+                  onClick={togglePanelMode}
+                  className="grid h-8 w-8 place-items-center rounded-[9px] text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  aria-label={panelMode === 'sidebar' ? '收回浮层' : '扩展工作区'}
+                  title={panelMode === 'sidebar' ? '收回浮层' : '扩展工作区'}
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    {panelMode === 'sidebar' ? 'close_fullscreen' : 'open_in_full'}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={closeAssistant}
+                  className="grid h-8 w-8 place-items-center rounded-[9px] text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  aria-label="关闭 AI 助手"
+                  title="关闭"
+                >
+                  <span className="material-symbols-outlined text-[18px]">close</span>
+                </button>
+              </div>
             </header>
 
             {/* Conversation dropdown - positioned outside header to escape overflow-hidden */}
@@ -505,14 +600,11 @@ export default function AIAssistantWidget() {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.97 }}
                       transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-                      className="relative w-full max-w-[440px] overflow-hidden rounded-[20px] border border-slate-200/70 bg-white text-slate-900 shadow-[0_32px_100px_rgba(15,23,42,0.25)]"
+                      className="relative w-full max-w-[440px] overflow-hidden rounded-[18px] border border-slate-200 bg-white text-slate-900 shadow-[0_32px_100px_rgba(15,23,42,0.25)]"
                       role="dialog"
                       aria-modal="true"
                       aria-label="个性化 AI 助手"
                     >
-                      {/* Header gradient bar */}
-                      <div className="h-1.5 w-full bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400" />
-
                       <div className="p-6">
                         <div className="flex items-center justify-between">
                           <div>
@@ -562,7 +654,7 @@ export default function AIAssistantWidget() {
                             value={assistantName}
                             onChange={(event) => setAssistantName(event.target.value.slice(0, 12))}
                             placeholder="给助手起个名字"
-                            className="block h-10 w-full rounded-[11px] border border-slate-200 bg-slate-50/50 px-3 text-[14px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                            className="block h-10 w-full rounded-[11px] border border-slate-200 bg-slate-50/50 px-3 text-[14px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-100"
                           />
                         </div>
 
@@ -577,7 +669,7 @@ export default function AIAssistantWidget() {
                                 onClick={() => setAvatarStyle(style)}
                                 className={`flex h-12 flex-col items-center justify-center gap-0.5 rounded-[11px] border text-[11px] font-medium transition ${
                                   avatarStyle === style
-                                    ? 'border-indigo-300 bg-indigo-50 text-indigo-700 shadow-sm'
+                                    ? 'border-slate-900 bg-slate-50 text-slate-900 shadow-sm'
                                     : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50'
                                 }`}
                               >
@@ -617,7 +709,7 @@ export default function AIAssistantWidget() {
                           <button
                             type="button"
                             onClick={() => setCustomizing(false)}
-                            className="h-9 rounded-[10px] bg-gradient-to-r from-indigo-500 to-purple-500 px-5 text-[13px] font-medium text-white shadow-sm transition hover:from-indigo-600 hover:to-purple-600 hover:shadow-md"
+                            className="h-9 rounded-[10px] bg-slate-900 px-5 text-[13px] font-medium text-white shadow-sm transition hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
                           >
                             完成
                           </button>
@@ -630,22 +722,22 @@ export default function AIAssistantWidget() {
 
               <div className="flex h-full min-h-0 flex-col overflow-hidden">
                 {!hasMessages && (
-                  <AssistantWelcome
-                    displayName={user?.name || user?.studentId || '同学'}
-                    status={status}
-                    avatarMotion={avatarMotion}
-                    avatarStyle={avatarStyle}
-                    assistantName={assistantName}
-                    onCustomize={() => setCustomizing((value) => !value)}
-                  />
+                  <>
+                    <AssistantWelcome
+                      displayName={user?.name || user?.studentId || '同学'}
+                      status={status}
+                      avatarMotion={avatarMotion}
+                      avatarStyle={avatarStyle}
+                      assistantName={assistantName}
+                      onCustomize={() => setCustomizing((value) => !value)}
+                    />
+                    <QuickPromptChips
+                      role={user?.role}
+                      disabled={isBusy}
+                      onSelect={(prompt) => void handleSend(prompt)}
+                    />
+                  </>
                 )}
-
-                <QuickPromptChips
-                  role={user?.role}
-                  disabled={isBusy}
-                  variant={hasMessages ? 'chips' : 'commands'}
-                  onSelect={(prompt) => void handleSend(prompt)}
-                />
                 <ChatMessageList messages={messages} onRetry={failedTurn ? handleRetry : undefined} />
               </div>
             </div>
@@ -653,11 +745,8 @@ export default function AIAssistantWidget() {
             <ChatInputBar
               value={input}
               disabled={isBusy}
-              tone={tone}
-              toneOptions={toneLabels}
               attachments={attachments}
               onChange={setInput}
-              onToneChange={setTone}
               onAddImages={handleAddImages}
               onRemoveAttachment={(id) => setAttachments((prev) => prev.filter((item) => item.id !== id))}
               onSubmit={() => void handleSend()}
@@ -738,26 +827,8 @@ function AvatarFace({ motion: avatarMotion, style: avatarStyle, preview = false 
       aria-hidden="true"
     >
       <div className="ai-avatar-glow" />
-      <div className="ai-avatar-particles">
-        <span className="ai-avatar-particle" />
-        <span className="ai-avatar-particle" />
-        <span className="ai-avatar-particle" />
-        <span className="ai-avatar-particle" />
-        <span className="ai-avatar-particle" />
-        <span className="ai-avatar-particle" />
-      </div>
       <div className="ai-avatar-shadow" />
-      <div className="ai-avatar-core">
-        <span className="ai-avatar-cheek ai-avatar-cheek-left" />
-        <span className="ai-avatar-cheek ai-avatar-cheek-right" />
-        <span className="ai-avatar-eye ai-avatar-eye-left" />
-        <span className="ai-avatar-eye ai-avatar-eye-right" />
-        <span className="ai-avatar-nose" />
-        <span className="ai-avatar-mouth" />
-      </div>
-      <span className="ai-avatar-charm material-symbols-outlined">
-        {avatarStyle === 'classic' ? 'auto_awesome' : avatarStyle === 'blue' ? 'school' : avatarStyle === 'warm' ? 'local_florist' : avatarStyle === 'mint' ? 'spa' : 'wb_twilight'}
-      </span>
+      <img className="ai-avatar-image" src={avatarAssets[avatarStyle]} alt="" draggable={false} />
     </motion.div>
   );
 }
@@ -811,6 +882,7 @@ function toAssistantChatMessage(message: AiChatConversationMessage): AssistantCh
     status: 'done',
     createTime: message.createTime,
     toolContext: message.toolContext,
+    artifacts: message.artifacts,
   };
 }
 

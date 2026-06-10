@@ -14,6 +14,7 @@ import com.etsaion.entity.User;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.mapper.ActivityMapper;
 import com.etsaion.service.ActivityService;
+import com.etsaion.service.ActivityCategoryService;
 import com.etsaion.service.ParticipationService;
 import com.etsaion.service.ReviewTaskService;
 import com.etsaion.service.UserService;
@@ -39,6 +40,9 @@ import java.util.stream.Collectors;
 public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> implements ActivityService {
 
     @Autowired
+    private ActivityCategoryService activityCategoryService;
+
+    @Autowired
     private ParticipationService participationService;
 
     @Autowired
@@ -49,10 +53,11 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
     private ReviewTaskService reviewTaskService;
 
     @Override
-    public Page<ActivityVO> listActivities(int current, int size, String type, String status, String keyword, boolean includePrivate) {
+    public Page<ActivityVO> listActivities(int current, int size, String type, String category, String status, String keyword, boolean includePrivate) {
         Page<Activity> page = new Page<>(current, size);
         LambdaQueryWrapper<Activity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(StrUtil.isNotBlank(type), Activity::getType, type)
+                .eq(StrUtil.isNotBlank(category), Activity::getCategory, category)
                 .like(StrUtil.isNotBlank(keyword), Activity::getTitle, keyword);
 
         if (includePrivate) {
@@ -88,8 +93,12 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
             throw new BusinessException("活动不存在");
         }
 
-        BeanUtils.copyProperties(dto, activity, "tags", "tracks", "config", "createTime", "updateTime");
-        activity.setType(StrUtil.blankToDefault(dto.getType(), "competition"));
+        BeanUtils.copyProperties(dto, activity, "tags", "tracks", "config", "createTime", "updateTime", "category");
+        String type = StrUtil.blankToDefault(dto.getType(), "competition");
+        activity.setType(type);
+        if (StrUtil.isNotBlank(dto.getCategory())) {
+            activity.setCategory(activityCategoryService.resolveOrCreate(type, dto.getCategory()));
+        }
         activity.setStatus(StrUtil.blankToDefault(dto.getStatus(), "draft"));
         activity.setTags(CollUtil.isNotEmpty(dto.getTags()) ? JSONUtil.toJsonStr(dto.getTags()) : "[]");
         activity.setTracks(CollUtil.isNotEmpty(dto.getTracks()) ? JSONUtil.toJsonStr(dto.getTracks()) : "[]");

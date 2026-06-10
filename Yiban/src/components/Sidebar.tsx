@@ -19,7 +19,7 @@ type NavEntry = NavItem | NavGroup;
 
 const studentNav: NavEntry[] = [
   { icon: 'space_dashboard', label: '工作台', path: '/student' },
-  { icon: 'emoji_events', label: '赛事大厅', path: '/student/competitions' },
+  { icon: 'emoji_events', label: '活动大厅', path: '/student/competitions' },
   { icon: 'timeline', label: '我的进度', path: '/student/progress' },
   { icon: 'group_add', label: '招募大厅', path: '/student/teams' },
   { icon: 'assignment_ind', label: '我的参赛', path: '/student/registrations' },
@@ -32,7 +32,7 @@ const studentNav: NavEntry[] = [
 const teacherNav: NavEntry[] = [
   { icon: 'space_dashboard', label: '工作台', path: '/teacher' },
   { icon: 'analytics', label: '学院总览', path: '/teacher/college-overview' },
-  { icon: 'emoji_events', label: '赛事大厅', path: '/teacher/competitions' },
+  { icon: 'emoji_events', label: '活动大厅', path: '/teacher/competitions' },
   { icon: 'fact_check', label: '学院审核中心', path: '/teacher/audit' },
   { icon: 'school', label: '学生看板', path: '/teacher/student-competitions' },
   { icon: 'trending_up', label: '学情分析', path: '/teacher/student-growth' },
@@ -41,9 +41,9 @@ const teacherNav: NavEntry[] = [
 const adminNav: NavEntry[] = [
   { type: 'group', label: '工作台' },
   { icon: 'space_dashboard', label: '工作台', path: '/admin' },
-  { type: 'group', label: '赛事运营' },
-  { icon: 'emoji_events', label: '赛事管理', path: '/admin/competitions' },
-  { icon: 'add_circle', label: '赛事发布', path: '/admin/publish' },
+  { type: 'group', label: '活动运营' },
+  { icon: 'emoji_events', label: '活动管理', path: '/admin/competitions' },
+  { icon: 'add_circle', label: '活动发布', path: '/admin/publish' },
   { icon: 'draft', label: '草稿箱', path: '/admin/drafts' },
   { icon: 'travel_explore', label: '赛事来源', path: '/admin/competition-sources' },
   { icon: 'campaign', label: '公告管理', path: '/admin/announcements' },

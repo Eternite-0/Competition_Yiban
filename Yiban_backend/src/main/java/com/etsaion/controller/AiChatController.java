@@ -26,6 +26,12 @@ import java.util.concurrent.CompletableFuture;
 @RequireRole({"student", "teacher", "admin"})
 public class AiChatController {
 
+    private static final int STREAM_CHUNK_TARGET = 4;
+    private static final int STREAM_CHUNK_MAX = 8;
+    private static final long STREAM_BASE_DELAY_MS = 55L;
+    private static final long STREAM_PUNCTUATION_DELAY_MS = 120L;
+    private static final long STREAM_LINE_BREAK_DELAY_MS = 170L;
+
     @Autowired
     private AiChatService aiChatService;
 
@@ -50,6 +56,7 @@ public class AiChatController {
                     } catch (IOException ignored) {
                     }
                 });
+                streamAnswer(response.getAnswer(), emitter);
                 emitter.send(SseEmitter.event().name("message").data(response));
                 emitter.complete();
             } catch (Exception e) {
@@ -62,6 +69,50 @@ public class AiChatController {
             }
         });
         return emitter;
+    }
+
+    private void streamAnswer(String answer, SseEmitter emitter) throws IOException, InterruptedException {
+        if (answer == null || answer.isBlank()) {
+            return;
+        }
+        for (String chunk : splitAnswer(answer)) {
+            if (chunk.isEmpty()) continue;
+            emitter.send(SseEmitter.event().name("message").data(Map.of("delta", chunk)));
+            Thread.sleep(streamDelay(chunk));
+        }
+    }
+
+    private List<String> splitAnswer(String answer) {
+        List<String> chunks = new java.util.ArrayList<>();
+        StringBuilder buffer = new StringBuilder();
+        for (int i = 0; i < answer.length(); i++) {
+            char current = answer.charAt(i);
+            buffer.append(current);
+            boolean lineBreak = current == '\n';
+            boolean punctuation = "。！？；;，,、：:".indexOf(current) >= 0;
+            boolean hardLimit = buffer.length() >= STREAM_CHUNK_MAX;
+            boolean regularBreak = buffer.length() >= STREAM_CHUNK_TARGET;
+            boolean softBreak = buffer.length() >= 2 && (punctuation || lineBreak);
+            if (hardLimit || regularBreak || softBreak) {
+                chunks.add(buffer.toString());
+                buffer.setLength(0);
+            }
+        }
+        if (buffer.length() > 0) {
+            chunks.add(buffer.toString());
+        }
+        return chunks;
+    }
+
+    private long streamDelay(String chunk) {
+        if (chunk.contains("\n")) {
+            return STREAM_LINE_BREAK_DELAY_MS;
+        }
+        char last = chunk.charAt(chunk.length() - 1);
+        if ("。！？；;，,、：:".indexOf(last) >= 0) {
+            return STREAM_PUNCTUATION_DELAY_MS;
+        }
+        return STREAM_BASE_DELAY_MS;
     }
 
     @Operation(summary = "获取当前用户 AI 会话列表")

@@ -4,14 +4,25 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import Breadcrumb from './Breadcrumb';
 import ErrorState from './ErrorState';
-import AIAssistantWidget from './ai/AIAssistantWidget';
+import AIAssistantWidget, { type AssistantPanelMode } from './ai/AIAssistantWidget';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { pageTransition, pageVariants } from '../lib/motion';
 
 export default function Layout() {
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [aiWorkspace, setAiWorkspace] = useState<{ open: boolean; mode: AssistantPanelMode }>({
+    open: false,
+    mode: 'floating',
+  });
+  const aiExpanded = aiWorkspace.open && aiWorkspace.mode === 'sidebar';
+
+  const handleAiWorkspaceChange = useCallback((next: { open: boolean; mode: AssistantPanelMode }) => {
+    setAiWorkspace((prev) => (
+      prev.open === next.open && prev.mode === next.mode ? prev : next
+    ));
+  }, []);
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -19,7 +30,7 @@ export default function Layout() {
   }, [location.pathname]);
 
   return (
-    <div className="relative min-h-screen app-workspace text-ink antialiased selection:bg-primary/10 selection:text-primary">
+    <div className={`relative min-h-screen app-workspace text-ink antialiased selection:bg-primary/10 selection:text-primary ${aiExpanded ? 'ai-workspace-expanded' : ''}`}>
       <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 
       <AnimatePresence>
@@ -36,7 +47,7 @@ export default function Layout() {
         )}
       </AnimatePresence>
 
-      <div className="relative flex min-h-screen flex-col md:ml-[200px]">
+      <div className="app-content-shell relative flex min-h-screen flex-col md:ml-[200px]">
         <Header
           mobileNavOpen={mobileNavOpen}
           onToggleMobileNav={() => setMobileNavOpen((prev) => !prev)}
@@ -63,7 +74,7 @@ export default function Layout() {
           </div>
         </main>
       </div>
-      <AIAssistantWidget />
+      <AIAssistantWidget onWorkspaceChange={handleAiWorkspaceChange} />
     </div>
   );
 }

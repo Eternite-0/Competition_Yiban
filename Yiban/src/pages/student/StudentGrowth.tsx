@@ -228,9 +228,9 @@ export default function StudentGrowth() {
     fetchGrowth();
   }, [currentUser?.id]);
 
-  if (loading) return <div className="py-section text-center text-ink-muted-48"><span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span><p className="mt-2 text-[14px]">加载中…</p></div>;
-  if (error) return <div className="py-section text-center text-error"><span className="material-symbols-outlined text-[32px]">error_outline</span><p className="mt-2 text-[14px]">{error}</p></div>;
-  if (!growth) return <div className="py-section text-center text-ink-muted-48"><span className="material-symbols-outlined text-[40px]">insights</span><p className="mt-3 text-[15px]">暂无成长数据</p></div>;
+  if (loading) return <div className="flex w-full min-w-0 flex-col items-center py-section text-center text-ink-muted-48"><span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span><p className="empty-state-copy mt-2 text-[14px]">加载中…</p></div>;
+  if (error) return <div className="flex w-full min-w-0 flex-col items-center py-section text-center text-error"><span className="material-symbols-outlined text-[32px]">error_outline</span><p className="empty-state-copy mt-2 text-[14px]">{error}</p></div>;
+  if (!growth) return <div className="flex w-full min-w-0 flex-col items-center py-section text-center text-ink-muted-48"><span className="material-symbols-outlined text-[40px]">insights</span><p className="empty-state-copy mt-3 text-[15px]">暂无成长数据</p></div>;
 
   const radarData = DIMENSION_LABELS.map((d) => ({ dimension: d.label, score: growth.radarData?.[d.key] ?? 0, maxScore: 100, hint: d.hint }));
   const averageScore = Math.round(radarData.reduce((acc, d) => acc + d.score, 0) / Math.max(1, radarData.length));
@@ -509,7 +509,7 @@ function GrowthTimeline({ items }: { items: TimelineItem[] }) {
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="rounded-md border border-dashed border-hairline bg-canvas p-5 text-center text-[13px] text-ink-muted-48">
+    <div className="empty-state-copy mx-auto rounded-md border border-dashed border-hairline bg-canvas p-5 text-center text-[13px] text-ink-muted-48">
       {text}
     </div>
   );

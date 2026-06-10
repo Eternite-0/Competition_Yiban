@@ -39,11 +39,12 @@ public class ActivityController {
             @RequestParam(defaultValue = "1") int current,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String type,
+            @RequestParam(required = false) String category,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String keyword) {
 
         boolean includePrivate = "admin".equalsIgnoreCase(UserContext.getUserRole());
-        return Result.success(activityService.listActivities(current, size, type, status, keyword, includePrivate));
+        return Result.success(activityService.listActivities(current, size, type, category, status, keyword, includePrivate));
     }
 
     @Operation(summary = "统一活动详情")
