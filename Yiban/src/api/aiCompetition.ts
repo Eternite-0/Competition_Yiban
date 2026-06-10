@@ -50,6 +50,15 @@ export interface PageResult<T> {
   pages?: number;
 }
 
+export interface AiCompetitionParseResultVO {
+  taskId?: number | string;
+  sourceType?: string;
+  sourceUrl?: string;
+  sourceTitle?: string;
+  drafts: AiCompetitionDraftVO[];
+  warnings?: string[];
+}
+
 export interface ConfidenceItem {
   field: string;
   label: string;
@@ -86,8 +95,237 @@ export function parseCompetitionFile(file: File): Promise<AiCompetitionDraftVO> 
   });
 }
 
+export function parseCompetitionFileBatch(file: File): Promise<AiCompetitionParseResultVO> {
+  const formData = new FormData();
+  formData.append('file', file);
+  return apiClient.post('/ai/competition/parse-file-batch', formData, {
+    timeout: 180000,
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+}
+
 export function parseCompetitionUrl(url: string): Promise<AiCompetitionDraftVO> {
   return apiClient.post('/ai/competition/parse-url', { url }, { timeout: 120000 });
+}
+
+export function parseCompetitionUrlBatch(url: string): Promise<AiCompetitionParseResultVO> {
+  return apiClient.post('/ai/competition/parse-url-batch', { url }, { timeout: 180000 });
+}
+
+export interface ParseProgress {
+  step: 'scraping' | 'analyzing' | 'generating';
+  message: string;
+}
+
+export async function streamParseCompetitionUrl(
+  url: string,
+  handlers: {
+    signal?: AbortSignal;
+    onProgress?: (progress: ParseProgress) => void;
+  } = {},
+): Promise<AiCompetitionDraftVO> {
+  const token = localStorage.getItem('token');
+  const response = await fetch('/api/ai/competition/parse-url-stream', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ url }),
+    signal: handlers.signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`AI 解析失败: HTTP ${response.status}`);
+  }
+  if (!response.body) {
+    throw new Error('AI 解析流为空');
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let resultDraft: AiCompetitionDraftVO | null = null;
+  let errorMsg = '';
+
+  const applyEvent = (eventName: string, data: string) => {
+    if (!data || data === '[DONE]') return;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(data);
+    } catch {
+      parsed = data;
+    }
+
+    if (eventName === 'error') {
+      const msg = typeof parsed === 'object' && parsed !== null && 'message' in parsed
+        ? String((parsed as { message?: unknown }).message)
+        : String(parsed);
+      throw new Error(msg || 'AI 解析失败');
+    }
+
+    if (eventName === 'progress' && typeof parsed === 'object' && parsed !== null) {
+      handlers.onProgress?.(parsed as ParseProgress);
+      return;
+    }
+
+    if (eventName === 'done') {
+      const unwrapped = parsed && typeof parsed === 'object' && 'data' in (parsed as Record<string, unknown>)
+        ? (parsed as Record<string, unknown>).data
+        : parsed;
+      resultDraft = unwrapped as AiCompetitionDraftVO;
+    }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split(/\r?\n\r?\n/);
+    buffer = parts.pop() ?? '';
+    for (const part of parts) {
+      const lines = part.split(/\r?\n/);
+      let eventName = 'message';
+      const dataLines: string[] = [];
+      for (const line of lines) {
+        if (!line || line.startsWith(':')) continue;
+        if (line.startsWith('event:')) {
+          eventName = line.slice(6).trim() || 'message';
+        } else if (line.startsWith('data:')) {
+          dataLines.push(line.slice(5).trimStart());
+        }
+      }
+      applyEvent(eventName, dataLines.join('\n'));
+    }
+  }
+
+  buffer += decoder.decode();
+  if (buffer.trim()) {
+    const lines = buffer.split(/\r?\n/);
+    let eventName = 'message';
+    const dataLines: string[] = [];
+    for (const line of lines) {
+      if (!line || line.startsWith(':')) continue;
+      if (line.startsWith('event:')) {
+        eventName = line.slice(6).trim() || 'message';
+      } else if (line.startsWith('data:')) {
+        dataLines.push(line.slice(5).trimStart());
+      }
+    }
+    applyEvent(eventName, dataLines.join('\n'));
+  }
+
+  if (!resultDraft) {
+    throw new Error(errorMsg || 'AI 解析未返回结果');
+  }
+  return resultDraft;
+}
+
+export async function streamParseCompetitionUrlBatch(
+  url: string,
+  handlers: {
+    signal?: AbortSignal;
+    onProgress?: (progress: ParseProgress) => void;
+  } = {},
+): Promise<AiCompetitionParseResultVO> {
+  const token = localStorage.getItem('token');
+  const response = await fetch('/api/ai/competition/parse-url-batch-stream', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ url }),
+    signal: handlers.signal,
+  });
+
+  if (!response.ok) {
+    throw new Error(`AI 解析失败: HTTP ${response.status}`);
+  }
+  if (!response.body) {
+    throw new Error('AI 解析流为空');
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let result: AiCompetitionParseResultVO | null = null;
+
+  const applyEvent = (eventName: string, data: string) => {
+    if (!data || data === '[DONE]') return;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(data);
+    } catch {
+      parsed = data;
+    }
+
+    if (eventName === 'error') {
+      const msg = typeof parsed === 'object' && parsed !== null && 'message' in parsed
+        ? String((parsed as { message?: unknown }).message)
+        : String(parsed);
+      throw new Error(msg || 'AI 解析失败');
+    }
+
+    if (eventName === 'progress' && typeof parsed === 'object' && parsed !== null) {
+      handlers.onProgress?.(parsed as ParseProgress);
+      return;
+    }
+
+    if (eventName === 'done') {
+      const unwrapped = parsed && typeof parsed === 'object' && 'data' in (parsed as Record<string, unknown>)
+        ? (parsed as Record<string, unknown>).data
+        : parsed;
+      result = unwrapped as AiCompetitionParseResultVO;
+    }
+  };
+
+  const consumeChunk = (chunk: string) => {
+    const parts = chunk.split(/\r?\n\r?\n/);
+    buffer = parts.pop() ?? '';
+    for (const part of parts) {
+      const lines = part.split(/\r?\n/);
+      let eventName = 'message';
+      const dataLines: string[] = [];
+      for (const line of lines) {
+        if (!line || line.startsWith(':')) continue;
+        if (line.startsWith('event:')) {
+          eventName = line.slice(6).trim() || 'message';
+        } else if (line.startsWith('data:')) {
+          dataLines.push(line.slice(5).trimStart());
+        }
+      }
+      applyEvent(eventName, dataLines.join('\n'));
+    }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    consumeChunk(buffer);
+  }
+
+  buffer += decoder.decode();
+  if (buffer.trim()) {
+    const lines = buffer.split(/\r?\n/);
+    let eventName = 'message';
+    const dataLines: string[] = [];
+    for (const line of lines) {
+      if (!line || line.startsWith(':')) continue;
+      if (line.startsWith('event:')) {
+        eventName = line.slice(6).trim() || 'message';
+      } else if (line.startsWith('data:')) {
+        dataLines.push(line.slice(5).trimStart());
+      }
+    }
+    applyEvent(eventName, dataLines.join('\n'));
+  }
+
+  if (!result) {
+    throw new Error('AI 解析未返回结果');
+  }
+  return result;
 }
 
 export function listAiCompetitionDrafts(

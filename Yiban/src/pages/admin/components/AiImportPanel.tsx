@@ -4,18 +4,20 @@ import { toast } from 'sonner';
 import {
   averageConfidence,
   formatConfidence,
-  parseCompetitionFile,
-  parseCompetitionUrl,
+  parseCompetitionFileBatch,
+  streamParseCompetitionUrlBatch,
   toConfidenceItems,
   toDisplayItems,
   toStringList,
   type AiCompetitionDraftVO,
+  type AiCompetitionParseResultVO,
+  type ParseProgress,
 } from '../../../api/aiCompetition';
 import { listContainer, listItem } from '../../../lib/motion';
 
 type ImportMode = 'file' | 'url';
 
-const acceptedTypes = '.pdf,.doc,.docx,.txt,.md,.png,.jpg,.jpeg,.webp';
+const acceptedTypes = '.pdf,.docx,.txt,.md,.html,.htm,.png,.jpg,.jpeg,.webp';
 
 function formatDate(value?: string) {
   if (!value) return '待补充';
@@ -31,6 +33,17 @@ function sourceLabel(type?: string) {
     crawl: '来源采集',
   };
   return labels[type || ''] || type || '未知来源';
+}
+
+function warningLabel(value: string) {
+  const labels: Record<string, string> = {
+    no_competitions_detected: '未识别到赛事',
+    pdf_scan_image_fallback: '扫描 PDF 兜底',
+    possible_dynamic_page: '疑似动态页',
+    image_only_file: '图片文件',
+    image_only_url: '图片链接',
+  };
+  return labels[value] || value;
 }
 
 export function aiDraftToPublishForm(draft: AiCompetitionDraftVO) {
@@ -57,30 +70,18 @@ interface AiImportPanelProps {
 
 export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const [mode, setMode] = useState<ImportMode>('file');
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState('');
   const [dragging, setDragging] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState('');
-  const [draft, setDraft] = useState<AiCompetitionDraftVO | null>(null);
+  const [result, setResult] = useState<AiCompetitionParseResultVO | null>(null);
+  const [progress, setProgress] = useState<ParseProgress | null>(null);
 
-  const confidenceItems = useMemo(
-    () => toConfidenceItems(draft?.fieldConfidenceJson),
-    [draft?.fieldConfidenceJson],
-  );
-  const evidenceItems = useMemo(
-    () => toDisplayItems(draft?.evidenceJson),
-    [draft?.evidenceJson],
-  );
-  const riskItems = useMemo(
-    () => toDisplayItems(draft?.riskFlagsJson),
-    [draft?.riskFlagsJson],
-  );
-  const confidence = useMemo(
-    () => averageConfidence(draft?.fieldConfidenceJson),
-    [draft?.fieldConfidenceJson],
-  );
+  const drafts = result?.drafts || [];
+  const warnings = result?.warnings || [];
 
   const chooseFile = (nextFile?: File) => {
     if (!nextFile) return;
@@ -90,7 +91,7 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
       return;
     }
     setFile(nextFile);
-    setDraft(null);
+    setResult(null);
     setError('');
   };
 
@@ -101,35 +102,51 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
     }
     if (mode === 'url') {
       try {
-        new URL(url);
+        const parsed = new URL(url);
+        if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error();
       } catch {
         toast.error('请输入完整有效的网页 URL');
         return;
       }
     }
 
+    const controller = new AbortController();
+    abortRef.current = controller;
     setParsing(true);
     setError('');
-    setDraft(null);
+    setResult(null);
+    setProgress(null);
     try {
-      const result = mode === 'file'
-        ? await parseCompetitionFile(file as File)
-        : await parseCompetitionUrl(url.trim());
-      setDraft(result);
-      toast.success('解析完成，已生成 AI 草稿');
+      const parsedResult = mode === 'file'
+        ? await parseCompetitionFileBatch(file as File)
+        : await streamParseCompetitionUrlBatch(url.trim(), {
+          signal: controller.signal,
+          onProgress: (p) => setProgress(p),
+        });
+      setResult(parsedResult);
+      const count = parsedResult.drafts?.length || 0;
+      if (count > 0) {
+        toast.success(`解析完成，已生成 ${count} 条 AI 草稿`);
+      } else {
+        toast.warning('解析完成，但未识别到可用赛事');
+      }
     } catch (parseError) {
+      if (parseError instanceof DOMException && parseError.name === 'AbortError') return;
       const message = parseError instanceof Error ? parseError.message : '解析失败，请稍后重试';
       setError(message);
       toast.error(message);
     } finally {
       setParsing(false);
+      setProgress(null);
+      abortRef.current = null;
     }
   };
 
   const reset = () => {
+    abortRef.current?.abort();
     setFile(null);
     setUrl('');
-    setDraft(null);
+    setResult(null);
     setError('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -152,7 +169,7 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
                 type="button"
                 onClick={() => {
                   setMode(item.value);
-                  setDraft(null);
+                  setResult(null);
                   setError('');
                 }}
                 className={`flex h-8 items-center gap-1.5 rounded-sm px-3 text-[13px] transition ${
@@ -204,10 +221,10 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
                   <span className="text-[15px] font-medium text-ink">
                     {file ? file.name : '点击选择或拖拽赛事通知'}
                   </span>
-                  <span className="mt-2 max-w-[400px] text-[12px] leading-5 text-placeholder" style={{ textWrap: 'pretty' }}>
+                  <span className="mt-2 max-w-[420px] text-[12px] leading-5 text-placeholder" style={{ textWrap: 'pretty' }}>
                     {file
                       ? `${(file.size / 1024 / 1024).toFixed(2)} MB · 点击可重新选择`
-                      : '支持 PDF、Word、TXT、Markdown 与常见图片格式，最大 20MB'}
+                      : '支持 PDF、DOCX、TXT、Markdown、HTML 与常见图片格式，最大 20MB'}
                   </span>
                 </button>
                 <input
@@ -249,7 +266,7 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
                   />
                 </div>
                 <p className="mt-3 text-[12px] leading-5 text-placeholder">
-                  请使用无需登录即可访问的赛事通知或官网详情页。
+                  仅支持无需登录即可访问的公开网页、PDF 或赛事详情页。
                 </p>
               </motion.div>
             )}
@@ -262,8 +279,30 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
             </div>
           ) : null}
 
+          {parsing && (
+            <div className="mt-md flex items-center gap-3 rounded-sm border border-primary/20 bg-primary-soft px-md py-3">
+              {(['scraping', 'analyzing', 'generating'] as const).map((step, i) => {
+                const labels: Record<string, string> = { scraping: '抓取内容', analyzing: 'AI 分析', generating: '生成草稿' };
+                const current = progress?.step === step || (!progress && i === (mode === 'file' ? 1 : 0));
+                const done = progress ? ['scraping', 'analyzing', 'generating'].indexOf(progress.step) > i : false;
+                return (
+                  <div key={step} className="flex items-center gap-2">
+                    {i > 0 && <span className="text-[11px] text-placeholder">—</span>}
+                    <span className={`material-symbols-outlined text-[16px] ${done ? 'text-success' : current ? 'text-primary animate-spin' : 'text-placeholder'}`}>
+                      {done ? 'check_circle' : current ? 'progress_activity' : 'radio_button_unchecked'}
+                    </span>
+                    <span className={`text-[12px] ${done ? 'text-success' : current ? 'text-primary font-medium' : 'text-placeholder'}`}>
+                      {labels[step]}
+                    </span>
+                  </div>
+                );
+              })}
+              <span className="ml-auto text-[12px] text-body-muted">{progress?.message || '正在解析'}</span>
+            </div>
+          )}
+
           <div className="mt-lg flex items-center justify-end gap-2 border-t border-hairline pt-md">
-            {(file || url || draft) && (
+            {(file || url || result) && (
               <button type="button" className="btn-secondary" disabled={parsing} onClick={reset}>
                 清空
               </button>
@@ -272,14 +311,14 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
               <span className={`material-symbols-outlined text-[18px] ${parsing ? 'animate-spin' : ''}`}>
                 {parsing ? 'progress_activity' : 'auto_awesome'}
               </span>
-              {parsing ? '正在解析' : '生成 AI 草稿'}
+              {parsing ? (progress?.message || '正在解析') : '生成 AI 草稿'}
             </button>
           </div>
         </div>
       </section>
 
       <AnimatePresence>
-        {draft && (
+        {result && (
           <motion.section
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -289,90 +328,157 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
             <div className="flex flex-col gap-3 border-b border-hairline px-lg py-md sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="chip chip-success">解析完成</span>
-                  <span className="chip">{sourceLabel(draft.sourceType)}</span>
-                  {confidence !== null && (
-                    <span className={`chip ${confidence < 0.7 ? 'chip-warning' : 'chip-primary'}`}>
-                      平均置信度 {formatConfidence(confidence)}
-                    </span>
-                  )}
+                  <span className={drafts.length ? 'chip chip-success' : 'chip chip-warning'}>
+                    {drafts.length ? `解析完成 ${drafts.length} 条` : '未生成草稿'}
+                  </span>
+                  <span className="chip">{sourceLabel(result.sourceType)}</span>
+                  {warnings.map((item) => (
+                    <span key={item} className="chip chip-warning">{warningLabel(item)}</span>
+                  ))}
                 </div>
-                <h2 className="mt-2 truncate text-[18px] font-medium text-ink" title={draft.name || undefined}>
-                  {draft.name || '未识别到赛事名称'}
+                <h2 className="mt-2 truncate text-[18px] font-medium text-ink" title={result.sourceTitle || undefined}>
+                  {result.sourceTitle || result.sourceUrl || 'AI 解析结果'}
                 </h2>
               </div>
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={() => onParsed(draft)}
-              >
-                <span className="material-symbols-outlined text-[18px]">edit</span>
-                填入表单
-              </button>
+              {result.sourceUrl && (
+                <a href={result.sourceUrl} target="_blank" rel="noreferrer" className="btn-secondary">
+                  <span className="material-symbols-outlined text-[18px]">open_in_new</span>
+                  打开来源
+                </a>
+              )}
             </div>
 
-            <motion.div
-              variants={listContainer}
-              initial="hidden"
-              animate="visible"
-              className="grid grid-cols-1 gap-0 divide-y divide-hairline lg:grid-cols-3 lg:divide-x lg:divide-y-0"
-            >
-              <motion.div variants={listItem} className="p-lg lg:col-span-2">
-                <h3 className="mb-md text-[13px] font-medium text-body-muted">草稿摘要</h3>
-                <dl className="grid grid-cols-1 gap-x-lg gap-y-md sm:grid-cols-2">
-                  {[
-                    ['主办单位', draft.organizer || '待补充'],
-                    ['赛事级别', draft.level || '待补充'],
-                    ['赛事分类', draft.category || '待补充'],
-                    ['团队人数', draft.maxTeamSize ? `最多 ${draft.maxTeamSize} 人` : '待补充'],
-                    ['报名时间', `${formatDate(draft.startTime)} 至 ${formatDate(draft.endTime)}`],
-                    ['比赛时间', `${formatDate(draft.competitionStart)} 至 ${formatDate(draft.competitionEnd)}`],
-                  ].map(([label, value]) => (
-                    <div key={label}>
-                      <dt className="text-[11px] text-placeholder">{label}</dt>
-                      <dd className="mt-1 text-[13px] text-ink">{value}</dd>
-                    </div>
-                  ))}
-                </dl>
-                {(toStringList(draft.tags).length > 0 || toStringList(draft.tracks).length > 0) && (
-                  <div className="mt-lg flex flex-wrap gap-2 border-t border-hairline pt-md">
-                    {[...toStringList(draft.tags), ...toStringList(draft.tracks)].map((item) => (
-                      <span key={item} className="chip">{item}</span>
-                    ))}
-                  </div>
-                )}
+            {drafts.length === 0 ? (
+              <div className="flex min-h-[220px] flex-col items-center justify-center px-lg text-center">
+                <span className="material-symbols-outlined text-[42px] text-placeholder">find_in_page</span>
+                <p className="mt-3 text-[14px] text-ink">暂未识别到可用赛事</p>
+                <p className="mt-1 text-[12px] text-placeholder">可以换用赛事详情页、通知 PDF，或把文本更完整的文件上传。</p>
+              </div>
+            ) : (
+              <motion.div variants={listContainer} initial="hidden" animate="visible" className="grid grid-cols-1 divide-y divide-hairline">
+                {drafts.map((draft) => (
+                  <DraftResultCard key={draft.id} draft={draft} onParsed={onParsed} />
+                ))}
               </motion.div>
-
-              <motion.div variants={listItem} className="p-lg">
-                <h3 className="text-[13px] font-medium text-body-muted">质量检查</h3>
-                <div className="mt-md flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[12px] text-placeholder">字段置信度</span>
-                    <span className="text-[13px] font-medium text-ink">
-                      {confidenceItems.length ? `${confidenceItems.length} 项` : '暂无数据'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[12px] text-placeholder">证据片段</span>
-                    <span className="text-[13px] font-medium text-ink">{evidenceItems.length} 条</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[12px] text-placeholder">风险提示</span>
-                    <span className={`text-[13px] font-medium ${riskItems.length ? 'text-warning' : 'text-success'}`}>
-                      {riskItems.length ? `${riskItems.length} 项` : '未发现'}
-                    </span>
-                  </div>
-                  {draft.duplicateCompetitionId && (
-                    <div className="rounded-sm border border-yellow-200 bg-yellow-50 px-3 py-2 text-[12px] leading-5 text-yellow-800">
-                      疑似与赛事 #{draft.duplicateCompetitionId} 重复，相似度 {formatConfidence(draft.duplicateScore)}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            </motion.div>
+            )}
           </motion.section>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function DraftResultCard({
+  draft,
+  onParsed,
+}: {
+  draft: AiCompetitionDraftVO;
+  onParsed: (draft: AiCompetitionDraftVO) => void;
+}) {
+  const confidenceItems = useMemo(
+    () => toConfidenceItems(draft.fieldConfidenceJson),
+    [draft.fieldConfidenceJson],
+  );
+  const evidenceItems = useMemo(
+    () => toDisplayItems(draft.evidenceJson),
+    [draft.evidenceJson],
+  );
+  const riskItems = useMemo(
+    () => toDisplayItems(draft.riskFlagsJson),
+    [draft.riskFlagsJson],
+  );
+  const confidence = useMemo(
+    () => averageConfidence(draft.fieldConfidenceJson),
+    [draft.fieldConfidenceJson],
+  );
+  const tags = [...toStringList(draft.tags), ...toStringList(draft.tracks)];
+
+  return (
+    <motion.div variants={listItem} className="grid grid-cols-1 gap-0 lg:grid-cols-[1fr_260px]">
+      <div className="p-lg">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="chip">{sourceLabel(draft.sourceType)}</span>
+          {confidence !== null && (
+            <span className={`chip ${confidence < 0.7 ? 'chip-warning' : 'chip-primary'}`}>
+              平均置信度 {formatConfidence(confidence)}
+            </span>
+          )}
+          {draft.duplicateCompetitionId && <span className="chip chip-warning">疑似重复</span>}
+        </div>
+        <h3 className="mt-2 text-[17px] font-medium text-ink" title={draft.name || undefined}>
+          {draft.name || '未识别到赛事名称'}
+        </h3>
+        <dl className="mt-md grid grid-cols-1 gap-x-lg gap-y-md sm:grid-cols-2">
+          {[
+            ['主办单位', draft.organizer || '待补充'],
+            ['赛事级别', draft.level || '待补充'],
+            ['赛事分类', draft.category || '待补充'],
+            ['团队人数', draft.maxTeamSize ? `最多 ${draft.maxTeamSize} 人` : '待补充'],
+            ['报名时间', `${formatDate(draft.startTime)} 至 ${formatDate(draft.endTime)}`],
+            ['比赛时间', `${formatDate(draft.competitionStart)} 至 ${formatDate(draft.competitionEnd)}`],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <dt className="text-[11px] text-placeholder">{label}</dt>
+              <dd className="mt-1 text-[13px] text-ink">{value}</dd>
+            </div>
+          ))}
+        </dl>
+        {tags.length > 0 && (
+          <div className="mt-md flex flex-wrap gap-2 border-t border-hairline pt-md">
+            {tags.map((item) => (
+              <span key={item} className="chip">{item}</span>
+            ))}
+          </div>
+        )}
+        {draft.sourceUrl && (
+          <a href={draft.sourceUrl} target="_blank" rel="noreferrer" className="mt-md inline-flex items-center gap-1 text-[12px] text-primary hover:underline">
+            <span className="material-symbols-outlined text-[14px]">link</span>
+            {draft.sourceUrl}
+          </a>
+        )}
+      </div>
+
+      <div className="border-t border-hairline p-lg lg:border-l lg:border-t-0">
+        <h4 className="text-[13px] font-medium text-body-muted">质量检查</h4>
+        <div className="mt-md flex flex-col gap-3">
+          <QualityRow label="字段置信度" value={confidenceItems.length ? `${confidenceItems.length} 项` : '暂无数据'} />
+          <QualityRow label="证据片段" value={`${evidenceItems.length} 条`} />
+          <QualityRow label="风险提示" value={riskItems.length ? `${riskItems.length} 项` : '未发现'} tone={riskItems.length ? 'warning' : 'success'} />
+          {draft.duplicateCompetitionId && (
+            <div className="rounded-sm border border-yellow-200 bg-yellow-50 px-3 py-2 text-[12px] leading-5 text-yellow-800">
+              疑似与赛事 #{draft.duplicateCompetitionId} 重复，相似度 {formatConfidence(draft.duplicateScore)}
+            </div>
+          )}
+          {riskItems.slice(0, 3).map((item) => (
+            <div key={`${item.label}-${item.value}`} className="rounded-sm border border-hairline bg-canvas-parchment px-3 py-2 text-[11px] leading-5 text-body-muted">
+              {item.value}
+            </div>
+          ))}
+          <button type="button" className="btn-primary mt-1 w-full justify-center" onClick={() => onParsed(draft)}>
+            <span className="material-symbols-outlined text-[18px]">edit</span>
+            填入表单
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function QualityRow({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: 'success' | 'warning';
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-[12px] text-placeholder">{label}</span>
+      <span className={`text-[13px] font-medium ${tone === 'success' ? 'text-success' : tone === 'warning' ? 'text-warning' : 'text-ink'}`}>
+        {value}
+      </span>
     </div>
   );
 }

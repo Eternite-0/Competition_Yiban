@@ -20,6 +20,8 @@
         <mybatis-plus.version>3.5.5</mybatis-plus.version>
         <hutool.version>5.8.25</hutool.version>
         <poi.version>5.2.5</poi.version>
+        <pdfbox.version>2.0.31</pdfbox.version>
+        <jsoup.version>1.17.2</jsoup.version>
         <jwt.version>0.11.5</jwt.version>
         <springdoc.version>1.7.0</springdoc.version>
     </properties>
@@ -76,6 +78,20 @@
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>${poi.version}</version>
+        </dependency>
+
+        <!-- PDF text extraction and scanned-page rendering -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${pdfbox.version}</version>
+        </dependency>
+
+        <!-- HTML parsing for public competition pages -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>${jsoup.version}</version>
         </dependency>
 
         <!-- JWT -->

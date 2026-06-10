@@ -1,6 +1,7 @@
 package com.etsaion.service.ai;
 
 import com.etsaion.exception.BusinessException;
+import com.etsaion.utils.DateTextUtil;
 import com.etsaion.vo.ai.AiModelResponseVO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,10 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -142,13 +139,7 @@ public class AiJsonSchemaService {
             return;
         }
         String text = value.asText();
-        try {
-            if (text.length() == 10) {
-                LocalDate.parse(text, DateTimeFormatter.ISO_LOCAL_DATE);
-            } else {
-                LocalDateTime.parse(text, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            }
-        } catch (DateTimeParseException e) {
+        if (DateTextUtil.parseFlexibleDateTime(text) == null) {
             errors.add(field + " 日期格式异常，应为 yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss");
         }
     }

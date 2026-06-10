@@ -8,6 +8,7 @@ import com.etsaion.interceptor.RequireRole;
 import com.etsaion.service.ai.AiCompetitionDraftService;
 import com.etsaion.utils.UserContext;
 import com.etsaion.vo.ai.AiCompetitionDraftVO;
+import com.etsaion.vo.ai.AiCompetitionParseResultVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,10 +37,22 @@ public class AiCompetitionController {
         return Result.success(aiCompetitionDraftService.parseFile(UserContext.getUserId(), file));
     }
 
+    @Operation(summary = "上传文档批量解析赛事草稿")
+    @PostMapping("/parse-file-batch")
+    public Result<AiCompetitionParseResultVO> parseFileBatch(@RequestParam("file") MultipartFile file) {
+        return Result.success(aiCompetitionDraftService.parseFileBatch(UserContext.getUserId(), file));
+    }
+
     @Operation(summary = "解析 URL 生成赛事草稿")
     @PostMapping("/parse-url")
     public Result<AiCompetitionDraftVO> parseUrl(@Validated @RequestBody CompetitionDraftParseUrlDTO dto) {
         return Result.success(aiCompetitionDraftService.parseUrl(UserContext.getUserId(), dto));
+    }
+
+    @Operation(summary = "解析 URL 批量生成赛事草稿")
+    @PostMapping("/parse-url-batch")
+    public Result<AiCompetitionParseResultVO> parseUrlBatch(@Validated @RequestBody CompetitionDraftParseUrlDTO dto) {
+        return Result.success(aiCompetitionDraftService.parseUrlBatch(UserContext.getUserId(), dto));
     }
 
     @Operation(summary = "SSE 实时进度解析 URL")
@@ -63,7 +76,34 @@ public class AiCompetitionController {
                             .data(Map.of("message", e.getMessage() != null ? e.getMessage() : "解析失败")));
                 } catch (IOException ignored) {
                 }
-                emitter.completeWithError(e);
+                emitter.complete();
+            }
+        });
+        return emitter;
+    }
+
+    @Operation(summary = "SSE 实时进度批量解析 URL")
+    @PostMapping(value = "/parse-url-batch-stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter parseUrlBatchStream(@Validated @RequestBody CompetitionDraftParseUrlDTO dto) {
+        SseEmitter emitter = new SseEmitter(180_000L);
+        Long adminId = UserContext.getUserId();
+        CompletableFuture.runAsync(() -> {
+            try {
+                AiCompetitionParseResultVO result = aiCompetitionDraftService.parseUrlBatchWithProgress(adminId, dto, event -> {
+                    try {
+                        emitter.send(SseEmitter.event().name("progress").data(event));
+                    } catch (IOException ignored) {
+                    }
+                });
+                emitter.send(SseEmitter.event().name("done").data(result));
+                emitter.complete();
+            } catch (Exception e) {
+                try {
+                    emitter.send(SseEmitter.event().name("error")
+                            .data(Map.of("message", e.getMessage() != null ? e.getMessage() : "解析失败")));
+                } catch (IOException ignored) {
+                }
+                emitter.complete();
             }
         });
         return emitter;

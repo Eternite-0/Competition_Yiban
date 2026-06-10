@@ -49,7 +49,12 @@ public class MimoModelClient {
         if (schemaHint != null && !schemaHint.isEmpty()) {
             prompt = userPrompt + "\n\n请严格返回 JSON，Schema 参考：" + toJson(schemaHint);
         }
-        return chatText(systemPrompt, List.of(new AiMessageDTO("user", prompt)));
+        List<Map<String, Object>> requestMessages = new ArrayList<>();
+        if (StringUtils.hasText(systemPrompt)) {
+            requestMessages.add(textMessage("system", systemPrompt));
+        }
+        requestMessages.add(textMessage("user", prompt));
+        return sendChatRequest(requestMessages, true);
     }
 
     public AiModelResponseVO chatVisionText(String systemPrompt, String userPrompt, List<String> imageUrls) {
@@ -58,10 +63,15 @@ public class MimoModelClient {
 
     public AiModelResponseVO chatVisionJson(String systemPrompt, String imageUrl, String userPrompt,
                                             Map<String, Object> schemaHint) {
+        return chatVisionJson(systemPrompt, List.of(imageUrl), userPrompt, schemaHint);
+    }
+
+    public AiModelResponseVO chatVisionJson(String systemPrompt, List<String> imageUrls, String userPrompt,
+                                            Map<String, Object> schemaHint) {
         String prompt = schemaHint == null || schemaHint.isEmpty()
                 ? userPrompt
                 : userPrompt + "\n\n请严格返回 JSON，Schema 参考：" + toJson(schemaHint);
-        return sendVisionRequest(systemPrompt, prompt, List.of(imageUrl), true);
+        return sendVisionRequest(systemPrompt, prompt, imageUrls, true);
     }
 
     /**
