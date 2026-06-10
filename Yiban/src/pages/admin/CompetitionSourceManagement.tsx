@@ -7,6 +7,7 @@ import ConfirmModal from '../../components/ConfirmModal';
 import { useConfirmModal } from '../../hooks/useConfirmModal';
 import {
   createCompetitionSource,
+  crawlEnabledCompetitionSources,
   crawlCompetitionSource,
   deleteCompetitionSource,
   listCompetitionSources,
@@ -90,6 +91,7 @@ export default function CompetitionSourceManagement() {
   const [editingId, setEditingId] = useState<number | string | null>(null);
   const [form, setForm] = useState<CompetitionSourcePayload>(defaultForm);
   const [saving, setSaving] = useState(false);
+  const [batchCrawling, setBatchCrawling] = useState(false);
   const [togglingId, setTogglingId] = useState<number | string | null>(null);
   const [crawlingIds, setCrawlingIds] = useState<Set<string>>(new Set());
   const [crawlDrafts, setCrawlDrafts] = useState<AiCompetitionDraftVO[]>([]);
@@ -257,6 +259,20 @@ export default function CompetitionSourceManagement() {
     }
   };
 
+  const handleCrawlEnabled = async () => {
+    setBatchCrawling(true);
+    try {
+      const result = await crawlEnabledCompetitionSources();
+      toast.success(`已采集 ${result.total} 个启用来源，生成 ${result.created} 条草稿`);
+      await loadSources();
+      if (activeTab === 'results') await loadCrawlResults();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '批量采集失败');
+    } finally {
+      setBatchCrawling(false);
+    }
+  };
+
   const enabledCount = sources.filter(isEnabled).length;
   const failedCount = sources.filter((source) => ['failed', 'error'].includes(source.lastCrawlStatus?.toLowerCase() || '')).length;
 
@@ -273,10 +289,18 @@ export default function CompetitionSourceManagement() {
         title="赛事来源管理"
         description="维护公开赛事网页来源，控制采集频率并查看最近一次采集结果。"
         actions={(
-          <button type="button" className="btn-primary" onClick={openCreate}>
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            新增来源
-          </button>
+          <div className="flex items-center gap-2">
+            <button type="button" className="btn-secondary" disabled={batchCrawling || enabledCount === 0} onClick={handleCrawlEnabled}>
+              <span className={`material-symbols-outlined text-[18px] ${batchCrawling ? 'animate-spin' : ''}`}>
+                {batchCrawling ? 'progress_activity' : 'sync'}
+              </span>
+              采集启用来源
+            </button>
+            <button type="button" className="btn-primary" onClick={openCreate}>
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              新增来源
+            </button>
+          </div>
         )}
       />
 

@@ -16,10 +16,16 @@ public class CompetitionSource {
     private String url;
     private String sourceType;
     private String crawlFrequency;
+    private String language;
+    private Integer crawlDepth;
+    private Integer maxPages;
+    private String allowPatterns;
+    private String denyPatterns;
     private Integer enabled;
     private LocalDateTime lastCrawlTime;
     private String lastCrawlStatus;
     private String lastErrorMessage;
+    private Integer lastSuccessCount;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

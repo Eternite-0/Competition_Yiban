@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Tag(name = "赛事来源管理")
 @RestController
 @RequestMapping("/api/admin/competition-sources")
@@ -56,5 +58,11 @@ public class CompetitionSourceController {
     @PostMapping("/{id}/crawl")
     public Result<CompetitionSourceVO> crawlSource(@PathVariable Long id) {
         return Result.success(competitionSourceService.crawlSource(id));
+    }
+
+    @Operation(summary = "手动采集全部启用赛事来源")
+    @PostMapping("/crawl-enabled")
+    public Result<Map<String, Object>> crawlEnabledSources() {
+        return Result.success(competitionSourceService.crawlEnabledSources());
     }
 }

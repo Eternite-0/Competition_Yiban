@@ -12,5 +12,10 @@ public class CompetitionSourceSaveDTO {
     private String url;
     private String sourceType;
     private String crawlFrequency;
+    private String language;
+    private Integer crawlDepth;
+    private Integer maxPages;
+    private String allowPatterns;
+    private String denyPatterns;
     private Boolean enabled;
 }

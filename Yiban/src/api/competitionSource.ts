@@ -9,10 +9,16 @@ export interface CompetitionSource {
   url: string;
   sourceType: CompetitionSourceType;
   crawlFrequency: CrawlFrequency;
+  language?: string;
+  crawlDepth?: number;
+  maxPages?: number;
+  allowPatterns?: string;
+  denyPatterns?: string;
   enabled: boolean | number;
   lastCrawlTime?: string;
   lastCrawlStatus?: string;
   lastErrorMessage?: string;
+  lastSuccessCount?: number;
   createTime?: string;
   updateTime?: string;
 }
@@ -22,6 +28,11 @@ export interface CompetitionSourcePayload {
   url: string;
   sourceType: CompetitionSourceType;
   crawlFrequency: CrawlFrequency;
+  language?: string;
+  crawlDepth?: number;
+  maxPages?: number;
+  allowPatterns?: string;
+  denyPatterns?: string;
   enabled: boolean;
 }
 
@@ -48,4 +59,23 @@ export function deleteCompetitionSource(id: number | string): Promise<void> {
 
 export function crawlCompetitionSource(id: number | string): Promise<unknown> {
   return apiClient.post(`/admin/competition-sources/${id}/crawl`, undefined, { timeout: 120000 });
+}
+
+export interface CrawlEnabledResult {
+  total: number;
+  succeeded: number;
+  failed: number;
+  created: number;
+  items?: Array<{
+    id: number | string;
+    name: string;
+    url: string;
+    status: string;
+    created?: number;
+    error?: string;
+  }>;
+}
+
+export function crawlEnabledCompetitionSources(): Promise<CrawlEnabledResult> {
+  return apiClient.post('/admin/competition-sources/crawl-enabled', undefined, { timeout: 300000 });
 }
