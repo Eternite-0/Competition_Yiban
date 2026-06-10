@@ -27,7 +27,9 @@ class AiCompetitionDraftContractTest {
 
         Class<?> draftService = Class.forName("com.etsaion.service.ai.AiCompetitionDraftService");
         assertTrue(hasMethod(draftService, "parseFile"));
+        assertTrue(hasMethod(draftService, "parseFileBatch"));
         assertTrue(hasMethod(draftService, "parseUrl"));
+        assertTrue(hasMethod(draftService, "parseUrlBatch"));
         assertTrue(hasMethod(draftService, "listDrafts"));
         assertTrue(hasMethod(draftService, "getDraftDetail"));
         assertTrue(hasMethod(draftService, "updateDraft"));
@@ -42,7 +44,10 @@ class AiCompetitionDraftContractTest {
         assertNotNull(role);
         assertArrayEquals(new String[]{"admin"}, role.value());
         assertTrue(hasMethod(controller, "parseFile"));
+        assertTrue(hasMethod(controller, "parseFileBatch"));
         assertTrue(hasMethod(controller, "parseUrl"));
+        assertTrue(hasMethod(controller, "parseUrlBatch"));
+        assertTrue(hasMethod(controller, "parseUrlBatchStream"));
         assertTrue(hasMethod(controller, "listDrafts"));
         assertTrue(hasMethod(controller, "detail"));
         assertTrue(hasMethod(controller, "updateDraft"));

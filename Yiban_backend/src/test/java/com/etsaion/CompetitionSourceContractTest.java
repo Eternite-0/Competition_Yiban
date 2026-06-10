@@ -23,6 +23,7 @@ class CompetitionSourceContractTest {
         assertTrue(hasMethod(service, "saveSource"));
         assertTrue(hasMethod(service, "deleteSource"));
         assertTrue(hasMethod(service, "crawlSource"));
+        assertTrue(hasMethod(service, "crawlEnabledSources"));
 
         Class<?> crawler = Class.forName("com.etsaion.service.ai.CrawlerService");
         assertTrue(hasMethod(crawler, "crawlSource"));
@@ -39,6 +40,7 @@ class CompetitionSourceContractTest {
         assertTrue(hasMethod(controller, "updateSource"));
         assertTrue(hasMethod(controller, "deleteSource"));
         assertTrue(hasMethod(controller, "crawlSource"));
+        assertTrue(hasMethod(controller, "crawlEnabledSources"));
     }
 
     private boolean hasMethod(Class<?> type, String name) {
