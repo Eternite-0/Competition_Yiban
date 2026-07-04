@@ -69,7 +69,21 @@ CREATE TABLE IF NOT EXISTS `student_roster` (
 -- ----------------------------
 -- 4. User 表添加 status 字段
 -- ----------------------------
-ALTER TABLE `user` ADD COLUMN `status` varchar(20) DEFAULT 'active' COMMENT 'active/pending_approval/rejected' AFTER `grade`;
+SET @user_status_exists := (
+  SELECT COUNT(*)
+  FROM INFORMATION_SCHEMA.COLUMNS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'user'
+    AND COLUMN_NAME = 'status'
+);
+SET @user_status_sql := IF(
+  @user_status_exists = 0,
+  'ALTER TABLE `user` ADD COLUMN `status` varchar(20) DEFAULT ''active'' COMMENT ''active/pending_approval/rejected'' AFTER `grade`',
+  'SELECT 1'
+);
+PREPARE user_status_stmt FROM @user_status_sql;
+EXECUTE user_status_stmt;
+DEALLOCATE PREPARE user_status_stmt;
 
 -- 回填现有用户状态
 UPDATE `user` SET `status` = 'active' WHERE `status` IS NULL;

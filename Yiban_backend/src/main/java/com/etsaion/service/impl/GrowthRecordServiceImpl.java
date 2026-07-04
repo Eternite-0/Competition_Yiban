@@ -76,21 +76,29 @@ public class GrowthRecordServiceImpl extends ServiceImpl<GrowthRecordMapper, Gro
             registrationSubmissions = submissionService.list(new LambdaQueryWrapper<Submission>()
                     .in(Submission::getRegistrationId, registrationIds)
                     .eq(Submission::getStatus, "已审核")
-                    .eq(Submission::getApproved, true));
+                    .eq(Submission::getApproved, true))
+                    .stream()
+                    .filter(this::isApprovedSubmission)
+                    .collect(Collectors.toList());
         }
 
-        List<Long> linkedSubmissionIds = submissionStudentService.list(new LambdaQueryWrapper<SubmissionStudent>()
-                        .eq(SubmissionStudent::getStudentId, studentId))
-                .stream()
-                .map(SubmissionStudent::getSubmissionId)
-                .filter(Objects::nonNull)
-                .distinct()
-                .collect(Collectors.toList());
+        List<Long> linkedSubmissionIds = submissionStudentService == null
+                ? Collections.emptyList()
+                : submissionStudentService.list(new LambdaQueryWrapper<SubmissionStudent>()
+                                .eq(SubmissionStudent::getStudentId, studentId))
+                        .stream()
+                        .map(SubmissionStudent::getSubmissionId)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .collect(Collectors.toList());
         List<Submission> linkedSubmissions = CollUtil.isNotEmpty(linkedSubmissionIds)
                 ? submissionService.list(new LambdaQueryWrapper<Submission>()
                         .in(Submission::getId, linkedSubmissionIds)
                         .eq(Submission::getStatus, "已审核")
                         .eq(Submission::getApproved, true))
+                        .stream()
+                        .filter(this::isApprovedSubmission)
+                        .collect(Collectors.toList())
                 : Collections.emptyList();
 
         Map<Long, Submission> approvedSubmissionMap = new HashMap<>();
@@ -177,5 +185,9 @@ public class GrowthRecordServiceImpl extends ServiceImpl<GrowthRecordMapper, Gro
 
         StudentGrowthVO.RadarData radarData = new StudentGrowthVO.RadarData(innovation, engineering, programming, writing, teamwork);
         return new StudentGrowthVO(studentId, radarData, totalCompetitions, awards);
+    }
+
+    private boolean isApprovedSubmission(Submission submission) {
+        return submission != null && Boolean.TRUE.equals(submission.getApproved());
     }
 }

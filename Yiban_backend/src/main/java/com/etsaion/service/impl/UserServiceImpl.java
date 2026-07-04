@@ -19,11 +19,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
+    private static final String DEFAULT_STUDENT_PASSWORD_HASH =
+            "$2a$10$swM2GAYIHrw/Jm6Edmkq8Ol20dzW5J7.UR3rWeHbR2f1H/OjLsRhO";
 
     @Autowired
     private StudentRosterService studentRosterService;
@@ -209,5 +213,62 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         stats.put("teachers", this.count(new LambdaQueryWrapper<User>().eq(User::getRole, "teacher")));
         stats.put("admins", this.count(new LambdaQueryWrapper<User>().eq(User::getRole, "admin")));
         return stats;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> syncStudentAccountsFromRoster(String grade, boolean resetPassword) {
+        String normalizedGrade = StrUtil.blankToDefault(grade, "2024").trim();
+        List<StudentRoster> rosters = studentRosterService.list(new LambdaQueryWrapper<StudentRoster>()
+                .eq(StudentRoster::getGrade, normalizedGrade));
+
+        int created = 0;
+        int updated = 0;
+        int passwordReset = 0;
+
+        for (StudentRoster roster : rosters) {
+            User user = this.getOne(new LambdaQueryWrapper<User>()
+                    .eq(User::getUsername, roster.getStudentNo()));
+            boolean isNew = user == null;
+            if (isNew) {
+                user = new User();
+                user.setUsername(roster.getStudentNo());
+                user.setPassword(DEFAULT_STUDENT_PASSWORD_HASH);
+            } else if (resetPassword) {
+                user.setPassword(DEFAULT_STUDENT_PASSWORD_HASH);
+                passwordReset++;
+            }
+
+            user.setRealName(roster.getRealName());
+            user.setRole("student");
+            user.setCollege(roster.getCollege());
+            user.setMajor(getMajorName(roster.getMajorId()));
+            user.setClassName(getClassName(roster.getClassId()));
+            user.setGrade(roster.getGrade());
+            user.setStatus("active");
+
+            if (isNew) {
+                this.save(user);
+                created++;
+            } else {
+                this.updateById(user);
+                updated++;
+            }
+
+            if (!"registered".equals(roster.getStatus())) {
+                roster.setStatus("registered");
+                roster.setUpdateTime(java.time.LocalDateTime.now());
+                studentRosterService.updateById(roster);
+            }
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("grade", normalizedGrade);
+        result.put("totalRoster", rosters.size());
+        result.put("created", created);
+        result.put("updated", updated);
+        result.put("passwordReset", passwordReset);
+        result.put("defaultPassword", resetPassword ? "123456" : null);
+        return result;
     }
 }

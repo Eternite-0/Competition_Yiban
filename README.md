@@ -66,11 +66,11 @@
 
 ```bash
 # 创建数据库
-mysql -u root -e "CREATE DATABASE IF NOT EXISTS etsaion DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
+mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot -e "CREATE DATABASE IF NOT EXISTS etsaion DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
 
 # 初始化表结构和种子数据
-mysql -u root etsaion < Yiban_backend/db/000-schema.sql
-mysql -u root etsaion < Yiban_backend/db/001-data.sql
+mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot etsaion < Yiban_backend/db/000-schema.sql
+mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot etsaion < Yiban_backend/db/001-data.sql
 ```
 
 > 💡 种子数据包含管理员、教师、学生测试账号及示例赛事数据。
@@ -87,7 +87,7 @@ cp src/main/resources/application.yml.example src/main/resources/application.yml
 # 编辑 src/main/resources/application.yml
 
 # 启动后端
-mvn spring-boot:run
+..\scripts\start-local-backend.ps1
 ```
 
 后端默认运行在 `http://localhost:8080`。

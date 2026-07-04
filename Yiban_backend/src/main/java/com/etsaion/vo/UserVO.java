@@ -2,6 +2,8 @@ package com.etsaion.vo;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class UserVO {
     private Long id;
@@ -12,4 +14,8 @@ public class UserVO {
     private String major;
     private String className;
     private String grade;
+    private String comprehensiveAcademicYear;
+    private BigDecimal comprehensiveScore;
+    private Integer comprehensiveRank;
+    private BigDecimal comprehensiveRankPercent;
 }

@@ -11,7 +11,9 @@ import com.etsaion.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -35,6 +37,7 @@ public class AssistantToolRegistry {
     @Autowired private AnnouncementService announcementService;
     @Autowired private TeacherService teacherService;
     @Autowired private AiArtifactService aiArtifactService;
+    @Autowired private ComprehensiveScoreService comprehensiveScoreService;
 
     // ────────────── 工具定义 ──────────────
 
@@ -63,6 +66,8 @@ public class AssistantToolRegistry {
                     "type", "object", "properties", Map.of(), "required", List.of())));
             tools.add(tool("get_my_growth", "查看当前学生的成长雷达数据和档案", Map.of(
                     "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("get_my_comprehensive_score", "查询当前学生的官方综测排名和排名百分比。只返回本年级本专业范围内的排名，不要按全校重新计算。", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
             tools.add(tool("get_my_participations", "查看当前学生参与的活动记录", Map.of(
                     "type", "object", "properties", Map.of(), "required", List.of())));
             tools.add(tool("get_my_messages", "查看当前学生的站内消息", Map.of(
@@ -81,6 +86,25 @@ public class AssistantToolRegistry {
                     "type", "object",
                     "properties", Map.of("student_id", Map.of("type", "integer", "description", "学生ID")),
                     "required", List.of("student_id")
+            )));
+            tools.add(tool("get_student_comprehensive_score", "查询指定学生的官方综测排名和排名百分比。只返回本年级本专业范围内的排名，不要按全校重新计算。", Map.of(
+                    "type", "object",
+                    "properties", Map.of("student_id", Map.of("type", "integer", "description", "学生ID")),
+                    "required", List.of("student_id")
+            )));
+            tools.add(tool("find_student_comprehensive_score", "按姓名或学号查询本学院某个学生的官方综测排名。姓名重名时会返回候选学生，不能跨学院查询。", Map.of(
+                    "type", "object",
+                    "properties", Map.of("keyword", Map.of("type", "string", "description", "学生姓名或学号")),
+                    "required", List.of("keyword")
+            )));
+            tools.add(tool("get_class_comprehensive_ranking", "按班级查询官方综测/学业成绩排名表。返回结构化表格数据，回答时只总结概况，不要把整张表直接写进聊天内容。", Map.of(
+                    "type", "object",
+                    "properties", Map.of(
+                            "class_name", Map.of("type", "string", "description", "班级全名，例如 2024大数据1班"),
+                            "academic_year", Map.of("type", "string", "description", "可选学年，例如 2024-2025-1"),
+                            "metric", Map.of("type", "string", "enum", List.of("comprehensive", "academic"), "description", "排序指标，comprehensive=综测，academic=学业成绩/绩点参考")
+                    ),
+                    "required", List.of("class_name")
             )));
             tools.add(tool("get_pending_reviews", "查看待审核的任务列表", Map.of(
                     "type", "object",
@@ -173,12 +197,24 @@ public class AssistantToolRegistry {
                 case "get_my_submissions" -> toJson(getMySubmissions(userId, role));
                 case "get_my_award_proofs" -> toJson(getMyAwardProofs(userId, role));
                 case "get_my_growth" -> toJson(getMyGrowth(userId, role));
+                case "get_my_comprehensive_score" -> toJson(getMyComprehensiveScore(userId, role));
                 case "get_my_participations" -> toJson(getMyParticipations(userId));
                 case "get_my_messages" -> toJson(getMyMessages(userId));
                 case "get_announcements" -> toJson(getRecentAnnouncements());
                 case "search_students" -> toJson(searchStudents(
-                        (String) args.getOrDefault("keyword", "")));
-                case "get_student_detail" -> toJson(getStudentDetailById(toLong(args.get("student_id")), userId));
+                        (String) args.getOrDefault("keyword", ""), userId, role));
+                case "get_student_detail" -> toJson(getStudentDetailById(toLong(args.get("student_id")), userId, role));
+                case "get_student_comprehensive_score" -> toJson(getStudentComprehensiveScore(toLong(args.get("student_id")), userId, role));
+                case "find_student_comprehensive_score" -> toJson(findStudentComprehensiveScore(
+                        (String) args.getOrDefault("keyword", ""),
+                        userId,
+                        role));
+                case "get_class_comprehensive_ranking" -> toJson(getClassComprehensiveRanking(
+                        (String) args.getOrDefault("class_name", ""),
+                        (String) args.getOrDefault("academic_year", ""),
+                        (String) args.getOrDefault("metric", "comprehensive"),
+                        userId,
+                        role));
                 case "get_pending_reviews" -> toJson(getPendingReviews(
                         toInt(args.getOrDefault("limit", 5))));
                 case "get_college_overview" -> toJson(getCollegeOverview());
@@ -244,6 +280,15 @@ public class AssistantToolRegistry {
         return growthRecordService.getStudentGrowth(userId);
     }
 
+    private Map<String, Object> getMyComprehensiveScore(Long userId, String role) {
+        requireRole(role, "student");
+        User user = userService.getById(userId);
+        if (user == null) {
+            return Map.of("error", "user not found");
+        }
+        return comprehensiveRankSummary(comprehensiveScoreService.getLatestByStudentNo(user.getUsername()));
+    }
+
     private List<Map<String, Object>> getMyParticipations(Long userId) {
         try {
             return activityService.listMyParticipations(userId).stream().limit(10)
@@ -288,11 +333,20 @@ public class AssistantToolRegistry {
         } catch (Exception e) { return List.of(); }
     }
 
-    private List<Map<String, Object>> searchStudents(String keyword) {
+    private List<Map<String, Object>> searchStudents(String keyword, Long teacherId, String role) {
+        requireRole(role, "teacher");
         if (keyword == null || keyword.isBlank()) return List.of();
         try {
-            return teacherService.listStudentsPage(1, 8, keyword, null, null, null, null)
-                    .getRecords().stream().map(student -> {
+            User teacher = userService.getById(teacherId);
+            if (teacher == null || teacher.getCollege() == null || teacher.getCollege().isBlank()) {
+                return List.of();
+            }
+            return userService.list(new LambdaQueryWrapper<User>()
+                    .eq(User::getRole, "student")
+                    .in(User::getCollege, collegeAliases(teacher.getCollege()))
+                    .and(w -> w.like(User::getUsername, keyword)
+                            .or().like(User::getRealName, keyword))
+                    .last("LIMIT 8")).stream().map(student -> {
                         Map<String, Object> item = new LinkedHashMap<>();
                         item.put("id", student.getId());
                         item.put("realName", student.getRealName());
@@ -306,19 +360,132 @@ public class AssistantToolRegistry {
         } catch (Exception e) { return List.of(); }
     }
 
-    private Map<String, Object> getStudentDetailById(Long studentId, Long teacherId) {
+    private Map<String, Object> getStudentDetailById(Long studentId, Long teacherId, String role) {
+        requireRole(role, "teacher");
         if (studentId == null) return Map.of("error", "缺少 student_id");
         try {
             // 验证教师权限（同学院）
             User teacher = userService.getById(teacherId);
             User student = userService.getById(studentId);
             if (teacher == null || student == null) return Map.of("error", "用户不存在");
-            if (teacher.getCollege() != null && !teacher.getCollege().equals(student.getCollege())) {
+            if (teacher.getCollege() != null && !sameCollege(teacher.getCollege(), student.getCollege())) {
                 return Map.of("error", "无权查看其他学院学生");
             }
             Map<String, Object> detail = teacherService.getStudentDetail(studentId);
             return detail != null ? detail : Map.of("error", "未找到学生详情");
         } catch (Exception e) { return Map.of("error", e.getMessage()); }
+    }
+
+    private Map<String, Object> getStudentComprehensiveScore(Long studentId, Long teacherId, String role) {
+        requireRole(role, "teacher");
+        if (studentId == null) return Map.of("error", "missing student_id");
+        try {
+            User teacher = userService.getById(teacherId);
+            User student = userService.getById(studentId);
+            if (teacher == null || student == null) return Map.of("error", "user not found");
+            if (teacher.getCollege() != null && !sameCollege(teacher.getCollege(), student.getCollege())) {
+                return Map.of("error", "no permission to view students from another college");
+            }
+            return comprehensiveRankSummary(teacherService.getStudentComprehensive(studentId));
+        } catch (Exception e) { return Map.of("error", e.getMessage()); }
+    }
+
+    private Map<String, Object> findStudentComprehensiveScore(String keyword, Long teacherId, String role) {
+        requireRole(role, "teacher");
+        if (keyword == null || keyword.isBlank()) {
+            return Map.of("error", "缺少 keyword");
+        }
+        User teacher = userService.getById(teacherId);
+        if (teacher == null || teacher.getCollege() == null || teacher.getCollege().isBlank()) {
+            return Map.of("error", "教师账号未绑定学院，无法查询学生综测");
+        }
+        List<User> students = userService.list(new LambdaQueryWrapper<User>()
+                .eq(User::getRole, "student")
+                .in(User::getCollege, collegeAliases(teacher.getCollege()))
+                .and(w -> w.eq(User::getUsername, keyword.trim())
+                        .or().eq(User::getRealName, keyword.trim())
+                        .or().like(User::getRealName, keyword.trim()))
+                .last("LIMIT 6"));
+        if (students.isEmpty()) {
+            return Map.of("found", false, "message", "未在本学院找到该学生");
+        }
+        if (students.size() > 1) {
+            List<Map<String, Object>> candidates = students.stream().map(student -> {
+                Map<String, Object> item = new LinkedHashMap<>();
+                item.put("id", student.getId());
+                item.put("realName", student.getRealName());
+                item.put("username", student.getUsername());
+                item.put("className", student.getClassName());
+                item.put("major", student.getMajor());
+                return item;
+            }).collect(Collectors.toList());
+            return Map.of("found", false, "candidates", candidates, "message", "找到多个匹配学生，请指定学号或 student_id");
+        }
+        return comprehensiveRankSummary(comprehensiveScoreService.getLatestByStudentNo(students.get(0).getUsername()));
+    }
+
+    private Map<String, Object> getClassComprehensiveRanking(
+            String className,
+            String academicYear,
+            String metric,
+            Long teacherId,
+            String role) {
+        requireRole(role, "teacher");
+        if (className == null || className.isBlank()) {
+            return Map.of("error", "缺少 class_name");
+        }
+        User teacher = userService.getById(teacherId);
+        if (teacher == null || teacher.getCollege() == null || teacher.getCollege().isBlank()) {
+            return Map.of("error", "教师账号未绑定学院，无法查询班级排名");
+        }
+
+        String normalizedMetric = "academic".equalsIgnoreCase(metric) ? "academic" : "comprehensive";
+        List<ComprehensiveScore> scores = comprehensiveScoreService.list(
+                new LambdaQueryWrapper<ComprehensiveScore>()
+                        .eq(ComprehensiveScore::getClassName, className.trim())
+                        .eq(academicYear != null && !academicYear.isBlank(), ComprehensiveScore::getAcademicYear, academicYear)
+                        .in(ComprehensiveScore::getCollege, collegeAliases(teacher.getCollege()))
+                        .orderByDesc(ComprehensiveScore::getAcademicYear)
+        );
+
+        Map<String, ComprehensiveScore> latestByStudentNo = new LinkedHashMap<>();
+        for (ComprehensiveScore score : scores) {
+            latestByStudentNo.putIfAbsent(score.getStudentNo(), score);
+        }
+        List<ComprehensiveScore> latestScores = new ArrayList<>(latestByStudentNo.values());
+        latestScores.sort(scoreComparator(normalizedMetric));
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (int i = 0; i < latestScores.size(); i++) {
+            ComprehensiveScore score = latestScores.get(i);
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("序号", i + 1);
+            row.put("姓名", score.getRealName());
+            row.put("学号", score.getStudentNo());
+            row.put("班级", score.getClassName());
+            row.put("专业", displayMajor(score.getMajor()));
+            row.put("学业成绩", score.getAcademicScore());
+            row.put("学业名次", score.getAcademicRank());
+            row.put("综测分", score.getComprehensiveScore());
+            row.put("综测名次", score.getComprehensiveRank());
+            row.put("综测百分比", percentText(score.getComprehensiveRankPercent()));
+            rows.add(row);
+        }
+
+        String title = className.trim() + ("academic".equals(normalizedMetric) ? "学业成绩排名" : "综测排名");
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("type", "table");
+        result.put("title", title);
+        result.put("description", "按官方" + ("academic".equals(normalizedMetric) ? "学业成绩名次" : "综测名次") + "升序排列，聊天区仅显示摘要，完整表格请点“查看详细”。");
+        result.put("academicYear", latestScores.isEmpty() ? academicYear : latestScores.get(0).getAcademicYear());
+        result.put("className", className.trim());
+        result.put("metric", normalizedMetric);
+        result.put("total", rows.size());
+        result.put("columns", List.of("序号", "姓名", "学号", "班级", "专业", "学业成绩", "学业名次", "综测分", "综测名次", "综测百分比"));
+        result.put("previewRows", rows.stream().limit(5).collect(Collectors.toList()));
+        result.put("rows", rows);
+        result.put("scopeNote", "该数据来自官方综测导入表。学业成绩字段不是教务 GPA，仅可作为绩点/学业表现参考。");
+        return result;
     }
 
     private List<Map<String, Object>> getPendingReviews(int limit) {
@@ -447,6 +614,67 @@ public class AssistantToolRegistry {
         item.put("endTime", c.getEndTime());
         item.put("status", c.getStatus());
         return item;
+    }
+
+    private Map<String, Object> comprehensiveRankSummary(ComprehensiveScoreVO score) {
+        if (score == null) {
+            return Map.of("found", false);
+        }
+        Map<String, Object> item = new LinkedHashMap<>();
+        item.put("found", true);
+        item.put("academicYear", score.getAcademicYear());
+        item.put("comprehensiveRank", score.getComprehensiveRank());
+        item.put("rankTotal", score.getRankTotal());
+        item.put("comprehensiveRankPercent", score.getComprehensiveRankPercent());
+        item.put("rankScope", score.getRankScope());
+        item.put("scopeNote", "该官方综测排名仅限学生所在年级和专业范围，不要按全校重新计算。");
+        return item;
+    }
+
+    private Comparator<ComprehensiveScore> scoreComparator(String metric) {
+        Function<ComprehensiveScore, Integer> rankExtractor = "academic".equals(metric)
+                ? ComprehensiveScore::getAcademicRank
+                : ComprehensiveScore::getComprehensiveRank;
+        Function<ComprehensiveScore, BigDecimal> scoreExtractor = "academic".equals(metric)
+                ? ComprehensiveScore::getAcademicScore
+                : ComprehensiveScore::getComprehensiveScore;
+        Comparator<ComprehensiveScore> byOfficialRank = Comparator.comparing(
+                rankExtractor,
+                Comparator.nullsLast(Comparator.naturalOrder()));
+        Comparator<ComprehensiveScore> byScore = Comparator.comparing(
+                scoreExtractor,
+                Comparator.nullsLast(Comparator.reverseOrder()));
+        return byOfficialRank.thenComparing(byScore).thenComparing(ComprehensiveScore::getStudentNo);
+    }
+
+    private String percentText(BigDecimal value) {
+        if (value == null) {
+            return "";
+        }
+        return String.format(Locale.ROOT, "%.1f%%", value.doubleValue() * 100.0);
+    }
+
+    private boolean sameCollege(String left, String right) {
+        if (left == null || right == null) {
+            return false;
+        }
+        return collegeAliases(left).contains(right) || collegeAliases(right).contains(left);
+    }
+
+    private String displayMajor(String major) {
+        return "软件工程(创新班)".equals(major) ? "软件工程" : major;
+    }
+
+    private List<String> collegeAliases(String college) {
+        if (college == null || college.isBlank()) {
+            return List.of();
+        }
+        if ("计算机学院".equals(college)
+                || "计算机与人工智能学院".equals(college)
+                || "计算机与智能教育学院".equals(college)) {
+            return List.of("计算机学院", "计算机与人工智能学院", "计算机与智能教育学院");
+        }
+        return List.of(college);
     }
 
     @SuppressWarnings("unchecked")

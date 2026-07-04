@@ -2,6 +2,7 @@ package com.etsaion.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etsaion.vo.RegistrationVO;
+import com.etsaion.vo.ComprehensiveScoreVO;
 import com.etsaion.vo.StudentComprehensiveVO;
 import com.etsaion.vo.UserVO;
 import java.util.List;
@@ -13,6 +14,7 @@ public interface TeacherService {
     List<StudentComprehensiveVO> getComprehensiveData(String academicYear, String major);
     List<UserVO> listStudents(String keyword, String college, String className, String grade, String major);
     Page<UserVO> listStudentsPage(int current, int size, String keyword, String college, String className, String grade, String major);
+    Page<UserVO> listStudentsPage(int current, int size, String keyword, String college, String className, String grade, String major, String sort);
 
     // Cascade filter APIs
     List<String> listColleges();
@@ -25,6 +27,7 @@ public interface TeacherService {
 
     // Student detail
     Map<String, Object> getStudentDetail(Long studentId);
+    ComprehensiveScoreVO getStudentComprehensive(Long studentId);
 
     // Trend data
     Map<String, Object> getTrend(String college, String grade, String major);

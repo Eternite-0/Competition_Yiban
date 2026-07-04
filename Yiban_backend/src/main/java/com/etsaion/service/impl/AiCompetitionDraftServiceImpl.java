@@ -37,7 +37,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -53,10 +56,26 @@ import java.util.stream.Collectors;
 public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraftMapper, AiCompetitionDraft>
         implements AiCompetitionDraftService {
 
-    private static final String PROMPT_VERSION = "competition_parse_v2";
+    private static final String PROMPT_VERSION = "competition_parse_v3_autofill";
     private static final int MAX_PARSE_TEXT_LENGTH = 70000;
     private static final Pattern STAGE_NAME_DATE_PATTERN =
             Pattern.compile("\\d{4}[-/.年]\\d{1,2}[-/.月]\\d{1,2}日?(?:\\s*\\d{1,2}[:：]\\d{2}(?::\\d{2})?)?");
+    private static final DateTimeFormatter NORMALIZED_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final String SOURCE_DATE_TIME_TOKEN =
+            "(?:(?:20\\d{2})\\s*年\\s*)?\\d{1,2}\\s*月\\s*\\d{1,2}\\s*日(?:\\s*\\d{1,2}(?:[:：]\\d{2}){0,2})?";
+    private static final Pattern SOURCE_DATE_TIME_PATTERN = Pattern.compile(
+            "(?:(20\\d{2})\\s*年\\s*)?(\\d{1,2})\\s*月\\s*(\\d{1,2})\\s*日(?:\\s*(\\d{1,2})(?:[:：](\\d{2}))?(?:[:：](\\d{2}))?)?");
+    private static final Pattern REGISTRATION_RANGE_PATTERN = Pattern.compile(
+            "([^\\n。；;]{0,120}?(?:报名|提交作品)[^\\n。；;]{0,80}?)[:：]?\\s*(" + SOURCE_DATE_TIME_TOKEN + ")\\s*(?:—|–|-|至|到|~|～)\\s*(" + SOURCE_DATE_TIME_TOKEN + ")");
+    private static final Pattern SUBMISSION_DEADLINE_PATTERN = Pattern.compile(
+            "([^\\n。；;]{0,120}?(?:提交作品截止|作品提交截止)[^\\n。；;]{0,40}?)[:：]?\\s*(" + SOURCE_DATE_TIME_TOKEN + ")");
+    private static final Pattern APPROX_COMPETITION_TIME_PATTERN = Pattern.compile(
+            "([^\\n。；;]{0,60}?(?:选拔赛|决赛|总决赛|比赛|竞赛)[^\\n。；;]{0,30}?时间)\\s*[:：]?\\s*(20\\d{2})\\s*年\\s*(\\d{1,2})\\s*月\\s*(中上旬|上旬|中旬|下旬)?(?!\\s*\\d{1,2}\\s*日)");
+    private static final Pattern APPROX_MONTH_TEXT_PATTERN = Pattern.compile(
+            "(20\\d{2})\\s*年\\s*(\\d{1,2})\\s*月\\s*(中上旬|上旬|中旬|下旬)?(?!\\s*\\d{1,2}\\s*日)");
+    private static final List<String> KNOWN_TRACKS = List.of(
+            "软件赛", "电子赛", "人工智能赛", "视觉艺术设计赛", "数字科技创新赛", "中数杯 AIGC 数字内容创意设计大赛");
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -199,7 +218,10 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
 
         for (JsonNode item : competitions) {
             AiCompetitionDraft draft = createDraftFromJson(task.getId(), sourceType, sourceUrl, sourceTitle, item);
+            applyAutoFillCorrections(draft, text);
             document.getWarnings().forEach(warning -> addRisk(draft, warning));
+            applyQualityRisks(draft);
+            applyDuplicateRisk(draft);
             this.save(draft);
             result.getDrafts().add(toVO(draft));
         }
@@ -210,19 +232,23 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
                                                     String sourceTitle,
                                                     String text,
                                                     DocumentContentService.ExtractedDocument document) {
-        String systemPrompt = "你是高校赛事通知解析助手。只抽取来源中明确出现或可由上下文强推断的信息，必须返回严格 JSON。";
+        String systemPrompt = "你是高校赛事通知解析助手。目标是生成可自动填入发布表单的赛事草稿，必须返回严格 JSON。";
         String userPrompt = """
                 请从以下公开赛事来源中抽取一个或多个赛事，返回 {"competitions":[...]}。
                 规则：
                 1. 一个页面/文档包含多个赛事时，competitions 中必须拆成多条。
-                2. 时间尽量规范为 yyyy-MM-dd HH:mm:ss；无法确定的字段留空，不要编造。
-                3. 英文赛事保留原始名称，content 用中文概括；英文/国际/AI/科技/英语等适合作为 tags。
-                4. 每个字段尽量给 fieldConfidence，证据写入 evidence，疑似重复/缺失/过期/动态页等写入 riskFlags。
-                5. sourceUrl 优先使用具体详情页或附件链接，否则使用当前来源。
+                2. 尽量生成可直接回填表单的完整字段；日期字段优先输出 yyyy-MM-dd HH:mm:ss。
+                3. 多个报名窗口必须全部写入 stages，并将最早开始/最晚截止作为 startTime/endTime。
+                4. 月份/上旬/中旬/下旬等模糊比赛时间也要写入 stages，riskFlags 标记 approximate_competition_time。
+                5. content 用中文整合参赛对象、竞赛类别、报名方式、官网与注意事项，避免只写一句摘要。
+                6. 英文赛事保留原始名称；英文/国际/AI/科技/英语/软件/信息技术等适合作为 tags。
+                7. 每个字段尽量给 fieldConfidence，证据写入 evidence，疑似重复/缺失/过期/动态页等写入 riskFlags。
+                8. sourceUrl 优先使用具体详情页或附件链接，否则使用当前来源。
 
                 字段：
                 name, level, category, organizer, startTime, endTime, competitionStart, competitionEnd,
-                maxTeamSize, coverUrl, content, tags, tracks, stages, fieldConfidence, evidence, riskFlags, sourceTitle, sourceUrl。
+                maxTeamSize, coverUrl, content, tags, tracks, stages, registrationWindows, approximateTimeRanges,
+                fieldConfidence, evidence, riskFlags, sourceTitle, sourceUrl。
 
                 来源标题：%s
                 来源 URL：%s
@@ -260,6 +286,8 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
         item.put("tags", List.of("AI", "科技"));
         item.put("tracks", List.of("赛道"));
         item.put("stages", List.of(Map.of("name", "报名", "startTime", "", "endTime", "", "description", "")));
+        item.put("registrationWindows", List.of(Map.of("name", "软件赛报名", "startTime", "yyyy-MM-dd HH:mm:ss", "endTime", "yyyy-MM-dd HH:mm:ss")));
+        item.put("approximateTimeRanges", List.of(Map.of("name", "全国选拔赛", "text", "2026年4月")));
         item.put("fieldConfidence", Map.of("name", 0.95, "endTime", 0.9));
         item.put("evidence", Map.of("name", "原文证据片段"));
         item.put("riskFlags", List.of("missing_registration_end"));
@@ -394,19 +422,511 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
                 text(node, "奖项设置")));
         draft.setTags(enrichTags(arrayTextAny(node, "tags", "keywords", "赛事标签"), draft));
         draft.setTracks(arrayTextAny(node, "tracks", "track", "赛道"));
-        draft.setStagesJson(normalizeStages(nodeAny(node, "stages", "competitionPhases", "competition_phases", "timeline", "比赛阶段")));
+        draft.setStagesJson(normalizeStages(node, "stages", "registrationWindows", "registration_windows",
+                "approximateTimeRanges", "approximate_time_ranges", "competitionPhases", "competition_phases",
+                "timeline", "比赛阶段"));
         JsonNode fieldConfidence = nodeAny(node, "fieldConfidence", "field_confidence");
         JsonNode evidence = nodeAny(node, "evidence", "evidences");
         JsonNode riskFlags = nodeAny(node, "riskFlags", "risk_flags");
         if (fieldConfidence != null) draft.setFieldConfidenceJson(fieldConfidence.toString());
         if (evidence != null) draft.setEvidenceJson(evidence.toString());
         if (riskFlags != null) draft.setRiskFlagsJson(riskFlags.toString());
-        applyQualityRisks(draft);
-        applyDuplicateRisk(draft);
+        applyRegistrationTimelineFromStages(draft);
+        applyCompetitionTimelineFromStages(draft);
         draft.setStatus("pending_review");
         draft.setCreateTime(LocalDateTime.now());
         draft.setUpdateTime(LocalDateTime.now());
         return draft;
+    }
+
+    private void applyAutoFillCorrections(AiCompetitionDraft draft, String sourceText) {
+        normalizeDraftLevelAndCategory(draft, sourceText);
+        enrichTracksFromSource(draft, sourceText);
+        enrichTagsFromSource(draft, sourceText);
+        enrichContentFromSource(draft, sourceText);
+
+        List<TimeWindow> registrationWindows = extractRegistrationWindows(sourceText);
+        if (!registrationWindows.isEmpty()) {
+            LocalDateTime start = registrationWindows.stream()
+                    .map(window -> window.start)
+                    .filter(time -> time != null)
+                    .min(LocalDateTime::compareTo)
+                    .orElse(null);
+            LocalDateTime end = registrationWindows.stream()
+                    .map(window -> window.end)
+                    .filter(time -> time != null)
+                    .max(LocalDateTime::compareTo)
+                    .orElse(null);
+            if (start != null && !start.equals(draft.getStartTime())) {
+                draft.setStartTime(start);
+                addRisk(draft, "registration_time_corrected_from_source");
+            }
+            if (end != null && !end.equals(draft.getEndTime())) {
+                draft.setEndTime(end);
+                addRisk(draft, "registration_time_corrected_from_source");
+            }
+            if (registrationWindows.size() > 1) {
+                addRisk(draft, "multiple_registration_windows");
+            }
+            mergeStages(draft, registrationWindows);
+            addEvidence(draft, "registrationWindows", registrationWindows.stream()
+                    .map(TimeWindow::evidenceText)
+                    .collect(Collectors.joining("；")));
+        }
+
+        List<TimeWindow> approximateCompetitionWindows = extractApproximateCompetitionWindows(sourceText);
+        if (!approximateCompetitionWindows.isEmpty()) {
+            LocalDateTime start = approximateCompetitionWindows.stream()
+                    .map(window -> window.start)
+                    .min(LocalDateTime::compareTo)
+                    .orElse(null);
+            LocalDateTime end = approximateCompetitionWindows.stream()
+                    .map(window -> window.end)
+                    .max(LocalDateTime::compareTo)
+                    .orElse(null);
+            if (start != null) draft.setCompetitionStart(start);
+            if (end != null) draft.setCompetitionEnd(end);
+            addRisk(draft, "approximate_competition_time");
+            if (approximateCompetitionWindows.size() > 1) {
+                addRisk(draft, "multi_stage_competition_time");
+            }
+            mergeStages(draft, approximateCompetitionWindows);
+            addEvidence(draft, "approximateCompetitionTime", approximateCompetitionWindows.stream()
+                    .map(TimeWindow::evidenceText)
+                    .collect(Collectors.joining("；")));
+        }
+
+        if (draft.getEndTime() != null) {
+            removeRisk(draft, "missing_registration_end");
+        }
+    }
+
+    private void applyRegistrationTimelineFromStages(AiCompetitionDraft draft) {
+        List<TimeWindow> registrationWindows = stageWindows(draft, true);
+        if (registrationWindows.isEmpty()) {
+            return;
+        }
+        LocalDateTime start = registrationWindows.stream()
+                .map(window -> window.start)
+                .min(LocalDateTime::compareTo)
+                .orElse(null);
+        LocalDateTime end = registrationWindows.stream()
+                .map(window -> window.end)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
+        if (draft.getStartTime() == null && start != null) {
+            draft.setStartTime(start);
+        }
+        if (draft.getEndTime() == null && end != null) {
+            draft.setEndTime(end);
+        }
+        if (registrationWindows.size() > 1) {
+            addRisk(draft, "multiple_registration_windows");
+        }
+    }
+
+    private void applyCompetitionTimelineFromStages(AiCompetitionDraft draft) {
+        List<TimeWindow> competitionWindows = stageWindows(draft, false);
+        if (competitionWindows.isEmpty()) {
+            return;
+        }
+        LocalDateTime start = competitionWindows.stream()
+                .map(window -> window.start)
+                .min(LocalDateTime::compareTo)
+                .orElse(null);
+        LocalDateTime end = competitionWindows.stream()
+                .map(window -> window.end)
+                .max(LocalDateTime::compareTo)
+                .orElse(null);
+        if (draft.getCompetitionStart() == null && start != null) {
+            draft.setCompetitionStart(start);
+        }
+        if (draft.getCompetitionEnd() == null && end != null) {
+            draft.setCompetitionEnd(end);
+        }
+        boolean hasApproximate = competitionWindows.stream()
+                .anyMatch(window -> APPROX_MONTH_TEXT_PATTERN.matcher(window.source).find());
+        if (hasApproximate) {
+            addRisk(draft, "approximate_competition_time");
+        }
+        if (competitionWindows.size() > 1) {
+            addRisk(draft, "multi_stage_competition_time");
+        }
+    }
+
+    private List<TimeWindow> stageWindows(AiCompetitionDraft draft, boolean registration) {
+        List<TimeWindow> windows = new ArrayList<>();
+        if (!JSONUtil.isTypeJSONArray(draft.getStagesJson())) {
+            return windows;
+        }
+        try {
+            JsonNode stages = objectMapper.readTree(draft.getStagesJson());
+            if (!stages.isArray()) {
+                return windows;
+            }
+            for (JsonNode stage : stages) {
+                String name = stage.path("name").asText("");
+                String description = stage.path("description").asText("");
+                boolean matches = registration
+                        ? looksRegistrationStage(name, description)
+                        : looksCompetitionStage(name, description);
+                if (!matches) {
+                    continue;
+                }
+                LocalDateTime start = parseTime(stage.path("startTime").asText(null));
+                LocalDateTime end = parseTime(stage.path("endTime").asText(null));
+                if (start != null && end != null) {
+                    windows.add(new TimeWindow(name, start, end, description));
+                }
+            }
+        } catch (Exception ignored) {
+            return windows;
+        }
+        return windows;
+    }
+
+    private boolean looksRegistrationStage(String name, String description) {
+        String text = StrUtil.blankToDefault(name, "") + " " + StrUtil.blankToDefault(description, "");
+        return containsAnyText(text, "报名", "提交作品");
+    }
+
+    private boolean looksCompetitionStage(String name, String description) {
+        String text = StrUtil.blankToDefault(name, "") + " " + StrUtil.blankToDefault(description, "");
+        if (containsAnyText(text, "报名", "提交作品")) {
+            return false;
+        }
+        return containsAnyText(text, "选拔赛", "决赛", "总决赛", "比赛", "竞赛", "评审", "答辩");
+    }
+
+    private void normalizeDraftLevelAndCategory(AiCompetitionDraft draft, String sourceText) {
+        String corpus = lowerCorpus(draft.getName(), draft.getLevel(), draft.getCategory(), draft.getOrganizer(),
+                draft.getContent(), draft.getTags(), draft.getTracks(), sourceText);
+        draft.setLevel(normalizeCompetitionLevel(draft.getLevel(), corpus));
+        draft.setCategory(normalizeCompetitionCategory(draft.getCategory(), corpus));
+    }
+
+    private String normalizeCompetitionLevel(String raw, String corpus) {
+        String value = StrUtil.blankToDefault(raw, "").trim();
+        String fallbackCorpus = StrUtil.isBlank(value) || "其他".equals(value) ? corpus : "";
+        if (containsAnyText(value, "国家级", "全国", "全国赛", "国赛", "国际", "国际赛", "global", "international", "教育部", "工信部", "工业和信息化部")
+                || containsAnyText(fallbackCorpus, "全国", "国家级", "教育部", "工信部", "工业和信息化部")) {
+            return "国家级";
+        }
+        if (containsAnyText(value, "省赛", "省级", "省教育厅") || containsAnyText(fallbackCorpus, "省赛", "省级", "省教育厅")) {
+            return "省级";
+        }
+        if (containsAnyText(value, "校赛", "校内", "学校", "校级") || containsAnyText(fallbackCorpus, "校赛", "校内", "学校")) {
+            return "校级";
+        }
+        if (containsAnyText(value, "院赛", "学院", "院级") || containsAnyText(fallbackCorpus, "院赛", "学院")) {
+            return "院级";
+        }
+        if ("其他".equals(value)) {
+            return "";
+        }
+        return value;
+    }
+
+    private String normalizeCompetitionCategory(String raw, String corpus) {
+        String value = StrUtil.blankToDefault(raw, "").trim();
+        if ("A".equalsIgnoreCase(value)
+                || containsAnyText(value, "科技", "信息技术", "软件", "AI", "人工智能")
+                || (StrUtil.isBlank(value) && containsAnyText(corpus, "科技", "信息技术", "软件", "ai", "人工智能", "蓝桥杯"))) {
+            return "A";
+        }
+        if ("B".equalsIgnoreCase(value)
+                || containsAnyText(value, "创业", "商业")
+                || (StrUtil.isBlank(value) && containsAnyText(corpus, "创业", "商业"))) {
+            return "B";
+        }
+        if ("C".equalsIgnoreCase(value)
+                || containsAnyText(value, "文化", "艺术")
+                || (StrUtil.isBlank(value) && containsAnyText(corpus, "文化", "艺术"))) {
+            return "C";
+        }
+        if (containsAnyText(value, "算法", "编程", "程序设计") || (StrUtil.isBlank(value) && containsAnyText(corpus, "算法", "编程", "程序设计"))) {
+            return "algorithm";
+        }
+        if (containsAnyText(value, "设计", "视觉") || (StrUtil.isBlank(value) && containsAnyText(corpus, "设计", "视觉"))) {
+            return "design";
+        }
+        return value;
+    }
+
+    private void enrichTracksFromSource(AiCompetitionDraft draft, String sourceText) {
+        List<String> tracks = jsonList(draft.getTracks());
+        String corpus = StrUtil.blankToDefault(sourceText, "") + " " + StrUtil.blankToDefault(draft.getContent(), "");
+        for (String track : KNOWN_TRACKS) {
+            if (corpus.contains(track)) {
+                addIfAbsent(tracks, track);
+            }
+        }
+        draft.setTracks(JSONUtil.toJsonStr(tracks));
+    }
+
+    private void enrichTagsFromSource(AiCompetitionDraft draft, String sourceText) {
+        List<String> tags = jsonList(draft.getTags());
+        String corpus = lowerCorpus(draft.getName(), draft.getContent(), draft.getTracks(), sourceText);
+        if (containsAnyText(corpus, "ai", "人工智能", "aigc")) addIfAbsent(tags, "AI");
+        if (containsAnyText(corpus, "科技", "技术", "信息技术")) addIfAbsent(tags, "科技");
+        if (containsAnyText(corpus, "软件")) addIfAbsent(tags, "软件");
+        if (containsAnyText(corpus, "信息技术")) addIfAbsent(tags, "信息技术");
+        draft.setTags(JSONUtil.toJsonStr(tags));
+    }
+
+    private void enrichContentFromSource(AiCompetitionDraft draft, String sourceText) {
+        String extracted = buildContentFromSource(sourceText);
+        if (StrUtil.isBlank(extracted)) {
+            return;
+        }
+        if (StrUtil.isBlank(draft.getContent())) {
+            draft.setContent(extracted);
+        } else if (draft.getContent().length() < 120 && !draft.getContent().contains(extracted)) {
+            draft.setContent(draft.getContent() + "\n" + extracted);
+        }
+    }
+
+    private String buildContentFromSource(String sourceText) {
+        if (StrUtil.isBlank(sourceText)) {
+            return "";
+        }
+        List<String> snippets = new ArrayList<>();
+        for (String sentence : sourceText.split("[。；;\\n]") ) {
+            String text = sentence.replaceAll("\\s+", " ").trim();
+            if (text.length() < 8 || text.length() > 220) continue;
+            if (containsAnyText(text, "联系人", "联系方式", "联系电话", "手机号", "手机", "邮箱", "QQ群", "qq")) continue;
+            if (containsAnyText(text, "参赛对象", "全日制在校大学生", "项目类别", "竞赛类别", "报名方式", "官方网站", "注意事项")) {
+                addIfAbsent(snippets, text);
+            }
+            if (snippets.size() >= 5) break;
+        }
+        return String.join("。", snippets);
+    }
+
+    private List<TimeWindow> extractRegistrationWindows(String sourceText) {
+        List<TimeWindow> windows = new ArrayList<>();
+        if (StrUtil.isBlank(sourceText)) {
+            return windows;
+        }
+        Matcher matcher = REGISTRATION_RANGE_PATTERN.matcher(sourceText);
+        while (matcher.find()) {
+            LocalDateTime start = parseSourceDateTime(matcher.group(2), null, false);
+            Integer startYear = start == null ? null : start.getYear();
+            LocalDateTime end = parseSourceDateTime(matcher.group(3), startYear, true);
+            if (start == null || end == null) continue;
+            String name = registrationStageName(matcher.group(1), windows.size() + 1);
+            windows.add(new TimeWindow(name, start, end, matcher.group(0)));
+        }
+        Matcher deadlineMatcher = SUBMISSION_DEADLINE_PATTERN.matcher(sourceText);
+        while (deadlineMatcher.find()) {
+            if (!deadlineMatcher.group(1).contains("提交作品截止")) continue;
+            LocalDateTime deadline = parseSourceDateTime(deadlineMatcher.group(2), null, true);
+            if (deadline == null) continue;
+            windows.add(new TimeWindow(registrationStageName(deadlineMatcher.group(1), windows.size() + 1),
+                    deadline, deadline, deadlineMatcher.group(0)));
+        }
+        return dedupeWindows(windows);
+    }
+
+    private List<TimeWindow> extractApproximateCompetitionWindows(String sourceText) {
+        List<TimeWindow> windows = new ArrayList<>();
+        if (StrUtil.isBlank(sourceText)) {
+            return windows;
+        }
+        Matcher matcher = APPROX_COMPETITION_TIME_PATTERN.matcher(sourceText);
+        while (matcher.find()) {
+            int year = Integer.parseInt(matcher.group(2));
+            int month = Integer.parseInt(matcher.group(3));
+            String qualifier = StrUtil.blankToDefault(matcher.group(4), "");
+            TimeWindow window = approximateMonthWindow(competitionStageName(matcher.group(1)), year, month, qualifier, matcher.group(0));
+            if (window != null) {
+                windows.add(window);
+            }
+        }
+        return dedupeWindows(windows);
+    }
+
+    private TimeWindow approximateMonthWindow(String name, int year, int month, String qualifier, String source) {
+        if (month < 1 || month > 12) {
+            return null;
+        }
+        YearMonth yearMonth = YearMonth.of(year, month);
+        int startDay = 1;
+        int endDay = yearMonth.lengthOfMonth();
+        if ("上旬".equals(qualifier)) {
+            endDay = 10;
+        } else if ("中旬".equals(qualifier)) {
+            startDay = 11;
+            endDay = 20;
+        } else if ("下旬".equals(qualifier)) {
+            startDay = 21;
+        } else if ("中上旬".equals(qualifier)) {
+            endDay = 20;
+        }
+        LocalDateTime start = LocalDateTime.of(LocalDate.of(year, month, startDay), LocalTime.MIN);
+        LocalDateTime end = LocalDateTime.of(LocalDate.of(year, month, endDay), LocalTime.of(23, 59, 59));
+        return new TimeWindow(name, start, end, source);
+    }
+
+    private LocalDateTime parseSourceDateTime(String raw, Integer fallbackYear, boolean endOfDayWhenTimeMissing) {
+        Matcher matcher = SOURCE_DATE_TIME_PATTERN.matcher(StrUtil.blankToDefault(raw, ""));
+        if (!matcher.find()) {
+            return parseTime(raw);
+        }
+        int year = matcher.group(1) != null ? Integer.parseInt(matcher.group(1)) : fallbackYear == null ? 0 : fallbackYear;
+        if (year == 0) {
+            return null;
+        }
+        int month = Integer.parseInt(matcher.group(2));
+        int day = Integer.parseInt(matcher.group(3));
+        boolean hasHour = matcher.group(4) != null;
+        int hour = hasHour ? Integer.parseInt(matcher.group(4)) : endOfDayWhenTimeMissing ? 23 : 0;
+        int minute = matcher.group(5) == null ? (endOfDayWhenTimeMissing && !hasHour ? 59 : 0) : Integer.parseInt(matcher.group(5));
+        int second = matcher.group(6) == null ? (endOfDayWhenTimeMissing && !hasHour ? 59 : 0) : Integer.parseInt(matcher.group(6));
+        return LocalDateTime.of(year, month, day, hour, minute, second);
+    }
+
+    private String registrationStageName(String rawContext, int order) {
+        String context = StrUtil.blankToDefault(rawContext, "")
+                .replaceAll(".*[（(]\\d+[）)]", "")
+                .replaceAll("^[\\s\\d.、]+", "")
+                .replace("全国选拔赛报名时间", "")
+                .replace("报名及提交作品时间", "报名及提交作品")
+                .replace("报名时间", "报名")
+                .replaceAll("\\s+", "")
+                .trim();
+        if (StrUtil.isBlank(context) || context.length() > 40) {
+            return "报名窗口" + order;
+        }
+        return context;
+    }
+
+    private String competitionStageName(String rawContext) {
+        String context = StrUtil.blankToDefault(rawContext, "");
+        if (context.contains("选拔赛")) return "全国选拔赛";
+        if (context.contains("总决赛") || context.contains("决赛")) return "全国总决赛";
+        return StrUtil.blankToDefault(context.replace("时间", "").replaceAll("\\s+", "").trim(), "比赛阶段");
+    }
+
+    private void mergeStages(AiCompetitionDraft draft, List<TimeWindow> windows) {
+        if (windows.isEmpty()) {
+            return;
+        }
+        ArrayNode stages = objectMapper.createArrayNode();
+        if (JSONUtil.isTypeJSONArray(draft.getStagesJson())) {
+            try {
+                JsonNode existing = objectMapper.readTree(draft.getStagesJson());
+                if (existing.isArray()) {
+                    existing.forEach(stages::add);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        for (TimeWindow window : windows) {
+            if (hasStage(stages, window)) continue;
+            ObjectNode stage = objectMapper.createObjectNode();
+            stage.put("name", window.name);
+            stage.put("startTime", formatTime(window.start));
+            stage.put("endTime", formatTime(window.end));
+            stage.put("description", window.source);
+            stages.add(stage);
+        }
+        draft.setStagesJson(stages.toString());
+    }
+
+    private boolean hasStage(ArrayNode stages, TimeWindow window) {
+        for (JsonNode stage : stages) {
+            if (window.name.equals(stage.path("name").asText())
+                    && formatTime(window.start).equals(stage.path("startTime").asText())
+                    && formatTime(window.end).equals(stage.path("endTime").asText())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<TimeWindow> dedupeWindows(List<TimeWindow> windows) {
+        List<TimeWindow> result = new ArrayList<>();
+        for (TimeWindow window : windows) {
+            boolean duplicate = result.stream().anyMatch(item -> item.name.equals(window.name)
+                    && item.start.equals(window.start)
+                    && item.end.equals(window.end));
+            if (!duplicate) {
+                result.add(window);
+            }
+        }
+        return result;
+    }
+
+    private void addEvidence(AiCompetitionDraft draft, String key, String value) {
+        if (StrUtil.isBlank(value)) {
+            return;
+        }
+        ObjectNode evidence = objectMapper.createObjectNode();
+        if (JSONUtil.isTypeJSON(draft.getEvidenceJson())) {
+            try {
+                JsonNode existing = objectMapper.readTree(draft.getEvidenceJson());
+                if (existing.isObject()) {
+                    existing.fields().forEachRemaining(entry -> evidence.set(entry.getKey(), entry.getValue()));
+                } else {
+                    evidence.put("modelEvidence", existing.toString());
+                }
+            } catch (Exception ignored) {
+            }
+        } else if (StrUtil.isNotBlank(draft.getEvidenceJson())) {
+            evidence.put("modelEvidence", draft.getEvidenceJson());
+        }
+        evidence.put(key, value);
+        draft.setEvidenceJson(evidence.toString());
+    }
+
+    private List<String> jsonList(String raw) {
+        List<String> list = new ArrayList<>();
+        if (JSONUtil.isTypeJSONArray(raw)) {
+            list.addAll(JSONUtil.toList(raw, String.class));
+        } else if (StrUtil.isNotBlank(raw)) {
+            list.addAll(splitList(raw));
+        }
+        return list;
+    }
+
+    private String lowerCorpus(String... values) {
+        return String.join(" ", java.util.Arrays.stream(values)
+                .map(value -> StrUtil.blankToDefault(value, ""))
+                .collect(Collectors.toList())).toLowerCase(Locale.ROOT);
+    }
+
+    private boolean containsAnyText(String text, String... values) {
+        String source = StrUtil.blankToDefault(text, "").toLowerCase(Locale.ROOT);
+        for (String value : values) {
+            if (source.contains(value.toLowerCase(Locale.ROOT))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String formatTime(LocalDateTime time) {
+        return time == null ? "" : time.format(NORMALIZED_TIME_FORMATTER);
+    }
+
+    private static class TimeWindow {
+        private final String name;
+        private final LocalDateTime start;
+        private final LocalDateTime end;
+        private final String source;
+
+        private TimeWindow(String name, LocalDateTime start, LocalDateTime end, String source) {
+            this.name = StrUtil.blankToDefault(name, "阶段");
+            this.start = start;
+            this.end = end;
+            this.source = StrUtil.blankToDefault(source, "").replaceAll("\\s+", " ").trim();
+        }
+
+        private String evidenceText() {
+            return name + "：" + start.format(NORMALIZED_TIME_FORMATTER) + " 至 "
+                    + end.format(NORMALIZED_TIME_FORMATTER) + "（" + source + "）";
+        }
     }
 
     private void applyQualityRisks(AiCompetitionDraft draft) {
@@ -638,32 +1158,61 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
         return null;
     }
 
-    private String normalizeStages(JsonNode value) {
-        if (value == null || !value.isArray()) {
-            return "[]";
-        }
+    private String normalizeStages(JsonNode root, String... fields) {
         ArrayNode stages = objectMapper.createArrayNode();
         int order = 1;
+        if (root != null && root.isObject()) {
+            for (String field : fields) {
+                order = appendNormalizedStages(stages, root.get(field), order);
+            }
+        } else {
+            appendNormalizedStages(stages, root, order);
+        }
+        return stages.toString();
+    }
+
+    private String normalizeStages(JsonNode value) {
+        ArrayNode stages = objectMapper.createArrayNode();
+        appendNormalizedStages(stages, value, 1);
+        return stages.toString();
+    }
+
+    private int appendNormalizedStages(ArrayNode stages, JsonNode value, int order) {
+        if (value == null || !value.isArray()) {
+            return order;
+        }
         for (JsonNode item : value) {
+            ObjectNode stage = null;
             if (item.isObject()) {
-                ObjectNode stage = item.deepCopy();
+                stage = item.deepCopy();
                 putIfMissing(stage, "name", textAny(item, "name", "stageName", "stage_name", "阶段名称"));
+                putIfMissing(stage, "name", "阶段" + order);
                 putIfMissing(stage, "startTime", normalizedTime(textAny(item, "startTime", "start_time", "开始时间")));
                 putIfMissing(stage, "endTime", normalizedTime(textAny(item, "endTime", "end_time", "结束时间")));
-                putIfMissing(stage, "description", textAny(item, "description", "说明"));
-                String timeRange = textAny(item, "timeRange", "time_range", "时间范围");
+                String timeRange = firstNonBlank(textAny(item, "timeRange", "time_range", "时间范围"),
+                        textAny(item, "text", "raw", "originalText", "原文"));
+                putIfMissing(stage, "description", firstNonBlank(textAny(item, "description", "说明"), timeRange));
                 List<String> dates = extractDateTexts(timeRange);
-                if (!stage.hasNonNull("startTime") && !dates.isEmpty()) {
+                if (!hasNonBlank(stage, "startTime") && !dates.isEmpty()) {
                     stage.put("startTime", normalizedTime(dates.get(0)));
                 }
-                if (!stage.hasNonNull("endTime") && dates.size() > 1) {
+                if (!hasNonBlank(stage, "endTime") && dates.size() > 1) {
                     stage.put("endTime", normalizedTime(dates.get(1)));
                 }
-                stages.add(stage);
+                TimeWindow approximate = approximateMonthWindowFromText(
+                        StrUtil.blankToDefault(stage.path("name").asText(null), "阶段" + order), timeRange);
+                if (approximate != null) {
+                    if (!hasNonBlank(stage, "startTime")) {
+                        stage.put("startTime", formatTime(approximate.start));
+                    }
+                    if (!hasNonBlank(stage, "endTime")) {
+                        stage.put("endTime", formatTime(approximate.end));
+                    }
+                }
             } else if (item.isTextual()) {
                 String raw = item.asText();
                 List<String> dates = extractDateTexts(raw);
-                ObjectNode stage = objectMapper.createObjectNode();
+                stage = objectMapper.createObjectNode();
                 stage.put("name", extractStageName(raw, order));
                 if (!dates.isEmpty()) {
                     stage.put("startTime", normalizedTime(dates.get(0)));
@@ -672,15 +1221,52 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
                     stage.put("endTime", normalizedTime(dates.get(1)));
                 }
                 stage.put("description", raw);
-                stages.add(stage);
+                TimeWindow approximate = approximateMonthWindowFromText(stage.path("name").asText("阶段" + order), raw);
+                if (approximate != null) {
+                    putIfMissing(stage, "startTime", formatTime(approximate.start));
+                    putIfMissing(stage, "endTime", formatTime(approximate.end));
+                }
+            }
+            if (stage != null) {
+                addStageIfAbsent(stages, stage);
             }
             order++;
         }
-        return stages.toString();
+        return order;
+    }
+
+    private TimeWindow approximateMonthWindowFromText(String name, String text) {
+        Matcher matcher = APPROX_MONTH_TEXT_PATTERN.matcher(StrUtil.blankToDefault(text, ""));
+        if (!matcher.find()) {
+            return null;
+        }
+        int year = Integer.parseInt(matcher.group(1));
+        int month = Integer.parseInt(matcher.group(2));
+        return approximateMonthWindow(name, year, month, StrUtil.blankToDefault(matcher.group(3), ""), matcher.group(0));
+    }
+
+    private void addStageIfAbsent(ArrayNode stages, ObjectNode stage) {
+        String name = stage.path("name").asText("");
+        String startTime = stage.path("startTime").asText("");
+        String endTime = stage.path("endTime").asText("");
+        String description = stage.path("description").asText("");
+        for (JsonNode existing : stages) {
+            if (name.equals(existing.path("name").asText(""))
+                    && startTime.equals(existing.path("startTime").asText(""))
+                    && endTime.equals(existing.path("endTime").asText(""))
+                    && description.equals(existing.path("description").asText(""))) {
+                return;
+            }
+        }
+        stages.add(stage);
+    }
+
+    private boolean hasNonBlank(JsonNode node, String field) {
+        return node != null && node.hasNonNull(field) && StrUtil.isNotBlank(node.path(field).asText());
     }
 
     private void putIfMissing(ObjectNode node, String field, String value) {
-        if (!node.hasNonNull(field) && StrUtil.isNotBlank(value)) {
+        if (node != null && !hasNonBlank(node, field) && StrUtil.isNotBlank(value)) {
             node.put(field, value);
         }
     }
@@ -812,6 +1398,16 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
             risks.addAll(splitList(draft.getRiskFlagsJson()));
         }
         addIfAbsent(risks, risk);
+        draft.setRiskFlagsJson(JSONUtil.toJsonStr(risks));
+    }
+
+    private void removeRisk(AiCompetitionDraft draft, String risk) {
+        if (!JSONUtil.isTypeJSONArray(draft.getRiskFlagsJson())) {
+            return;
+        }
+        List<String> risks = JSONUtil.toList(draft.getRiskFlagsJson(), String.class).stream()
+                .filter(item -> !risk.equals(item))
+                .collect(Collectors.toList());
         draft.setRiskFlagsJson(JSONUtil.toJsonStr(risks));
     }
 

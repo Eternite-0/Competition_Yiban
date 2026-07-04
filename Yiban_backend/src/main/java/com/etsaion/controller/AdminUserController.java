@@ -43,6 +43,16 @@ public class AdminUserController {
         return Result.success(userService.getUserStats());
     }
 
+    @Operation(summary = "从花名册修复学生登录账号")
+    @PostMapping("/sync-student-accounts")
+    public Result<Map<String, Object>> syncStudentAccounts(@RequestBody(required = false) Map<String, Object> body) {
+        String grade = body != null && body.get("grade") != null ? body.get("grade").toString() : "2024";
+        boolean resetPassword = body == null
+                || body.get("resetPassword") == null
+                || Boolean.parseBoolean(body.get("resetPassword").toString());
+        return Result.success(userService.syncStudentAccountsFromRoster(grade, resetPassword));
+    }
+
     @Operation(summary = "删除用户")
     @DeleteMapping("/{id}")
     public Result<Void> deleteUser(@PathVariable Long id) {

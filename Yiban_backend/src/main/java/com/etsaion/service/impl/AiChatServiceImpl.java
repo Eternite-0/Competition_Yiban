@@ -48,6 +48,8 @@ public class AiChatServiceImpl implements AiChatService {
     private static final Pattern IMAGE_DATA_URL = Pattern.compile(
             "^data:image/(png|jpe?g|webp|gif);base64,([A-Za-z0-9+/=\\r\\n]+)$",
             Pattern.CASE_INSENSITIVE);
+    private static final Pattern CLASS_NAME_PATTERN = Pattern.compile("20\\d{2}[\\u4e00-\\u9fa5A-Za-z0-9（）()]+?\\d+班");
+    private static final Pattern STUDENT_NO_PATTERN = Pattern.compile("\\b20\\d{10}\\b");
 
     private static final String SYSTEM_PROMPT = """
             你是易赛通高校赛事报名管理平台的 AI 助手。
@@ -99,6 +101,12 @@ public class AiChatServiceImpl implements AiChatService {
                 ? userText
                 : userText + "\n[图片附件 " + imageDataUrls.size() + " 张]";
         saveMessage(conversation.getId(), "user", persistedMessage, null);
+
+        AiChatResponseVO directComprehensiveAnswer = tryAnswerComprehensiveRankDirectly(
+                conversation, userId, role, userText, progress);
+        if (directComprehensiveAnswer != null) {
+            return directComprehensiveAnswer;
+        }
 
         // 构建对话历史
         List<Map<String, Object>> messages = buildConversationHistory(conversation.getId(), userText, imageDataUrls);
@@ -233,6 +241,8 @@ public class AiChatServiceImpl implements AiChatService {
             case "get_my_submissions" -> "成果记录";
             case "get_my_award_proofs", "get_award_proof_audit" -> "获奖证明";
             case "get_my_growth" -> "成长档案";
+            case "get_my_comprehensive_score", "get_student_comprehensive_score",
+                    "find_student_comprehensive_score", "get_class_comprehensive_ranking" -> "综测排名";
             case "get_my_participations" -> "活动记录";
             case "get_my_messages" -> "站内消息";
             case "get_announcements" -> "公告";
@@ -267,6 +277,204 @@ public class AiChatServiceImpl implements AiChatService {
             next.add(existing);
             next.add(value);
             usedToolContext.put(toolName, next);
+        }
+    }
+
+    private AiChatResponseVO tryAnswerComprehensiveRankDirectly(
+            AiConversation conversation,
+            Long userId,
+            String role,
+            String userText,
+            Consumer<String> progress) {
+        if (!isComprehensiveRankQuestion(userText)) {
+            return null;
+        }
+        String toolName = "teacher".equalsIgnoreCase(role)
+                ? "get_student_comprehensive_score"
+                : "get_my_comprehensive_score";
+        String argsJson = "{}";
+        if ("teacher".equalsIgnoreCase(role)) {
+            String className = extractClassName(userText);
+            if (className != null) {
+                String metric = isAcademicRankQuestion(userText) ? "academic" : "comprehensive";
+                String tableArgs = JSONUtil.toJsonStr(Map.of("class_name", className, "metric", metric));
+                emitProgress(progress, "正在查询班级综测排名");
+                String toolResult = assistantToolRegistry.executeTool("get_class_comprehensive_ranking", tableArgs, userId, role);
+                Object parsed = JSONUtil.parse(toolResult);
+                Map<String, Object> toolContext = new LinkedHashMap<>();
+                toolContext.put("get_class_comprehensive_ranking", parsed);
+                emitProgress(progress, "已读取班级排名");
+
+                String answer = summarizeClassRanking(parsed);
+                saveMessage(conversation.getId(), "assistant", answer, JSONUtil.toJsonStr(toolContext));
+                conversation.setLastMessageAt(LocalDateTime.now());
+                conversation.setUpdateTime(LocalDateTime.now());
+                aiConversationService.updateById(conversation);
+
+                AiChatResponseVO vo = new AiChatResponseVO();
+                vo.setConversationId(conversation.getId());
+                vo.setAnswer(answer);
+                vo.setToolContext(toolContext);
+                vo.setArtifacts(List.of());
+                vo.setCreateTime(LocalDateTime.now());
+                return vo;
+            }
+            Long studentId = extractStudentId(userText);
+            if (studentId == null) {
+                String keyword = extractStudentKeyword(userText);
+                if (keyword == null) {
+                    return null;
+                }
+                toolName = "find_student_comprehensive_score";
+                argsJson = JSONUtil.toJsonStr(Map.of("keyword", keyword));
+            } else {
+                argsJson = JSONUtil.toJsonStr(Map.of("student_id", studentId));
+            }
+        } else if (!"student".equalsIgnoreCase(role)) {
+            return null;
+        }
+
+        emitProgress(progress, "正在查询综测排名");
+        String toolResult = assistantToolRegistry.executeTool(toolName, argsJson, userId, role);
+        Object parsed = JSONUtil.parse(toolResult);
+        Map<String, Object> toolContext = new LinkedHashMap<>();
+        toolContext.put(toolName, parsed);
+        emitProgress(progress, "已读取综测排名");
+
+        String answer = summarizeComprehensiveRank(parsed);
+        saveMessage(conversation.getId(), "assistant", answer, JSONUtil.toJsonStr(toolContext));
+        conversation.setLastMessageAt(LocalDateTime.now());
+        conversation.setUpdateTime(LocalDateTime.now());
+        aiConversationService.updateById(conversation);
+
+        AiChatResponseVO vo = new AiChatResponseVO();
+        vo.setConversationId(conversation.getId());
+        vo.setAnswer(answer);
+        vo.setToolContext(toolContext);
+        vo.setArtifacts(List.of());
+        vo.setCreateTime(LocalDateTime.now());
+        return vo;
+    }
+
+    private boolean isComprehensiveRankQuestion(String text) {
+        String normalized = StrUtil.blankToDefault(text, "").toLowerCase();
+        boolean asksRank = normalized.contains("排名")
+                || normalized.contains("名次")
+                || normalized.contains("百分比")
+                || normalized.contains("percent")
+                || normalized.contains("rank");
+        boolean asksOfficialScore = normalized.contains("综测")
+                || normalized.contains("绩点")
+                || normalized.contains("gpa")
+                || normalized.contains("学业")
+                || extractClassName(text) != null;
+        return asksOfficialScore && asksRank;
+    }
+
+    private boolean isAcademicRankQuestion(String text) {
+        String normalized = StrUtil.blankToDefault(text, "").toLowerCase();
+        return normalized.contains("绩点") || normalized.contains("gpa") || normalized.contains("学业");
+    }
+
+    private Long extractStudentId(String text) {
+        Matcher matcher = Pattern.compile("student[_\\s-]*id\\D*(\\d+)|学生id\\D*(\\d+)", Pattern.CASE_INSENSITIVE)
+                .matcher(StrUtil.blankToDefault(text, ""));
+        if (!matcher.find()) {
+            return null;
+        }
+        String value = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private String extractClassName(String text) {
+        Matcher matcher = CLASS_NAME_PATTERN.matcher(StrUtil.blankToDefault(text, ""));
+        return matcher.find() ? matcher.group() : null;
+    }
+
+    private String extractStudentKeyword(String text) {
+        String value = StrUtil.blankToDefault(text, "");
+        Matcher studentNoMatcher = STUDENT_NO_PATTERN.matcher(value);
+        if (studentNoMatcher.find()) {
+            return studentNoMatcher.group();
+        }
+        Matcher nameMatcher = Pattern.compile("(?:查(?:一下)?|查询|看看|看下)([\\u4e00-\\u9fa5]{2,4})(?:的)?(?:综测|绩点|学业|排名|信息)")
+                .matcher(value);
+        if (nameMatcher.find()) {
+            return nameMatcher.group(1);
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String summarizeComprehensiveRank(Object parsed) {
+        if (!(parsed instanceof Map<?, ?> raw)) {
+            return "暂未查询到官方综测排名。";
+        }
+        Map<String, Object> payload = (Map<String, Object>) raw;
+        if (!Boolean.TRUE.equals(payload.get("found"))) {
+            return "暂未查询到官方综测排名。";
+        }
+        String rank = String.valueOf(payload.getOrDefault("comprehensiveRank", "暂无"));
+        String total = payload.get("rankTotal") == null ? "" : " / " + payload.get("rankTotal");
+        String percent = formatPercent(payload.get("comprehensiveRankPercent"));
+        String scope = String.valueOf(payload.getOrDefault("rankScope", "本专业"));
+        String academicYear = String.valueOf(payload.getOrDefault("academicYear", "官方综测"));
+        return "官方综测排名：" + rank + total + " 名；百分比：" + percent + "；范围：" + scope
+                + "；学年：" + academicYear + "。该排名按学生所在年级和专业统计，不按全校重新计算。";
+    }
+
+    @SuppressWarnings("unchecked")
+    private String summarizeClassRanking(Object parsed) {
+        if (!(parsed instanceof Map<?, ?> raw)) {
+            return "暂未查询到班级排名数据。";
+        }
+        Map<String, Object> payload = (Map<String, Object>) raw;
+        if (payload.get("error") != null) {
+            return String.valueOf(payload.get("error"));
+        }
+        int total = toInt(payload.get("total"), 0);
+        if (total == 0) {
+            return "暂未查询到该班级的官方排名数据。";
+        }
+        String title = String.valueOf(payload.getOrDefault("title", "班级排名"));
+        String academicYear = String.valueOf(payload.getOrDefault("academicYear", "官方综测"));
+        String metric = String.valueOf(payload.getOrDefault("metric", "comprehensive"));
+        String metricName = "academic".equals(metric) ? "学业成绩" : "综测";
+        String topText = "";
+        Object previewRows = payload.get("previewRows");
+        if (previewRows instanceof List<?> rows && !rows.isEmpty() && rows.get(0) instanceof Map<?, ?> first) {
+            Object name = first.get("姓名");
+            Object rank = "academic".equals(metric) ? first.get("学业名次") : first.get("综测名次");
+            Object score = "academic".equals(metric) ? first.get("学业成绩") : first.get("综测分");
+            topText = "，当前第一名：" + name + "（" + metricName + "名次 " + rank + "，分数 " + score + "）";
+        }
+        return "已查询到" + title + "，共 " + total + " 人，学年：" + academicYear + topText
+                + "。完整表格请点击下方“查看详细”。";
+    }
+
+    private int toInt(Object value, int fallback) {
+        if (value == null) return fallback;
+        if (value instanceof Number number) return number.intValue();
+        try {
+            return Integer.parseInt(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
+    }
+
+    private String formatPercent(Object value) {
+        if (value == null) {
+            return "暂无";
+        }
+        try {
+            double number = Double.parseDouble(String.valueOf(value));
+            return String.format(java.util.Locale.ROOT, "%.1f%%", number * 100.0);
+        } catch (NumberFormatException e) {
+            return String.valueOf(value);
         }
     }
 

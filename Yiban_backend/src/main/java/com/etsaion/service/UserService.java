@@ -15,4 +15,6 @@ public interface UserService extends IService<User> {
     Page<UserVO> getUserPage(String keyword, String role, String college, int current, int size);
 
     Map<String, Object> getUserStats();
+
+    Map<String, Object> syncStudentAccountsFromRoster(String grade, boolean resetPassword);
 }

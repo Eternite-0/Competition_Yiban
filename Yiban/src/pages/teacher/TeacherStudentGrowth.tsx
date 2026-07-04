@@ -17,6 +17,7 @@ function currentAcademicYear() {
 
 function ExportButton({ filters, fixedCollege }: { filters: FilterValues; fixedCollege?: string }) {
   const [exporting, setExporting] = useState(false);
+
   const handleExport = async () => {
     setExporting(true);
     try {
@@ -43,10 +44,15 @@ function ExportButton({ filters, fixedCollege }: { filters: FilterValues; fixedC
       setExporting(false);
     }
   };
+
   return (
-    <button onClick={handleExport} disabled={exporting} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px] disabled:opacity-60 disabled:cursor-not-allowed">
+    <button
+      onClick={handleExport}
+      disabled={exporting}
+      className="btn-secondary h-9 flex items-center gap-1.5 text-[13px] disabled:opacity-60 disabled:cursor-not-allowed"
+    >
       <span className="material-symbols-outlined text-[16px]">{exporting ? 'hourglass_top' : 'download'}</span>
-      {exporting ? '导出中…' : '导出综测'}
+      {exporting ? '导出中...' : '导出综测'}
     </button>
   );
 }
@@ -66,11 +72,25 @@ interface StudentGrowthData {
 
 interface SupervisedStudent {
   studentId: string;
+  studentNo?: string;
   studentName: string;
+  major?: string;
   className?: string;
+  comprehensiveScore?: number | string;
+  comprehensiveRank?: number;
+  comprehensiveRankPercent?: number | string;
 }
 
-// Backend RadarData fields → display labels
+interface ComprehensiveScore {
+  academicYear?: string;
+  major?: string;
+  grade?: string;
+  comprehensiveRank?: number;
+  comprehensiveRankPercent?: number | string;
+  rankTotal?: number;
+  rankScope?: string;
+}
+
 const RADAR_FIELDS: Array<{ key: string; label: string }> = [
   { key: 'innovation', label: '创新能力' },
   { key: 'engineering', label: '工程实践' },
@@ -100,18 +120,10 @@ function RadarChart({ data }: { data: RadarDim[] }) {
     })
     .join(' ');
 
-  const gridLevels = [0.25, 0.5, 0.75, 1.0];
-
   return (
     <svg viewBox="0 0 240 240" className="w-full h-full">
-      {gridLevels.map((level, idx) => (
-        <polygon
-          key={idx}
-          points={getPolygonPoints(maxRadius * level)}
-          fill="none"
-          stroke="var(--color-border)"
-          strokeWidth="1"
-        />
+      {[0.25, 0.5, 0.75, 1].map((level, idx) => (
+        <polygon key={idx} points={getPolygonPoints(maxRadius * level)} fill="none" stroke="var(--color-border)" strokeWidth="1" />
       ))}
       {data.map((_, i) => {
         const angle = angleStep * i - Math.PI / 2;
@@ -123,9 +135,7 @@ function RadarChart({ data }: { data: RadarDim[] }) {
       {data.map((d, i) => {
         const angle = angleStep * i - Math.PI / 2;
         const r = (d.score / Math.max(d.maxScore, 1)) * maxRadius;
-        return (
-          <circle key={i} cx={cx + r * Math.cos(angle)} cy={cy + r * Math.sin(angle)} r="3.5" fill="var(--color-primary)" />
-        );
+        return <circle key={i} cx={cx + r * Math.cos(angle)} cy={cy + r * Math.sin(angle)} r="3.5" fill="var(--color-primary)" />;
       })}
       {data.map((d, i) => {
         const angle = angleStep * i - Math.PI / 2;
@@ -143,7 +153,6 @@ function RadarChart({ data }: { data: RadarDim[] }) {
 }
 
 function mapRadar(raw: any): RadarDim[] {
-  // Backend shape: { radarData: { innovation, engineering, programming, writing, teamwork } }
   const rd = raw?.radarData ?? raw?.radar ?? null;
   if (!rd) return [];
   if (Array.isArray(rd)) {
@@ -160,6 +169,22 @@ function mapRadar(raw: any): RadarDim[] {
   }));
 }
 
+function formatOfficialRank(score?: ComprehensiveScore | null) {
+  if (!score?.comprehensiveRank) return '暂无数据';
+  return score.rankTotal ? `第 ${score.comprehensiveRank} / ${score.rankTotal} 名` : `第 ${score.comprehensiveRank} 名`;
+}
+
+function formatOfficialPercent(value?: number | string) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '暂无数据';
+  return `${(n * 100).toFixed(1)}%`;
+}
+
+function formatScore(value?: number | string) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n.toFixed(2) : null;
+}
+
 export default function TeacherStudentGrowth() {
   const navigate = useNavigate();
   const currentUser = useStore((s) => s.currentUser);
@@ -171,6 +196,9 @@ export default function TeacherStudentGrowth() {
   const [selectedId, setSelectedId] = useState<string>(initialId);
   const [supervised, setSupervised] = useState<SupervisedStudent[]>([]);
   const [growth, setGrowth] = useState<StudentGrowthData | null>(null);
+  const [comprehensive, setComprehensive] = useState<ComprehensiveScore | null>(null);
+  const [comprehensiveMode, setComprehensiveMode] = useState<'rank' | 'percent'>('rank');
+  const [studentSort, setStudentSort] = useState<'default' | 'comprehensive_desc'>('default');
   const [loadingList, setLoadingList] = useState(true);
   const [loadingGrowth, setLoadingGrowth] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -196,33 +224,43 @@ export default function TeacherStudentGrowth() {
     });
   }, []);
 
-  // Load supervised student list
   useEffect(() => {
     let cancelled = false;
     const loadStudents = async () => {
       setLoadingList(true);
       try {
-        const params: Record<string, any> = { current: 1, size: 200 };
+        const params: Record<string, any> = { current: 1, size: 1000 };
         if (filters.college || scopeCollege) params.college = filters.college || scopeCollege;
         if (filters.grade) params.grade = filters.grade;
         if (filters.major) params.major = filters.major;
         if (filters.className) params.className = filters.className;
-        const data: any = await apiClient.get('/teacher/monitor/registrations', { params });
+        if (studentSort !== 'default') params.sort = studentSort;
+        const data: any = await apiClient.get('/teacher/students', { params });
         if (cancelled) return;
+
         const records: any[] = Array.isArray(data) ? data : data?.records ?? [];
         const map = new Map<string, SupervisedStudent>();
         records.forEach((r: any) => {
-          const sid = String(r.studentId ?? '');
+          const sid = String(r.id ?? r.studentId ?? '');
           if (!sid || map.has(sid)) return;
           map.set(sid, {
             studentId: sid,
-            studentName: r.studentName ?? `学号 ${sid}`,
+            studentNo: r.username,
+            studentName: r.realName ?? r.studentName ?? `学号 ${r.username ?? sid}`,
+            major: r.major,
             className: r.className,
+            comprehensiveScore: r.comprehensiveScore,
+            comprehensiveRank: r.comprehensiveRank,
+            comprehensiveRankPercent: r.comprehensiveRankPercent,
           });
         });
+
         const list = Array.from(map.values());
         setSupervised(list);
-        if ((!selectedId || !map.has(selectedId)) && list.length > 0) {
+        setCompareIds((prev) => new Set(Array.from(prev).filter((id) => map.has(id))));
+        if (list.length === 0) {
+          setSelectedId('');
+        } else if (!selectedId || !map.has(selectedId)) {
           setSelectedId(list[0].studentId);
         }
       } catch (e: any) {
@@ -236,12 +274,12 @@ export default function TeacherStudentGrowth() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, scopeCollege]);
+  }, [filters, scopeCollege, studentSort]);
 
-  // Load growth for selected student
   useEffect(() => {
     if (!selectedId) {
       setGrowth(null);
+      setComprehensive(null);
       return;
     }
     let cancelled = false;
@@ -249,7 +287,10 @@ export default function TeacherStudentGrowth() {
       setLoadingGrowth(true);
       setError(null);
       try {
-        const data: any = await apiClient.get('/growth/radar', { params: { studentId: selectedId } });
+        const [data, score]: any[] = await Promise.all([
+          apiClient.get('/growth/radar', { params: { studentId: selectedId } }),
+          apiClient.get('/growth/comprehensive', { params: { studentId: selectedId } }).catch(() => null),
+        ]);
         if (cancelled) return;
         setGrowth({
           studentId: data?.studentId ?? selectedId,
@@ -257,6 +298,7 @@ export default function TeacherStudentGrowth() {
           awards: data?.awards ?? 0,
           radar: mapRadar(data),
         });
+        setComprehensive(score ?? null);
       } catch (e: any) {
         if (!cancelled) setError(e?.message || '获取成长数据失败');
       } finally {
@@ -269,7 +311,6 @@ export default function TeacherStudentGrowth() {
     };
   }, [selectedId]);
 
-  // Sync selectedId → URL
   useEffect(() => {
     if (selectedId && selectedId !== searchParams.get('studentId')) {
       setSearchParams({ studentId: selectedId }, { replace: true });
@@ -280,18 +321,32 @@ export default function TeacherStudentGrowth() {
   const filteredStudents = useMemo(() => {
     if (!searchQuery.trim()) return supervised;
     const q = searchQuery.toLowerCase();
-    return supervised.filter(
-      (s) => s.studentName.toLowerCase().includes(q) || s.studentId.includes(q)
+    return supervised.filter((s) =>
+      s.studentName.toLowerCase().includes(q)
+      || s.studentNo?.includes(q)
+      || s.studentId.includes(q)
+      || s.major?.toLowerCase().includes(q)
+      || s.className?.toLowerCase().includes(q)
     );
   }, [supervised, searchQuery]);
 
   const selectedStudent = supervised.find((s) => s.studentId === selectedId);
+  const selectedScore = formatScore(selectedStudent?.comprehensiveScore);
 
   const kpiCards = [
     { label: '累计参赛', value: String(growth?.totalCompetitions ?? 0), suffix: '次', icon: 'format_list_numbered' },
     { label: '累计获奖', value: String(growth?.awards ?? 0), suffix: '项', icon: 'military_tech' },
     { label: '能力维度', value: String(growth?.radar?.length ?? 0), suffix: '项', icon: 'radar' },
-    { label: '档案状态', value: growth ? '已建档' : '未建档', suffix: '', icon: 'task_alt' },
+    {
+      label: '综测排名',
+      value: comprehensiveMode === 'rank'
+        ? formatOfficialRank(comprehensive)
+        : formatOfficialPercent(comprehensive?.comprehensiveRankPercent),
+      suffix: '',
+      icon: 'leaderboard',
+      toggle: true,
+      hint: comprehensive?.rankScope || comprehensive?.major || '本专业',
+    },
   ];
 
   return (
@@ -302,11 +357,10 @@ export default function TeacherStudentGrowth() {
       animate="visible"
       transition={pageTransition}
     >
-      {/* Header */}
       <PageHero
         eyebrow="Growth"
         title="学生成长管理"
-        description="查看学生竞赛参与度与五维能力画像。"
+        description="查看学生竞赛参与度、综测排名与五维能力画像。"
         contentClassName="max-w-2xl"
         actions={(
           <>
@@ -342,19 +396,32 @@ export default function TeacherStudentGrowth() {
         )}
       />
 
-      {/* Filters */}
-      <CascadeFilter onChange={handleFilterChange} fixedCollege={scopeCollege || undefined} showCollege={!scopeCollege} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <CascadeFilter onChange={handleFilterChange} fixedCollege={scopeCollege || undefined} showCollege={!scopeCollege} />
+        <label className="flex items-center gap-2 text-[13px] text-ink-muted-80">
+          <span className="material-symbols-outlined text-[17px] text-primary">sort</span>
+          <select
+            value={studentSort}
+            onChange={(e) => setStudentSort(e.target.value as 'default' | 'comprehensive_desc')}
+            className="h-9 min-w-[190px] rounded-sm border border-hairline bg-canvas pl-3 pr-9 text-[14px] font-normal text-ink transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
+          >
+            <option value="default">默认排序</option>
+            <option value="comprehensive_desc">专业综测从高到低</option>
+          </select>
+        </label>
+      </div>
 
-      {/* KPIs */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
         {kpiCards.map((card, i) => (
-          <motion.div
+          <motion.button
+            type="button"
             key={card.label}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.35 }}
             whileHover={{ scale: 1.03, y: -2 }}
-            className="stat-tile p-lg"
+            onClick={() => card.toggle && setComprehensiveMode((mode) => mode === 'rank' ? 'percent' : 'rank')}
+            className="stat-tile p-lg text-left"
           >
             <div className="flex justify-between items-start mb-2">
               <p className="text-[13px] text-ink-muted-80">{card.label}</p>
@@ -364,19 +431,22 @@ export default function TeacherStudentGrowth() {
               <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{card.value}</span>
               <span className="text-[12px] text-ink-muted-48">{card.suffix}</span>
             </div>
-          </motion.div>
+            {'hint' in card && card.hint && (
+              <p className="mt-2 truncate text-[11px] text-ink-muted-48">
+                {card.hint} · {comprehensiveMode === 'rank' ? '点击看百分比' : '点击看排名'}
+              </p>
+            )}
+          </motion.button>
         ))}
       </section>
 
-      {/* Content: sidebar + detail */}
       <section className="flex flex-col lg:flex-row gap-md min-h-[500px]">
-        {/* Sidebar — supervised student list */}
-        <aside className="w-full lg:w-72 glass overflow-hidden flex flex-col shrink-0">
+        <aside className="w-full lg:w-80 glass overflow-hidden flex flex-col shrink-0">
           <div className="p-md border-b border-hairline">
             <h3 className="text-[14px] font-semibold text-ink flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">groups</span>
               监管学生
-              <span className="chip ml-auto">{supervised.length}</span>
+              <span className="chip ml-auto">{filteredStudents.length}</span>
             </h3>
           </div>
           <div className="flex-1 overflow-y-auto p-2">
@@ -391,42 +461,58 @@ export default function TeacherStudentGrowth() {
               </div>
             ) : (
               <motion.div variants={listContainer} initial="hidden" animate="visible">
-              {filteredStudents.map((s) => (
-                <motion.div key={s.studentId} variants={listItem} whileHover={{ x: 2 }} className={`flex items-center gap-2 p-2 rounded-md transition mb-1 ${
-                  selectedId === s.studentId ? 'bg-primary/8' : 'hover:bg-primary/6'
-                }`}>
-                  <input
-                    type="checkbox"
-                    checked={compareIds.has(s.studentId)}
-                    onChange={() => toggleCompare(s.studentId)}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-4 h-4 rounded border-hairline text-primary focus:ring-primary/30 shrink-0 accent-primary"
-                  />
-                  <button
-                    onClick={() => setSelectedId(s.studentId)}
-                    className="flex-1 text-left min-w-0"
-                  >
-                    <div className={`text-[13px] ${selectedId === s.studentId ? 'text-primary font-semibold' : 'text-ink font-medium'} truncate`}>
-                      {s.studentName}
-                    </div>
-                    <div className="text-[11px] text-ink-muted-48 mt-0.5 truncate">
-                      {s.studentId}{s.className ? ` · ${s.className}` : ''}
-                    </div>
-                  </button>
-                </motion.div>
-              ))}
+                {filteredStudents.map((s) => {
+                  const scoreText = formatScore(s.comprehensiveScore);
+                  return (
+                    <motion.div
+                      key={s.studentId}
+                      variants={listItem}
+                      whileHover={{ x: 2 }}
+                      className={`flex items-center gap-2 p-2 rounded-md transition mb-1 ${
+                        selectedId === s.studentId ? 'bg-primary/8' : 'hover:bg-primary/6'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={compareIds.has(s.studentId)}
+                        onChange={() => toggleCompare(s.studentId)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 rounded border-hairline text-primary focus:ring-primary/30 shrink-0 accent-primary"
+                      />
+                      <button onClick={() => setSelectedId(s.studentId)} className="flex-1 text-left min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`text-[13px] ${selectedId === s.studentId ? 'text-primary font-semibold' : 'text-ink font-medium'} truncate`}>
+                            {s.studentName}
+                          </span>
+                          {s.comprehensiveRank && (
+                            <span className="ml-auto shrink-0 rounded-sm bg-primary/8 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-primary">
+                              #{s.comprehensiveRank}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-ink-muted-48 mt-0.5 truncate">
+                          {s.studentNo ?? s.studentId}{s.major ? ` · ${s.major}` : ''}{s.className ? ` · ${s.className}` : ''}
+                        </div>
+                        {scoreText && (
+                          <div className="mt-1 text-[11px] text-ink-muted-60 tabular-nums">
+                            综测 {scoreText}
+                          </div>
+                        )}
+                      </button>
+                    </motion.div>
+                  );
+                })}
               </motion.div>
             )}
           </div>
         </aside>
 
-        {/* Detail */}
         <div className="flex-1 glass overflow-hidden flex flex-col">
           {!selectedId ? (
             <div className="flex-1 grid place-items-center text-ink-muted-48 gap-2 p-lg">
               <span className="material-symbols-outlined text-[48px] opacity-40">insights</span>
               <p className="text-[15px] font-medium text-ink-muted-80">请从左侧选择学生</p>
-              <p className="text-[13px]">查看其成长档案与能力画像</p>
+              <p className="text-[13px]">查看成长档案与能力画像</p>
             </div>
           ) : loadingGrowth ? (
             <div className="flex-1 grid place-items-center text-ink-muted-48">
@@ -439,22 +525,23 @@ export default function TeacherStudentGrowth() {
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto p-lg flex flex-col gap-lg">
-              {/* Profile */}
               <div className="flex items-center gap-3">
                 <div className="w-14 h-14 rounded-full bg-canvas-parchment text-ink-muted-80 grid place-items-center font-semibold text-[18px]">
                   {(selectedStudent?.studentName || '?')[0]}
                 </div>
-                <div>
-                  <p className="text-[18px] font-semibold text-ink">
+                <div className="min-w-0">
+                  <p className="text-[18px] font-semibold text-ink truncate">
                     {selectedStudent?.studentName || `学号 ${selectedId}`}
                   </p>
-                  <p className="text-[12px] text-ink-muted-48">
-                    {selectedId}{selectedStudent?.className ? ` · ${selectedStudent.className}` : ''}
+                  <p className="text-[12px] text-ink-muted-48 truncate">
+                    {selectedStudent?.studentNo ?? selectedId}
+                    {selectedStudent?.major ? ` · ${selectedStudent.major}` : ''}
+                    {selectedStudent?.className ? ` · ${selectedStudent.className}` : ''}
+                    {selectedScore ? ` · 综测 ${selectedScore}` : ''}
                   </p>
                 </div>
               </div>
 
-              {/* Radar */}
               <div>
                 <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">
                   <span className="material-symbols-outlined text-[18px] text-primary">radar</span>
@@ -472,7 +559,6 @@ export default function TeacherStudentGrowth() {
                 )}
               </div>
 
-              {/* Dimension bars */}
               {growth && growth.radar.length > 0 && (
                 <motion.div variants={listContainer} initial="hidden" animate="visible">
                   <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">

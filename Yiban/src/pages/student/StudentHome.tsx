@@ -34,6 +34,27 @@ type Registration = {
   submitDate?: string;
 };
 
+type ComprehensiveScore = {
+  academicYear?: string;
+  major?: string;
+  grade?: string;
+  comprehensiveRank?: number;
+  comprehensiveRankPercent?: number | string;
+  rankTotal?: number;
+  rankScope?: string;
+};
+
+function formatRank(score: ComprehensiveScore | null) {
+  if (!score?.comprehensiveRank) return '暂无数据';
+  return score.rankTotal ? `第 ${score.comprehensiveRank} / ${score.rankTotal} 名` : `第 ${score.comprehensiveRank} 名`;
+}
+
+function formatPercent(value?: number | string) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '暂无数据';
+  return `${(n * 100).toFixed(1)}%`;
+}
+
 export default function StudentHome() {
   const navigate = useNavigate();
   const currentUser = useAuthStore((s) => s.currentUser);
@@ -42,6 +63,8 @@ export default function StudentHome() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [comprehensive, setComprehensive] = useState<ComprehensiveScore | null>(null);
+  const [comprehensiveMode, setComprehensiveMode] = useState<'rank' | 'percent'>('rank');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,6 +89,12 @@ export default function StudentHome() {
           params: { current: 1, size: 3 },
         });
         setAnnouncements(Array.isArray(annPage?.records) ? annPage.records : []);
+      } catch (err) {
+        console.error(err);
+      }
+      try {
+        const score: any = await apiClient.get('/growth/comprehensive');
+        setComprehensive(score ?? null);
       } catch (err) {
         console.error(err);
       } finally {
@@ -256,6 +285,37 @@ export default function StudentHome() {
           </div>
         </div>
       </motion.section>
+
+      <motion.button
+        type="button"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...pageTransition, delay: 0.04 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => setComprehensiveMode((mode) => mode === 'rank' ? 'percent' : 'rank')}
+        className="app-panel p-lg mb-4 min-h-[118px] text-left grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
+        title="点击切换排名/百分比"
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-[13px] font-semibold text-primary">
+            <span className="material-symbols-outlined text-[19px]">leaderboard</span>
+            综测排名
+          </div>
+          <div className="mt-2 text-[28px] font-semibold leading-none text-ink tabular-nums">
+            {comprehensiveMode === 'rank'
+              ? formatRank(comprehensive)
+              : formatPercent(comprehensive?.comprehensiveRankPercent)}
+          </div>
+          <div className="mt-2 text-[12px] text-ink-muted-48">
+            {comprehensive?.rankScope || comprehensive?.major || '本专业'} · {comprehensive?.academicYear || '官方综测'}
+          </div>
+        </div>
+        <div className="justify-self-start md:justify-self-end">
+          <span className="chip chip-primary">
+            {comprehensiveMode === 'rank' ? '点击查看百分比' : '点击查看排名'}
+          </span>
+        </div>
+      </motion.button>
 
       <motion.div
         variants={listContainer}

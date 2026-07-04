@@ -10,6 +10,7 @@ import com.etsaion.entity.Registration;
 import com.etsaion.entity.User;
 import com.etsaion.entity.Competition;
 import com.etsaion.entity.GrowthRecord;
+import com.etsaion.entity.ComprehensiveScore;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.service.*;
 import com.etsaion.utils.UserContext;
@@ -40,6 +41,9 @@ public class TeacherServiceImpl implements TeacherService {
 
     @Autowired
     private GrowthRecordService growthRecordService;
+
+    @Autowired
+    private ComprehensiveScoreService comprehensiveScoreService;
 
     // ---- helpers ----
 
@@ -85,12 +89,45 @@ public class TeacherServiceImpl implements TeacherService {
         return student != null && ownCollege.equals(student.getCollege());
     }
 
+    private String normalizeGrade(String grade) {
+        if (StrUtil.isBlank(grade)) {
+            return grade;
+        }
+        return grade.trim().replace("级", "");
+    }
+
+    private String displayMajor(String major) {
+        return "软件工程(创新班)".equals(major) ? "软件工程" : major;
+    }
+
+    private List<String> majorAliases(String major) {
+        if (StrUtil.isBlank(major)) {
+            return List.of();
+        }
+        if ("软件工程".equals(major) || "软件工程(创新班)".equals(major)) {
+            return List.of("软件工程", "软件工程(创新班)");
+        }
+        return List.of(major);
+    }
+
+    private LambdaQueryWrapper<User> applyMajorFilter(LambdaQueryWrapper<User> wrapper, String major) {
+        if (StrUtil.isBlank(major)) {
+            return wrapper;
+        }
+        List<String> aliases = majorAliases(major);
+        if (aliases.size() > 1) {
+            return wrapper.in(User::getMajor, aliases);
+        }
+        return wrapper.eq(User::getMajor, major);
+    }
+
     private LambdaQueryWrapper<User> studentQuery(String college, String grade, String major, String className) {
         String effectiveCollege = scopedCollege(college);
+        String normalizedGrade = normalizeGrade(grade);
         LambdaQueryWrapper<User> w = new LambdaQueryWrapper<User>().eq(User::getRole, "student");
         if (StrUtil.isNotBlank(effectiveCollege)) w.eq(User::getCollege, effectiveCollege);
-        if (StrUtil.isNotBlank(grade))      w.eq(User::getGrade, grade);
-        if (StrUtil.isNotBlank(major))      w.eq(User::getMajor, major);
+        if (StrUtil.isNotBlank(normalizedGrade)) w.eq(User::getGrade, normalizedGrade);
+        applyMajorFilter(w, major);
         if (StrUtil.isNotBlank(className))  w.eq(User::getClassName, className);
         return w;
     }
@@ -159,9 +196,10 @@ public class TeacherServiceImpl implements TeacherService {
         Page<Registration> page = new Page<>(current, size);
         LambdaQueryWrapper<Registration> wrapper = new LambdaQueryWrapper<>();
         String effectiveCollege = scopedCollege(college);
+        String normalizedGrade = normalizeGrade(grade);
 
         boolean needStudentFilter = StrUtil.isNotBlank(studentName) || StrUtil.isNotBlank(className)
-                || StrUtil.isNotBlank(effectiveCollege) || StrUtil.isNotBlank(grade) || StrUtil.isNotBlank(major);
+                || StrUtil.isNotBlank(effectiveCollege) || StrUtil.isNotBlank(normalizedGrade) || StrUtil.isNotBlank(major);
 
         List<Long> studentIds = null;
         if (needStudentFilter) {
@@ -170,8 +208,8 @@ public class TeacherServiceImpl implements TeacherService {
                     .like(StrUtil.isNotBlank(studentName), User::getRealName, studentName)
                     .eq(StrUtil.isNotBlank(className), User::getClassName, className)
                     .eq(StrUtil.isNotBlank(effectiveCollege), User::getCollege, effectiveCollege)
-                    .eq(StrUtil.isNotBlank(grade), User::getGrade, grade)
-                    .eq(StrUtil.isNotBlank(major), User::getMajor, major);
+                    .eq(StrUtil.isNotBlank(normalizedGrade), User::getGrade, normalizedGrade);
+            applyMajorFilter(userWrapper, major);
 
             List<User> students = userService.list(userWrapper);
             if (CollUtil.isEmpty(students)) {
@@ -191,12 +229,13 @@ public class TeacherServiceImpl implements TeacherService {
     @Override
     public List<UserVO> listStudents(String keyword, String college, String className, String grade, String major) {
         String effectiveCollege = scopedCollege(college);
+        String normalizedGrade = normalizeGrade(grade);
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
                 .eq(User::getRole, "student")
                 .eq(StrUtil.isNotBlank(effectiveCollege), User::getCollege, effectiveCollege)
                 .eq(StrUtil.isNotBlank(className), User::getClassName, className)
-                .eq(StrUtil.isNotBlank(grade), User::getGrade, grade)
-                .eq(StrUtil.isNotBlank(major), User::getMajor, major);
+                .eq(StrUtil.isNotBlank(normalizedGrade), User::getGrade, normalizedGrade);
+        applyMajorFilter(wrapper, major);
 
         if (StrUtil.isNotBlank(keyword)) {
             wrapper.and(w -> w.like(User::getRealName, keyword)
@@ -210,40 +249,125 @@ public class TeacherServiceImpl implements TeacherService {
 
     @Override
     public Page<UserVO> listStudentsPage(int current, int size, String keyword, String college, String className, String grade, String major) {
+        return listStudentsPage(current, size, keyword, college, className, grade, major, null);
+    }
+
+    @Override
+    public Page<UserVO> listStudentsPage(int current, int size, String keyword, String college, String className, String grade, String major, String sort) {
         String effectiveCollege = scopedCollege(college);
+        String normalizedGrade = normalizeGrade(grade);
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
                 .eq(User::getRole, "student")
                 .eq(StrUtil.isNotBlank(effectiveCollege), User::getCollege, effectiveCollege)
                 .eq(StrUtil.isNotBlank(className), User::getClassName, className)
-                .eq(StrUtil.isNotBlank(grade), User::getGrade, grade)
-                .eq(StrUtil.isNotBlank(major), User::getMajor, major);
+                .eq(StrUtil.isNotBlank(normalizedGrade), User::getGrade, normalizedGrade);
+        applyMajorFilter(wrapper, major);
 
         if (StrUtil.isNotBlank(keyword)) {
             wrapper.and(w -> w.like(User::getRealName, keyword)
                               .or().like(User::getUsername, keyword)
                               .or().like(User::getMajor, keyword));
         }
-        wrapper.orderByAsc(User::getId);
 
+        if ("comprehensive_desc".equalsIgnoreCase(sort)) {
+            wrapper.orderByAsc(User::getMajor).orderByAsc(User::getClassName).orderByAsc(User::getId);
+            List<User> users = userService.list(wrapper);
+            Map<String, ComprehensiveScore> scores = latestComprehensiveScores(users);
+            List<UserVO> records = users.stream()
+                    .map(u -> toUserVO(u, scores.get(u.getUsername())))
+                    .sorted(Comparator
+                            .comparing(UserVO::getComprehensiveScore, Comparator.nullsLast(Comparator.reverseOrder()))
+                            .thenComparing(UserVO::getComprehensiveRank, Comparator.nullsLast(Comparator.naturalOrder()))
+                            .thenComparing(UserVO::getId, Comparator.nullsLast(Comparator.naturalOrder())))
+                    .collect(Collectors.toList());
+            return paginateUserVO(records, current, size);
+        }
+
+        wrapper.orderByAsc(User::getId);
         Page<User> page = userService.page(new Page<>(current, size), wrapper);
+        Map<String, ComprehensiveScore> scores = latestComprehensiveScores(page.getRecords());
         Page<UserVO> voPage = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
-        voPage.setRecords(page.getRecords().stream().map(this::toUserVO).collect(Collectors.toList()));
+        voPage.setRecords(page.getRecords().stream()
+                .map(u -> toUserVO(u, scores.get(u.getUsername())))
+                .collect(Collectors.toList()));
         return voPage;
     }
 
     private UserVO toUserVO(User u) {
+        return toUserVO(u, null);
+    }
+
+    private UserVO toUserVO(User u, ComprehensiveScore score) {
         UserVO vo = new UserVO();
         BeanUtils.copyProperties(u, vo);
+        if (score != null) {
+            vo.setComprehensiveAcademicYear(score.getAcademicYear());
+            vo.setComprehensiveScore(score.getComprehensiveScore());
+            vo.setComprehensiveRank(score.getComprehensiveRank());
+            vo.setComprehensiveRankPercent(score.getComprehensiveRankPercent());
+        }
+        vo.setMajor(displayMajor(vo.getMajor()));
         return vo;
+    }
+
+    private Map<String, ComprehensiveScore> latestComprehensiveScores(List<User> users) {
+        if (comprehensiveScoreService == null || CollUtil.isEmpty(users)) {
+            return Collections.emptyMap();
+        }
+        List<String> studentNos = users.stream()
+                .map(User::getUsername)
+                .filter(StrUtil::isNotBlank)
+                .distinct()
+                .collect(Collectors.toList());
+        if (CollUtil.isEmpty(studentNos)) {
+            return Collections.emptyMap();
+        }
+        return comprehensiveScoreService.list(new LambdaQueryWrapper<ComprehensiveScore>()
+                        .in(ComprehensiveScore::getStudentNo, studentNos)
+                        .orderByDesc(ComprehensiveScore::getAcademicYear))
+                .stream()
+                .collect(Collectors.toMap(
+                        ComprehensiveScore::getStudentNo,
+                        score -> score,
+                        (first, ignored) -> first,
+                        LinkedHashMap::new
+                ));
+    }
+
+    private Page<UserVO> paginateUserVO(List<UserVO> records, int current, int size) {
+        int pageSize = Math.max(size, 1);
+        int pageNo = Math.max(current, 1);
+        int from = Math.min((pageNo - 1) * pageSize, records.size());
+        int to = Math.min(from + pageSize, records.size());
+        Page<UserVO> page = new Page<>(pageNo, pageSize, records.size());
+        page.setRecords(records.subList(from, to));
+        return page;
     }
 
     @Override
     public List<StudentComprehensiveVO> getComprehensiveData(String academicYear, String major) {
         String effectiveCollege = scopedCollege(null);
+        if (comprehensiveScoreService != null) {
+            List<ComprehensiveScoreVO> officialScores = comprehensiveScoreService.listByScope(academicYear, effectiveCollege, major);
+            if (CollUtil.isNotEmpty(officialScores)) {
+                return officialScores.stream()
+                        .map(score -> new StudentComprehensiveVO(
+                                score.getRealName(),
+                                score.getStudentNo(),
+                                score.getCollege(),
+                                displayMajor(score.getMajor()),
+                                score.getClassName(),
+                                score.getComprehensiveRank(),
+                                score.getComprehensiveScore() == null ? 0.0 : score.getComprehensiveScore().doubleValue()
+                        ))
+                        .collect(Collectors.toList());
+            }
+        }
+
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
                 .eq(User::getRole, "student")
-                .eq(StrUtil.isNotBlank(effectiveCollege), User::getCollege, effectiveCollege)
-                .eq(StrUtil.isNotBlank(major), User::getMajor, major);
+                .eq(StrUtil.isNotBlank(effectiveCollege), User::getCollege, effectiveCollege);
+        applyMajorFilter(wrapper, major);
 
         List<User> students = userService.list(wrapper);
         if (CollUtil.isEmpty(students)) {
@@ -304,7 +428,7 @@ public class TeacherServiceImpl implements TeacherService {
                     student.getRealName(),
                     student.getUsername(),
                     student.getCollege(),
-                    student.getMajor(),
+                    displayMajor(student.getMajor()),
                     student.getClassName(),
                     participationCount,
                     score
@@ -338,7 +462,12 @@ public class TeacherServiceImpl implements TeacherService {
                 .select(User::getMajor)
                 .groupBy(User::getMajor);
         if (StrUtil.isNotBlank(effectiveCollege)) w.eq(User::getCollege, effectiveCollege);
-        return userService.list(w).stream().map(User::getMajor).filter(Objects::nonNull).sorted().collect(Collectors.toList());
+        return userService.list(w).stream()
+                .map(u -> displayMajor(u.getMajor()))
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -350,21 +479,22 @@ public class TeacherServiceImpl implements TeacherService {
                 .select(User::getGrade)
                 .groupBy(User::getGrade);
         if (StrUtil.isNotBlank(effectiveCollege)) w.eq(User::getCollege, effectiveCollege);
-        if (StrUtil.isNotBlank(major))   w.eq(User::getMajor, major);
+        applyMajorFilter(w, major);
         return userService.list(w).stream().map(User::getGrade).filter(Objects::nonNull).sorted(Comparator.reverseOrder()).collect(Collectors.toList());
     }
 
     @Override
     public List<String> listClasses(String college, String major, String grade) {
         String effectiveCollege = scopedCollege(college);
+        String normalizedGrade = normalizeGrade(grade);
         if (deniedCollege(effectiveCollege)) return new ArrayList<>();
         LambdaQueryWrapper<User> w = new LambdaQueryWrapper<User>()
                 .eq(User::getRole, "student")
                 .select(User::getClassName)
                 .groupBy(User::getClassName);
         if (StrUtil.isNotBlank(effectiveCollege)) w.eq(User::getCollege, effectiveCollege);
-        if (StrUtil.isNotBlank(major))   w.eq(User::getMajor, major);
-        if (StrUtil.isNotBlank(grade))   w.eq(User::getGrade, grade);
+        applyMajorFilter(w, major);
+        if (StrUtil.isNotBlank(normalizedGrade)) w.eq(User::getGrade, normalizedGrade);
         return userService.list(w).stream().map(User::getClassName).filter(Objects::nonNull).sorted().collect(Collectors.toList());
     }
 
@@ -401,7 +531,7 @@ public class TeacherServiceImpl implements TeacherService {
         List<Map<String, Object>> majorStats = new ArrayList<>();
         Map<String, List<User>> majorGroups = students.stream()
                 .filter(u -> u.getMajor() != null)
-                .collect(Collectors.groupingBy(User::getMajor));
+                .collect(Collectors.groupingBy(u -> displayMajor(u.getMajor())));
 
         List<Registration> allRegs = registrationService.list(new LambdaQueryWrapper<Registration>()
                 .in(Registration::getStudentId, sIds));
@@ -478,7 +608,7 @@ public class TeacherServiceImpl implements TeacherService {
         info.put("username", student.getUsername());
         info.put("realName", student.getRealName());
         info.put("college", student.getCollege());
-        info.put("major", student.getMajor());
+        info.put("major", displayMajor(student.getMajor()));
         info.put("className", student.getClassName());
         info.put("grade", student.getGrade());
         result.put("student", info);
@@ -501,6 +631,7 @@ public class TeacherServiceImpl implements TeacherService {
         result.put("totalCompetitions", totalCompetitions);
         result.put("totalAwards", totalAwards);
         result.put("awardRate", totalCompetitions == 0 ? 0.0 : Math.round((double) totalAwards / totalCompetitions * 100.0) / 100.0);
+        result.put("comprehensive", getStudentComprehensive(studentId));
 
         // Competition list with details
         List<Map<String, Object>> compList = new ArrayList<>();
@@ -538,8 +669,8 @@ public class TeacherServiceImpl implements TeacherService {
         if (student.getMajor() != null) {
             String ownCollege = currentTeacherCollege();
             LambdaQueryWrapper<User> peerWrapper = new LambdaQueryWrapper<User>()
-                    .eq(User::getRole, "student")
-                    .eq(User::getMajor, student.getMajor());
+                    .eq(User::getRole, "student");
+            applyMajorFilter(peerWrapper, student.getMajor());
             if (StrUtil.isNotBlank(ownCollege)) {
                 peerWrapper.eq(User::getCollege, ownCollege);
             }
@@ -592,6 +723,18 @@ public class TeacherServiceImpl implements TeacherService {
         }
 
         return result;
+    }
+
+    @Override
+    public ComprehensiveScoreVO getStudentComprehensive(Long studentId) {
+        User student = userService.getById(studentId);
+        if (student == null || !"student".equals(student.getRole())) {
+            throw new BusinessException("学生不存在");
+        }
+        if (!canAccessStudent(student)) {
+            throw new BusinessException(403, "无权查看该学生");
+        }
+        return comprehensiveScoreService.getLatestByStudentNo(student.getUsername());
     }
 
     // ---- trend ----

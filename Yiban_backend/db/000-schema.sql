@@ -324,6 +324,47 @@ CREATE TABLE `growth_record` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='成长记录表';
 
 -- ----------------------------
+-- Table structure for comprehensive_score
+-- ----------------------------
+DROP TABLE IF EXISTS `comprehensive_score`;
+CREATE TABLE `comprehensive_score` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `academic_year` varchar(30) NOT NULL,
+  `student_no` varchar(50) NOT NULL,
+  `real_name` varchar(50) DEFAULT NULL,
+  `college` varchar(100) DEFAULT NULL,
+  `major` varchar(100) DEFAULT NULL,
+  `grade` varchar(20) DEFAULT NULL,
+  `class_name` varchar(100) DEFAULT NULL,
+  `moral_raw_score` decimal(8,4) DEFAULT NULL,
+  `moral_final_score` decimal(8,4) DEFAULT NULL,
+  `sports_raw_score` decimal(8,4) DEFAULT NULL,
+  `sports_final_score` decimal(8,4) DEFAULT NULL,
+  `ability_raw_score` decimal(8,4) DEFAULT NULL,
+  `ability_final_score` decimal(8,4) DEFAULT NULL,
+  `academic_score` decimal(8,4) DEFAULT NULL,
+  `comprehensive_score` decimal(8,4) DEFAULT NULL,
+  `moral_rank` int DEFAULT NULL,
+  `moral_rank_percent` decimal(10,8) DEFAULT NULL,
+  `sports_rank` int DEFAULT NULL,
+  `sports_rank_percent` decimal(10,8) DEFAULT NULL,
+  `ability_rank` int DEFAULT NULL,
+  `ability_rank_percent` decimal(10,8) DEFAULT NULL,
+  `academic_rank` int DEFAULT NULL,
+  `academic_rank_percent` decimal(10,8) DEFAULT NULL,
+  `comprehensive_rank` int DEFAULT NULL COMMENT 'official rank within grade and major',
+  `comprehensive_rank_percent` decimal(10,8) DEFAULT NULL COMMENT 'official percentile within grade and major',
+  `source_file` varchar(255) DEFAULT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_year_student` (`academic_year`, `student_no`),
+  KEY `idx_student_no` (`student_no`),
+  KEY `idx_scope_rank` (`academic_year`, `grade`, `major`, `comprehensive_rank`),
+  KEY `idx_college_major` (`college`, `major`, `grade`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='official comprehensive score';
+
+-- ----------------------------
 -- Table structure for message
 -- ----------------------------
 DROP TABLE IF EXISTS `message`;

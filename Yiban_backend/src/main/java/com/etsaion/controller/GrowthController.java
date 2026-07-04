@@ -5,9 +5,11 @@ import com.etsaion.dto.Result;
 import com.etsaion.entity.GrowthRecord;
 import com.etsaion.entity.User;
 import com.etsaion.interceptor.RequireRole;
+import com.etsaion.service.ComprehensiveScoreService;
 import com.etsaion.service.GrowthRecordService;
 import com.etsaion.service.UserService;
 import com.etsaion.utils.UserContext;
+import com.etsaion.vo.ComprehensiveScoreVO;
 import com.etsaion.vo.StudentGrowthVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +28,9 @@ public class GrowthController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private ComprehensiveScoreService comprehensiveScoreService;
 
     @Operation(summary = "根据学生ID获取能力画像雷达图数据与参赛汇总 (TS 格式对齐)")
     @GetMapping("/radar")
@@ -55,6 +60,40 @@ public class GrowthController {
 
         StudentGrowthVO growth = growthRecordService.getStudentGrowth(targetStudentId);
         return Result.success(growth);
+    }
+
+    @Operation(summary = "Get official comprehensive evaluation rank")
+    @GetMapping("/comprehensive")
+    @RequireRole({"student", "teacher", "admin"})
+    public Result<ComprehensiveScoreVO> getComprehensiveScore(
+            @RequestParam(required = false) Long studentId,
+            @RequestParam(required = false) String academicYear) {
+        Long targetStudentId = studentId;
+        if (targetStudentId == null) {
+            targetStudentId = UserContext.getUserId();
+        }
+        if (targetStudentId == null) {
+            return Result.error(401, "please login or pass studentId");
+        }
+        if ("student".equalsIgnoreCase(UserContext.getUserRole())
+                && !targetStudentId.equals(UserContext.getUserId())) {
+            return Result.error(403, "students can only view their own comprehensive score");
+        }
+
+        User student = userService.getById(targetStudentId);
+        if (student == null || !"student".equalsIgnoreCase(student.getRole())) {
+            return Result.error(404, "student not found");
+        }
+        if ("teacher".equalsIgnoreCase(UserContext.getUserRole())) {
+            Long teacherId = UserContext.getUserId();
+            User teacher = userService.getById(teacherId);
+            if (teacher != null && teacher.getCollege() != null
+                    && !teacher.getCollege().equals(student.getCollege())) {
+                return Result.error(403, "no permission to view students from another college");
+            }
+        }
+
+        return Result.success(comprehensiveScoreService.getByStudentNo(student.getUsername(), academicYear));
     }
 
     @Operation(summary = "获取学生成长时间轴")

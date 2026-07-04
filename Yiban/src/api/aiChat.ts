@@ -29,6 +29,7 @@ export interface AiChatConversationMessage {
   content: string;
   createTime?: string;
   toolContext?: unknown;
+  toolResultJson?: string;
   artifacts?: AiArtifact[];
 }
 

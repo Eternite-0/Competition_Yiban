@@ -90,6 +90,8 @@ const categoryOptions = [
   { value: 'A', label: '科技创新' },
   { value: 'B', label: '商业创业' },
   { value: 'C', label: '文化艺术' },
+  { value: 'algorithm', label: '算法编程' },
+  { value: 'design', label: '设计创作' },
 ];
 
 /* ─── Helpers ─── */
@@ -120,12 +122,58 @@ function sourceLabel(type?: string) {
   return labels[type || ''] || type || '未知来源';
 }
 
+function categoryLabel(value?: string) {
+  return categoryOptions.find((item) => item.value === value)?.label || value || '—';
+}
+
+function normalizeDraftCategory(value?: string) {
+  const raw = (value || '').trim();
+  const lower = raw.toLowerCase();
+  if (!raw) return '';
+  if (['a', 'b', 'c', 'algorithm', 'design'].includes(lower)) return lower === 'a' || lower === 'b' || lower === 'c' ? lower.toUpperCase() : lower;
+  if (/科技|信息技术|软件|ai|人工智能/i.test(raw)) return 'A';
+  if (/创业|商业/.test(raw)) return 'B';
+  if (/文化|艺术/.test(raw)) return 'C';
+  if (/算法|编程|程序设计/.test(raw)) return 'algorithm';
+  if (/设计|视觉/.test(raw)) return 'design';
+  return raw;
+}
+
+function normalizeDraftLevel(value?: string) {
+  const raw = (value || '').trim();
+  if (!raw) return '';
+  if (/国家级|全国|全国赛|国赛|国际|国际赛|global|international|教育部|工信部|工业和信息化部/i.test(raw)) return '国家级';
+  if (/省赛|省级|省教育厅/.test(raw)) return '省级';
+  if (/校赛|校内|学校|校级/.test(raw)) return '校级';
+  if (/院赛|学院|院级/.test(raw)) return '院级';
+  if (raw === '其他') return '';
+  return raw;
+}
+
+function riskLabel(value: string) {
+  const labels: Record<string, string> = {
+    multiple_registration_windows: '存在多个报名窗口，已自动取最早开始和最晚截止',
+    registration_time_corrected_from_source: '报名时间已根据原文自动修正',
+    approximate_competition_time: '比赛时间由月份/旬级描述推断',
+    multi_stage_competition_time: '存在多个比赛阶段，已自动汇总起止时间',
+    duplicate_competition: '疑似重复赛事',
+    duplicate_pending_draft: '存在相似待审核草稿',
+    missing_registration_end: '报名截止待补充',
+    missing_name: '赛事名称待补充',
+    missing_content: '赛事内容待补充',
+    low_confidence: '字段整体置信度偏低',
+    possible_dynamic_page: '疑似动态页，已按抓取文本生成草稿',
+    pdf_scan_image_fallback: '扫描 PDF 兜底识别',
+  };
+  return labels[value] || value;
+}
+
 function draftToForm(draft: AiCompetitionDraftVO): DraftFormState {
   return {
     name: draft.name || '',
     sourceTitle: draft.sourceTitle || '',
-    level: draft.level || '',
-    category: draft.category || '',
+    level: normalizeDraftLevel(draft.level),
+    category: normalizeDraftCategory(draft.category),
     organizer: draft.organizer || '',
     startTime: toInputDateTime(draft.startTime),
     endTime: toInputDateTime(draft.endTime),
@@ -202,7 +250,7 @@ function ManualDraftDetail({ competition, onEdit }: { competition: any; onEdit: 
       <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
         {[
           ['赛事级别', competition.level || '—'],
-          ['赛事分类', competition.category === 'A' ? '科技创新' : competition.category === 'B' ? '商业创业' : competition.category === 'C' ? '文化艺术' : '—'],
+          ['赛事分类', categoryLabel(competition.category)],
           ['主办单位', competition.organizer || '—'],
           ['最大团队', competition.maxTeamSize ? `${competition.maxTeamSize} 人` : '—'],
           ['报名时间', competition.startTime && competition.endTime ? `${formatDateShort(competition.startTime)} ~ ${formatDateShort(competition.endTime)}` : '—'],
@@ -344,8 +392,10 @@ function QualityPanel({
                 )}
                 {riskItems.map((item, index) => (
                   <div key={`${item.label}-${index}`} className="rounded-sm border border-red-200 bg-red-50 px-3 py-2.5">
-                    <p className="text-[11px] font-medium text-error">{item.label}</p>
-                    <p className="mt-1 break-words text-[12px] leading-5 text-red-800">{item.value}</p>
+                    <p className="text-[11px] font-medium text-error">{riskLabel(item.value)}</p>
+                    {riskLabel(item.value) !== item.value && (
+                      <p className="mt-1 break-words text-[12px] leading-5 text-red-800">{item.value}</p>
+                    )}
                   </div>
                 ))}
               </div>

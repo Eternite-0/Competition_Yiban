@@ -115,6 +115,8 @@ public final class DateTextUtil {
 
     private static String cleanup(String text) {
         return text == null ? "" : text
+                .replaceAll("(\\d)\\s+(?=年|月|日)", "$1")
+                .replaceAll("(?<=年|月|日)\\s+(?=\\d)", "")
                 .replace("截至", "")
                 .replace("截止至", "")
                 .replace("报名截止时间", "")

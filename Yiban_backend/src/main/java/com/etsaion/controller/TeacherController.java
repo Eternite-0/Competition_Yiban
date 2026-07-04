@@ -70,9 +70,10 @@ public class TeacherController {
             @RequestParam(required = false) String college,
             @RequestParam(required = false) String className,
             @RequestParam(required = false) String grade,
-            @RequestParam(required = false) String major) {
+            @RequestParam(required = false) String major,
+            @RequestParam(required = false) String sort) {
 
-        return Result.success(teacherService.listStudentsPage(current, size, keyword, college, className, grade, major));
+        return Result.success(teacherService.listStudentsPage(current, size, keyword, college, className, grade, major, sort));
     }
 
     @Operation(summary = "导出综测评分表 (Excel 流)")

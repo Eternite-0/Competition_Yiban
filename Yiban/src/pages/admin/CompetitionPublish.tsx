@@ -507,7 +507,7 @@ export default function CompetitionPublish() {
       )}
 
       {(isEdit || activeTab === 'manual') && (
-        <div className="flex flex-col lg:flex-row gap-lg">
+        <div className="flex min-w-0 flex-col gap-lg xl:flex-row">
           <motion.div className="flex-1 flex flex-col gap-md min-w-0" variants={listContainer} initial="hidden" animate="visible">
             {!isEdit && (
               <motion.section variants={listItem} className="glass p-lg">
@@ -586,19 +586,19 @@ export default function CompetitionPublish() {
                   <input className="input-glass" placeholder="输入主办单位名称" value={form.organizer} onChange={(e) => updateField('organizer', e.target.value)} />
                 </Field>
 
-                <Field label="报名时间" required error={errors.regStart}>
-                  <div className="flex items-center gap-2">
-                    <input className="input-glass" type="date" value={form.regStart} onChange={(e) => updateField('regStart', e.target.value)} />
-                    <span className="text-ink-muted-48">→</span>
-                    <input className="input-glass" type="date" value={form.regEnd} onChange={(e) => updateField('regEnd', e.target.value)} />
+                <Field label="报名时间" required error={errors.regStart} className="md:col-span-2">
+                  <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                    <input className="input-glass min-w-0 flex-1" type="date" value={form.regStart} onChange={(e) => updateField('regStart', e.target.value)} />
+                    <span className="hidden text-ink-muted-48 sm:inline">→</span>
+                    <input className="input-glass min-w-0 flex-1" type="date" value={form.regEnd} onChange={(e) => updateField('regEnd', e.target.value)} />
                   </div>
                 </Field>
 
-                <Field label={text.stage} required error={errors.activityStart}>
-                  <div className="flex items-center gap-2">
-                    <input className="input-glass" type="date" value={form.activityStart} onChange={(e) => updateField('activityStart', e.target.value)} />
-                    <span className="text-ink-muted-48">→</span>
-                    <input className="input-glass" type="date" value={form.activityEnd} onChange={(e) => updateField('activityEnd', e.target.value)} />
+                <Field label={text.stage} required error={errors.activityStart} className="md:col-span-2">
+                  <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+                    <input className="input-glass min-w-0 flex-1" type="date" value={form.activityStart} onChange={(e) => updateField('activityStart', e.target.value)} />
+                    <span className="hidden text-ink-muted-48 sm:inline">→</span>
+                    <input className="input-glass min-w-0 flex-1" type="date" value={form.activityEnd} onChange={(e) => updateField('activityEnd', e.target.value)} />
                   </div>
                 </Field>
 
@@ -759,8 +759,8 @@ export default function CompetitionPublish() {
             )}
           </motion.div>
 
-          <div className="w-full lg:w-[380px] shrink-0">
-            <div className="sticky top-[88px] flex flex-col gap-3">
+          <div className="w-full shrink-0 xl:w-[340px] 2xl:w-[380px]">
+            <div className="flex flex-col gap-3 xl:sticky xl:top-[88px]">
               <h3 className="text-[12px] text-ink-muted-48 px-1 flex items-center gap-2">
                 <span className="material-symbols-outlined text-[14px]">visibility</span>
                 发布效果预览
@@ -774,7 +774,7 @@ export default function CompetitionPublish() {
                   </div>
                 </div>
                 <div className="p-md">
-                  <h4 className="font-display font-semibold text-[17px] leading-snug text-ink mb-2">
+                  <h4 className="font-display font-semibold text-[17px] leading-snug text-ink mb-2 break-words">
                     {form.title || `${text.noun}名称将在这里显示…`}
                   </h4>
                   <div className="flex flex-wrap gap-1.5 mb-3">
@@ -805,9 +805,9 @@ export default function CompetitionPublish() {
         }} />
       )}
 
-      <div className="fixed bottom-0 left-0 lg:left-[240px] right-0 z-40">
+      <div className="fixed bottom-0 left-0 right-0 z-40 md:left-[200px]">
         <div className="bg-canvas border-t border-hairline px-lg py-3">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="mx-auto flex w-full max-w-[1100px] items-center justify-between gap-3">
             <motion.button whileTap={{ scale: 0.97 }} type="button" onClick={() => navigate('/admin/competitions')} className="btn-secondary">
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
               返回
@@ -944,7 +944,7 @@ function StageManager({ competitionId }: { competitionId: number }) {
 
 function Field({ label, required, error, children, className = '' }: { label: string; required?: boolean; error?: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={`flex flex-col gap-1.5 ${className}`}>
+    <div className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
       <label className="text-[14px] font-medium text-body-muted">
         {label}{required && <span className="text-error ml-0.5">*</span>}
       </label>
@@ -959,7 +959,7 @@ function PreviewLine({ icon, label, value }: { icon: string; label: string; valu
     <div className="flex items-start gap-2">
       <span className="material-symbols-outlined text-[14px] text-ink-muted-48 mt-0.5">{icon}</span>
       <span className="text-ink-muted-48 mr-1">{label}:</span>
-      <span className="text-ink-muted-80 flex-1">{value}</span>
+      <span className="text-ink-muted-80 min-w-0 flex-1 break-words">{value}</span>
     </div>
   );
 }

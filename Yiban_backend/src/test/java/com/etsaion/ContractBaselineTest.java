@@ -20,6 +20,7 @@ import com.etsaion.service.CompetitionService;
 import com.etsaion.service.GrowthRecordService;
 import com.etsaion.service.RegistrationService;
 import com.etsaion.service.ReviewTaskService;
+import com.etsaion.service.SubmissionStudentService;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.impl.GrowthRecordServiceImpl;
 import com.etsaion.service.impl.RegistrationServiceImpl;
@@ -142,6 +143,7 @@ class ContractBaselineTest {
         GrowthRecordServiceImpl service = new GrowthRecordServiceImpl();
         RegistrationService registrationService = mock(RegistrationService.class);
         SubmissionService submissionService = mock(SubmissionService.class);
+        SubmissionStudentService submissionStudentService = mock(SubmissionStudentService.class);
         CompetitionService competitionService = mock(CompetitionService.class);
 
         Registration reg = new Registration();
@@ -167,10 +169,12 @@ class ContractBaselineTest {
 
         when(registrationService.list(any(Wrapper.class))).thenReturn(List.of(reg));
         when(submissionService.list(any(Wrapper.class))).thenReturn(List.of(approved, rejected));
+        when(submissionStudentService.list(any(Wrapper.class))).thenReturn(List.of());
         when(competitionService.getById(10L)).thenReturn(competition);
 
         ReflectionTestUtils.setField(service, "registrationService", registrationService);
         ReflectionTestUtils.setField(service, "submissionService", submissionService);
+        ReflectionTestUtils.setField(service, "submissionStudentService", submissionStudentService);
         ReflectionTestUtils.setField(service, "competitionService", competitionService);
 
         StudentGrowthVO result = service.getStudentGrowth(4L);

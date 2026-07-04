@@ -121,7 +121,7 @@ export default function CascadeFilter({
   };
 
   const selectClass =
-    'h-9 min-w-[120px] rounded-sm border border-hairline bg-canvas px-3 text-[14px] font-normal text-ink transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10';
+    'h-9 min-w-[120px] rounded-sm border border-hairline bg-canvas pl-3 pr-9 text-[14px] font-normal text-ink transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10';
 
   return (
     <div className="flex flex-wrap items-center gap-3">

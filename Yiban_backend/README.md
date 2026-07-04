@@ -76,9 +76,11 @@ mvn clean compile
 ```
 启动 Spring Boot 服务：
 ```powershell
-mvn spring-boot:run
+..\scripts\start-local-backend.ps1
 ```
 服务成功启动后，后端将运行在 `http://localhost:8080` 上。
+
+> 本地项目数据库固定使用 `127.0.0.1:3307/etsaion`，用户名/密码为 `root/root`。不要默认连 `localhost:3306`，那是另一套 `MySQL84` 服务，密码和数据都可能不同。
 
 ---
 

@@ -15,17 +15,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 后端 (端口 8080)
 
 ```powershell
-cd D:\Project\Competition\Yiban_backend
+cd D:\Project\Competition
 $env:AI_API_KEY = "your-api-key"  # AI 功能必须
-mvn clean install -DskipTests   # 首次或依赖变更
-mvn spring-boot:run             # 日常启动
-mvn compile                     # 仅编译检查
-mvn test                        # 运行所有测试
-mvn test -q                     # 静默测试（只看结果）
+.\scripts\start-local-backend.ps1  # 日常启动，会先检查 3307 项目库
+```
+
+后端检查命令:
+
+```powershell
+cd D:\Project\Competition\Yiban_backend
+mvn clean install -DskipTests         # 首次或依赖变更
+mvn compile                           # 仅编译检查
+mvn test                              # 运行所有测试
+mvn test -q                           # 静默测试（只看结果）
 mvn test -Dtest=ContractBaselineTest  # 运行单个测试类
 ```
 
-数据库: MySQL `localhost:3306/etsaion`，用户名/密码在 `application.yml`。种子密码均为 `123456`。
+数据库: 本地项目库使用 MySQL `127.0.0.1:3307/etsaion`，用户名/密码为 `root/root`。不要默认连 `localhost:3306`，那是单独的 `MySQL84` 服务，账号和数据目录都可能不同。种子密码均为 `123456`。
 AI 配置: `AI_API_KEY`(必须), `AI_BASE_URL`, `AI_MODEL` 在 `application.yml` 的 `ai.*` 节点。
 
 停止后端: `Stop-Process -Name java -Force`
@@ -141,8 +147,8 @@ AI 助手采用 OpenAI Function Calling 架构，模型按需调用工具获取�
 
 ```bash
 # 两步完成全新初始化（幂等，可重复运行）
-mysql -u root etsaion < db/000-schema.sql   # 全量建表 (15 张表)
-mysql -u root etsaion < db/001-data.sql     # 种子数据 + review_task 回填
+mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot etsaion < db/000-schema.sql   # 全量建表 (15 张表)
+mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot etsaion < db/001-data.sql     # 种子数据 + review_task 回填
 
 # Docker 启动自动执行，无需手动操作
 # migrate-*.sql 已全部合并进 schema，仅保留用于已有数据库升级

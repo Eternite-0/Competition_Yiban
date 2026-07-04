@@ -32,7 +32,15 @@ interface RadarDim {
   score: number;
   maxScore: number;
 }
-
+interface ComprehensiveScore {
+  academicYear?: string;
+  major?: string;
+  grade?: string;
+  comprehensiveRank?: number;
+  comprehensiveRankPercent?: number | string;
+  rankTotal?: number;
+  rankScope?: string;
+}
 interface DetailData {
   student: StudentInfo;
   totalCompetitions: number;
@@ -42,6 +50,7 @@ interface DetailData {
   radar: { radarData: Record<string, number>; totalCompetitions: number; awards: number } | null;
   rank: number;
   rankTotal: number;
+  comprehensive?: ComprehensiveScore | null;
 }
 
 const RADAR_FIELDS: Array<{ key: string; label: string }> = [
@@ -66,6 +75,16 @@ const LEVEL_COLORS: Record<string, string> = {
   '校级': 'chip-school',
   '院级': 'chip-school',
 };
+
+function formatOfficialRank(score?: ComprehensiveScore | null) {
+  if (!score?.comprehensiveRank) return '暂无';
+  return score.rankTotal ? `${score.comprehensiveRank}/${score.rankTotal}` : String(score.comprehensiveRank);
+}
+function formatOfficialPercent(value?: number | string) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '暂无';
+  return `${(n * 100).toFixed(1)}%`;
+}
 
 function RadarChart({ data }: { data: RadarDim[] }) {
   const cx = 120, cy = 120, maxRadius = 90;
@@ -111,7 +130,6 @@ function RadarChart({ data }: { data: RadarDim[] }) {
     </svg>
   );
 }
-
 export default function StudentDetail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -121,6 +139,7 @@ export default function StudentDetail() {
   const [data, setData] = useState<DetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [rankMode, setRankMode] = useState<'rank' | 'percent'>('rank');
 
   const handleExport = useCallback(async () => {
     if (!studentId) return;
@@ -187,10 +206,18 @@ export default function StudentDetail() {
         { label: '参赛总数', value: String(data.totalCompetitions), suffix: '次', icon: 'format_list_numbered' },
         { label: '获奖数', value: String(data.totalAwards), suffix: '项', icon: 'military_tech' },
         { label: '获奖率', value: String(Math.round((data.awardRate ?? 0) * 100)), suffix: '%', icon: 'percent' },
-        { label: '专业排名', value: data.rank ? `${data.rank}/${data.rankTotal}` : '—', suffix: '', icon: 'leaderboard' },
+        {
+          label: '综测排名',
+          value: rankMode === 'rank'
+            ? formatOfficialRank(data.comprehensive)
+            : formatOfficialPercent(data.comprehensive?.comprehensiveRankPercent),
+          suffix: '',
+          icon: 'leaderboard',
+          toggle: true,
+          hint: `${data.comprehensive?.rankScope || data.student.major || '本专业'} · ${rankMode === 'rank' ? '点击看百分比' : '点击看排名'}`,
+        },
       ]
     : [];
-
   return (
     <motion.div
       className="py-lg flex flex-col gap-lg"
@@ -207,7 +234,7 @@ export default function StudentDetail() {
           <>
             <motion.button whileTap={{ scale: 0.97 }} onClick={handleExport} disabled={exporting} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px] disabled:opacity-60">
               <span className="material-symbols-outlined text-[16px]">{exporting ? 'hourglass_top' : 'download'}</span>
-              {exporting ? '导出中…' : '导出报告'}
+              {exporting ? '导出中...' : '导出报告'}
             </motion.button>
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate(-1)} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px]">
               <span className="material-symbols-outlined text-[16px]">arrow_back</span>
@@ -249,13 +276,15 @@ export default function StudentDetail() {
           {/* KPIs */}
           <section className="grid grid-cols-2 md:grid-cols-4 gap-md">
             {kpiCards.map((m, i) => (
-              <motion.div
+              <motion.button
+                type="button"
                 key={m.label}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05, duration: 0.35 }}
                 whileHover={{ scale: 1.03, y: -2 }}
-                className="stat-tile p-lg flex flex-col gap-2"
+                onClick={() => m.toggle && setRankMode((mode) => mode === 'rank' ? 'percent' : 'rank')}
+                className="stat-tile p-lg flex flex-col gap-2 text-left"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[13px] text-ink-muted-80">{m.label}</span>
@@ -265,7 +294,8 @@ export default function StudentDetail() {
                   <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{m.value}</span>
                   <span className="text-[12px] text-ink-muted-48">{m.suffix}</span>
                 </div>
-              </motion.div>
+                {m.hint && <span className="truncate text-[11px] text-ink-muted-48">{m.hint}</span>}
+              </motion.button>
             ))}
           </section>
 
@@ -372,7 +402,7 @@ export default function StudentDetail() {
                         </td>
                         <td className="py-3 px-md text-ink-muted-80">{c.teamName || '个人'}</td>
                         <td className="py-3 px-md text-ink-muted-80 tabular-nums">
-                          {c.submitDate ? new Date(c.submitDate).toLocaleDateString() : '—'}
+                          {c.submitDate ? new Date(c.submitDate).toLocaleDateString() : '-'}
                         </td>
                         <td className="py-3 px-md">
                           <span className={statusChip[c.status] || 'chip'}>{c.status}</span>

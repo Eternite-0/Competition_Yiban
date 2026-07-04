@@ -5,6 +5,7 @@ import com.etsaion.entity.AiCompetitionDraft;
 import com.etsaion.entity.Competition;
 import com.etsaion.entity.CompetitionStage;
 import com.etsaion.mapper.AiCompetitionDraftMapper;
+import com.etsaion.service.ActivityCategoryService;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.CompetitionStageService;
 import com.etsaion.service.impl.AiCompetitionDraftServiceImpl;
@@ -36,10 +37,12 @@ class AiCompetitionDraftFlowTest {
         AiCompetitionDraftMapper mapper = mock(AiCompetitionDraftMapper.class);
         CompetitionService competitionService = mock(CompetitionService.class);
         CompetitionStageService competitionStageService = mock(CompetitionStageService.class);
+        ActivityCategoryService activityCategoryService = mock(ActivityCategoryService.class);
         AiCompetitionDraftServiceImpl service = new AiCompetitionDraftServiceImpl();
         ReflectionTestUtils.setField(service, "baseMapper", mapper);
         ReflectionTestUtils.setField(service, "competitionService", competitionService);
         ReflectionTestUtils.setField(service, "competitionStageService", competitionStageService);
+        ReflectionTestUtils.setField(service, "activityCategoryService", activityCategoryService);
 
         AiCompetitionDraft draft = new AiCompetitionDraft();
         draft.setId(7L);
@@ -67,6 +70,7 @@ class AiCompetitionDraftFlowTest {
             competition.setId(99L);
             return true;
         });
+        when(activityCategoryService.resolveOrCreate(eq("competition"), any())).thenAnswer(invocation -> invocation.getArgument(1));
         when(competitionStageService.createStage(eq(99L), any(CompetitionStage.class)))
                 .thenAnswer(invocation -> invocation.getArgument(1));
 
@@ -253,5 +257,136 @@ class AiCompetitionDraftFlowTest {
         assertEquals("2026-06-15 09:00:00", stages.get(0).get("startTime").asText());
         assertEquals("2026-07-20 18:00:00", stages.get(0).get("endTime").asText());
         assertEquals("全国总决赛", stages.get(1).get("name").asText());
+    }
+
+    @Test
+    void autoFillCorrectionsCompleteLanqiaoRegistrationAndApproximateCompetitionTimes() throws Exception {
+        AiCompetitionDraftServiceImpl service = new AiCompetitionDraftServiceImpl();
+        ReflectionTestUtils.setField(service, "competitionService", mock(CompetitionService.class));
+
+        JsonNode node = objectMapper.readTree("{"
+                + "\"name\":\"第十七届蓝桥杯全国软件和信息技术专业人才大赛\","
+                + "\"level\":\"全国赛\","
+                + "\"category\":\"科技\","
+                + "\"organizer\":\"蓝桥杯大赛组委会\","
+                + "\"competitionStart\":\"2026-04-01 00:00:00\","
+                + "\"competitionEnd\":\"2026-06-30 23:59:59\","
+                + "\"content\":\"面向全日制在校大学生。\","
+                + "\"tags\":[\"科技\"],"
+                + "\"tracks\":[]"
+                + "}");
+        AiCompetitionDraft draft = ReflectionTestUtils.invokeMethod(service, "createDraftFromJson",
+                11L, "url", "https://jiaowu.nwpu.edu.cn/info/1164/25808.htm",
+                "第十七届蓝桥杯全国软件和信息技术专业人才大赛通知", node);
+
+        ReflectionTestUtils.invokeMethod(service, "applyAutoFillCorrections", draft, lanqiaoNoticeText());
+
+        assertNotNull(draft);
+        assertEquals("国家级", draft.getLevel());
+        assertEquals("A", draft.getCategory());
+        assertEquals(LocalDateTime.of(2025, 10, 20, 10, 0), draft.getStartTime());
+        assertEquals(LocalDateTime.of(2026, 4, 27, 14, 0), draft.getEndTime());
+        assertEquals(LocalDateTime.of(2026, 4, 1, 0, 0), draft.getCompetitionStart());
+        assertEquals(LocalDateTime.of(2026, 6, 20, 23, 59, 59), draft.getCompetitionEnd());
+        assertTrue(draft.getTags().contains("AI"));
+        assertTrue(draft.getTags().contains("软件"));
+        assertTrue(draft.getTags().contains("信息技术"));
+        assertTrue(draft.getTracks().contains("软件赛"));
+        assertTrue(draft.getTracks().contains("中数杯 AIGC 数字内容创意设计大赛"));
+
+        JsonNode stages = objectMapper.readTree(draft.getStagesJson());
+        assertTrue(stages.size() >= 6);
+        assertTrue(draft.getStagesJson().contains("软件赛、电子赛、人工智能赛报名"));
+        assertTrue(draft.getStagesJson().contains("全国选拔赛"));
+        assertTrue(draft.getStagesJson().contains("全国总决赛"));
+        assertTrue(draft.getRiskFlagsJson().contains("multiple_registration_windows"));
+        assertTrue(draft.getRiskFlagsJson().contains("approximate_competition_time"));
+        assertTrue(draft.getRiskFlagsJson().contains("multi_stage_competition_time"));
+        assertTrue(draft.getEvidenceJson().contains("registrationWindows"));
+    }
+
+    @Test
+    void autoFillCorrectionsKeepExactCompetitionDates() throws Exception {
+        AiCompetitionDraftServiceImpl service = new AiCompetitionDraftServiceImpl();
+        ReflectionTestUtils.setField(service, "competitionService", mock(CompetitionService.class));
+
+        JsonNode node = objectMapper.readTree("{"
+                + "\"name\":\"精确日期测试赛\","
+                + "\"category\":\"算法编程\","
+                + "\"competitionStart\":\"2026-07-05 09:00:00\","
+                + "\"competitionEnd\":\"2026-07-05 18:00:00\""
+                + "}");
+        AiCompetitionDraft draft = ReflectionTestUtils.invokeMethod(service, "createDraftFromJson",
+                12L, "file", "notice.txt", "notice.txt", node);
+
+        ReflectionTestUtils.invokeMethod(service, "applyAutoFillCorrections", draft,
+                "比赛时间：2026年7月5日 09:00—2026年7月5日 18:00。报名时间：2026年6月1日10:00—2026年6月20日18:00。");
+
+        assertNotNull(draft);
+        assertEquals("algorithm", draft.getCategory());
+        assertEquals(LocalDateTime.of(2026, 7, 5, 9, 0), draft.getCompetitionStart());
+        assertEquals(LocalDateTime.of(2026, 7, 5, 18, 0), draft.getCompetitionEnd());
+        assertEquals(LocalDateTime.of(2026, 6, 1, 10, 0), draft.getStartTime());
+        assertEquals(LocalDateTime.of(2026, 6, 20, 18, 0), draft.getEndTime());
+    }
+
+    @Test
+    void autoFillCorrectionsHandleDateOnlyRegistrationRange() throws Exception {
+        AiCompetitionDraftServiceImpl service = new AiCompetitionDraftServiceImpl();
+        ReflectionTestUtils.setField(service, "competitionService", mock(CompetitionService.class));
+
+        JsonNode node = objectMapper.readTree("{\"name\":\"日期区间测试赛\",\"category\":\"科技\"}");
+        AiCompetitionDraft draft = ReflectionTestUtils.invokeMethod(service, "createDraftFromJson",
+                13L, "file", "notice.txt", "notice.txt", node);
+
+        ReflectionTestUtils.invokeMethod(service, "applyAutoFillCorrections", draft,
+                "报名时间：2026年5月1日—2026年5月31日。比赛时间：2026年7月上旬。");
+
+        assertNotNull(draft);
+        assertEquals(LocalDateTime.of(2026, 5, 1, 0, 0), draft.getStartTime());
+        assertEquals(LocalDateTime.of(2026, 5, 31, 23, 59, 59), draft.getEndTime());
+    }
+
+    @Test
+    void createDraftFromJsonMergesStructuredRegistrationAndApproximateRanges() throws Exception {
+        AiCompetitionDraftServiceImpl service = new AiCompetitionDraftServiceImpl();
+        ReflectionTestUtils.setField(service, "competitionService", mock(CompetitionService.class));
+
+        JsonNode node = objectMapper.readTree("{"
+                + "\"name\":\"结构化窗口测试赛\","
+                + "\"category\":\"科技\","
+                + "\"registrationWindows\":["
+                + "{\"name\":\"软件赛报名\",\"startTime\":\"2025-10-20 10:00:00\",\"endTime\":\"2025-12-15 14:00:00\"},"
+                + "{\"name\":\"视觉艺术设计赛报名及提交作品\",\"startTime\":\"2025-10-20 10:00:00\",\"endTime\":\"2026-04-27 14:00:00\"}],"
+                + "\"approximateTimeRanges\":["
+                + "{\"name\":\"全国选拔赛\",\"text\":\"2026年4月\"},"
+                + "{\"name\":\"全国总决赛\",\"text\":\"2026年6月中上旬\"}]"
+                + "}");
+        AiCompetitionDraft draft = ReflectionTestUtils.invokeMethod(service, "createDraftFromJson",
+                14L, "file", "notice.txt", "notice.txt", node);
+
+        assertNotNull(draft);
+        assertEquals(LocalDateTime.of(2025, 10, 20, 10, 0), draft.getStartTime());
+        assertEquals(LocalDateTime.of(2026, 4, 27, 14, 0), draft.getEndTime());
+        assertEquals(LocalDateTime.of(2026, 4, 1, 0, 0), draft.getCompetitionStart());
+        assertEquals(LocalDateTime.of(2026, 6, 20, 23, 59, 59), draft.getCompetitionEnd());
+        assertTrue(draft.getStagesJson().contains("软件赛报名"));
+        assertTrue(draft.getStagesJson().contains("全国总决赛"));
+        assertTrue(draft.getRiskFlagsJson().contains("multiple_registration_windows"));
+        assertTrue(draft.getRiskFlagsJson().contains("approximate_competition_time"));
+        assertTrue(draft.getRiskFlagsJson().contains("multi_stage_competition_time"));
+    }
+
+    private String lanqiaoNoticeText() {
+        return "第十七届蓝桥杯全国软件和信息技术专业人才大赛通知。"
+                + "所有全日制在校大学生。"
+                + "项目类别分为软件赛、电子赛、人工智能赛、视觉艺术设计赛、数字科技创新赛、中数杯 AIGC 数字内容创意设计大赛。"
+                + "二、竞赛时间 1.选拔赛时间：2026年4月。2.决赛时间：2026年6月中上旬。"
+                + "三、报名相关事宜 1.全国选拔赛报名时间 "
+                + "（1）软件赛、电子赛、人工智能赛报名时间：2025 年 10月20 日10:00—2025 年12月15日14:00。"
+                + "（2）视觉艺术设计赛、数字科技创新赛报名及提交作品时间：2025年10月20 日10:00—2026年4月27日14:00。"
+                + "（3）中数杯 AIGC 数字内容创意设计大赛报名时间：2025年10月20日10:00—2025年11月30日14:00，提交作品截止时间：2025年12月5日14:00。"
+                + "2.报名方式 参赛学生统一登录大赛官网报名；大赛官方网站为：dasai.lanqiao.cn。"
+                + "注意事项：请及时关注大赛官网。";
     }
 }

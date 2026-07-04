@@ -284,7 +284,7 @@ export default function TeamRecruitment() {
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill bg-canvas border border-hairline text-[12px] text-ink-muted-80">
           <span className="text-ink-muted-48">赛事</span>
           <select
-            className="bg-transparent focus:outline-none font-medium text-ink"
+            className="bg-transparent pr-6 font-medium text-ink focus:outline-none"
             value={selectedCompetitionId}
             onChange={(e) => { setSelectedCompetitionId(e.target.value); setPage(1); }}
           >
@@ -309,7 +309,7 @@ export default function TeamRecruitment() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-transparent text-primary cursor-pointer focus:outline-none font-medium"
+                className="cursor-pointer bg-transparent pr-6 font-medium text-primary focus:outline-none"
               >
                 <option>最新发布</option>
                 <option>即将截止</option>

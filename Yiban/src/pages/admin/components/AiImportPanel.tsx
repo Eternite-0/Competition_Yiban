@@ -42,20 +42,60 @@ function warningLabel(value: string) {
     possible_dynamic_page: '疑似动态页',
     image_only_file: '图片文件',
     image_only_url: '图片链接',
+    multiple_registration_windows: '存在多个报名窗口，已自动取最早开始和最晚截止',
+    registration_time_corrected_from_source: '报名时间已根据原文自动修正',
+    approximate_competition_time: '比赛时间由月份/旬级描述推断',
+    multi_stage_competition_time: '存在多个比赛阶段，已自动汇总起止时间',
+    duplicate_competition: '疑似重复赛事',
+    duplicate_pending_draft: '存在相似待审核草稿',
+    missing_registration_end: '报名截止待补充',
   };
   return labels[value] || value;
+}
+
+function normalizeDraftCategory(value?: string) {
+  const raw = (value || '').trim();
+  const lower = raw.toLowerCase();
+  if (!raw) return '';
+  if (['a', 'b', 'c', 'algorithm', 'design'].includes(lower)) return lower === 'a' || lower === 'b' || lower === 'c' ? lower.toUpperCase() : lower;
+  if (/科技|信息技术|软件|ai|人工智能/i.test(raw)) return 'A';
+  if (/创业|商业/.test(raw)) return 'B';
+  if (/文化|艺术/.test(raw)) return 'C';
+  if (/算法|编程|程序设计/.test(raw)) return 'algorithm';
+  if (/设计|视觉/.test(raw)) return 'design';
+  return raw;
+}
+
+function normalizeDraftLevel(value?: string) {
+  const raw = (value || '').trim();
+  if (!raw) return '';
+  if (/国家级|全国|全国赛|国赛|国际|国际赛|global|international|教育部|工信部|工业和信息化部/i.test(raw)) return '国家级';
+  if (/省赛|省级|省教育厅/.test(raw)) return '省级';
+  if (/校赛|校内|学校|校级/.test(raw)) return '校级';
+  if (/院赛|学院|院级/.test(raw)) return '院级';
+  if (raw === '其他') return '';
+  return raw;
+}
+
+function toInputDate(value?: string) {
+  if (!value) return '';
+  const matched = value.match(/^\d{4}-\d{2}-\d{2}/);
+  if (matched) return matched[0];
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 export function aiDraftToPublishForm(draft: AiCompetitionDraftVO) {
   return {
     title: draft.name || '',
-    level: (draft.level || '') as any,
-    category: (draft.category || '') as any,
+    level: normalizeDraftLevel(draft.level) as any,
+    category: normalizeDraftCategory(draft.category) as any,
     organizer: draft.organizer || '',
-    regStart: draft.startTime ? new Date(draft.startTime).toISOString().slice(0, 10) : '',
-    regEnd: draft.endTime ? new Date(draft.endTime).toISOString().slice(0, 10) : '',
-    compStart: draft.competitionStart ? new Date(draft.competitionStart).toISOString().slice(0, 10) : '',
-    compEnd: draft.competitionEnd ? new Date(draft.competitionEnd).toISOString().slice(0, 10) : '',
+    regStart: toInputDate(draft.startTime),
+    regEnd: toInputDate(draft.endTime),
+    compStart: toInputDate(draft.competitionStart),
+    compEnd: toInputDate(draft.competitionEnd),
     description: draft.content || '',
     tags: toStringList(draft.tags).join(', '),
     sourceUrl: draft.sourceUrl || '',
@@ -451,7 +491,7 @@ function DraftResultCard({
           )}
           {riskItems.slice(0, 3).map((item) => (
             <div key={`${item.label}-${item.value}`} className="rounded-sm border border-hairline bg-canvas-parchment px-3 py-2 text-[11px] leading-5 text-body-muted">
-              {item.value}
+              {warningLabel(item.value)}
             </div>
           ))}
           <button type="button" className="btn-primary mt-1 w-full justify-center" onClick={() => onParsed(draft)}>

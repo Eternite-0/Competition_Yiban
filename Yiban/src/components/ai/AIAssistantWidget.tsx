@@ -881,9 +881,18 @@ function toAssistantChatMessage(message: AiChatConversationMessage): AssistantCh
     content: message.content || '',
     status: 'done',
     createTime: message.createTime,
-    toolContext: message.toolContext,
+    toolContext: message.toolContext ?? parseToolContext(message.toolResultJson),
     artifacts: message.artifacts,
   };
+}
+
+function parseToolContext(raw?: string): unknown {
+  if (!raw) return undefined;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return undefined;
+  }
 }
 
 function readImageFile(file: File): Promise<ChatImageAttachment> {

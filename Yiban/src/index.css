@@ -245,6 +245,28 @@ h1, h2, h3, h4, h5, h6 {
     border-color: var(--color-primary);
     box-shadow: var(--shadow-focus);
   }
+  select:not([multiple]) {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 12px center;
+    background-repeat: no-repeat;
+    background-size: 16px 16px;
+  }
+  select.input-glass:not([multiple]) {
+    padding-right: 36px !important;
+  }
+  select.bg-transparent:not([multiple]) {
+    background-position: right 0 center;
+    padding-right: 22px;
+  }
+  select.input-glass option {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+  }
+  .dark select:not([multiple]) {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7890' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
   textarea.input-glass {
     min-height: 92px;
     border-radius: var(--radius-sm);
