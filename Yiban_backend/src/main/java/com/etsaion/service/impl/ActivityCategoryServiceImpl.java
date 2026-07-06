@@ -122,7 +122,7 @@ public class ActivityCategoryServiceImpl extends ServiceImpl<ActivityCategoryMap
 
     private String normalizeType(String type) {
         String t = StrUtil.blankToDefault(type, "competition").trim().toLowerCase(Locale.ROOT);
-        if ("competition".equals(t) || "volunteer".equals(t) || "other".equals(t)) {
+        if ("competition".equals(t) || "volunteer".equals(t) || "culture_sports".equals(t) || "other".equals(t)) {
             return t;
         }
         return "other";
@@ -162,6 +162,7 @@ public class ActivityCategoryServiceImpl extends ServiceImpl<ActivityCategoryMap
 
     private String defaultIcon(String type) {
         if ("volunteer".equals(type)) return "volunteer_activism";
+        if ("culture_sports".equals(type)) return "sports_soccer";
         if ("other".equals(type)) return "event_available";
         return "emoji_events";
     }

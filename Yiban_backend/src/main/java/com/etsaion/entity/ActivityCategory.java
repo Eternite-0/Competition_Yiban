@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 public class ActivityCategory {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String type; // competition, volunteer, other
+    private String type; // competition, volunteer, culture_sports, other
     private String code;
     private String name;
     private String icon;

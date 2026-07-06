@@ -176,6 +176,7 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
                 stats.put("resolved", 0L);
                 stats.put("competition", 0L);
                 stats.put("volunteer", 0L);
+                stats.put("culture_sports", 0L);
                 stats.put("overdue", 0L);
                 return stats;
             }
@@ -188,6 +189,7 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
         stats.put("resolved", this.count(buildStatsWrapper(ids, "resolved", null, null)));
         stats.put("competition", this.count(buildStatsWrapper(ids, null, "competition", null)));
         stats.put("volunteer", this.count(buildStatsWrapper(ids, null, "volunteer", null)));
+        stats.put("culture_sports", this.count(buildStatsWrapper(ids, null, "culture_sports", null)));
         stats.put("overdue", this.count(buildStatsWrapper(ids, "pending", null, true)));
         return stats;
     }
@@ -304,7 +306,7 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
             GrowthRecord record = new GrowthRecord();
             record.setStudentId(participation.getStudentId());
             record.setCompetitionId(participation.getActivityId());
-            record.setRecordType(activity != null && "volunteer".equalsIgnoreCase(activity.getType()) ? "volunteer" : "activity");
+            record.setRecordType(activity != null ? StrUtil.blankToDefault(activity.getType(), "activity") : "activity");
             record.setTitle(String.format("完成了“%s”活动报名审核", activityTitle));
             record.setHappenTime(LocalDateTime.now());
             growthRecordService.save(record);

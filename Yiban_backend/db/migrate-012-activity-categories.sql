@@ -4,7 +4,7 @@ SET CHARACTER SET utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `activity_category` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `type` varchar(30) NOT NULL DEFAULT 'competition' COMMENT 'competition/volunteer/other',
+  `type` varchar(30) NOT NULL DEFAULT 'competition' COMMENT 'competition/volunteer/culture_sports/other',
   `code` varchar(50) NOT NULL COMMENT '分类编码，activity/competition.category 存此值',
   `name` varchar(50) NOT NULL COMMENT '分类名称',
   `icon` varchar(50) DEFAULT 'category' COMMENT 'Material Symbols 图标名',
@@ -27,6 +27,9 @@ INSERT INTO `activity_category` (`type`, `code`, `name`, `icon`, `sort_order`, `
 ('volunteer', 'campus_service', '校园服务', 'volunteer_activism', 10, 'active'),
 ('volunteer', 'community', '社区公益', 'diversity_1', 20, 'active'),
 ('volunteer', 'event_support', '赛会保障', 'support_agent', 30, 'active'),
+('culture_sports', 'sports', '体育赛事', 'sports_soccer', 10, 'active'),
+('culture_sports', 'performance', '文艺展演', 'theater_comedy', 20, 'active'),
+('culture_sports', 'club', '社团活动', 'diversity_3', 30, 'active'),
 ('other', 'lecture', '讲座培训', 'co_present', 10, 'active'),
 ('other', 'practice', '实践项目', 'fact_check', 20, 'active')
 ON DUPLICATE KEY UPDATE

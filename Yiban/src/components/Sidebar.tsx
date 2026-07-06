@@ -23,7 +23,7 @@ const studentNav: NavEntry[] = [
   { icon: 'timeline', label: '我的进度', path: '/student/progress' },
   { icon: 'group_add', label: '招募大厅', path: '/student/teams' },
   { icon: 'assignment_ind', label: '我的参赛', path: '/student/registrations' },
-  { icon: 'trending_up', label: '能力雷达', path: '/student/growth' },
+  { icon: 'insights', label: '成长画像', path: '/student/growth' },
   { icon: 'workspace_premium', label: '光荣榜', path: '/student/works' },
   { icon: 'calendar_month', label: '赛事日历', path: '/student/calendar' },
   { icon: 'upload_file', label: '上传成果', path: '/student/achievements/upload' },
@@ -72,10 +72,11 @@ function isGroup(item: NavEntry): item is NavGroup {
 
 interface SidebarProps {
   mobileOpen: boolean;
+  desktopOpen: boolean;
   onClose: () => void;
 }
 
-export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
+export default function Sidebar({ mobileOpen, desktopOpen, onClose }: SidebarProps) {
   const user = useStore((s) => s.currentUser);
   const logout = useStore((s) => s.logout);
   const navigate = useNavigate();
@@ -90,12 +91,12 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 flex w-[200px] flex-col overflow-hidden border-r border-hairline bg-canvas transition-transform duration-300 ease-out md:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-50 flex w-[200px] flex-col overflow-hidden border-r border-hairline bg-canvas/80 backdrop-blur-xl transition-transform duration-300 ease-out ${
         mobileOpen ? 'translate-x-0' : '-translate-x-[calc(100%+16px)]'
-      }`}
+      } ${desktopOpen ? 'md:translate-x-0' : 'md:-translate-x-[calc(100%+16px)]'}`}
     >
       <div className="flex h-[58px] items-center gap-3 border-b border-hairline px-4">
-        <div className="grid h-8 w-8 place-items-center rounded-sm bg-primary text-on-primary">
+        <div className="grid h-8 w-8 place-items-center rounded-md bg-primary text-on-primary">
           <span className="material-symbols-outlined icon-fill text-[18px]">workspace_premium</span>
         </div>
         <div className="min-w-0 flex flex-col leading-tight">
@@ -132,8 +133,8 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                   onClick={onClose}
                   end={item.path.split('/').length <= 2}
                   className={({ isActive }) =>
-                    `group relative flex h-10 items-center gap-3 overflow-hidden rounded-sm border-l-2 px-3 text-[14px] font-normal transition-colors ${
-                      isActive ? 'border-primary bg-primary-soft text-primary' : 'border-transparent text-body-muted hover:bg-canvas-parchment hover:text-ink'
+                    `group relative flex h-10 items-center gap-3 overflow-hidden rounded-md px-3 text-[14px] font-medium transition-colors ${
+                      isActive ? 'text-primary' : 'text-body-muted hover:bg-canvas-parchment hover:text-ink'
                     }`
                   }
                 >
@@ -142,18 +143,11 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
                       {isActive ? (
                         <motion.span
                           layoutId="dock-active-item"
-                          className="absolute inset-0 rounded-sm bg-primary-soft"
+                          className="absolute inset-0 rounded-md bg-primary-soft"
                           transition={softSpring}
                         />
                       ) : (
-                        <span className="absolute inset-0 rounded-sm opacity-0 transition group-hover:bg-canvas-parchment group-hover:opacity-100" />
-                      )}
-                      {isActive && (
-                        <motion.span
-                          layoutId="dock-active-mark"
-                          className="absolute left-0 top-0 bottom-0 w-[2px] bg-primary"
-                          transition={softSpring}
-                        />
+                        <span className="absolute inset-0 rounded-md opacity-0 transition group-hover:bg-canvas-parchment group-hover:opacity-100" />
                       )}
                       <span
                         className={`material-symbols-outlined relative z-10 text-[19px] transition ${
@@ -175,7 +169,7 @@ export default function Sidebar({ mobileOpen, onClose }: SidebarProps) {
       </nav>
 
       <div className="border-t border-hairline p-2.5">
-        <div className="flex items-center gap-2.5 rounded-sm px-2 py-2 transition hover:bg-canvas-parchment">
+        <div className="flex items-center gap-2.5 rounded-md px-2 py-2 transition hover:bg-canvas-parchment">
           <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-[12px] font-medium text-on-primary">
             {user?.name?.[0] ?? 'U'}
           </div>

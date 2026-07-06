@@ -41,6 +41,7 @@ interface PublishFormState {
 const activityTypes: { value: ActivityType; label: string; icon: string; hint: string }[] = [
   { value: 'competition', label: '竞赛赛事', icon: 'emoji_events', hint: '保留参赛报名、组队、成果提交等完整赛事流程' },
   { value: 'volunteer', label: '志愿服务', icon: 'volunteer_activism', hint: '用于志愿活动报名、岗位选择和服务时长记录' },
+  { value: 'culture_sports', label: '文体活动', icon: 'sports_soccer', hint: '用于体育赛事、文艺展演、社团活动等校园成长记录' },
   { value: 'other', label: '其他活动', icon: 'event_available', hint: '用于讲座、培训、实践项目等通用活动' },
 ];
 
@@ -77,12 +78,14 @@ const defaultForm: PublishFormState = {
 const defaultTracks: Record<ActivityType, string[]> = {
   competition: ['软件开发', 'AI 大模型', '数字媒体', '硬件创新', '学术论文', '创业实践'],
   volunteer: ['秩序维护', '场馆引导', '资料整理', '宣传服务', '社区走访', '活动保障'],
+  culture_sports: ['体育竞赛', '文艺展演', '社团活动', '班级风采', '校园文化', '体质提升'],
   other: ['讲座', '培训', '实践', '调研', '展示', '交流'],
 };
 
 const typeText: Record<ActivityType, { noun: string; title: string; stage: string; track: string; trackHint: string }> = {
   competition: { noun: '赛事', title: '赛事名称', stage: '比赛时间', track: '参赛赛道', trackHint: '选择该赛事开放的赛道，学生报名时可从中选择。' },
   volunteer: { noun: '志愿活动', title: '活动名称', stage: '服务时间', track: '服务岗位', trackHint: '选择该志愿活动开放的岗位，学生报名时可从中选择。' },
+  culture_sports: { noun: '文体活动', title: '活动名称', stage: '活动时间', track: '活动项目', trackHint: '选择该文体活动开放的项目或场次，学生报名时可从中选择。' },
   other: { noun: '活动', title: '活动名称', stage: '活动时间', track: '活动方向', trackHint: '选择活动方向或场次，学生报名时可从中选择。' },
 };
 
@@ -175,6 +178,7 @@ export default function CompetitionPublish() {
   const [activeTab, setActiveTab] = useState<'manual' | 'ai-import'>('manual');
 
   const text = typeText[form.activityType];
+  const trackUnit = form.activityType === 'competition' ? '赛道' : form.activityType === 'volunteer' ? '岗位' : '项目';
   const categoryLabel = categories.find((c) => c.code === form.category)?.name || form.category;
 
   useEffect(() => {
@@ -482,7 +486,7 @@ export default function CompetitionPublish() {
       <PageHero
         eyebrow={isEdit ? 'Edit' : 'Publish'}
         title={isEdit ? `编辑${text.noun}` : '发布新活动'}
-        description={isEdit ? `修改${text.noun}信息，保存后立即生效。` : '发布竞赛、志愿服务或其他校内活动，并维护可复用的活动分类。'}
+        description={isEdit ? `修改${text.noun}信息，保存后立即生效。` : '发布竞赛、志愿服务、文体活动或其他校内活动，并维护可复用的活动分类。'}
       />
 
       {!isEdit && (
@@ -781,7 +785,7 @@ export default function CompetitionPublish() {
                     <span className="chip chip-primary">{activityTypes.find((o) => o.value === form.activityType)?.label}</span>
                     {form.category && <span className="chip">{categoryLabel}</span>}
                     {form.level && <span className={levelChipClass(form.level)}>{form.level}</span>}
-                    {form.tracks.length > 0 && <span className="chip">{form.tracks.length} 项{form.activityType === 'competition' ? '赛道' : '岗位'}</span>}
+                    {form.tracks.length > 0 && <span className="chip">{form.tracks.length} 项{trackUnit}</span>}
                   </div>
                   <div className="flex flex-col gap-2 mb-4 text-[12px]">
                     <PreviewLine icon="apartment" label="主办" value={form.organizer || '主办单位名称'} />

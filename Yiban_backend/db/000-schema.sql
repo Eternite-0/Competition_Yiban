@@ -98,7 +98,7 @@ CREATE TABLE `student_roster` (
 DROP TABLE IF EXISTS `activity_category`;
 CREATE TABLE `activity_category` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `type` varchar(30) NOT NULL DEFAULT 'competition' COMMENT 'competition/volunteer/other',
+  `type` varchar(30) NOT NULL DEFAULT 'competition' COMMENT 'competition/volunteer/culture_sports/other',
   `code` varchar(50) NOT NULL COMMENT '分类编码，活动表 category 存此值',
   `name` varchar(50) NOT NULL COMMENT '分类名称',
   `icon` varchar(50) DEFAULT 'category' COMMENT 'Material Symbols 图标名',
@@ -200,7 +200,7 @@ CREATE TABLE `submission_student` (
 DROP TABLE IF EXISTS `activity`;
 CREATE TABLE `activity` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `type` varchar(30) NOT NULL DEFAULT 'competition' COMMENT 'competition/volunteer',
+  `type` varchar(30) NOT NULL DEFAULT 'competition' COMMENT 'competition/volunteer/culture_sports/other',
   `title` varchar(200) NOT NULL,
   `level` varchar(20) DEFAULT NULL,
   `category` varchar(50) DEFAULT NULL,

@@ -20,6 +20,38 @@ type StudentGrowthVO = {
   awards: number;
 };
 
+type GrowthDimension = {
+  key: string;
+  label: string;
+  score: number;
+  maxScore?: number;
+  evidenceCount?: number;
+  summary?: string;
+};
+
+type GrowthProfileTimeline = {
+  id: string;
+  sourceType?: string;
+  title?: string;
+  subtitle?: string;
+  status?: string;
+  dimensionKey?: string;
+  activityType?: string;
+  happenTime?: string;
+};
+
+type GrowthProfileVO = {
+  studentId: number | string;
+  dimensions?: GrowthDimension[];
+  totalCompetitions?: number;
+  totalAwards?: number;
+  totalActivities?: number;
+  totalVolunteerHours?: number | string;
+  totalCultureSports?: number;
+  timeline?: GrowthProfileTimeline[];
+  suggestions?: string[];
+};
+
 type Registration = {
   id: number | string;
   competitionId: number | string;
@@ -65,7 +97,7 @@ type TimelineRecord = {
 
 type TimelineItem = {
   id: string;
-  type: 'honor' | 'registration' | 'submission' | 'growth';
+  type: 'honor' | 'registration' | 'submission' | 'growth' | 'activity';
   title: string;
   subtitle: string;
   date?: string;
@@ -82,11 +114,24 @@ const DIMENSION_LABELS: Array<{ key: keyof RadarData; label: string; hint: strin
   { key: 'teamwork', label: '团队协作', hint: '组队参赛和团队成果会提升该维度' },
 ];
 
+const PROFILE_DIMENSION_HINTS: Record<string, string> = {
+  competition_practice: '通过审核的赛事报名、成果材料和获奖记录会沉淀到这里',
+  innovation: '通过审核的成果、荣誉和创新类赛事会提升该维度',
+  volunteer: '志愿服务报名审核通过后，会按服务记录和时长沉淀',
+  culture_sports: '文体活动、体育赛事、文艺展演等审核通过后沉淀',
+  teamwork: '团队参赛、团队活动和协作记录会提升该维度',
+};
+
 function formatDate(value?: string) {
   if (!value) return '—';
   const d = new Date(value);
   if (isNaN(d.getTime())) return value;
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function formatNumber(value?: number | string) {
+  const n = Number(value ?? 0);
+  return Number.isFinite(n) ? n : 0;
 }
 
 function dateValue(value?: string) {
@@ -191,6 +236,7 @@ function RadarChart({ data }: { data: { dimension: string; score: number; maxSco
 
 export default function StudentGrowth() {
   const { currentUser } = useStore();
+  const [profile, setProfile] = useState<GrowthProfileVO | null>(null);
   const [growth, setGrowth] = useState<StudentGrowthVO | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -206,13 +252,15 @@ export default function StudentGrowth() {
         setLoading(true);
         setError(null);
         const params = currentUser?.id ? { studentId: currentUser.id } : {};
-        const [radarData, timelineData, submissionData, registrationData, awardData] = await Promise.all([
-          apiClient.get('/growth/radar', { params }),
+        const [profileData, radarData, timelineData, submissionData, registrationData, awardData] = await Promise.all([
+          apiClient.get('/growth/profile', { params }).catch(() => null),
+          apiClient.get('/growth/radar', { params }).catch(() => null),
           apiClient.get('/growth/timeline', { params: { ...params, current: 1, size: 20 } }).catch(() => null),
           apiClient.get('/submission/my').catch(() => []),
           apiClient.get('/registration/my').catch(() => []),
           apiClient.get('/award-proof/my', { params: { current: 1, size: 20 } }).catch(() => null),
         ]);
+        setProfile((profileData as unknown as GrowthProfileVO) || null);
         setGrowth((radarData as unknown as StudentGrowthVO) || null);
         setTimeline(unwrapRecords<TimelineRecord>(timelineData));
         setSubmissions(unwrapRecords<Submission>(submissionData));
@@ -230,9 +278,16 @@ export default function StudentGrowth() {
 
   if (loading) return <div className="flex w-full min-w-0 flex-col items-center py-section text-center text-ink-muted-48"><span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span><p className="empty-state-copy mt-2 text-[14px]">加载中…</p></div>;
   if (error) return <div className="flex w-full min-w-0 flex-col items-center py-section text-center text-error"><span className="material-symbols-outlined text-[32px]">error_outline</span><p className="empty-state-copy mt-2 text-[14px]">{error}</p></div>;
-  if (!growth) return <div className="flex w-full min-w-0 flex-col items-center py-section text-center text-ink-muted-48"><span className="material-symbols-outlined text-[40px]">insights</span><p className="empty-state-copy mt-3 text-[15px]">暂无成长数据</p></div>;
+  if (!growth && !profile) return <div className="flex w-full min-w-0 flex-col items-center py-section text-center text-ink-muted-48"><span className="material-symbols-outlined text-[40px]">insights</span><p className="empty-state-copy mt-3 text-[15px]">暂无成长数据</p></div>;
 
-  const radarData = DIMENSION_LABELS.map((d) => ({ dimension: d.label, score: growth.radarData?.[d.key] ?? 0, maxScore: 100, hint: d.hint }));
+  const radarData = profile?.dimensions?.length
+    ? profile.dimensions.map((d) => ({
+        dimension: d.label,
+        score: Number(d.score ?? 0),
+        maxScore: Number(d.maxScore ?? 100),
+        hint: d.summary || PROFILE_DIMENSION_HINTS[d.key] || '通过审核的校园活动会沉淀到该维度',
+      }))
+    : DIMENSION_LABELS.map((d) => ({ dimension: d.label, score: growth?.radarData?.[d.key] ?? 0, maxScore: 100, hint: d.hint }));
   const averageScore = Math.round(radarData.reduce((acc, d) => acc + d.score, 0) / Math.max(1, radarData.length));
   const highest = radarData.reduce((best, item) => item.score > best.score ? item : best, radarData[0]);
   const approvedSubmissions = submissions.filter((s) => s.status === '已审核' && s.approved === true);
@@ -243,14 +298,25 @@ export default function StudentGrowth() {
     acc[level] = (acc[level] || 0) + 1;
     return acc;
   }, {});
-  const suggestions = radarData
-    .filter((d) => d.score < 75)
-    .sort((a, b) => a.score - b.score)
-    .slice(0, 2)
-    .map((d) => `${d.dimension}当前 ${d.score} 分，${d.hint}。`);
+  const suggestions = profile?.suggestions?.length
+    ? [...profile.suggestions]
+    : radarData
+        .filter((d) => d.score < 75)
+        .sort((a, b) => a.score - b.score)
+        .slice(0, 2)
+        .map((d) => `${d.dimension}当前 ${d.score} 分，${d.hint}。`);
   if (suggestions.length === 0) suggestions.push('各维度表现均衡，建议继续参与不同级别赛事并沉淀可认证荣誉材料。');
 
   const timelineItems: TimelineItem[] = [
+    ...(profile?.timeline || []).map((record) => ({
+      id: `profile-${record.id}`,
+      type: record.sourceType === 'participation' ? 'activity' as const : 'growth' as const,
+      title: record.title || '成长画像记录',
+      subtitle: record.subtitle || record.sourceType || '校园成长',
+      date: record.happenTime,
+      status: record.status || '已沉淀',
+      icon: record.sourceType === 'participation' ? 'event_available' : 'insights',
+    })),
     ...approvedAwards.map((award) => ({
       id: `award-${award.id}`,
       type: 'honor' as const,
@@ -292,15 +358,15 @@ export default function StudentGrowth() {
   const visibleTimeline = showAllTimeline ? timelineItems : timelineItems.slice(0, 4);
 
   const metrics = [
-    { label: '累计参赛', value: registrations.length || growth.totalCompetitions || 0, suffix: '次', icon: 'format_list_numbered' },
-    { label: '认证荣誉', value: approvedAwards.length, suffix: '项', icon: 'military_tech' },
-    { label: '能力均值', value: averageScore, suffix: '分', icon: 'analytics' },
-    { label: '团队参与', value: teamParticipationCount, suffix: '次', icon: 'groups' },
+    { label: '竞赛实践', value: profile?.totalCompetitions ?? registrations.length ?? growth?.totalCompetitions ?? 0, suffix: '次', icon: 'emoji_events' },
+    { label: '志愿公益', value: formatNumber(profile?.totalVolunteerHours), suffix: '小时', icon: 'volunteer_activism' },
+    { label: '文体活动', value: profile?.totalCultureSports ?? 0, suffix: '次', icon: 'sports_soccer' },
+    { label: '认证荣誉', value: approvedAwards.length || profile?.totalAwards || 0, suffix: '项', icon: 'military_tech' },
   ];
 
   return (
     <motion.div variants={pageVariants} initial="hidden" animate="visible" className="flex flex-col gap-6">
-      <PageHero eyebrow="Growth" title="我的成长档案" description="查看参赛级别、认证荣誉与能力雷达。" contentClassName="max-w-2xl" />
+      <PageHero eyebrow="Growth" title="我的成长画像" description="查看竞赛、志愿、文体活动与认证荣誉沉淀。" contentClassName="max-w-2xl" />
 
       <section className="glass p-xl flex items-start gap-lg flex-wrap">
         <div className="w-20 h-20 rounded-full bg-canvas-parchment grid place-items-center shrink-0 border border-hairline">
@@ -311,6 +377,8 @@ export default function StudentGrowth() {
             <h2 className="font-display text-[22px] font-medium leading-[1.4] text-ink">{currentUser?.name || '同学'}</h2>
             <span className="chip chip-primary">优势维度：{highest.dimension}</span>
             {approvedAwards.length > 0 && <span className="chip chip-success">认证荣誉 {approvedAwards.length} 项</span>}
+            {(profile?.totalActivities ?? 0) > 0 && <span className="chip chip-success">校园活动 {profile?.totalActivities} 次</span>}
+            {teamParticipationCount > 0 && <span className="chip">团队参与 {teamParticipationCount} 次</span>}
           </div>
           <p className="mt-2 text-[14px] text-ink-muted-80">{currentUser?.department || '学院信息暂未同步'}</p>
           <div className="mt-3 flex flex-wrap gap-2 text-[12px]">
@@ -342,7 +410,7 @@ export default function StudentGrowth() {
 
       <section className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-6">
         <div className="flex flex-col gap-6">
-          <Panel title="能力雷达" icon="radar" aside={`均值 ${averageScore}`}>
+          <Panel title="校园成长五维" icon="insights" aside={`均值 ${averageScore}`}>
             <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-5 items-center">
               <div className="h-[260px] max-w-[280px] mx-auto w-full">
                 <RadarChart data={radarData} />
@@ -395,7 +463,7 @@ export default function StudentGrowth() {
             ) : <EmptyState text="暂无成长时间线。报名、提交成果或认证荣誉后会自动生成。" />}
           </Panel>
 
-          <Panel title="成长建议" icon="tips_and_updates">
+          <Panel title="下一步建议" icon="tips_and_updates">
             <ul className="flex flex-col gap-2 text-[13px] text-ink-muted-80 leading-relaxed">
               {suggestions.map((item) => <li key={item} className="flex gap-2"><span className="material-symbols-outlined text-[16px] text-primary mt-0.5">trending_up</span><span>{item}</span></li>)}
             </ul>

@@ -52,7 +52,8 @@ function formatRank(score: ComprehensiveScore | null) {
 function formatPercent(value?: number | string) {
   const n = Number(value);
   if (!Number.isFinite(n)) return '暂无数据';
-  return `${(n * 100).toFixed(1)}%`;
+  const percent = n > 1 ? n : n * 100;
+  return `前 ${percent.toFixed(1)}%`;
 }
 
 export default function StudentHome() {
@@ -312,7 +313,7 @@ export default function StudentHome() {
         </div>
         <div className="justify-self-start md:justify-self-end">
           <span className="chip chip-primary">
-            {comprehensiveMode === 'rank' ? '点击查看百分比' : '点击查看排名'}
+            {comprehensiveMode === 'rank' ? '点击查看前百分位' : '点击查看排名'}
           </span>
         </div>
       </motion.button>

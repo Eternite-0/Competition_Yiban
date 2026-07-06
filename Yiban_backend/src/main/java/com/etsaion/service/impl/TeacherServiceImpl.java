@@ -11,6 +11,8 @@ import com.etsaion.entity.User;
 import com.etsaion.entity.Competition;
 import com.etsaion.entity.GrowthRecord;
 import com.etsaion.entity.ComprehensiveScore;
+import com.etsaion.entity.Activity;
+import com.etsaion.entity.Participation;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.service.*;
 import com.etsaion.utils.UserContext;
@@ -20,6 +22,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -44,6 +47,12 @@ public class TeacherServiceImpl implements TeacherService {
 
     @Autowired
     private ComprehensiveScoreService comprehensiveScoreService;
+
+    @Autowired
+    private ParticipationService participationService;
+
+    @Autowired
+    private ActivityService activityService;
 
     // ---- helpers ----
 
@@ -735,6 +744,155 @@ public class TeacherServiceImpl implements TeacherService {
             throw new BusinessException(403, "无权查看该学生");
         }
         return comprehensiveScoreService.getLatestByStudentNo(student.getUsername());
+    }
+
+    @Override
+    public TeacherGrowthOverviewVO getGrowthOverview(String college, String grade, String major, String className) {
+        List<User> students = userService.list(studentQuery(college, grade, major, className));
+        TeacherGrowthOverviewVO overview = new TeacherGrowthOverviewVO();
+        overview.setTotalStudents(students.size());
+        overview.setActivityTypeDistribution(new LinkedHashMap<>());
+        overview.setTotalVolunteerHours(BigDecimal.ZERO);
+        overview.setAverageDimensions(defaultAverageDimensions(Map.of()));
+        overview.setLowParticipationCount(0);
+        overview.setLowParticipationStudents(new ArrayList<>());
+
+        if (CollUtil.isEmpty(students)) {
+            return overview;
+        }
+
+        Set<Long> studentIdSet = students.stream().map(User::getId).collect(Collectors.toSet());
+        Map<Long, Integer> evidenceByStudent = students.stream()
+                .collect(Collectors.toMap(User::getId, u -> 0, (a, b) -> a, LinkedHashMap::new));
+        Map<String, Integer> dimensionTotals = new LinkedHashMap<>();
+        dimensionTotals.put("competition_practice", 0);
+        dimensionTotals.put("innovation", 0);
+        dimensionTotals.put("volunteer", 0);
+        dimensionTotals.put("culture_sports", 0);
+        dimensionTotals.put("teamwork", 0);
+
+        List<Long> studentIds = new ArrayList<>(studentIdSet);
+        List<Registration> registrations = registrationService.list(new LambdaQueryWrapper<Registration>()
+                .in(Registration::getStudentId, studentIds));
+        List<Registration> approvedRegistrations = registrations.stream()
+                .filter(r -> "审核通过".equals(r.getStatus()))
+                .collect(Collectors.toList());
+        approvedRegistrations.forEach(reg -> {
+            evidenceByStudent.computeIfPresent(reg.getStudentId(), (id, count) -> count + 1);
+            addDimensionTotal(dimensionTotals, "competition_practice", 14);
+            if (StrUtil.isNotBlank(reg.getTeamName()) || StrUtil.isNotBlank(reg.getMemberStudentIds())) {
+                addDimensionTotal(dimensionTotals, "teamwork", 10);
+            }
+        });
+
+        List<Long> approvedRegIds = approvedRegistrations.stream()
+                .map(Registration::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        if (CollUtil.isNotEmpty(approvedRegIds)) {
+            List<Submission> approvedSubmissions = submissionService.list(new LambdaQueryWrapper<Submission>()
+                    .in(Submission::getRegistrationId, approvedRegIds)
+                    .eq(Submission::getStatus, "已审核")
+                    .eq(Submission::getApproved, true));
+            Map<Long, Long> regToStudent = approvedRegistrations.stream()
+                    .collect(Collectors.toMap(Registration::getId, Registration::getStudentId, (a, b) -> a));
+            approvedSubmissions.stream()
+                    .filter(s -> Boolean.TRUE.equals(s.getApproved()))
+                    .forEach(submission -> {
+                        Long sid = regToStudent.get(submission.getRegistrationId());
+                        if (sid != null) {
+                            evidenceByStudent.computeIfPresent(sid, (id, count) -> count + 1);
+                        }
+                        addDimensionTotal(dimensionTotals, "competition_practice", 8);
+                        addDimensionTotal(dimensionTotals, "innovation", 12);
+                    });
+        }
+
+        List<Participation> participations = participationService.list(new LambdaQueryWrapper<Participation>()
+                .in(Participation::getStudentId, studentIds));
+        List<Participation> approvedParticipations = participations.stream()
+                .filter(p -> "approved".equalsIgnoreCase(p.getStatus()))
+                .collect(Collectors.toList());
+        Map<Long, Activity> activityMap = loadActivityMap(approvedParticipations);
+        Map<String, Long> activityTypeDistribution = new LinkedHashMap<>();
+        BigDecimal volunteerHours = BigDecimal.ZERO;
+
+        for (Participation participation : approvedParticipations) {
+            if (!studentIdSet.contains(participation.getStudentId())) continue;
+            Activity activity = activityMap.get(participation.getActivityId());
+            String type = activity != null && StrUtil.isNotBlank(activity.getType()) ? activity.getType() : "other";
+            activityTypeDistribution.put(type, activityTypeDistribution.getOrDefault(type, 0L) + 1L);
+            evidenceByStudent.computeIfPresent(participation.getStudentId(), (id, count) -> count + 1);
+            if ("volunteer".equalsIgnoreCase(type)) {
+                BigDecimal hours = activity != null && activity.getServiceHours() != null ? activity.getServiceHours() : BigDecimal.ZERO;
+                volunteerHours = volunteerHours.add(hours);
+                addDimensionTotal(dimensionTotals, "volunteer", 20 + Math.min(20, hours.multiply(BigDecimal.valueOf(4)).intValue()));
+            } else if ("culture_sports".equalsIgnoreCase(type)) {
+                addDimensionTotal(dimensionTotals, "culture_sports", 26);
+            } else {
+                addDimensionTotal(dimensionTotals, "competition_practice", 8);
+            }
+            if (StrUtil.isNotBlank(participation.getTeamName()) || StrUtil.isNotBlank(participation.getMemberStudentIds())) {
+                addDimensionTotal(dimensionTotals, "teamwork", 8);
+            }
+        }
+
+        overview.setActivityTypeDistribution(activityTypeDistribution);
+        overview.setTotalVolunteerHours(volunteerHours);
+        overview.setAverageDimensions(defaultAverageDimensions(dimensionTotals, students.size()));
+        List<TeacherGrowthOverviewVO.LowParticipationStudentVO> lowParticipationStudents = students.stream()
+                .filter(student -> evidenceByStudent.getOrDefault(student.getId(), 0) == 0)
+                .map(student -> new TeacherGrowthOverviewVO.LowParticipationStudentVO(
+                        student.getId(),
+                        student.getUsername(),
+                        student.getRealName(),
+                        displayMajor(student.getMajor()),
+                        student.getClassName(),
+                        evidenceByStudent.getOrDefault(student.getId(), 0)
+                ))
+                .collect(Collectors.toList());
+        overview.setLowParticipationCount(lowParticipationStudents.size());
+        overview.setLowParticipationStudents(lowParticipationStudents.stream()
+                .limit(8)
+                .collect(Collectors.toList()));
+        return overview;
+    }
+
+    private Map<Long, Activity> loadActivityMap(List<Participation> participations) {
+        List<Long> activityIds = participations.stream()
+                .map(Participation::getActivityId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+        if (CollUtil.isEmpty(activityIds) || activityService == null) {
+            return Collections.emptyMap();
+        }
+        return activityService.listByIds(activityIds).stream()
+                .collect(Collectors.toMap(Activity::getId, a -> a, (a, b) -> a));
+    }
+
+    private void addDimensionTotal(Map<String, Integer> totals, String key, int delta) {
+        totals.put(key, Math.min(100, totals.getOrDefault(key, 0) + delta));
+    }
+
+    private List<GrowthDimensionVO> defaultAverageDimensions(Map<String, Integer> totals) {
+        return defaultAverageDimensions(totals, 1);
+    }
+
+    private List<GrowthDimensionVO> defaultAverageDimensions(Map<String, Integer> totals, int totalStudents) {
+        int divisor = Math.max(totalStudents, 1);
+        return List.of(
+                averageDimension("competition_practice", "竞赛实践", totals, divisor),
+                averageDimension("innovation", "创新能力", totals, divisor),
+                averageDimension("volunteer", "志愿公益", totals, divisor),
+                averageDimension("culture_sports", "文体素养", totals, divisor),
+                averageDimension("teamwork", "团队协作", totals, divisor)
+        );
+    }
+
+    private GrowthDimensionVO averageDimension(String key, String label, Map<String, Integer> totals, int divisor) {
+        int score = Math.min(100, Math.round((float) totals.getOrDefault(key, 0) / divisor));
+        return new GrowthDimensionVO(key, label, score, 100, 0, "学院范围平均画像");
     }
 
     // ---- trend ----

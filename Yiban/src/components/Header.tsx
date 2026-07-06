@@ -59,6 +59,8 @@ function resolveTitle(path: string): string {
 interface HeaderProps {
   mobileNavOpen: boolean;
   onToggleMobileNav: () => void;
+  desktopSidebarOpen: boolean;
+  onToggleDesktopSidebar: () => void;
 }
 
 interface SearchResult {
@@ -69,7 +71,7 @@ interface SearchResult {
   status?: string;
 }
 
-export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps) {
+export default function Header({ mobileNavOpen, onToggleMobileNav, desktopSidebarOpen, onToggleDesktopSidebar }: HeaderProps) {
   const user = useStore((s) => s.currentUser);
   const theme = useStore((s) => s.theme);
   const setTheme = useStore((s) => s.setTheme);
@@ -282,7 +284,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
   }
 
   return (
-    <header className="app-header fixed left-0 right-0 top-0 z-30 flex h-[52px] items-center justify-between border-b border-hairline bg-canvas-parchment px-lg sm:px-page md:left-[200px]">
+    <header className={`app-header fixed left-0 right-0 top-0 z-30 flex h-[52px] items-center justify-between border-b border-hairline bg-canvas/80 backdrop-blur-xl px-lg sm:px-page ${desktopSidebarOpen ? 'md:left-[200px]' : 'md:left-0'}`}>
       <div className="flex items-center gap-3 min-w-0">
         <button
           type="button"
@@ -294,12 +296,23 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
             {mobileNavOpen ? 'close' : 'menu'}
           </span>
         </button>
+        <button
+          type="button"
+          onClick={onToggleDesktopSidebar}
+          className="icon-button hidden md:flex"
+          aria-label={desktopSidebarOpen ? '收起侧边栏' : '展开侧边栏'}
+          title={desktopSidebarOpen ? '收起侧边栏' : '展开侧边栏'}
+        >
+          <span className="material-symbols-outlined text-[20px]">
+            menu
+          </span>
+        </button>
         <span className="sr-only">{title}</span>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
         <div ref={searchRef} className="relative hidden md:block">
-          <div className="flex h-9 w-[180px] lg:w-[244px] items-center rounded-sm border border-hairline bg-canvas transition-all focus-within:border-primary focus-within:shadow-focus" aria-expanded={searchOpen}>
+          <div className="flex h-9 w-[180px] lg:w-[244px] items-center rounded-md border border-hairline bg-canvas-parchment/60 transition-all focus-within:border-primary focus-within:shadow-focus focus-within:bg-canvas" aria-expanded={searchOpen}>
             <span className="material-symbols-outlined text-[17px] text-placeholder ml-3">search</span>
             <input
               ref={searchInputRef}
@@ -327,7 +340,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
                 animate="visible"
                 exit="exit"
                 transition={panelTransition}
-                className="absolute left-0 top-[42px] z-50 w-[340px] overflow-hidden rounded-md border border-hairline bg-canvas shadow-float"
+                className="absolute left-0 top-[42px] z-50 w-[340px] overflow-hidden rounded-lg border border-hairline bg-canvas shadow-float"
               >
                 <div className="border-b border-hairline/80 px-3 py-2">
                   <span className="text-[12px] text-placeholder">搜索结果</span>
@@ -392,7 +405,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav }: HeaderProps
                 animate="visible"
                 exit="exit"
                 transition={panelTransition}
-                className="absolute right-0 top-[46px] max-h-[420px] w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-md border border-hairline bg-canvas shadow-float"
+                className="absolute right-0 top-[46px] max-h-[420px] w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-hairline bg-canvas shadow-float"
               >
                 <div className="flex items-center justify-between border-b border-hairline/80 px-4 py-3">
                   <span className="text-[14px] font-medium text-ink">消息通知</span>

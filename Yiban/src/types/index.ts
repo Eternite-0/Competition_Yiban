@@ -1,5 +1,5 @@
 export type UserRole = 'student' | 'teacher' | 'admin';
-export type ActivityType = 'competition' | 'volunteer' | 'other';
+export type ActivityType = 'competition' | 'volunteer' | 'culture_sports' | 'other';
 export type ActivityStatus = 'draft' | 'published' | 'closed' | 'archived';
 export type ParticipationStatus = 'submitted' | 'in_review' | 'approved' | 'rejected' | 'returned' | 'cancelled';
 export type ReviewTaskStatus = 'pending' | 'processing' | 'resolved';

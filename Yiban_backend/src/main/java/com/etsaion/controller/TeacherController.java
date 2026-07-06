@@ -7,6 +7,7 @@ import com.etsaion.service.TeacherService;
 import com.etsaion.utils.ExcelUtil;
 import com.etsaion.vo.RegistrationVO;
 import com.etsaion.vo.StudentComprehensiveVO;
+import com.etsaion.vo.TeacherGrowthOverviewVO;
 import com.etsaion.vo.UserVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -160,6 +161,16 @@ public class TeacherController {
             @RequestParam(required = false) String grade,
             @RequestParam(required = false) String major) {
         return Result.success(teacherService.getTrend(college, grade, major));
+    }
+
+    @Operation(summary = "学院/班级校园成长画像总览")
+    @GetMapping("/growth-overview")
+    public Result<TeacherGrowthOverviewVO> growthOverview(
+            @RequestParam(required = false) String college,
+            @RequestParam(required = false) String grade,
+            @RequestParam(required = false) String major,
+            @RequestParam(required = false) String className) {
+        return Result.success(teacherService.getGrowthOverview(college, grade, major, className));
     }
 
     // ---- student export ----

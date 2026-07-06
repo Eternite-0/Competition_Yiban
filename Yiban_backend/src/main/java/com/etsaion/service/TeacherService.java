@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etsaion.vo.RegistrationVO;
 import com.etsaion.vo.ComprehensiveScoreVO;
 import com.etsaion.vo.StudentComprehensiveVO;
+import com.etsaion.vo.TeacherGrowthOverviewVO;
 import com.etsaion.vo.UserVO;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,9 @@ public interface TeacherService {
 
     // Trend data
     Map<String, Object> getTrend(String college, String grade, String major);
+
+    // Growth overview
+    TeacherGrowthOverviewVO getGrowthOverview(String college, String grade, String major, String className);
 
     // Student detail export
     Map<String, Object> getStudentExportData(Long studentId);

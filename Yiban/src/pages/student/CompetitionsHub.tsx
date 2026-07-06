@@ -45,6 +45,7 @@ const LEVELS: { label: string; value: string }[] = [
 const ACTIVITY_TYPES: { label: string; value: ActivityType; icon: string }[] = [
   { label: '竞赛赛事', value: 'competition', icon: 'emoji_events' },
   { label: '志愿服务', value: 'volunteer', icon: 'volunteer_activism' },
+  { label: '文体活动', value: 'culture_sports', icon: 'sports_soccer' },
   { label: '其他活动', value: 'other', icon: 'event_available' },
 ];
 
@@ -58,12 +59,14 @@ const STATUSES: { label: string; value: string }[] = [
 const typeLabel: Record<ActivityType, string> = {
   competition: '竞赛',
   volunteer: '志愿',
+  culture_sports: '文体',
   other: '活动',
 };
 
 const typeFallbackIcon: Record<ActivityType, string> = {
   competition: 'emoji_events',
   volunteer: 'volunteer_activism',
+  culture_sports: 'sports_soccer',
   other: 'event_available',
 };
 
@@ -295,7 +298,7 @@ export default function CompetitionsHub() {
       <PageHero
         eyebrow="活动大厅"
         title="活动大厅"
-        description="集中浏览赛事、志愿服务与其他活动，按分类、级别和状态快速收拢结果。"
+        description="集中浏览赛事、志愿服务、文体活动与其他活动，按分类、级别和状态快速收拢结果。"
         contentClassName="max-w-3xl"
         actions={(
           <div className="grid min-w-[220px] grid-cols-2 gap-2">

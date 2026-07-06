@@ -12,11 +12,27 @@ import { pageTransition, pageVariants } from '../lib/motion';
 export default function Layout() {
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(() => {
+    try {
+      const stored = localStorage.getItem('sidebarOpen');
+      return stored === null ? true : stored === 'true';
+    } catch {
+      return true;
+    }
+  });
   const [aiWorkspace, setAiWorkspace] = useState<{ open: boolean; mode: AssistantPanelMode }>({
     open: false,
     mode: 'floating',
   });
   const aiExpanded = aiWorkspace.open && aiWorkspace.mode === 'sidebar';
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sidebarOpen', String(desktopSidebarOpen));
+    } catch {
+      /* ignore */
+    }
+  }, [desktopSidebarOpen]);
 
   const handleAiWorkspaceChange = useCallback((next: { open: boolean; mode: AssistantPanelMode }) => {
     setAiWorkspace((prev) => (
@@ -31,7 +47,11 @@ export default function Layout() {
 
   return (
     <div className={`relative min-h-screen app-workspace text-ink antialiased selection:bg-primary/10 selection:text-primary ${aiExpanded ? 'ai-workspace-expanded' : ''}`}>
-      <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+      <Sidebar
+        mobileOpen={mobileNavOpen}
+        desktopOpen={desktopSidebarOpen}
+        onClose={() => setMobileNavOpen(false)}
+      />
 
       <AnimatePresence>
         {mobileNavOpen && (
@@ -39,22 +59,24 @@ export default function Layout() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.25 }}
             onClick={() => setMobileNavOpen(false)}
-            className="fixed inset-0 z-40 bg-ink/10 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-40 bg-ink/20 backdrop-blur-md md:hidden"
             aria-label="关闭侧边导航"
           />
         )}
       </AnimatePresence>
 
-      <div className="app-content-shell relative flex min-h-screen flex-col md:ml-[200px]">
+      <div className={`app-content-shell relative flex min-h-screen flex-col ${desktopSidebarOpen ? 'md:ml-[200px]' : 'md:ml-0'}`}>
         <Header
           mobileNavOpen={mobileNavOpen}
           onToggleMobileNav={() => setMobileNavOpen((prev) => !prev)}
+          desktopSidebarOpen={desktopSidebarOpen}
+          onToggleDesktopSidebar={() => setDesktopSidebarOpen((prev) => !prev)}
         />
         <main className="flex-1 pt-[52px]">
           <div className="app-main-frame">
-            <div className="mx-auto w-full max-w-[1100px] px-4 sm:px-6 pt-6 sm:pt-8 pb-6 sm:pb-8">
+            <div className="mx-auto w-full max-w-[1100px] px-5 sm:px-8 pt-8 sm:pt-10 pb-8 sm:pb-10">
             <Breadcrumb />
             <AnimatePresence mode="wait">
               <motion.div

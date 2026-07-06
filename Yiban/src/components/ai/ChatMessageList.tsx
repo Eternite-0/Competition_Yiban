@@ -299,7 +299,8 @@ function formatRank(score: ComprehensiveScoreSummary) {
 function formatPercent(value?: number | string) {
   const n = Number(value);
   if (!Number.isFinite(n)) return '暂无数据';
-  return `${(n * 100).toFixed(1)}%`;
+  const percent = n > 1 ? n : n * 100;
+  return `前 ${percent.toFixed(1)}%`;
 }
 
 function DetailTableCards({ tables, onOpen }: { tables: DetailTable[]; onOpen: (table: DetailTable) => void }) {

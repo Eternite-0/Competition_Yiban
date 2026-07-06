@@ -83,7 +83,8 @@ function formatOfficialRank(score?: ComprehensiveScore | null) {
 function formatOfficialPercent(value?: number | string) {
   const n = Number(value);
   if (!Number.isFinite(n)) return '暂无';
-  return `${(n * 100).toFixed(1)}%`;
+  const percent = n > 1 ? n : n * 100;
+  return `前 ${percent.toFixed(1)}%`;
 }
 
 function RadarChart({ data }: { data: RadarDim[] }) {
@@ -214,7 +215,7 @@ export default function StudentDetail() {
           suffix: '',
           icon: 'leaderboard',
           toggle: true,
-          hint: `${data.comprehensive?.rankScope || data.student.major || '本专业'} · ${rankMode === 'rank' ? '点击看百分比' : '点击看排名'}`,
+          hint: `${data.comprehensive?.rankScope || data.student.major || '本专业'} · ${rankMode === 'rank' ? '点击看前百分位' : '点击看排名'}`,
         },
       ]
     : [];

@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class Activity {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String type; // competition, volunteer
+    private String type; // competition, volunteer, culture_sports, other
     private String title;
     private String level;
     private String category;

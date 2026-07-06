@@ -67,6 +67,9 @@ interface StudentGrowthData {
   studentId?: number | string;
   totalCompetitions?: number;
   awards?: number;
+  totalActivities?: number;
+  totalVolunteerHours?: number | string;
+  totalCultureSports?: number;
   radar: RadarDim[];
 }
 
@@ -89,6 +92,40 @@ interface ComprehensiveScore {
   comprehensiveRankPercent?: number | string;
   rankTotal?: number;
   rankScope?: string;
+}
+
+interface GrowthDimension {
+  key?: string;
+  label?: string;
+  dimension?: string;
+  score?: number;
+  maxScore?: number;
+}
+
+interface GrowthProfileVO {
+  studentId?: number | string;
+  dimensions?: GrowthDimension[];
+  totalCompetitions?: number;
+  totalAwards?: number;
+  totalActivities?: number;
+  totalVolunteerHours?: number | string;
+  totalCultureSports?: number;
+}
+
+interface TeacherGrowthOverview {
+  totalStudents?: number;
+  averageDimensions?: GrowthDimension[];
+  activityTypeDistribution?: Record<string, number>;
+  totalVolunteerHours?: number | string;
+  lowParticipationCount?: number;
+  lowParticipationStudents?: Array<{
+    studentId?: number | string;
+    studentNo?: string;
+    studentName?: string;
+    major?: string;
+    className?: string;
+    evidenceCount?: number;
+  }>;
 }
 
 const RADAR_FIELDS: Array<{ key: string; label: string }> = [
@@ -169,6 +206,21 @@ function mapRadar(raw: any): RadarDim[] {
   }));
 }
 
+function mapProfileRadar(raw: GrowthProfileVO | null): RadarDim[] {
+  if (!Array.isArray(raw?.dimensions)) return [];
+  return raw.dimensions.map((d) => ({
+    dimension: d.label ?? d.dimension ?? '',
+    score: Number(d.score ?? 0),
+    maxScore: Number(d.maxScore ?? 100),
+  }));
+}
+
+function formatHours(value?: number | string) {
+  const n = Number(value ?? 0);
+  if (!Number.isFinite(n)) return '0';
+  return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, '');
+}
+
 function formatOfficialRank(score?: ComprehensiveScore | null) {
   if (!score?.comprehensiveRank) return '暂无数据';
   return score.rankTotal ? `第 ${score.comprehensiveRank} / ${score.rankTotal} 名` : `第 ${score.comprehensiveRank} 名`;
@@ -177,12 +229,16 @@ function formatOfficialRank(score?: ComprehensiveScore | null) {
 function formatOfficialPercent(value?: number | string) {
   const n = Number(value);
   if (!Number.isFinite(n)) return '暂无数据';
-  return `${(n * 100).toFixed(1)}%`;
+  const percent = n > 1 ? n : n * 100;
+  return `前 ${percent.toFixed(1)}%`;
 }
 
-function formatScore(value?: number | string) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n.toFixed(2) : null;
+function studentNoText(student: Pick<SupervisedStudent, 'studentId' | 'studentNo'>) {
+  return student.studentNo || student.studentId;
+}
+
+function compareByStudentNo(a: SupervisedStudent, b: SupervisedStudent) {
+  return studentNoText(a).localeCompare(studentNoText(b), 'zh-CN', { numeric: true });
 }
 
 export default function TeacherStudentGrowth() {
@@ -196,10 +252,12 @@ export default function TeacherStudentGrowth() {
   const [selectedId, setSelectedId] = useState<string>(initialId);
   const [supervised, setSupervised] = useState<SupervisedStudent[]>([]);
   const [growth, setGrowth] = useState<StudentGrowthData | null>(null);
+  const [overview, setOverview] = useState<TeacherGrowthOverview | null>(null);
   const [comprehensive, setComprehensive] = useState<ComprehensiveScore | null>(null);
   const [comprehensiveMode, setComprehensiveMode] = useState<'rank' | 'percent'>('rank');
   const [studentSort, setStudentSort] = useState<'default' | 'comprehensive_desc'>('default');
   const [loadingList, setLoadingList] = useState(true);
+  const [loadingOverview, setLoadingOverview] = useState(false);
   const [loadingGrowth, setLoadingGrowth] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -223,6 +281,31 @@ export default function TeacherStudentGrowth() {
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadOverview = async () => {
+      setLoadingOverview(true);
+      try {
+        const params: Record<string, any> = {};
+        if (filters.college || scopeCollege) params.college = filters.college || scopeCollege;
+        if (filters.grade) params.grade = filters.grade;
+        if (filters.major) params.major = filters.major;
+        if (filters.className) params.className = filters.className;
+        const data = await apiClient.get('/teacher/growth-overview', { params });
+        if (!cancelled) setOverview(data as TeacherGrowthOverview);
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) setOverview(null);
+      } finally {
+        if (!cancelled) setLoadingOverview(false);
+      }
+    };
+    loadOverview();
+    return () => {
+      cancelled = true;
+    };
+  }, [filters, scopeCollege]);
 
   useEffect(() => {
     let cancelled = false;
@@ -256,12 +339,13 @@ export default function TeacherStudentGrowth() {
         });
 
         const list = Array.from(map.values());
-        setSupervised(list);
+        const orderedList = studentSort === 'default' ? [...list].sort(compareByStudentNo) : list;
+        setSupervised(orderedList);
         setCompareIds((prev) => new Set(Array.from(prev).filter((id) => map.has(id))));
-        if (list.length === 0) {
+        if (orderedList.length === 0) {
           setSelectedId('');
         } else if (!selectedId || !map.has(selectedId)) {
-          setSelectedId(list[0].studentId);
+          setSelectedId(orderedList[0].studentId);
         }
       } catch (e: any) {
         if (!cancelled) toast.error(e?.message || '加载学生列表失败');
@@ -287,16 +371,33 @@ export default function TeacherStudentGrowth() {
       setLoadingGrowth(true);
       setError(null);
       try {
-        const [data, score]: any[] = await Promise.all([
-          apiClient.get('/growth/radar', { params: { studentId: selectedId } }),
+        let profileError: unknown = null;
+        let radarError: unknown = null;
+        const [profile, data, score]: any[] = await Promise.all([
+          apiClient.get('/growth/profile', { params: { studentId: selectedId } }).catch((e) => {
+            profileError = e;
+            return null;
+          }),
+          apiClient.get('/growth/radar', { params: { studentId: selectedId } }).catch((e) => {
+            radarError = e;
+            return null;
+          }),
           apiClient.get('/growth/comprehensive', { params: { studentId: selectedId } }).catch(() => null),
         ]);
+        if (!profile && !data) {
+          throw profileError || radarError || new Error('获取成长数据失败');
+        }
         if (cancelled) return;
+        const profileRadar = mapProfileRadar(profile as GrowthProfileVO | null);
+        const fallbackRadar = mapRadar(data);
         setGrowth({
-          studentId: data?.studentId ?? selectedId,
-          totalCompetitions: data?.totalCompetitions ?? 0,
-          awards: data?.awards ?? 0,
-          radar: mapRadar(data),
+          studentId: profile?.studentId ?? data?.studentId ?? selectedId,
+          totalCompetitions: profile?.totalCompetitions ?? data?.totalCompetitions ?? 0,
+          awards: profile?.totalAwards ?? data?.awards ?? 0,
+          totalActivities: profile?.totalActivities ?? 0,
+          totalVolunteerHours: profile?.totalVolunteerHours ?? 0,
+          totalCultureSports: profile?.totalCultureSports ?? 0,
+          radar: profileRadar.length > 0 ? profileRadar : fallbackRadar,
         });
         setComprehensive(score ?? null);
       } catch (e: any) {
@@ -331,12 +432,48 @@ export default function TeacherStudentGrowth() {
   }, [supervised, searchQuery]);
 
   const selectedStudent = supervised.find((s) => s.studentId === selectedId);
-  const selectedScore = formatScore(selectedStudent?.comprehensiveScore);
+  const selectedPercent = formatOfficialPercent(selectedStudent?.comprehensiveRankPercent);
+  const activityDistribution = overview?.activityTypeDistribution ?? {};
+  const totalStudents = overview?.totalStudents ?? supervised.length;
+  const lowParticipationCount = overview?.lowParticipationCount ?? overview?.lowParticipationStudents?.length ?? 0;
+  const coveredStudents = Math.max(0, totalStudents - lowParticipationCount);
+  const firstLowParticipation = overview?.lowParticipationStudents?.[0];
+  const overviewCards = [
+    {
+      label: '画像覆盖',
+      value: loadingOverview ? '...' : `${coveredStudents}/${totalStudents}`,
+      suffix: '人',
+      icon: 'groups',
+      hint: '已有竞赛/志愿/文体沉淀',
+    },
+    {
+      label: '志愿服务',
+      value: loadingOverview ? '...' : String(activityDistribution.volunteer ?? 0),
+      suffix: '人次',
+      icon: 'volunteer_activism',
+      hint: `累计 ${formatHours(overview?.totalVolunteerHours)} 小时`,
+    },
+    {
+      label: '文体活动',
+      value: loadingOverview ? '...' : String(activityDistribution.culture_sports ?? 0),
+      suffix: '人次',
+      icon: 'sports_soccer',
+      hint: '审核通过后计入文体素养',
+    },
+    {
+      label: '待激活学生',
+      value: loadingOverview ? '...' : String(lowParticipationCount),
+      suffix: '人',
+      icon: 'person_alert',
+      hint: firstLowParticipation?.studentName ? `优先关注：${firstLowParticipation.studentName}` : '当前范围暂无低参与提示',
+    },
+  ];
 
   const kpiCards = [
-    { label: '累计参赛', value: String(growth?.totalCompetitions ?? 0), suffix: '次', icon: 'format_list_numbered' },
-    { label: '累计获奖', value: String(growth?.awards ?? 0), suffix: '项', icon: 'military_tech' },
-    { label: '能力维度', value: String(growth?.radar?.length ?? 0), suffix: '项', icon: 'radar' },
+    { label: '竞赛实践', value: String(growth?.totalCompetitions ?? 0), suffix: '次', icon: 'emoji_events' },
+    { label: '校园活动', value: String(growth?.totalActivities ?? 0), suffix: '次', icon: 'event_available', hint: `认证荣誉 ${growth?.awards ?? 0} 项` },
+    { label: '志愿公益', value: formatHours(growth?.totalVolunteerHours), suffix: '小时', icon: 'volunteer_activism' },
+    { label: '文体活动', value: String(growth?.totalCultureSports ?? 0), suffix: '次', icon: 'sports_soccer' },
     {
       label: '综测排名',
       value: comprehensiveMode === 'rank'
@@ -360,7 +497,7 @@ export default function TeacherStudentGrowth() {
       <PageHero
         eyebrow="Growth"
         title="学生成长管理"
-        description="查看学生竞赛参与度、综测排名与五维能力画像。"
+        description="按学院、专业或班级查看竞赛、志愿、文体活动沉淀与学生成长画像。"
         contentClassName="max-w-2xl"
         actions={(
           <>
@@ -411,7 +548,40 @@ export default function TeacherStudentGrowth() {
         </label>
       </div>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
+      <section className="flex flex-col gap-sm">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-[15px] font-semibold text-ink flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px] text-primary">monitoring</span>
+            当前范围概览
+          </h2>
+          <span className="text-[12px] text-ink-muted-48">
+            {filters.className || filters.major || filters.grade || scopeCollege || '全部学生'}
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
+          {overviewCards.map((card, i) => (
+            <motion.div
+              key={card.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.04, duration: 0.3 }}
+              className="stat-tile p-lg"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <p className="text-[13px] text-ink-muted-80">{card.label}</p>
+                <span className="material-symbols-outlined text-[18px] text-primary">{card.icon}</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{card.value}</span>
+                <span className="text-[12px] text-ink-muted-48">{card.suffix}</span>
+              </div>
+              <p className="mt-2 truncate text-[11px] text-ink-muted-48">{card.hint}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-md">
         {kpiCards.map((card, i) => (
           <motion.button
             type="button"
@@ -433,15 +603,15 @@ export default function TeacherStudentGrowth() {
             </div>
             {'hint' in card && card.hint && (
               <p className="mt-2 truncate text-[11px] text-ink-muted-48">
-                {card.hint} · {comprehensiveMode === 'rank' ? '点击看百分比' : '点击看排名'}
+                {card.hint}{'toggle' in card && card.toggle ? ` · ${comprehensiveMode === 'rank' ? '点击看前百分位' : '点击看排名'}` : ''}
               </p>
             )}
           </motion.button>
         ))}
       </section>
 
-      <section className="flex flex-col lg:flex-row gap-md min-h-[500px]">
-        <aside className="w-full lg:w-80 glass overflow-hidden flex flex-col shrink-0">
+      <section className="flex flex-col lg:flex-row gap-md min-h-[500px] lg:h-[720px]">
+        <aside className="w-full lg:w-80 max-h-[520px] lg:max-h-none glass overflow-hidden flex flex-col shrink-0">
           <div className="p-md border-b border-hairline">
             <h3 className="text-[14px] font-semibold text-ink flex items-center gap-2">
               <span className="material-symbols-outlined text-[18px] text-primary">groups</span>
@@ -462,7 +632,7 @@ export default function TeacherStudentGrowth() {
             ) : (
               <motion.div variants={listContainer} initial="hidden" animate="visible">
                 {filteredStudents.map((s) => {
-                  const scoreText = formatScore(s.comprehensiveScore);
+                  const rankPercentText = formatOfficialPercent(s.comprehensiveRankPercent);
                   return (
                     <motion.div
                       key={s.studentId}
@@ -484,18 +654,18 @@ export default function TeacherStudentGrowth() {
                           <span className={`text-[13px] ${selectedId === s.studentId ? 'text-primary font-semibold' : 'text-ink font-medium'} truncate`}>
                             {s.studentName}
                           </span>
-                          {s.comprehensiveRank && (
+                          {studentSort !== 'default' && s.comprehensiveRank ? (
                             <span className="ml-auto shrink-0 rounded-sm bg-primary/8 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-primary">
-                              #{s.comprehensiveRank}
+                              第 {s.comprehensiveRank} 名
                             </span>
-                          )}
+                          ) : null}
                         </div>
                         <div className="text-[11px] text-ink-muted-48 mt-0.5 truncate">
                           {s.studentNo ?? s.studentId}{s.major ? ` · ${s.major}` : ''}{s.className ? ` · ${s.className}` : ''}
                         </div>
-                        {scoreText && (
+                        {rankPercentText !== '暂无数据' && (
                           <div className="mt-1 text-[11px] text-ink-muted-60 tabular-nums">
-                            综测 {scoreText}
+                            综测排名 {rankPercentText}
                           </div>
                         )}
                       </button>
@@ -537,15 +707,15 @@ export default function TeacherStudentGrowth() {
                     {selectedStudent?.studentNo ?? selectedId}
                     {selectedStudent?.major ? ` · ${selectedStudent.major}` : ''}
                     {selectedStudent?.className ? ` · ${selectedStudent.className}` : ''}
-                    {selectedScore ? ` · 综测 ${selectedScore}` : ''}
+                    {selectedPercent !== '暂无数据' ? ` · 综测排名 ${selectedPercent}` : ''}
                   </p>
                 </div>
               </div>
 
               <div>
                 <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px] text-primary">radar</span>
-                  能力维度雷达
+                  <span className="material-symbols-outlined text-[18px] text-primary">insights</span>
+                  成长画像五维
                 </h3>
                 {growth && growth.radar.length > 0 ? (
                   <div className="aspect-square max-w-[320px] mx-auto">
@@ -553,8 +723,8 @@ export default function TeacherStudentGrowth() {
                   </div>
                 ) : (
                   <div className="py-10 grid place-items-center text-ink-muted-48 gap-2">
-                    <span className="material-symbols-outlined text-[28px] opacity-40">radar</span>
-                    <p className="text-[12px]">暂无能力数据</p>
+                    <span className="material-symbols-outlined text-[28px] opacity-40">insights</span>
+                    <p className="text-[12px]">暂无画像数据</p>
                   </div>
                 )}
               </div>
@@ -563,7 +733,7 @@ export default function TeacherStudentGrowth() {
                 <motion.div variants={listContainer} initial="hidden" animate="visible">
                   <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px] text-primary">bar_chart</span>
-                    能力详情
+                    画像详情
                   </h3>
                   <div className="flex flex-col gap-3">
                     {growth.radar.map((d, i) => (

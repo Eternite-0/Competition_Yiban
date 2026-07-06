@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 public class ReviewTask {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String activityType; // competition, volunteer
+    private String activityType; // competition, volunteer, culture_sports, other
     private Long activityId;
     private String targetType; // registration, submission, participation
     private Long targetId;

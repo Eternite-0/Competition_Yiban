@@ -5,11 +5,13 @@ import com.etsaion.dto.Result;
 import com.etsaion.entity.GrowthRecord;
 import com.etsaion.entity.User;
 import com.etsaion.interceptor.RequireRole;
+import com.etsaion.service.GrowthProfileService;
 import com.etsaion.service.ComprehensiveScoreService;
 import com.etsaion.service.GrowthRecordService;
 import com.etsaion.service.UserService;
 import com.etsaion.utils.UserContext;
 import com.etsaion.vo.ComprehensiveScoreVO;
+import com.etsaion.vo.GrowthProfileVO;
 import com.etsaion.vo.StudentGrowthVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,6 +27,9 @@ public class GrowthController {
 
     @Autowired
     private GrowthRecordService growthRecordService;
+
+    @Autowired
+    private GrowthProfileService growthProfileService;
 
     @Autowired
     private UserService userService;
@@ -60,6 +65,35 @@ public class GrowthController {
 
         StudentGrowthVO growth = growthRecordService.getStudentGrowth(targetStudentId);
         return Result.success(growth);
+    }
+
+    @Operation(summary = "获取学生校园成长画像")
+    @GetMapping("/profile")
+    @RequireRole({"student", "teacher", "admin"})
+    public Result<GrowthProfileVO> getGrowthProfile(
+            @RequestParam(required = false) Long studentId,
+            @RequestParam(required = false) String academicYear) {
+        Long targetStudentId = studentId;
+        if (targetStudentId == null) {
+            targetStudentId = UserContext.getUserId();
+        }
+        if (targetStudentId == null) {
+            return Result.error(401, "请先登录或传入目标学生ID");
+        }
+        if ("student".equalsIgnoreCase(UserContext.getUserRole())
+                && !targetStudentId.equals(UserContext.getUserId())) {
+            return Result.error(403, "学生只能查看自己的成长档案");
+        }
+        if ("teacher".equalsIgnoreCase(UserContext.getUserRole())) {
+            Long teacherId = UserContext.getUserId();
+            User teacher = userService.getById(teacherId);
+            User student = userService.getById(targetStudentId);
+            if (teacher != null && student != null && teacher.getCollege() != null
+                    && !teacher.getCollege().equals(student.getCollege())) {
+                return Result.error(403, "无权查看其他学院学生的成长档案");
+            }
+        }
+        return Result.success(growthProfileService.getStudentProfile(targetStudentId, academicYear));
     }
 
     @Operation(summary = "Get official comprehensive evaluation rank")
