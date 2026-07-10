@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import { useStore } from '../../store/useStore';
 import CascadeFilter, { type FilterValues } from '../../components/CascadeFilter';
-import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
+import PageHero from '../../components/PageHero';
+import ProgressBar from '../../components/ProgressBar';
 
 interface DashboardStats {
   totalStudents?: number;
@@ -227,191 +227,143 @@ export default function TeacherHome() {
     .sort((a, b) => b.registrationCount - a.registrationCount)[0];
 
   const cockpitMetrics = [
-    { label: '参赛学生', value: totalStudents, suffix: '人', icon: 'groups', accent: 'text-primary' },
-    { label: '参与人次', value: totalRegistrations, suffix: '次', icon: 'event_available', accent: 'text-primary' },
-    { label: '待审压力', value: pendingReviews, suffix: '项', icon: 'pending_actions', accent: 'text-primary' },
-    { label: '通过率', value: completionRate, suffix: '%', icon: 'verified', accent: 'text-primary' },
+    { label: '参赛学生', value: totalStudents, suffix: '人', hint: '覆盖范围' },
+    { label: '参与人次', value: totalRegistrations, suffix: '次', hint: '报名记录' },
+    { label: '待审压力', value: pendingReviews, suffix: '项', hint: pendingReviews > 0 ? '需尽快处理' : '暂无积压' },
+    { label: '通过率', value: completionRate, suffix: '%', hint: `已通过 ${approvedCount}` },
   ];
 
   const statusTotal = Math.max(1, statusGroups.reduce((sum, item) => sum + item.count, 0));
 
   return (
-    <motion.div
-      className="py-lg flex flex-col gap-lg"
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-      transition={pageTransition}
-    >
-      <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45 }}
-        className="glass-strong text-ink"
-      >
-        <div className="grid gap-lg p-lg lg:grid-cols-[minmax(0,1.1fr)_minmax(380px,0.9fr)]">
-          <div className="flex min-w-0 flex-col justify-between gap-xl">
-            <div className="flex flex-wrap items-start justify-between gap-md">
-              <div>
-                <p className="text-[12px] text-ink-muted-48">Teacher command center</p>
-                <h1 className="mt-1 mb-1 text-[22px] font-medium leading-[1.4]">
-                  {scopeLabel}竞赛态势总览
-                </h1>
-                <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-ink-muted-48">
-                  {currentUser?.name ?? '老师'}，当前视图覆盖 {totalStudents} 名学生、{totalRegistrations} 条参赛记录，适合快速判断班级活跃度与待处理压力。
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-sm">
-                <motion.button
-                  className="btn-utility"
-                  onClick={() => navigate(`${basePath}/audit`)}
-                  aria-label="前往审核"
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <span className="material-symbols-outlined text-[17px]">fact_check</span>
-                  审核中心
-                </motion.button>
-                <motion.button
-                  className="btn-utility"
-                  onClick={() => navigate(`${basePath}/student-competitions`)}
-                  aria-label="学生动态"
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <span className="material-symbols-outlined text-[17px]">groups</span>
-                  学生动态
-                </motion.button>
-              </div>
-            </div>
+    <div className="flex flex-col gap-4">
+      <PageHero
+        eyebrow="教师端"
+        title={`${scopeLabel}工作台`}
+        description={`${currentUser?.name ?? '老师'}，优先处理审核，再通过学生看板与学情分析跟进。当前覆盖 ${totalStudents} 名学生、${totalRegistrations} 条参赛记录。`}
+        actions={(
+          <>
+            <button type="button" className="btn-primary" onClick={() => navigate(`${basePath}/audit`)} aria-label="前往审核">
+              <span className="material-symbols-outlined">fact_check</span>
+              去审核中心
+            </button>
+            <button type="button" className="btn-secondary" onClick={() => navigate(`${basePath}/student-competitions`)} aria-label="学生看板">
+              <span className="material-symbols-outlined">groups</span>
+              学生看板
+            </button>
+          </>
+        )}
+      />
 
-            <div className="grid grid-cols-2 gap-sm lg:grid-cols-4">
-              {cockpitMetrics.map((metric, index) => (
-                <motion.div
-                  key={metric.label}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.08 + index * 0.05, duration: 0.35 }}
-                  whileHover={{ scale: 1.03, y: -2 }}
-                  className="stat-tile p-md"
-                >
-                  <div className="mb-3 flex items-center justify-between gap-2">
-                    <span className="text-[12px] text-ink-muted-48">{metric.label}</span>
-                    <span className={`material-symbols-outlined text-[18px] ${metric.accent}`}>{metric.icon}</span>
-                  </div>
-                  <div className="flex items-end gap-1">
-                    <span className="font-display text-[22px] font-medium leading-none tabular-nums text-ink">
-                      {loading ? '—' : metric.value}
-                    </span>
-                    <span className="pb-1 text-[12px] text-ink-muted-48">{metric.suffix}</span>
-                  </div>
-                </motion.div>
-              ))}
+      <div className="stat-grid">
+        {cockpitMetrics.map((metric) => (
+          <div key={metric.label} className="stat-card">
+            <div className="stat-card-label">{metric.label}</div>
+            <div className="stat-card-value">
+              {loading ? '—' : metric.value}
+              <span className="ml-1 text-[13px] font-normal text-placeholder">{metric.suffix}</span>
             </div>
+            <div className="stat-card-hint">{metric.hint}</div>
           </div>
+        ))}
+      </div>
 
-          <div className="rounded-md border border-hairline bg-canvas-parchment p-md">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <h2 className="text-[15px] font-semibold text-ink">关键状态分布</h2>
-                <p className="text-[11px] text-ink-muted-48">按报名/成果流转状态统计</p>
+      <section className="section-card">
+        <div className="section-card-header">
+          <div>
+            <h2 className="section-card-title">关键状态分布</h2>
+            <p className="mt-0.5 text-[12px] text-placeholder">按报名/成果流转状态统计</p>
+          </div>
+          <span className="chip">{monitorRows.length} 条记录</span>
+        </div>
+        <div className="section-card-body flex flex-col gap-3">
+          <div className="flex h-2.5 overflow-hidden rounded-md bg-surface-chip">
+            {statusGroups.map((item) => (
+              <div
+                key={item.key}
+                className={`${item.tone} transition-all`}
+                style={{ width: `${(item.count / statusTotal) * 100}%` }}
+                title={`${item.label}: ${item.count}`}
+              />
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {statusGroups.map((item) => (
+              <div key={item.key} className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
+                <span className="flex min-w-0 items-center gap-2 text-[12px] text-body-muted">
+                  <span className={`h-2 w-2 shrink-0 rounded-md ${item.tone}`} />
+                  <span className="truncate">{item.label}</span>
+                </span>
+                <span className="text-[13px] font-medium tabular-nums text-ink">{item.count}</span>
               </div>
-              <span className="rounded-md border border-hairline bg-canvas px-2 py-1 text-[11px] text-ink-muted-48">
-                {monitorRows.length} 条记录
-              </span>
-            </div>
-            <div className="flex h-3 overflow-hidden rounded-full bg-surface-chip">
-              {statusGroups.map((item) => (
-                <div
-                  key={item.key}
-                  className={`${item.tone} transition-all`}
-                  style={{ width: `${(item.count / statusTotal) * 100}%` }}
-                  title={`${item.label}: ${item.count}`}
-                />
-              ))}
-            </div>
-            <div className="mt-md grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {statusGroups.map((item) => (
-                <div key={item.key} className="flex items-center justify-between gap-2 rounded-md border border-hairline bg-canvas px-3 py-2">
-                  <span className="flex min-w-0 items-center gap-2 text-[12px] text-ink-muted-80">
-                    <span className={`h-2 w-2 rounded-full ${item.tone}`} />
-                    <span className="truncate">{item.label}</span>
-                  </span>
-                  <span className="text-[13px] font-semibold tabular-nums">{item.count}</span>
-                </div>
-              ))}
-            </div>
-            <div className="mt-md rounded-md border border-hairline bg-canvas p-3">
-              <p className="text-[12px] text-ink-muted-48">重点专业</p>
-              <p className="mt-1 text-[15px] font-semibold text-ink">{strongestMajor?.major || '暂无数据'}</p>
-              <p className="mt-1 text-[12px] text-ink-muted-48">
-                {strongestMajor ? `${strongestMajor.registrationCount} 次参与，覆盖 ${strongestMajor.studentCount} 名学生` : '筛选后暂无专业参与记录'}
-              </p>
-            </div>
+            ))}
+          </div>
+          <div className="rounded-md border border-border bg-surface-tile-1 px-3 py-2.5">
+            <p className="text-[12px] text-placeholder">重点专业</p>
+            <p className="mt-0.5 text-[14px] font-medium text-ink">{strongestMajor?.major || '暂无数据'}</p>
+            <p className="mt-0.5 text-[12px] text-placeholder">
+              {strongestMajor ? `${strongestMajor.registrationCount} 次参与，覆盖 ${strongestMajor.studentCount} 名学生` : '筛选后暂无专业参与记录'}
+            </p>
           </div>
         </div>
-      </motion.section>
+      </section>
 
-      <section className="glass-tint flex flex-col gap-3 px-md py-3 lg:flex-row lg:items-center">
+      <div className="filter-bar">
         <div className="flex items-center gap-2 text-[13px] font-medium text-ink">
-          <span className="material-symbols-outlined text-[18px] text-primary">tune</span>
+          <span className="material-symbols-outlined text-[18px] text-body-muted">tune</span>
           教师授权范围
         </div>
         <CascadeFilter onChange={handleFilterChange} fixedCollege={scopeCollege || undefined} showCollege={!scopeCollege} />
-      </section>
+      </div>
 
-      <section className="grid grid-cols-1 gap-lg xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,0.6fr)]">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.12, duration: 0.4 }}
-          className="glass overflow-hidden"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-md border-b border-hairline p-lg">
+      <section className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)]">
+        <section className="section-card">
+          <div className="section-card-header">
             <div>
-              <h2 className="text-[16px] font-medium text-ink">参赛趋势监测</h2>
-              <p className="mt-1 text-[12px] text-ink-muted-48">近 {Math.max(trend.length, 1)} 个月报名活跃度，含空档月份。</p>
+              <h2 className="section-card-title">参赛趋势监测</h2>
+              <p className="mt-0.5 text-[12px] text-placeholder">近 {Math.max(trend.length, 1)} 个月报名活跃度</p>
             </div>
-            <div className="flex gap-2">
-              <span className="chip chip-primary">峰值 {trendMax}</span>
+            <div className="flex gap-1.5">
+              <span className="chip">峰值 {trendMax}</span>
               <span className="chip">人均 {stats.activeCoefficient ?? 0} 次</span>
             </div>
           </div>
-          <div className="p-lg">
+          <div className="section-card-body">
             {loading ? (
-              <div className="h-[320px] grid place-items-center text-ink-muted-48">
-                <span className="material-symbols-outlined animate-spin text-[30px]">progress_activity</span>
+              <div className="empty-panel h-[280px]">
+                <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                <p className="text-[13px]">加载中…</p>
               </div>
             ) : trend.length === 0 || trend.every((t) => t.count === 0) ? (
-              <div className="h-[320px] grid place-items-center text-ink-muted-48 gap-2">
-                <span className="material-symbols-outlined text-[34px] opacity-40">bar_chart</span>
+              <div className="empty-panel h-[280px]">
+                <span className="material-symbols-outlined">bar_chart</span>
                 <p className="text-[13px]">暂无趋势数据</p>
               </div>
             ) : (
-              <div className="relative h-[320px] rounded-md border border-hairline bg-canvas p-md">
-                <div className="absolute inset-x-md top-md bottom-10 grid grid-rows-4">
+              <div className="relative h-[280px] rounded-md border border-border p-3">
+                <div className="absolute inset-x-3 top-3 bottom-10 grid grid-rows-4">
                   {Array.from({ length: 4 }).map((_, i) => (
                     <div key={i} className="border-t border-dashed border-hairline" />
                   ))}
                 </div>
-                <div className="relative z-10 flex h-full items-end gap-3 pb-8">
-                  {trend.map((point, index) => {
+                <div className="relative z-10 flex h-full items-end gap-2 pb-8">
+                  {trend.map((point) => {
                     const height = Math.max(8, (point.count / trendMax) * 100);
                     const label = point.month.includes('-') ? `${Number(point.month.split('-')[1])}月` : point.month;
                     const active = point.count === trendMax;
                     return (
                       <div key={point.month} className="group flex h-full flex-1 flex-col justify-end gap-2">
                         <div className="flex flex-1 items-end justify-center">
-                          <motion.div
-                            initial={{ height: 0 }}
-                            animate={{ height: `${height}%` }}
-                            transition={{ delay: index * 0.04, duration: 0.55, ease: 'easeOut' }}
-                            className={`relative w-full max-w-[56px] rounded-t-md ${active ? 'bg-primary' : 'bg-primary/18'} group-hover:bg-primary/70`}
+                          <div
+                            className={`relative w-full max-w-[48px] rounded-t-md ${active ? 'bg-ink' : 'bg-ink/20'} group-hover:bg-ink/55`}
+                            style={{ height: `${height}%` }}
                           >
-                            <span className={`absolute -top-7 left-1/2 -translate-x-1/2 text-[12px] font-semibold tabular-nums ${active ? 'text-primary' : 'text-ink-muted-48'}`}>
+                            <span className={`absolute -top-6 left-1/2 -translate-x-1/2 text-[12px] font-medium tabular-nums ${active ? 'text-ink' : 'text-placeholder'}`}>
                               {point.count}
                             </span>
-                          </motion.div>
+                          </div>
                         </div>
-                        <span className="text-center text-[11px] text-ink-muted-48">{label}</span>
+                        <span className="text-center text-[11px] text-placeholder">{label}</span>
                       </div>
                     );
                   })}
@@ -419,192 +371,154 @@ export default function TeacherHome() {
               </div>
             )}
           </div>
-        </motion.div>
+        </section>
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18, duration: 0.4 }}
-          className="glass flex flex-col overflow-hidden"
-        >
-          <div className="border-b border-hairline p-lg">
-            <h2 className="text-[16px] font-medium text-ink">需要关注</h2>
-            <p className="mt-1 text-[12px] text-ink-muted-48">退回、驳回、待完善与待审记录。</p>
+        <section className="section-card flex flex-col">
+          <div className="section-card-header">
+            <div>
+              <h2 className="section-card-title">需要关注</h2>
+              <p className="mt-0.5 text-[12px] text-placeholder">退回、驳回、待完善与待审</p>
+            </div>
           </div>
-          <div className="flex-1 p-md">
+          <div className="section-card-body tight flex-1">
             {riskRows.length === 0 ? (
-              <div className="grid min-h-[260px] place-items-center text-ink-muted-48">
-                <div className="text-center">
-                  <span className="material-symbols-outlined text-[34px] opacity-40">task_alt</span>
-                  <p className="mt-2 text-[13px]">暂无风险事项</p>
-                </div>
+              <div className="empty-panel min-h-[240px]">
+                <span className="material-symbols-outlined">task_alt</span>
+                <p className="text-[13px]">暂无风险事项</p>
               </div>
             ) : (
-              <motion.div className="flex flex-col gap-2" variants={listContainer} initial="hidden" animate="visible">
-                {riskRows.map((row, index) => (
-                  <motion.button
-                    key={`${row.id}-${index}`}
-                    variants={listItem}
-                    whileHover={{ scale: 1.01, x: 2 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => row.studentId && navigate(`${basePath}/student-detail?studentId=${row.studentId}`)}
-                    className="rounded-md border border-hairline bg-canvas px-3 py-3 text-left transition hover:border-primary/30 hover:bg-primary/5"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-[13px] font-semibold text-ink">{row.studentName}</p>
-                        <p className="mt-0.5 truncate text-[11px] text-ink-muted-48">{row.className || '未分班'} · {row.competitionName}</p>
-                      </div>
-                      <span className={row.status === '审核驳回' ? 'chip chip-error' : 'chip chip-warning'}>{row.status}</span>
-                    </div>
-                  </motion.button>
-                ))}
-              </motion.div>
+              riskRows.map((row, index) => (
+                <button
+                  key={`${row.id}-${index}`}
+                  type="button"
+                  onClick={() => row.studentId && navigate(`${basePath}/student-detail?studentId=${row.studentId}`)}
+                  className="list-row list-row-clickable w-full text-left"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13.5px] font-medium text-ink">{row.studentName}</p>
+                    <p className="mt-0.5 truncate text-[12px] text-placeholder">{row.className || '未分班'} · {row.competitionName}</p>
+                  </div>
+                  <span className={row.status === '审核驳回' ? 'chip chip-error' : 'chip chip-warning'}>{row.status}</span>
+                </button>
+              ))
             )}
           </div>
-        </motion.div>
+        </section>
       </section>
 
-      <section className="grid grid-cols-1 gap-lg xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.22, duration: 0.4 }}
-          className="glass overflow-hidden"
-        >
-          <div className="flex items-center justify-between border-b border-hairline p-lg">
+      <section className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+        <section className="section-card">
+          <div className="section-card-header">
             <div>
-              <h2 className="text-[16px] font-medium text-ink">班级活跃排行</h2>
-              <p className="mt-1 text-[12px] text-ink-muted-48">按当前筛选范围内参赛记录数排序。</p>
+              <h2 className="section-card-title">班级活跃排行</h2>
+              <p className="mt-0.5 text-[12px] text-placeholder">按参赛记录数排序</p>
             </div>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate(`${basePath}/student-growth`)}
-              className="text-[12px] font-medium text-primary hover:text-primary-focus"
-            >
+            <button type="button" onClick={() => navigate(`${basePath}/student-growth`)} className="text-[12.5px] text-body-muted hover:text-ink">
               学情分析 →
-            </motion.button>
+            </button>
           </div>
-          <div className="p-lg">
+          <div className="section-card-body">
             {classRank.length === 0 ? (
-              <div className="py-14 text-center text-[13px] text-ink-muted-48">暂无班级数据</div>
+              <div className="empty-panel py-10">
+                <span className="material-symbols-outlined">inbox</span>
+                <p className="text-[13px]">暂无班级数据</p>
+              </div>
             ) : (
-              <motion.div className="flex flex-col gap-4" variants={listContainer} initial="hidden" animate="visible">
-                {classRank.map((item, index) => {
+              <div className="flex flex-col gap-3">
+                {classRank.map((item) => {
                   const width = Math.max(8, (item.count / Math.max(classRank[0]?.count || 1, 1)) * 100);
                   return (
-                    <motion.div key={item.className} variants={listItem} className="grid grid-cols-[100px_minmax(0,1fr)_52px] items-center gap-3">
+                    <div key={item.className} className="grid grid-cols-[100px_minmax(0,1fr)_48px] items-center gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-[13px] font-semibold text-ink">{item.className}</p>
-                        <p className="truncate text-[11px] text-ink-muted-48">{item.major || '未标注专业'}</p>
+                        <p className="truncate text-[13px] font-medium text-ink">{item.className}</p>
+                        <p className="truncate text-[11px] text-placeholder">{item.major || '未标注专业'}</p>
                       </div>
-                      <div className="h-8 rounded-md bg-primary/8 p-1">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${width}%` }}
-                          transition={{ delay: index * 0.04, duration: 0.45 }}
-                          className="h-full rounded-sm bg-primary"
-                        />
-                      </div>
+                      <ProgressBar value={width} size="sm" segments={4} showThumb instant className="min-w-0" />
                       <div className="text-right">
-                        <p className="text-[15px] font-semibold tabular-nums text-ink">{item.count}</p>
-                        <p className="text-[10px] text-ink-muted-48">人次</p>
+                        <p className="text-[14px] font-medium tabular-nums text-ink">{item.count}</p>
+                        <p className="text-[10px] text-placeholder">人次</p>
                       </div>
-                    </motion.div>
+                    </div>
                   );
                 })}
-              </motion.div>
+              </div>
             )}
           </div>
-        </motion.div>
+        </section>
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.26, duration: 0.4 }}
-          className="glass overflow-hidden"
-        >
-          <div className="flex items-center justify-between border-b border-hairline p-lg">
+        <section className="section-card">
+          <div className="section-card-header">
             <div>
-              <h2 className="text-[16px] font-medium text-ink">近期动态流</h2>
-              <p className="mt-1 text-[12px] text-ink-muted-48">最新报名、审核和材料流转。</p>
+              <h2 className="section-card-title">近期动态流</h2>
+              <p className="mt-0.5 text-[12px] text-placeholder">最新报名与审核流转</p>
             </div>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate(`${basePath}/student-competitions`)}
-              className="text-[12px] font-medium text-primary hover:text-primary-focus"
-            >
+            <button type="button" onClick={() => navigate(`${basePath}/student-competitions`)} className="text-[12.5px] text-body-muted hover:text-ink">
               查看学生 →
-            </motion.button>
+            </button>
           </div>
-          <div className="p-md">
+          <div className="section-card-body tight">
             {recentActivities.length === 0 ? (
-              <div className="py-14 text-center text-[13px] text-ink-muted-48">暂无近期动态</div>
+              <div className="empty-panel py-10">
+                <span className="material-symbols-outlined">inbox</span>
+                <p className="text-[13px]">暂无近期动态</p>
+              </div>
             ) : (
-              <motion.div className="flex flex-col" variants={listContainer} initial="hidden" animate="visible">
-                {recentActivities.map((item, index) => (
-                  <motion.div key={index} variants={listItem} className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 border-b border-hairline px-1 py-3 last:border-0">
-                    <div className="grid h-8 w-8 place-items-center rounded-md bg-canvas-parchment text-[12px] font-semibold text-ink-muted-80">
-                      {(item.studentName || '?')[0]}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-[13px] font-medium text-ink">{item.studentName || '未知学生'}</p>
-                      <p className="truncate text-[11px] text-ink-muted-48">
-                        {item.class || '未分班'} · {item.submitDate ? new Date(item.submitDate).toLocaleDateString() : '—'}
-                      </p>
-                    </div>
-                    <span className={item.status === '审核驳回' ? 'chip chip-error' : item.status === '审核通过' ? 'chip chip-success' : 'chip'}>
-                      {item.status || '—'}
-                    </span>
-                  </motion.div>
-                ))}
-              </motion.div>
+              recentActivities.map((item, index) => (
+                <div key={index} className="list-row">
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-surface-tile-1 text-[12px] font-medium text-body-muted">
+                    {(item.studentName || '?')[0]}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13.5px] font-medium text-ink">{item.studentName || '未知学生'}</p>
+                    <p className="truncate text-[12px] text-placeholder">
+                      {item.class || '未分班'} · {item.submitDate ? new Date(item.submitDate).toLocaleDateString() : '—'}
+                    </p>
+                  </div>
+                  <span className={item.status === '审核驳回' ? 'chip chip-error' : item.status === '审核通过' ? 'chip chip-success' : 'chip'}>
+                    {item.status || '—'}
+                  </span>
+                </div>
+              ))
             )}
           </div>
-        </motion.div>
+        </section>
       </section>
 
-      <section className="glass overflow-hidden">
-          <div className="flex items-center justify-between border-b border-hairline p-lg">
-            <div>
-              <h2 className="text-[16px] font-medium text-ink">待审核报名</h2>
-              <p className="mt-1 text-[12px] text-ink-muted-48">教师角色可直接进入审核中心处理。</p>
+      <section className="section-card">
+        <div className="section-card-header">
+          <div>
+            <h2 className="section-card-title">待审核报名</h2>
+            <p className="mt-0.5 text-[12px] text-placeholder">可直接进入审核中心处理</p>
+          </div>
+          <button type="button" onClick={() => navigate(`${basePath}/audit`)} className="text-[12.5px] text-body-muted hover:text-ink">
+            查看全部 →
+          </button>
+        </div>
+        <div className="section-card-body tight">
+          {pending.length === 0 ? (
+            <div className="empty-panel py-10">
+              <span className="material-symbols-outlined">task_alt</span>
+              <p className="text-[13px]">暂无待审核</p>
             </div>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={() => navigate(`${basePath}/audit`)}
-              className="text-[12px] font-medium text-primary hover:text-primary-focus"
-            >
-              查看全部 →
-            </motion.button>
-          </div>
-          <div className="p-md">
-            {pending.length === 0 ? (
-              <div className="py-10 text-center text-[13px] text-ink-muted-48">暂无待审核</div>
-            ) : (
-              <motion.div className="grid grid-cols-1 gap-2 md:grid-cols-2" variants={listContainer} initial="hidden" animate="visible">
-                {pending.map((item) => (
-                  <motion.button
-                    key={item.id}
-                    variants={listItem}
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => navigate('/teacher/audit')}
-                    className="rounded-md border border-hairline bg-canvas p-3 text-left transition hover:border-primary/30 hover:bg-primary/5"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-[13px] font-semibold text-ink">{item.studentLabel}</p>
-                        <p className="mt-0.5 truncate text-[11px] text-ink-muted-48">{item.competitionLabel}</p>
-                      </div>
-                      <span className="chip chip-warning">{item.status}</span>
-                    </div>
-                  </motion.button>
-                ))}
-              </motion.div>
-            )}
-          </div>
+          ) : (
+            pending.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => navigate('/teacher/audit')}
+                className="list-row list-row-clickable w-full text-left"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13.5px] font-medium text-ink">{item.studentLabel}</p>
+                  <p className="mt-0.5 truncate text-[12px] text-placeholder">{item.competitionLabel}</p>
+                </div>
+                <span className="chip chip-warning">{item.status}</span>
+                <span className="material-symbols-outlined text-[18px] text-placeholder">chevron_right</span>
+              </button>
+            ))
+          )}
+        </div>
       </section>
-    </motion.div>
+    </div>
   );
 }

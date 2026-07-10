@@ -2,7 +2,6 @@ import { toast } from 'sonner';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import { uploadToQiniu } from '../../api/qiniu';
 import {
@@ -15,6 +14,7 @@ import {
   type AwardProofVO,
 } from '../../api/awardProof';
 import PageHero from '../../components/PageHero';
+import ProgressBar from '../../components/ProgressBar';
 import { useStore } from '../../store/useStore';
 
 interface Competition {
@@ -123,7 +123,7 @@ function AwardField({
 }) {
   return (
     <label className="block">
-      <span className="block text-[12px] font-medium text-ink-muted-80 mb-1.5">
+      <span className="block text-[12px] font-medium text-body-subtle mb-1.5">
         {required && <span className="text-error mr-1">*</span>}
         {label}
       </span>
@@ -510,18 +510,12 @@ export default function AchievementUpload() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="py-lg flex flex-col gap-lg"
-    >
-      {/* Header */}
+    <div className="page-stack">
       <PageHero
         title="上传获奖凭证"
         description="上传证书后由 AI 自动识别关键信息，核对修正后可为团队成员一起提交获奖证明审核。"
         prefix={(
-          <nav className="flex items-center gap-1 text-[13px] text-ink-muted-48 mb-1">
+          <nav className="mb-1 flex items-center gap-1 text-[13px] text-placeholder">
             <button onClick={() => navigate(-1)} className="hover:text-ink transition">返回</button>
             <span className="material-symbols-outlined text-[16px]">chevron_right</span>
             <span className="text-ink">上传成果</span>
@@ -535,45 +529,45 @@ export default function AchievementUpload() {
               disabled={submitting || (!canSubmitAwardProof && !canSubmitLegacy)}
               className="btn-primary"
             >
-              {submitting && <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>}
-              <span className="material-symbols-outlined text-[18px]">send</span>
-              提交审核
+              {submitting ? '提交中…' : '提交审核'}
             </button>
           </>
         )}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg">
-        {/* Left: form */}
-        <div className="lg:col-span-8 flex flex-col gap-lg">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <div className="flex flex-col gap-8 lg:col-span-8">
 
-          {/* Competition selector */}
-          <section className="glass p-xl">
-            <h3 className="text-[19px] font-semibold tracking-tight text-ink mb-md pb-md border-b border-hairline">
-              <span className="text-error mr-1">*</span>关联赛事
-            </h3>
+          <section className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title">
+                <span className="text-error mr-1">*</span>关联赛事
+              </h3>
+            </div>
+            <div>
             <div ref={compRef}>
               {selectedComp ? (
-                <div className="rounded-md border border-hairline p-3 bg-canvas flex items-center justify-between">
+                <div className="flex items-center justify-between rounded-md border border-hairline p-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-md bg-primary/10 grid place-items-center text-primary">
+                    <div className="grid h-10 w-10 place-items-center rounded-md bg-surface-tile-1 text-body-muted">
                       <span className="material-symbols-outlined icon-fill">emoji_events</span>
                     </div>
                     <div>
                       <p className="text-[14px] font-medium text-ink">{selectedComp.name}</p>
-                      <p className="text-[11px] text-ink-muted-48 mt-0.5">{selectedComp.level} · {selectedComp.category} 类</p>
+                      <p className="mt-0.5 text-[11px] text-placeholder">{selectedComp.level} · {selectedComp.category} 类</p>
                     </div>
                   </div>
                   <button
+                    type="button"
                     onClick={() => setSelectedComp(null)}
-                    className="text-ink-muted-48 hover:text-primary p-2 rounded-md hover:bg-primary/6 transition"
+                    className="icon-button !h-9 !w-9"
                   >
                     <span className="material-symbols-outlined text-[20px]">close</span>
                   </button>
                 </div>
               ) : (
                 <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">search</span>
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-placeholder">search</span>
                   <input
                     className="input-glass h-11 pl-9 text-[14px]"
                     placeholder="搜索赛事名称…"
@@ -592,62 +586,61 @@ export default function AchievementUpload() {
               {filteredCompetitions.map(c => (
                 <button
                   key={c.id}
+                  type="button"
                   onClick={() => {
                     setSelectedComp(c);
                     setAwardForm(prev => ({ ...prev, competitionName: c.name }));
                     setShowCompDropdown(false);
                     setCompSearch('');
                   }}
-                  className="w-full text-left px-4 py-3 hover:bg-primary/5 transition flex items-center justify-between border-b border-hairline last:border-0"
+                  className="flex w-full items-center justify-between border-b border-hairline px-4 py-3 text-left transition-colors last:border-0 hover:bg-hover-overlay"
                 >
                   <div>
                     <p className="text-[14px] font-medium text-ink">{c.name}</p>
-                    <p className="text-[11px] text-ink-muted-48 mt-0.5">{c.level} · {c.category} 类</p>
+                    <p className="mt-0.5 text-[11px] text-placeholder">{c.level} · {c.category} 类</p>
                   </div>
-                  <span className="material-symbols-outlined text-[18px] text-primary">add_circle</span>
+                  <span className="material-symbols-outlined text-[18px] text-body-muted">add_circle</span>
                 </button>
               ))}
             </PortalDropdown>
+            </div>
           </section>
 
-          {/* AI certificate recognition */}
-          <section className="glass p-xl">
-            <div className="flex items-center justify-between mb-md pb-md border-b border-hairline">
-              <h3 className="text-[19px] font-semibold tracking-tight text-ink flex items-center gap-2">
-                <span className="material-symbols-outlined text-[21px] text-primary">document_scanner</span>
-                AI 识别证书
-              </h3>
+          <section className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title">AI 识别证书</h3>
               {awardProof ? (
                 <span className={confidenceChipClass}>置信度 {formatConfidence(awardProof.confidence)}</span>
               ) : (
                 <span className="chip">推荐先上传证书</span>
               )}
             </div>
+            <div >
 
             <div
-              className={`rounded-md border-2 border-dashed flex flex-col items-center justify-center text-center transition-all cursor-pointer group ${
-                awardProof ? 'py-5' : 'py-9'
+              className={`flex cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-center transition-colors group ${
+                awardProof ? 'py-5' : 'py-10'
               } ${
                 isCertDragging
-                  ? 'border-primary bg-primary/5'
-                  : 'border-hairline bg-canvas hover:border-primary/50 hover:bg-primary/3'
+                  ? 'border-primary bg-hover-overlay'
+                  : 'border-hairline hover:bg-hover-overlay'
               }`}
               onDrop={handleCertificateDrop}
               onDragOver={(e) => { e.preventDefault(); setIsCertDragging(true); }}
               onDragLeave={() => setIsCertDragging(false)}
               onClick={() => document.getElementById('certificate-file-input')?.click()}
             >
-              <div className={`w-12 h-12 rounded-full grid place-items-center mb-2 transition ${
-                isCertDragging ? 'bg-primary/15' : 'bg-canvas-parchment group-hover:bg-primary/10'
+              <div className={`mb-2 grid h-12 w-12 place-items-center rounded-md transition ${
+                isCertDragging ? 'bg-surface-tile-2' : 'bg-surface-tile-1'
               }`}>
                 <span className={`material-symbols-outlined text-[24px] ${
-                  isCertDragging ? 'text-primary' : 'text-ink-muted-48 group-hover:text-primary'
+                  isCertDragging ? 'text-ink' : 'text-body-muted'
                 }`}>{recognizing ? 'progress_activity' : 'upload_file'}</span>
               </div>
-              <p className="text-[14px] font-semibold text-ink mb-1">
+              <p className="mb-1 text-[14px] font-medium text-ink">
                 {awardProof ? awardProof.fileName || '已上传证书' : '点击或拖拽证书到这里'}
               </p>
-              <p className="text-[12px] text-ink-muted-48">
+              <p className="text-[12px] text-placeholder">
                 支持 PDF、JPG、PNG、WEBP · 上传后自动识别比赛、奖项、姓名、编号和印章
               </p>
               <input
@@ -665,28 +658,23 @@ export default function AchievementUpload() {
 
             {(recognizing || recognizeProgress > 0) && (
               <div className="mt-3">
-                <div className="flex justify-between text-[11px] text-ink-muted-48 mb-1">
+                <div className="mb-2 flex justify-between text-[11px] text-placeholder">
                   <span>{recognizing ? '正在上传并识别证书…' : '识别完成'}</span>
-                  <span className="tabular-nums">{recognizeProgress}%</span>
+                  <span className="tabular-nums font-medium text-primary">{recognizeProgress}%</span>
                 </div>
-                <div className="h-1.5 rounded-full bg-primary/8 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all duration-300"
-                    style={{ width: `${recognizeProgress}%` }}
-                  />
-                </div>
+                <ProgressBar value={recognizeProgress} size="md" showThumb segments={5} />
               </div>
             )}
 
             {awardProof && (
-              <div className="mt-lg flex flex-col gap-lg">
+              <div className="mt-4 flex flex-col gap-4">
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-[15px] font-semibold text-ink flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[18px] text-primary">fact_check</span>
+                    <h4 className="flex items-center gap-2 text-[13.5px] font-medium text-ink">
+                      <span className="material-symbols-outlined text-[18px] text-body-muted">fact_check</span>
                       核对识别字段
                     </h4>
-                    <span className="text-[12px] text-ink-muted-48">可直接编辑后提交审核</span>
+                    <span className="text-[12px] text-placeholder">可直接编辑后提交审核</span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <AwardField
@@ -740,18 +728,18 @@ export default function AchievementUpload() {
 
                 {(lowConfidenceItems.length > 0 || riskItems.length > 0) && (
                   <div className="rounded-md border border-error/20 bg-error/5 p-md">
-                    <h4 className="text-[14px] font-semibold text-error mb-2 flex items-center gap-2">
+                    <h4 className="mb-2 flex items-center gap-2 text-[13.5px] font-medium text-error">
                       <span className="material-symbols-outlined text-[18px]">warning</span>
                       需要重点核对
                     </h4>
                     <div className="flex flex-col gap-2">
                       {lowConfidenceItems.length > 0 && (
-                        <p className="text-[12px] text-ink-muted-80 leading-relaxed">
+                        <p className="text-[12px] leading-relaxed text-body-subtle">
                           低置信度字段：{lowConfidenceItems.map(item => `${item.label} ${formatConfidence(item.confidence)}`).join('、')}
                         </p>
                       )}
                       {riskItems.map((item, index) => (
-                        <p key={`${item}-${index}`} className="text-[12px] text-ink-muted-80 leading-relaxed flex items-start gap-1.5">
+                        <p key={`${item}-${index}`} className="text-[12px] text-body-subtle leading-relaxed flex items-start gap-1.5">
                           <span className="material-symbols-outlined text-[14px] text-error mt-0.5 shrink-0">report</span>
                           <span>{item}</span>
                         </p>
@@ -762,22 +750,24 @@ export default function AchievementUpload() {
 
                 {confidenceItems.length > 0 && (
                   <div>
-                    <h4 className="text-[14px] font-semibold text-ink mb-2">字段置信度</h4>
+                    <h4 className="mb-2 text-[13.5px] font-medium text-ink">字段置信度</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {confidenceItems.map(item => (
-                        <div key={item.field} className="rounded-md border border-hairline bg-canvas p-3">
-                          <div className="flex items-center justify-between text-[12px] mb-2">
+                        <div key={item.field} className="rounded-md border border-hairline p-3">
+                          <div className="mb-2 flex items-center justify-between text-[12px]">
                             <span className="font-medium text-ink">{item.label}</span>
-                            <span className={item.confidence < LOW_CONFIDENCE_THRESHOLD ? 'text-error' : 'text-primary'}>
+                            <span className={item.confidence < LOW_CONFIDENCE_THRESHOLD ? 'text-error' : 'text-body-muted'}>
                               {formatConfidence(item.confidence)}
                             </span>
                           </div>
-                          <div className="h-1.5 rounded-full bg-primary/8 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${item.confidence < LOW_CONFIDENCE_THRESHOLD ? 'bg-error' : 'bg-primary'}`}
-                              style={{ width: `${Math.round(item.confidence * 100)}%` }}
-                            />
-                          </div>
+                          <ProgressBar
+                            value={Math.round(item.confidence * 100)}
+                            size="sm"
+                            showThumb={false}
+                            segments={4}
+                            instant
+                            trackClassName={item.confidence < LOW_CONFIDENCE_THRESHOLD ? 'progress-track-danger' : ''}
+                          />
                         </div>
                       ))}
                     </div>
@@ -786,10 +776,10 @@ export default function AchievementUpload() {
 
                 {evidenceItems.length > 0 && (
                   <div>
-                    <h4 className="text-[14px] font-semibold text-ink mb-2">识别证据</h4>
+                    <h4 className="mb-2 text-[13.5px] font-medium text-ink">识别证据</h4>
                     <div className="flex flex-col gap-2">
                       {evidenceItems.map((item, index) => (
-                        <div key={`${item}-${index}`} className="rounded-md border border-hairline bg-canvas p-3 text-[12px] text-ink-muted-80 leading-relaxed">
+                        <div key={`${item}-${index}`} className="rounded-md border border-hairline p-3 text-[12px] leading-relaxed text-body-subtle">
                           {item}
                         </div>
                       ))}
@@ -798,23 +788,25 @@ export default function AchievementUpload() {
                 )}
               </div>
             )}
+            </div>
           </section>
 
           {/* Team members */}
-          <section className="glass p-xl">
-            <div className="flex items-center justify-between mb-md pb-md border-b border-hairline">
-              <h3 className="text-[19px] font-semibold tracking-tight text-ink">
+          <section className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title">
                 <span className="text-error mr-1">*</span>关联成员
               </h3>
               <span className="chip">{selectedMembers.length} 人</span>
             </div>
-            <p className="text-[12px] text-ink-muted-48 mb-md">
+            <div >
+            <p className="mb-3 text-[12px] text-placeholder">
               搜索并添加本次成果关联的团队成员。队长上传后，所有关联成员均可查看该成果，无需重复上传。
             </p>
 
             {/* Search */}
-            <div ref={memberSearchRef} className="relative mb-md">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">person_search</span>
+            <div ref={memberSearchRef} className="relative mb-3">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-placeholder">person_search</span>
               <input
                 className="input-glass h-11 pl-9 text-[14px]"
                 placeholder="输入学号或姓名搜索其他队友…"
@@ -823,7 +815,7 @@ export default function AchievementUpload() {
                 onFocus={() => { if (memberResults.length > 0) setShowMemberDropdown(true); }}
               />
               {searchingMembers && (
-                <span className="material-symbols-outlined animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-ink-muted-48">progress_activity</span>
+                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[18px] text-placeholder">progress_activity</span>
               )}
             </div>
             <PortalDropdown
@@ -839,28 +831,28 @@ export default function AchievementUpload() {
                       key={s.id}
                       onClick={() => toggleCheck(s.id)}
                       className={`w-full text-left px-4 py-2.5 transition flex items-center gap-3 border-b border-hairline last:border-0 ${
-                        checked ? 'bg-primary/8' : 'hover:bg-primary/6'
+                        checked ? 'bg-hover-overlay' : 'hover:bg-hover-overlay'
                       }`}
                     >
                       <div className={`w-5 h-5 rounded-md border-2 grid place-items-center shrink-0 transition ${
-                        checked ? 'bg-primary border-primary' : 'border-primary/20'
+                        checked ? 'bg-primary border-primary' : 'border-border'
                       }`}>
                       {checked && <span className="material-symbols-outlined text-[14px] text-on-primary">check</span>}
                       </div>
-                      <div className="w-8 h-8 rounded-full bg-primary/10 grid place-items-center text-primary text-[12px] font-semibold shrink-0">
+                      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-surface-tile-1 text-[12px] font-semibold text-body-muted">
                         {s.realName[0]}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-medium text-ink">{s.realName}</p>
-                        <p className="text-[11px] text-ink-muted-48">{s.username} · {s.college} {s.major}</p>
+                        <p className="text-[11px] text-placeholder">{s.username} · {s.college} {s.major}</p>
                       </div>
                     </button>
                   );
                 })}
               </div>
               {checkedIds.size > 0 && (
-                <div className="px-4 py-2.5 border-t border-hairline flex items-center justify-between bg-canvas sticky bottom-0">
-                  <span className="text-[12px] text-ink-muted-80">已选 {checkedIds.size} 人</span>
+                <div className="sticky bottom-0 flex items-center justify-between border-t border-hairline bg-canvas px-4 py-2.5">
+                  <span className="text-[12px] text-body-subtle">已选 {checkedIds.size} 人</span>
                   <button
                     onClick={confirmMembers}
                     className="btn-primary !py-1.5 !px-4 !text-[12px]"
@@ -877,23 +869,23 @@ export default function AchievementUpload() {
                 {selectedMembers.map(m => {
                   const isSelf = m.id === Number(currentUser?.id);
                   return (
-                    <div key={m.id} className={`rounded-md border p-3 bg-canvas flex items-center justify-between group transition ${isSelf ? 'border-primary/30 bg-primary/3' : 'border-hairline hover:border-primary/40'}`}>
+                    <div key={m.id} className={`rounded-md border p-3 bg-canvas flex items-center justify-between group transition ${isSelf ? 'border-border bg-surface-tile-1' : 'border-hairline'}`}>
                       <div className="flex items-center gap-3">
-                        <div className={`w-9 h-9 rounded-full grid place-items-center text-[12px] font-semibold ${isSelf ? 'bg-primary/20 text-primary' : 'bg-primary/10 text-primary'}`}>
+                        <div className={`grid h-9 w-9 place-items-center rounded-md text-[12px] font-semibold ${isSelf ? 'bg-surface-tile-2 text-ink' : 'bg-surface-tile-1 text-body-muted'}`}>
                           {m.realName[0]}
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
                             <p className="text-[14px] font-medium text-ink">{m.realName}</p>
-                            {isSelf && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-medium">我</span>}
+                            {isSelf && <span className="chip !py-0 !text-[10px]">我</span>}
                           </div>
-                          <p className="text-[11px] text-ink-muted-48">{m.username} · {m.college}</p>
+                          <p className="text-[11px] text-placeholder">{m.username} · {m.college}</p>
                         </div>
                       </div>
                       {!isSelf && (
                         <button
                           onClick={() => removeMember(m.id)}
-                          className="text-ink-muted-48 hover:text-primary p-2 rounded-md hover:bg-primary/6 transition opacity-0 group-hover:opacity-100"
+                          className="icon-button !h-8 !w-8 opacity-0 transition-opacity group-hover:opacity-100"
                           title="移除"
                         >
                           <span className="material-symbols-outlined text-[18px]">close</span>
@@ -904,39 +896,42 @@ export default function AchievementUpload() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-6 text-ink-muted-48">
-                <span className="material-symbols-outlined text-[32px] mb-1 block">group_add</span>
+              <div className="empty-panel py-8">
+                <span className="material-symbols-outlined">group_add</span>
                 <p className="text-[13px]">请搜索并添加关联成员</p>
               </div>
             )}
+            </div>
           </section>
 
           {/* File upload */}
-          <section className="glass p-xl">
-            <div className="flex items-center justify-between mb-md pb-md border-b border-hairline">
-              <h3 className="text-[19px] font-semibold tracking-tight text-ink">
+          <section className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title">
                 <span className="text-error mr-1">*</span>附件材料
               </h3>
               <span className="chip">{files.length} 个文件</span>
             </div>
+            <div >
 
             {/* File list */}
             {files.length > 0 && (
-              <div className="flex flex-col gap-2 mb-md">
+              <div className="mb-3 flex flex-col gap-2">
                 {files.map((f) => (
-                  <div key={f.id} className="rounded-md border border-hairline p-3 bg-canvas flex items-center justify-between group hover:border-primary/40 transition">
+                  <div key={f.id} className="group flex items-center justify-between rounded-md border border-hairline p-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-md bg-primary/10 grid place-items-center text-primary">
-                        <span className="material-symbols-outlined icon-fill text-[18px]">description</span>
+                      <div className="grid h-10 w-10 place-items-center rounded-md bg-surface-tile-1 text-body-muted">
+                        <span className="material-symbols-outlined text-[18px]">description</span>
                       </div>
                       <div>
                         <p className="text-[13px] font-medium text-ink">{f.file.name}</p>
-                        <p className="text-[11px] text-ink-muted-48 mt-0.5">{formatFileSize(f.file.size)}</p>
+                        <p className="mt-0.5 text-[11px] text-placeholder">{formatFileSize(f.file.size)}</p>
                       </div>
                     </div>
                     <button
+                      type="button"
                       onClick={() => removeFile(f.id)}
-                      className="text-ink-muted-48 hover:text-primary p-2 rounded-md hover:bg-primary/6 transition opacity-0 group-hover:opacity-100"
+                      className="icon-button !h-8 !w-8 opacity-0 transition-opacity group-hover:opacity-100"
                     >
                       <span className="material-symbols-outlined text-[18px]">delete</span>
                     </button>
@@ -947,27 +942,27 @@ export default function AchievementUpload() {
 
             {/* Drop zone */}
             <div
-              className={`rounded-md border-2 border-dashed flex flex-col items-center justify-center text-center transition-all cursor-pointer group ${
-                files.length > 0 ? 'py-6' : 'py-section'
+              className={`flex cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-center transition-colors group ${
+                files.length > 0 ? 'py-6' : 'py-12'
               } ${
                 isDragging
-                  ? 'border-primary bg-primary/5'
-                  : 'border-hairline bg-canvas hover:border-primary/50 hover:bg-primary/3'
+                  ? 'border-primary bg-hover-overlay'
+                  : 'border-hairline hover:bg-hover-overlay'
               }`}
               onDrop={handleDrop}
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
               onClick={() => document.getElementById('achievement-file-input')?.click()}
             >
-              <div className={`w-12 h-12 rounded-full grid place-items-center mb-2 transition ${
-                isDragging ? 'bg-primary/15' : 'bg-canvas-parchment group-hover:bg-primary/10'
+              <div className={`mb-2 grid h-12 w-12 place-items-center rounded-md transition ${
+                isDragging ? 'bg-surface-tile-2' : 'bg-surface-tile-1'
               }`}>
                 <span className={`material-symbols-outlined text-[24px] ${
-                  isDragging ? 'text-primary' : 'text-ink-muted-48 group-hover:text-primary'
+                  isDragging ? 'text-ink' : 'text-body-muted'
                 }`}>cloud_upload</span>
               </div>
-              <p className="text-[14px] font-semibold text-ink mb-1">点击或拖拽文件到这里</p>
-              <p className="text-[12px] text-ink-muted-48">支持 .pdf, .doc, .docx, .jpg, .png, .zip · 可多选 · 限 50 MB/个</p>
+              <p className="mb-1 text-[14px] font-medium text-ink">点击或拖拽文件到这里</p>
+              <p className="text-[12px] text-placeholder">支持 .pdf, .doc, .docx, .jpg, .png, .zip · 可多选 · 限 50 MB/个</p>
               <input
                 id="achievement-file-input"
                 type="file"
@@ -981,44 +976,42 @@ export default function AchievementUpload() {
             {/* Upload progress */}
             {submitting && (
               <div className="mt-3">
-                <div className="flex justify-between text-[11px] text-ink-muted-48 mb-1">
+                <div className="mb-2 flex justify-between text-[11px] text-placeholder">
                   <span>上传中 ({currentUploadIdx + 1}/{files.length})…</span>
-                  <span className="tabular-nums">{uploadProgress}%</span>
+                  <span className="tabular-nums font-medium text-primary">{uploadProgress}%</span>
                 </div>
-                <div className="h-1.5 rounded-full bg-primary/8 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
+                <ProgressBar value={uploadProgress} size="md" showThumb segments={5} />
               </div>
             )}
+            </div>
           </section>
         </div>
 
         {/* Right: instructions */}
-        <aside className="lg:col-span-4 flex flex-col gap-md sticky top-6 self-start">
-          <div className="glass p-lg">
-            <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-primary">tips_and_updates</span>
-              使用说明
-            </h3>
-            <div className="flex flex-col gap-md">
+        <aside className="flex h-fit flex-col gap-6 lg:col-span-4 lg:sticky lg:top-[68px]">
+          <div className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-body-muted">tips_and_updates</span>
+                使用说明
+              </h3>
+            </div>
+            <div className="flex flex-col gap-4">
               <div>
                 <h4 className="text-[13px] font-medium text-ink mb-1.5 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-ink" />
                   队长代传
                 </h4>
-                <p className="text-[12px] text-ink-muted-80 leading-relaxed pl-3 border-l-2 border-primary/20">
+                <p className="border-l border-hairline pl-3 text-[12px] leading-relaxed text-body-subtle">
                   队长上传获奖凭证时，可以同时添加所有团队成员。上传后每个成员都能在个人成果中看到该凭证。
                 </p>
               </div>
               <div>
                 <h4 className="text-[13px] font-medium text-ink mb-1.5 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-ink" />
                   材料要求
                 </h4>
-                <p className="text-[12px] text-ink-muted-80 leading-relaxed pl-3 border-l-2 border-primary/20">
+                <p className="border-l border-hairline pl-3 text-[12px] leading-relaxed text-body-subtle">
                   附件需清晰可见，包含完整的赛事名称、获奖级别、个人姓名及主办方公章。支持一次上传多个文件。
                 </p>
               </div>
@@ -1033,7 +1026,7 @@ export default function AchievementUpload() {
                     '填写的获奖等级与上传证书不符',
                     '证明材料缺失官方印章或防伪标识',
                   ].map((item) => (
-                    <li key={item} className="text-[12px] text-ink-muted-80 flex items-start gap-1.5 leading-relaxed">
+                    <li key={item} className="flex items-start gap-1.5 text-[12px] leading-relaxed text-body-subtle">
                       <span className="material-symbols-outlined text-[13px] text-error mt-0.5 shrink-0">close</span>
                       <span>{item}</span>
                     </li>
@@ -1044,24 +1037,28 @@ export default function AchievementUpload() {
           </div>
 
           {/* Summary */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4">
-            <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-primary">checklist</span>
-              提交检查
-            </h3>
-            <ul className="flex flex-col gap-3 p-4 bg-slate-50 rounded-xl">
+          <div className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-body-muted">checklist</span>
+                提交检查
+              </h3>
+            </div>
+            <div >
+            <ul className="flex flex-col gap-2">
               {submitChecks.map(it => (
-                <li key={it.label} className={`flex items-center gap-2 text-sm ${it.done ? 'text-green-700' : 'text-slate-400'}`}>
-                  <span className={it.done ? 'text-green-500' : 'text-slate-400'}>
-                    {it.done ? '✓' : '○'}
+                <li key={it.label} className={`flex items-center gap-2 text-[13px] ${it.done ? 'text-ink' : 'text-placeholder'}`}>
+                  <span className="material-symbols-outlined text-[16px]">
+                    {it.done ? 'check_circle' : 'radio_button_unchecked'}
                   </span>
                   <span>{it.label}</span>
                 </li>
               ))}
             </ul>
+            </div>
           </div>
         </aside>
       </div>
-    </motion.div>
+    </div>
   );
 }

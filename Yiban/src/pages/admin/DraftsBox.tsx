@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import PageHero from '../../components/PageHero';
+import ProgressBar from '../../components/ProgressBar';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useConfirmModal } from '../../hooks/useConfirmModal';
 import apiClient from '../../api/client';
@@ -306,7 +307,7 @@ function QualityPanel({
   return (
     <div className="sticky top-[78px]">
       <h2 className="flex items-center gap-2 text-[15px] font-medium text-ink">
-        <span className="material-symbols-outlined text-[19px] text-primary">fact_check</span>
+        <span className="material-symbols-outlined text-[19px] text-body-muted">fact_check</span>
         AI 质量信息
       </h2>
       <div className="mt-md grid grid-cols-3 gap-1 rounded-sm border border-hairline bg-canvas p-1">
@@ -320,7 +321,7 @@ function QualityPanel({
             type="button"
             onClick={() => setTab(value)}
             className={`rounded-sm px-2 py-2 text-[12px] transition ${
-              tab === value ? 'bg-primary-soft text-primary' : 'text-placeholder hover:text-ink'
+              tab === value ? 'bg-surface-tile-1 text-ink' : 'text-placeholder hover:text-ink'
             }`}
           >
             {label} {counts[value]}
@@ -347,13 +348,14 @@ function QualityPanel({
                         {formatConfidence(item.confidence)}
                       </span>
                     </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-hairline">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${item.confidence * 100}%` }}
-                        className={`h-full rounded-full ${item.confidence < 0.7 ? 'bg-warning' : 'bg-primary'}`}
-                      />
-                    </div>
+                    <ProgressBar
+                      value={item.confidence * 100}
+                      size="sm"
+                      segments={4}
+                      showThumb
+                      instant
+                      trackClassName={item.confidence < 0.7 ? 'progress-track-warning' : ''}
+                    />
                   </div>
                 ))}
               </div>
@@ -365,7 +367,7 @@ function QualityPanel({
               <div className="flex flex-col gap-2">
                 {evidenceItems.map((item, index) => (
                   <div key={`${item.label}-${index}`} className="rounded-sm border border-hairline bg-canvas px-3 py-2.5">
-                    <p className="text-[11px] font-medium text-primary">{item.label}</p>
+                    <p className="text-[11px] font-medium text-body-muted">{item.label}</p>
                     <p className="mt-1 break-words text-[12px] leading-5 text-body-muted">{item.value}</p>
                   </div>
                 ))}
@@ -377,24 +379,24 @@ function QualityPanel({
             counts.risk ? (
               <div className="flex flex-col gap-2">
                 {duplicateCompetitionId && (
-                  <div className="rounded-sm border border-yellow-200 bg-yellow-50 px-3 py-3">
-                    <p className="flex items-center gap-1.5 text-[12px] font-medium text-yellow-900">
+                  <div className="rounded-sm border border-border bg-surface-tile-1 px-3 py-3">
+                    <p className="flex items-center gap-1.5 text-[12px] font-medium text-warning">
                       <span className="material-symbols-outlined text-[17px]">content_copy</span>
                       疑似重复赛事
                     </p>
-                    <p className="mt-1 text-[12px] leading-5 text-yellow-800">
+                    <p className="mt-1 text-[12px] leading-5 text-body-muted">
                       匹配赛事 #{duplicateCompetitionId}，相似度 {formatConfidence(duplicateScore)}
                     </p>
-                    <button type="button" className="mt-2 text-[12px] text-primary hover:underline" onClick={onOpenDuplicate}>
+                    <button type="button" className="mt-2 text-[12px] text-body-muted hover:underline" onClick={onOpenDuplicate}>
                       打开已有赛事
                     </button>
                   </div>
                 )}
                 {riskItems.map((item, index) => (
-                  <div key={`${item.label}-${index}`} className="rounded-sm border border-red-200 bg-red-50 px-3 py-2.5">
+                  <div key={`${item.label}-${index}`} className="rounded-sm border border-border bg-surface-tile-1 px-3 py-2.5">
                     <p className="text-[11px] font-medium text-error">{riskLabel(item.value)}</p>
                     {riskLabel(item.value) !== item.value && (
-                      <p className="mt-1 break-words text-[12px] leading-5 text-red-800">{item.value}</p>
+                      <p className="mt-1 break-words text-[12px] leading-5 text-error">{item.value}</p>
                     )}
                   </div>
                 ))}
@@ -721,7 +723,7 @@ export default function DraftsBox() {
       initial="hidden"
       animate="visible"
       transition={pageTransition}
-      className="flex flex-col gap-lg py-lg pb-24"
+      className="flex flex-col gap-4 pb-24"
     >
       <PageHero
         eyebrow="Drafts"
@@ -736,7 +738,7 @@ export default function DraftsBox() {
       />
 
       {/* Filters */}
-      <section className="glass-tint flex flex-col gap-3 px-md py-3 lg:flex-row lg:items-center">
+      <section className="filter-bar lg:flex-row">
         <div className="relative min-w-0 flex-1 lg:max-w-[420px]">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-placeholder">
             search
@@ -753,7 +755,7 @@ export default function DraftsBox() {
         </div>
 
         {/* Source filter */}
-        <div className="flex rounded-sm border border-hairline bg-canvas-parchment p-1">
+        <div className="flex rounded-sm border border-hairline bg-surface-tile-1 p-1">
           {([
             { value: 'all', label: '全部' },
             { value: 'ai', label: 'AI 导入' },
@@ -765,7 +767,7 @@ export default function DraftsBox() {
               onClick={() => setFilterSource(item.value)}
               className={`flex h-8 items-center rounded-sm px-3 text-[13px] transition ${
                 filterSource === item.value
-                  ? 'bg-canvas text-primary shadow-sm'
+                  ? 'bg-canvas text-ink shadow-none'
                   : 'text-body-muted hover:text-ink'
               }`}
             >
@@ -800,22 +802,23 @@ export default function DraftsBox() {
       </section>
 
       {/* Main content */}
-      <div className="grid min-h-[680px] grid-cols-1 gap-lg xl:grid-cols-[340px_minmax(0,1fr)]">
+      <div className="grid min-h-[680px] grid-cols-1 gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
         {/* Left: Draft list */}
-        <section className="glass overflow-hidden">
-          <div className="border-b border-hairline px-md py-3">
-            <h2 className="text-[14px] font-medium text-ink">草稿列表</h2>
+        <section className="section-card">
+          <div className="section-card-header">
+            <h2 className="section-card-title">草稿列表</h2>
+            <span className="chip tabular-nums">{unifiedDrafts.length}</span>
           </div>
           <div className="max-h-[760px] overflow-y-auto">
             {loading ? (
-              <div className="grid min-h-[240px] place-items-center text-placeholder">
-                <span className="material-symbols-outlined animate-spin text-[26px]">progress_activity</span>
+              <div className="empty-panel py-16">
+                <span className="material-symbols-outlined animate-spin">progress_activity</span>
               </div>
             ) : unifiedDrafts.length === 0 ? (
-              <div className="flex min-h-[280px] w-full min-w-0 flex-col items-center justify-center px-lg text-center">
-                <span className="material-symbols-outlined text-[42px] text-placeholder">draft</span>
-                <p className="empty-state-copy mt-3 text-[14px] text-ink">暂无匹配草稿</p>
-                <p className="empty-state-copy mt-1 text-[12px] text-placeholder">尝试调整筛选条件或新建赛事</p>
+              <div className="empty-panel py-16">
+                <span className="material-symbols-outlined">draft</span>
+                <p className="text-[13px]">暂无匹配草稿</p>
+                <p className="text-[12px] text-placeholder">尝试调整筛选条件或新建赛事</p>
               </div>
             ) : (
               <motion.div variants={listContainer} initial="hidden" animate="visible">
@@ -829,8 +832,8 @@ export default function DraftsBox() {
                       type="button"
                       variants={listItem}
                       onClick={() => handleSelectItem(item)}
-                      className={`block w-full border-b border-hairline px-md py-md text-left transition last:border-b-0 ${
-                        selected ? 'bg-primary-soft' : 'hover:bg-canvas-parchment'
+                      className={`list-row list-row-clickable w-full text-left ${
+                        selected ? 'bg-primary-soft' : ''
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -887,11 +890,11 @@ export default function DraftsBox() {
         </section>
 
         {/* Right: Detail panel */}
-        <section className="glass min-w-0 overflow-hidden">
+        <section className="section-card min-w-0">
           {!selectedId ? (
-            <div className="flex min-h-[620px] flex-col items-center justify-center text-center">
-              <span className="material-symbols-outlined text-[46px] text-placeholder">select_window</span>
-              <p className="mt-3 text-[14px] text-ink">选择一条草稿开始审核</p>
+            <div className="empty-panel min-h-[620px]">
+              <span className="material-symbols-outlined">select_window</span>
+              <p className="text-[13px]">选择一条草稿开始审核</p>
             </div>
           ) : selectedSource === 'manual' ? (
             selectedManualDraft ? (
@@ -900,13 +903,13 @@ export default function DraftsBox() {
                 onEdit={() => navigate(`/admin/publish/${selectedManualDraft.id}`)}
               />
             ) : (
-              <div className="grid min-h-[620px] place-items-center text-placeholder">
-                <span className="material-symbols-outlined animate-spin text-[28px]">progress_activity</span>
+              <div className="empty-panel min-h-[620px]">
+                <span className="material-symbols-outlined animate-spin">progress_activity</span>
               </div>
             )
           ) : detailLoading ? (
-            <div className="grid min-h-[620px] place-items-center text-placeholder">
-              <span className="material-symbols-outlined animate-spin text-[28px]">progress_activity</span>
+            <div className="empty-panel min-h-[620px]">
+              <span className="material-symbols-outlined animate-spin">progress_activity</span>
             </div>
           ) : selectedDraft ? (
             <div>
@@ -950,12 +953,12 @@ export default function DraftsBox() {
 
               {/* Confirmed banner */}
               {selectedDraft.status === 'confirmed' && (
-                <div className="flex flex-col gap-3 border-b border-green-200 bg-green-50 px-lg py-md sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 border-b border-hairline bg-surface-tile-1 px-lg py-md sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-2">
                     <span className="material-symbols-outlined text-[20px] text-success">check_circle</span>
                     <div>
-                      <p className="text-[13px] font-medium text-green-900">已创建未发布赛事</p>
-                      <p className="mt-1 text-[12px] text-green-700">请在现有赛事编辑页补充封面并完成发布。</p>
+                      <p className="text-[13px] font-medium text-success">已创建未发布赛事</p>
+                      <p className="mt-1 text-[12px] text-success">请在现有赛事编辑页补充封面并完成发布。</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -978,10 +981,10 @@ export default function DraftsBox() {
               {/* AI draft form */}
               <div className="grid grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_320px]">
                 <div className="p-lg">
-                  <fieldset disabled={selectedDraft.status !== 'pending_review'} className="flex flex-col gap-lg disabled:opacity-75">
+                  <fieldset disabled={selectedDraft.status !== 'pending_review'} className="flex flex-col gap-4 disabled:opacity-75">
                     <div>
                       <h2 className="mb-md flex items-center gap-2 text-[15px] font-medium text-ink">
-                        <span className="material-symbols-outlined text-[19px] text-primary">edit_note</span>
+                        <span className="material-symbols-outlined text-[19px] text-body-muted">edit_note</span>
                         赛事字段
                       </h2>
                       <div className="grid grid-cols-1 gap-md md:grid-cols-2">
@@ -1045,7 +1048,7 @@ export default function DraftsBox() {
 
                     <div className="border-t border-hairline pt-lg">
                       <h2 className="mb-md flex items-center gap-2 text-[15px] font-medium text-ink">
-                        <span className="material-symbols-outlined text-[19px] text-primary">rate_review</span>
+                        <span className="material-symbols-outlined text-[19px] text-body-muted">rate_review</span>
                         审核意见
                       </h2>
                       <textarea
@@ -1059,7 +1062,7 @@ export default function DraftsBox() {
                   </fieldset>
                 </div>
 
-                <aside className="border-t border-hairline bg-canvas-parchment/50 p-lg 2xl:border-l 2xl:border-t-0">
+                <aside className="border-t border-hairline bg-surface-tile-1/50 p-lg 2xl:border-l 2xl:border-t-0">
                   <QualityPanel
                     confidenceItems={confidenceItems}
                     evidenceItems={evidenceItems}

@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 import ErrorState from '../../components/ErrorState';
-import { CardSkeleton } from '../../components/Skeleton';
+import Pagination from '../../components/Pagination';
+import ProgressBar, { StageProgressBar } from '../../components/ProgressBar';
+import Skeleton from '../../components/Skeleton';
+import { displayLevel } from '../../lib/levelDisplay';
 import type { CompetitionProgress, StageProgressStatus, StudentStageProgress } from '../../types';
-import { pageVariants, pageTransition, listContainer, listItem } from '../../lib/motion';
 
 type RegistrationRecord = {
   id: number | string;
@@ -57,10 +58,10 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 
 const statusConfig: Record<StageProgressStatus, { icon: string; label: string; dot: string; text: string }> = {
   passed: { icon: 'check_circle', label: '已完成', dot: 'bg-success text-white', text: 'text-success' },
-  in_progress: { icon: 'radio_button_checked', label: '进行中', dot: 'bg-primary text-on-primary ring-4 ring-primary/15', text: 'text-primary' },
-  submitted: { icon: 'schedule', label: '已提交', dot: 'bg-primary text-on-primary ring-4 ring-primary/15', text: 'text-primary' },
+  in_progress: { icon: 'radio_button_checked', label: '进行中', dot: 'bg-primary text-on-primary', text: 'text-ink' },
+  submitted: { icon: 'schedule', label: '已提交', dot: 'bg-primary text-on-primary', text: 'text-ink' },
   failed: { icon: 'error', label: '需处理', dot: 'bg-error text-white', text: 'text-error' },
-  not_started: { icon: 'radio_button_unchecked', label: '未开始', dot: 'bg-surface-chip text-placeholder', text: 'text-ink-muted-48' },
+  not_started: { icon: 'radio_button_unchecked', label: '未开始', dot: 'bg-surface-chip text-placeholder', text: 'text-placeholder' },
 };
 
 function formatDate(value?: string | null) {
@@ -112,15 +113,15 @@ function isCompleted(card: ProgressCard) {
 }
 
 function getStatusMeta(reg?: RegistrationRecord) {
-  if (!reg) return { label: '阶段跟踪中', chip: 'chip chip-info', icon: 'timeline', tone: 'text-primary' };
-  if (reg.status === '退回补充') return { label: '退回补充', chip: 'chip chip-warning', icon: 'assignment_return', tone: 'text-warning' };
-  if (reg.status === '审核驳回') return { label: '审核驳回', chip: 'chip chip-error', icon: 'cancel', tone: 'text-error' };
-  if (reg.status === '审核中') return { label: '成果审核中', chip: 'chip chip-warning', icon: 'hourglass_top', tone: 'text-warning' };
-  if (reg.status === '已提交') return { label: '报名审核中', chip: 'chip chip-info', icon: 'pending_actions', tone: 'text-primary' };
-  if (reg.status === '审核通过' && isSubmissionAccepted(reg)) return { label: '已完成', chip: 'chip chip-success', icon: 'verified', tone: 'text-success' };
-  if (reg.status === '审核通过') return { label: '待上传成果', chip: 'chip chip-primary', icon: 'upload_file', tone: 'text-primary' };
-  if (reg.status === '待完善') return { label: '待提交成果', chip: 'chip chip-primary', icon: 'upload_file', tone: 'text-primary' };
-  return { label: reg.status || '未知状态', chip: 'chip', icon: 'info', tone: 'text-ink-muted-80' };
+  if (!reg) return { label: '阶段跟踪中', chip: 'chip chip-info', icon: 'timeline' };
+  if (reg.status === '退回补充') return { label: '退回补充', chip: 'chip chip-warning', icon: 'assignment_return' };
+  if (reg.status === '审核驳回') return { label: '审核驳回', chip: 'chip chip-error', icon: 'cancel' };
+  if (reg.status === '审核中') return { label: '成果审核中', chip: 'chip chip-warning', icon: 'hourglass_top' };
+  if (reg.status === '已提交') return { label: '报名审核中', chip: 'chip chip-info', icon: 'pending_actions' };
+  if (reg.status === '审核通过' && isSubmissionAccepted(reg)) return { label: '已完成', chip: 'chip chip-success', icon: 'verified' };
+  if (reg.status === '审核通过') return { label: '待上传成果', chip: 'chip chip-primary', icon: 'upload_file' };
+  if (reg.status === '待完善') return { label: '待提交成果', chip: 'chip chip-primary', icon: 'upload_file' };
+  return { label: reg.status || '未知状态', chip: 'chip', icon: 'info' };
 }
 
 function makeStage(
@@ -318,55 +319,66 @@ function matchesFilter(card: ProgressCard, filter: FilterKey) {
   return true;
 }
 
-function StatTile({ label, value, icon, tone }: { label: string; value: number; icon: string; tone: 'primary' | 'success' | 'warning' | 'error' }) {
-  const toneClass = {
-    primary: 'text-primary bg-primary/8',
-    success: 'text-success bg-success/8',
-    warning: 'text-warning bg-warning/8',
-    error: 'text-error bg-error/8',
-  }[tone];
-
-  return (
-    <div className="rounded-md border border-hairline bg-canvas px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[12px] text-ink-muted-48">{label}</p>
-        <span className={`material-symbols-outlined grid h-8 w-8 place-items-center rounded-full text-[18px] ${toneClass}`}>{icon}</span>
-      </div>
-      <p className="mt-2 text-[24px] font-semibold leading-none text-ink tabular-nums">{value}</p>
-    </div>
-  );
-}
-
 function StageTimeline({ stages }: { stages: StudentStageProgress[] }) {
   if (stages.length === 0) {
     return (
-      <div className="border-t border-hairline pt-4 text-[13px] text-ink-muted-48">
+      <p className="pt-3 text-[12.5px] text-placeholder">
         暂无阶段配置，报名与审核状态会在这里持续更新。
-      </div>
+      </p>
     );
   }
 
+  const doneIndex = (() => {
+    let last = -1;
+    stages.forEach((s, i) => {
+      if (s.status === 'passed' || s.status === 'submitted' || s.status === 'in_progress' || s.status === 'failed') {
+        last = i;
+      }
+    });
+    return last;
+  })();
+
   return (
-    <div className="overflow-x-auto pb-1">
-      <div className="relative min-w-[680px] pt-1">
-        <div className="absolute left-[10%] right-[10%] top-[19px] h-px bg-hairline" />
+    <div className="overflow-x-auto pb-1 pt-2">
+      <div className="relative min-w-[560px] px-2">
+        {/* 背景轨 */}
+        <div className="absolute left-[8%] right-[8%] top-[18px] h-3 rounded-full bg-[color-mix(in_srgb,var(--color-primary)_14%,var(--color-surface-tile-1))]" />
+        {/* 已完成轨 */}
+        {doneIndex >= 0 && stages.length > 1 ? (
+          <div
+            className="absolute top-[18px] h-3 rounded-full bg-gradient-to-r from-[#3b82f6] via-[#2563eb] to-[#1d4ed8]"
+            style={{
+              left: '8%',
+              width: `${(doneIndex / (stages.length - 1)) * 84}%`,
+            }}
+          />
+        ) : null}
         <div
-          className="grid gap-3"
+          className="relative z-10 grid gap-2"
           style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))` }}
         >
           {stages.map((stage) => {
             const cfg = statusConfig[stage.status] || statusConfig.not_started;
             const stageDate = getStageDate(stage);
+            const active = stage.status !== 'not_started';
             return (
               <div key={`${stage.stageId}-${stage.stageOrder}`} className="relative flex min-w-0 flex-col items-center text-center">
-                <div className={`relative z-10 grid h-9 w-9 place-items-center rounded-full ${cfg.dot}`}>
-                  <span className="material-symbols-outlined text-[19px]">{cfg.icon}</span>
+                <div
+                  className={`grid h-9 w-9 place-items-center rounded-full border-[2.5px] shadow-sm ${
+                    active
+                      ? 'border-primary bg-canvas text-primary'
+                      : 'border-hairline bg-canvas text-placeholder'
+                  } ${stage.status === 'passed' ? '!border-primary !bg-primary !text-on-primary' : ''} ${
+                    stage.status === 'failed' ? '!border-error !bg-error !text-white' : ''
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">{cfg.icon}</span>
                 </div>
-                <p className="mt-3 max-w-[8rem] truncate text-[13px] font-medium text-ink">{stage.stageName}</p>
-                <p className={`mt-1 text-[11px] ${cfg.text}`}>{cfg.label}</p>
-                {stageDate && (
-                  <p className="mt-1 text-[11px] text-ink-muted-48 tabular-nums">{formatDate(stageDate)}</p>
-                )}
+                <p className="mt-2.5 max-w-[7.5rem] truncate text-[12.5px] font-semibold text-ink">{stage.stageName}</p>
+                <p className={`mt-0.5 text-[11px] font-medium ${cfg.text}`}>{cfg.label}</p>
+                {stageDate ? (
+                  <p className="mt-0.5 text-[11px] tabular-nums text-placeholder">{formatDate(stageDate)}</p>
+                ) : null}
               </div>
             );
           })}
@@ -376,7 +388,63 @@ function StageTimeline({ stages }: { stages: StudentStageProgress[] }) {
   );
 }
 
-function ProgressCardView({ card }: { card: ProgressCard }) {
+/** 列表上只展示「最新进度」一句话 */
+function latestProgressText(card: ProgressCard) {
+  const status = getStatusMeta(card.registration);
+  const stage = deriveCurrentStage(card);
+  const percent = getProgressPercent(card);
+  return `${status.label} · ${stage} · ${percent}%`;
+}
+
+function EmptyProgress({ recommendations }: { recommendations: Recommendation[] }) {
+  const navigate = useNavigate();
+
+  return (
+    <section className="page-section">
+      <div className="py-10 text-center">
+        <p className="text-[14px] font-medium text-ink">暂无赛事进度</p>
+        <p className="mt-1 text-[13px] text-placeholder">报名赛事后，进度会出现在列表中。</p>
+        <button type="button" onClick={() => navigate('/student/competitions')} className="btn-primary mt-4">
+          去报名赛事
+        </button>
+      </div>
+
+      {recommendations.length > 0 ? (
+        <div className="page-section">
+          <div className="page-section-head">
+            <h2 className="page-section-title">推荐赛事</h2>
+            <button type="button" onClick={() => navigate('/student/competitions')} className="page-section-extra hover:text-primary">
+              查看更多
+            </button>
+          </div>
+          <div className="flat-list">
+            {recommendations.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => navigate(`/student/competitions/${item.id}`)}
+                className="flat-row flat-row-clickable"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[14px] font-medium text-ink">{item.name}</p>
+                  <p className="mt-0.5 flex flex-wrap gap-2 text-[12px] text-placeholder">
+                    {item.level ? <span>{displayLevel(item.level)}</span> : null}
+                    {item.category ? <span>{item.category} 类</span> : null}
+                    <span>截止 {formatDate(item.endTime)}</span>
+                  </p>
+                </div>
+                <span className="material-symbols-outlined text-[18px] text-placeholder">chevron_right</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+/** 详情页：完整阶段 + 操作 */
+function ProgressDetail({ card, onBack }: { card: ProgressCard; onBack: () => void }) {
   const navigate = useNavigate();
   const reg = card.registration;
   const status = getStatusMeta(reg);
@@ -384,149 +452,104 @@ function ProgressCardView({ card }: { card: ProgressCard }) {
   const currentStage = deriveCurrentStage(card);
   const percent = getProgressPercent(card);
   const note = cleanReviewNote(reg?.reviewNote);
-  const activeStage = card.stages.find((stage) => stage.stageName === currentStage) || card.stages.find((stage) => stage.status === 'in_progress' || stage.status === 'submitted' || stage.status === 'failed');
+  const activeStage = card.stages.find((stage) => stage.stageName === currentStage)
+    || card.stages.find((stage) => stage.status === 'in_progress' || stage.status === 'submitted' || stage.status === 'failed');
 
   return (
-    <motion.article variants={listItem} className="glass p-lg">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={status.chip}>
-              <span className="material-symbols-outlined text-[14px]">{status.icon}</span>
-              {status.label}
-            </span>
-            {card.competitionLevel && <span className="chip chip-primary">{card.competitionLevel}</span>}
-            {card.competitionCategory && <span className="chip">{card.competitionCategory} 类</span>}
-          </div>
-          <h2 className="mt-3 truncate text-[20px] font-semibold tracking-tight text-ink">{card.competitionName}</h2>
-          <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-ink-muted-80">
-            <span className="inline-flex items-center gap-1">
-              <span className={`material-symbols-outlined text-[16px] ${status.tone}`}>timeline</span>
-              当前阶段：<span className="font-medium text-ink">{currentStage}</span>
-            </span>
-            {reg?.submitDate && (
-              <span className="inline-flex items-center gap-1">
-                <span className="material-symbols-outlined text-[16px] text-ink-muted-48">event</span>
-                报名时间：{formatDate(reg.submitDate)}
-              </span>
-            )}
-          </p>
-        </div>
-
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <button onClick={() => navigate(`/student/competitions/${card.competitionId}`)} className="btn-secondary !py-2 !text-[13px]">
-            <span className="material-symbols-outlined text-[16px]">open_in_new</span>
-            赛事详情
-          </button>
-          <button
-            onClick={() => navigate(action.path)}
-            className={`${action.primary ? 'btn-primary' : 'btn-secondary'} !py-2 !text-[13px]`}
-          >
-            <span className="material-symbols-outlined text-[16px]">{action.icon}</span>
-            {action.label}
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-5 grid grid-cols-1 gap-3 border-y border-hairline py-4 sm:grid-cols-2 xl:grid-cols-4">
-        <InfoCell icon="groups" label="队伍信息" value={reg?.teamName ? `团队：${reg.teamName}` : '个人报名'} />
-        <InfoCell icon="flag" label="参赛赛道" value={reg?.track || '暂未选择'} />
-        <InfoCell icon="folder_open" label="成果材料" value={reg?.fileName || (hasSubmission(reg) ? '已上传材料' : '暂未上传')} />
-        <InfoCell icon="percent" label="完成度" value={`${percent}%`} />
-      </div>
-
-      {note && (isReturned(reg) || isRejected(reg)) && (
-        <div className={`mt-4 rounded-md border px-4 py-3 ${isRejected(reg) ? 'border-error/20 bg-error/5' : 'border-warning/20 bg-warning/5'}`}>
-          <div className="flex gap-3">
-            <span className={`material-symbols-outlined mt-0.5 text-[18px] ${isRejected(reg) ? 'text-error' : 'text-warning'}`}>
-              {isRejected(reg) ? 'report' : 'assignment_return'}
-            </span>
-            <div className="min-w-0">
-              <p className={`text-[13px] font-medium ${isRejected(reg) ? 'text-error' : 'text-warning'}`}>
-                {isRejected(reg) ? '审核驳回原因' : '退回补充说明'}
-              </p>
-              <p className="mt-1 text-[13px] leading-6 text-ink">{note}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeStage?.description && (
-        <div className="mt-4 flex items-start gap-3 rounded-md border border-primary/12 bg-primary/5 px-4 py-3">
-          <span className="material-symbols-outlined mt-0.5 text-[18px] text-primary">tips_and_updates</span>
-          <p className="text-[13px] leading-6 text-ink-muted-80">{activeStage.description}</p>
-        </div>
-      )}
-
-      <div className="mt-5">
-        <StageTimeline stages={card.stages} />
-      </div>
-    </motion.article>
-  );
-}
-
-function InfoCell({ icon, label, value }: { icon: string; label: string; value: string }) {
-  return (
-    <div className="min-w-0">
-      <p className="flex items-center gap-1.5 text-[12px] text-ink-muted-48">
-        <span className="material-symbols-outlined text-[15px] text-primary">{icon}</span>
-        {label}
-      </p>
-      <p className="mt-1 truncate text-[13px] font-medium text-ink">{value}</p>
-    </div>
-  );
-}
-
-function EmptyProgress({ recommendations }: { recommendations: Recommendation[] }) {
-  const navigate = useNavigate();
-
-  return (
-    <div className="glass p-xl">
-      <div className="flex flex-col items-center text-center">
-        <span className="material-symbols-outlined text-[48px] text-ink-muted-48">timeline</span>
-        <p className="empty-state-copy mt-3 text-[16px] font-medium text-ink">暂无赛事进度</p>
-        <p className="empty-state-copy mt-1 text-[13px] text-ink-muted-48">报名赛事后，你的阶段进度、审核意见和下一步操作会在这里集中展示。</p>
-        <button onClick={() => navigate('/student/competitions')} className="btn-primary mt-4">
-          <span className="material-symbols-outlined text-[16px]">search</span>
-          去报名赛事
+    <div className="page-stack">
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" onClick={onBack} className="btn-secondary !h-9">
+          <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+          返回列表
         </button>
       </div>
 
-      {recommendations.length > 0 && (
-        <div className="mt-8 border-t border-hairline pt-5">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="text-[15px] font-semibold text-ink">正在报名的赛事</h2>
-            <button onClick={() => navigate('/student/competitions')} className="text-[13px] font-medium text-primary hover:text-primary-focus">
-              查看更多
+      <PageHero
+        eyebrow="进度详情"
+        title={card.competitionName}
+        description={`${status.label} · 当前阶段 ${currentStage} · 完成 ${percent}%`}
+        actions={(
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => navigate(`/student/competitions/${card.competitionId}`)} className="btn-secondary">
+              赛事详情
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(action.path)}
+              className={action.primary ? 'btn-primary' : 'btn-secondary'}
+            >
+              {action.label}
             </button>
           </div>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            {recommendations.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => navigate(`/student/competitions/${item.id}`)}
-                className="min-w-0 rounded-md border border-hairline bg-canvas px-4 py-3 text-left transition hover:border-primary/30 hover:bg-primary/5"
-              >
-                <p className="truncate text-[14px] font-medium text-ink">{item.name}</p>
-                <p className="mt-2 flex flex-wrap gap-2 text-[12px] text-ink-muted-48">
-                  {item.level && <span>{item.level}</span>}
-                  {item.category && <span>{item.category} 类</span>}
-                  <span>截止 {formatDate(item.endTime)}</span>
-                </p>
-              </button>
-            ))}
-          </div>
+        )}
+      />
+
+      <section className="metric-row">
+        <div className="metric-item">
+          <div className="metric-item-label">状态</div>
+          <div className="metric-item-value text-[16px]">{status.label}</div>
         </div>
-      )}
+        <div className="metric-item">
+          <div className="metric-item-label">当前阶段</div>
+          <div className="metric-item-value text-[16px]">{currentStage}</div>
+        </div>
+        <div className="metric-item">
+          <div className="metric-item-label">完成度</div>
+          <div className="metric-item-value text-[16px]">{percent}%</div>
+        </div>
+        <div className="metric-item">
+          <div className="metric-item-label">级别</div>
+          <div className="metric-item-value text-[16px]">{displayLevel(card.competitionLevel)}</div>
+        </div>
+      </section>
+
+      <ProgressBar value={percent} size="lg" showThumb showLabel segments={Math.min(6, Math.max(3, card.stages.length || 4))} />
+
+      {(reg?.teamName || reg?.track || reg?.submitDate) ? (
+        <p className="text-[13px] text-body-subtle">
+          {[
+            reg?.teamName ? `队伍：${reg.teamName}` : '个人报名',
+            reg?.track ? `赛道：${reg.track}` : null,
+            reg?.submitDate ? `报名：${formatDate(reg.submitDate)}` : null,
+            reg?.fileName || (hasSubmission(reg) ? '已上传材料' : '暂未上传材料'),
+          ].filter(Boolean).join(' · ')}
+        </p>
+      ) : null}
+
+      {note && (isReturned(reg) || isRejected(reg)) ? (
+        <p className={`rounded-lg border px-3 py-2.5 text-[13px] leading-relaxed ${
+          isRejected(reg) ? 'border-error/25 bg-error/5 text-error' : 'border-warning/25 bg-warning/5 text-warning'
+        }`}>
+          {isRejected(reg) ? '驳回原因：' : '补充说明：'}{note}
+        </p>
+      ) : null}
+
+      {activeStage?.description ? (
+        <p className="text-[13px] leading-relaxed text-body-subtle">{activeStage.description}</p>
+      ) : null}
+
+      <section className="page-section">
+        <div className="page-section-head">
+          <h2 className="page-section-title">阶段进度</h2>
+        </div>
+        {card.stages.length > 0 ? (
+          <StageProgressBar stages={card.stages} size="md" className="mb-4 max-w-xl" />
+        ) : null}
+        <StageTimeline stages={card.stages} />
+      </section>
     </div>
   );
 }
+
+const PAGE_SIZE = 10;
 
 export default function MyProgress() {
   const [progressList, setProgressList] = useState<CompetitionProgress[]>([]);
   const [registrations, setRegistrations] = useState<RegistrationRecord[]>([]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
+  const [page, setPage] = useState(1);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -590,16 +613,28 @@ export default function MyProgress() {
     completed: cards.filter(isCompleted).length,
   }), [cards]);
 
+  const totalFiltered = filteredCards.length;
+  const pageCount = Math.max(1, Math.ceil(totalFiltered / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const pagedCards = useMemo(() => {
+    const start = (safePage - 1) * PAGE_SIZE;
+    return filteredCards.slice(start, start + PAGE_SIZE);
+  }, [filteredCards, safePage]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeFilter]);
+
+  const selectedCard = selectedKey
+    ? cards.find((c) => c.cardKey === selectedKey) ?? null
+    : null;
+
   if (loading) {
     return (
-      <div className="py-lg flex flex-col gap-lg">
-        <PageHero eyebrow="My progress" title="我的赛事进度" description="正在整理你的赛事阶段与待办事项。" />
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-          {Array.from({ length: 5 }, (_, index) => <CardSkeleton key={index} />)}
-        </div>
-        <div className="flex flex-col gap-4">
-          {Array.from({ length: 2 }, (_, index) => <CardSkeleton key={`card-${index}`} />)}
-        </div>
+      <div className="page-stack">
+        <PageHero eyebrow="进度" title="我的赛事进度" description="加载中…" />
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-40 w-full" />
       </div>
     );
   }
@@ -614,21 +649,19 @@ export default function MyProgress() {
     );
   }
 
+  // 详情视图：点进某场赛事
+  if (selectedCard) {
+    return <ProgressDetail card={selectedCard} onBack={() => setSelectedKey(null)} />;
+  }
+
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-      transition={pageTransition}
-      className="py-lg flex flex-col gap-lg"
-    >
+    <div className="page-stack">
       <PageHero
-        eyebrow="My progress"
+        eyebrow="进度"
         title="我的赛事进度"
-        description="集中追踪每项赛事的报名、审核、成果提交和成长记录，快速找到下一步要处理的事项。"
+        description="赛事列表只展示最新进度，点击某一项查看完整阶段。"
         actions={(
-          <button onClick={() => navigate('/student/competitions')} className="btn-secondary">
-            <span className="material-symbols-outlined text-[18px]">search</span>
+          <button type="button" onClick={() => navigate('/student/competitions')} className="btn-secondary">
             浏览更多赛事
           </button>
         )}
@@ -638,46 +671,89 @@ export default function MyProgress() {
         <EmptyProgress recommendations={recommendations} />
       ) : (
         <>
-          <motion.div variants={listContainer} initial="hidden" animate="visible" className="grid grid-cols-2 gap-3 md:grid-cols-5">
-            <motion.div variants={listItem}><StatTile label="累计报名" value={counts.all} icon="format_list_numbered" tone="primary" /></motion.div>
-            <motion.div variants={listItem}><StatTile label="待我处理" value={counts.todo} icon="task_alt" tone="warning" /></motion.div>
-            <motion.div variants={listItem}><StatTile label="审核中" value={counts.reviewing} icon="hourglass_top" tone="warning" /></motion.div>
-            <motion.div variants={listItem}><StatTile label="退回补充" value={counts.returned} icon="assignment_return" tone="error" /></motion.div>
-            <motion.div variants={listItem}><StatTile label="已完成" value={counts.completed} icon="verified" tone="success" /></motion.div>
-          </motion.div>
-
-          <div className="flex gap-1 overflow-x-auto rounded-full bg-primary/6 p-1 w-fit max-w-full no-scrollbar">
+          <div className="filter-strip">
             {FILTERS.map((filter) => (
               <button
                 key={filter.key}
+                type="button"
                 onClick={() => setActiveFilter(filter.key)}
-                className={`rounded-full px-4 py-1.5 text-[13px] whitespace-nowrap transition ${
-                  activeFilter === filter.key
-                    ? 'bg-canvas text-ink font-semibold shadow-sm'
-                    : 'text-ink-muted-80 hover:text-ink'
-                }`}
+                className={`chip ${activeFilter === filter.key ? 'chip-primary' : ''}`}
               >
                 {filter.label}
-                <span className="ml-1 tabular-nums text-[12px] opacity-70">{counts[filter.key]}</span>
+                <span className="tabular-nums text-placeholder">{counts[filter.key]}</span>
               </button>
             ))}
           </div>
 
           {filteredCards.length === 0 ? (
-            <div className="glass">
-              <ErrorState
-                variant="not-found"
-                title="当前筛选下暂无赛事"
-                message="可以切换到全部进度查看所有报名赛事。"
-              />
-            </div>
+            <p className="py-10 text-center text-[13.5px] text-placeholder">
+              当前筛选下暂无赛事，可切换到「全部」查看。
+            </p>
           ) : (
-            <motion.div variants={listContainer} initial="hidden" animate="visible" className="flex flex-col gap-4">
-              {filteredCards.map((card) => <ProgressCardView key={card.cardKey} card={card} />)}
-            </motion.div>
+            <>
+              <div className="overflow-hidden rounded-xl border border-hairline bg-canvas">
+                <div className="hidden grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_88px] gap-3 border-b border-hairline bg-canvas-parchment px-4 py-2.5 text-[12px] font-medium text-placeholder sm:grid">
+                  <span>赛事</span>
+                  <span>最新进度</span>
+                  <span className="text-right">操作</span>
+                </div>
+                <div className="divide-y divide-hairline">
+                  {pagedCards.map((card) => {
+                    const status = getStatusMeta(card.registration);
+                    const percent = getProgressPercent(card);
+                    return (
+                      <button
+                        key={card.cardKey}
+                        type="button"
+                        onClick={() => setSelectedKey(card.cardKey)}
+                        className="grid w-full grid-cols-1 gap-2 px-4 py-3.5 text-left transition-colors hover:bg-hover-overlay sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_88px] sm:items-center sm:gap-3"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="truncate text-[14px] font-medium text-ink">{card.competitionName}</span>
+                            <span className={status.chip}>{status.label}</span>
+                          </div>
+                          <p className="mt-0.5 text-[12px] text-placeholder sm:hidden">
+                            {latestProgressText(card)}
+                          </p>
+                        </div>
+                        <div className="hidden min-w-0 sm:block">
+                          <p className="truncate text-[13px] text-body-muted">{latestProgressText(card)}</p>
+                          <ProgressBar
+                            value={percent}
+                            size="sm"
+                            showThumb
+                            instant
+                            segments={4}
+                            className="mt-2 max-w-[240px]"
+                          />
+                        </div>
+                        <div className="flex items-center justify-end text-placeholder">
+                          <span className="text-[12.5px] text-primary sm:hidden">查看详情</span>
+                          <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {totalFiltered > PAGE_SIZE ? (
+                <Pagination
+                  current={safePage}
+                  total={totalFiltered}
+                  pageSize={PAGE_SIZE}
+                  onChange={setPage}
+                />
+              ) : (
+                <p className="text-center text-[12.5px] text-placeholder">
+                  共 {totalFiltered} 场赛事
+                </p>
+              )}
+            </>
           )}
         </>
       )}
-    </motion.div>
+    </div>
   );
 }

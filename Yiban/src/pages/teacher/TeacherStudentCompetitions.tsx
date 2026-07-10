@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 import CascadeFilter, { type FilterValues } from '../../components/CascadeFilter';
-import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
 
 interface MonitorRow {
   id: string;
@@ -96,22 +94,14 @@ export default function TeacherStudentCompetitions() {
   }, [rows, total]);
 
   return (
-    <motion.div
-      className="py-lg flex flex-col gap-lg"
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-      transition={pageTransition}
-    >
-      {/* Header */}
+    <div className="flex flex-col gap-4">
       <PageHero
         eyebrow="Students"
         title="学生赛事动态"
         description="追踪学生赛事参与情况与审核状态。"
       />
 
-      {/* Filters */}
-      <div className="glass-tint flex flex-wrap gap-sm items-center px-md py-3">
+      <div className="filter-bar">
         <CascadeFilter onChange={handleFilterChange} />
         <select
           className="input-glass h-9 min-w-[120px] text-[13px]"
@@ -124,9 +114,9 @@ export default function TeacherStudentCompetitions() {
         </select>
         <div className="flex-1" />
         <div className="relative w-full md:w-[260px]">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">search</span>
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-placeholder">search</span>
           <input
-            className="input-glass h-9 pl-9 text-[13px] !rounded-pill"
+            className="input-glass h-9 pl-9 text-[13px]"
             placeholder="搜索学生姓名"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -134,106 +124,103 @@ export default function TeacherStudentCompetitions() {
         </div>
       </div>
 
-      {/* KPIs */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-md">
-        {kpiCards.map((card, i) => (
-          <motion.div
-            key={card.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05, duration: 0.35 }}
-            whileHover={{ scale: 1.03, y: -2 }}
-            className="stat-tile p-lg flex flex-col gap-2"
-          >
-            <div className="flex justify-between items-center">
-              <span className="text-[13px] text-ink-muted-80">{card.label}</span>
-              <span className="material-symbols-outlined text-[18px] text-primary">{card.icon}</span>
+      <div className="stat-grid">
+        {kpiCards.map((card) => (
+          <div key={card.label} className="stat-card">
+            <div className="stat-card-label">{card.label}</div>
+            <div className="stat-card-value">{card.value}</div>
+            <div className="stat-card-hint">
+              <span className="material-symbols-outlined text-[14px] align-middle text-placeholder">{card.icon}</span>
             </div>
-            <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{card.value}</span>
-          </motion.div>
+          </div>
         ))}
-      </section>
+      </div>
 
-      {/* Table */}
-      <section className="glass overflow-hidden">
-        <div className="p-md border-b border-hairline flex justify-between items-center">
-          <h3 className="text-[17px] font-semibold tracking-tight text-ink">学生近期参赛动态</h3>
-          <span className="text-[12px] text-ink-muted-48">共 {total || rows.length} 条</span>
+      <section className="section-card">
+        <div className="section-card-header">
+          <h2 className="section-card-title">学生近期参赛动态</h2>
+          <span className="text-[12px] text-placeholder">共 {total || rows.length} 条</span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-canvas-parchment text-[11px] text-ink-muted-48 border-b border-hairline">
-                <th className="py-3 px-md font-medium">学生</th>
-                <th className="py-3 px-md font-medium">赛事 / 团队</th>
-                <th className="py-3 px-md font-medium">提交时间</th>
-                <th className="py-3 px-md font-medium">状态</th>
-                <th className="py-3 px-md font-medium text-right">操作</th>
-              </tr>
-            </thead>
-            <motion.tbody className="text-[13px]" variants={listContainer} initial="hidden" animate="visible">
-              {loading ? (
+        <div className="section-card-body tight">
+          <div className="data-table-wrap !border-0 !rounded-none">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-ink-muted-48">
-                    <span className="material-symbols-outlined animate-spin text-[28px]">progress_activity</span>
-                  </td>
+                  <th>学生</th>
+                  <th>赛事 / 团队</th>
+                  <th>提交时间</th>
+                  <th>状态</th>
+                  <th className="text-right">操作</th>
                 </tr>
-              ) : rows.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-12 text-center text-ink-muted-48">
-                    <span className="material-symbols-outlined text-[36px] block mb-2 opacity-40">search_off</span>
-                    <p>暂无匹配的参赛记录</p>
-                  </td>
-                </tr>
-              ) : (
-                rows.map((reg) => (
-                  <motion.tr key={reg.id} variants={listItem} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
-                    <td className="py-3 px-md">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-canvas-parchment text-ink-muted-80 grid place-items-center font-semibold text-[12px]">
-                          {reg.studentName[0]}
-                        </div>
-                        <div>
-                          <div className="text-[13px] font-medium text-ink">{reg.studentName}</div>
-                          <div className="text-[11px] text-ink-muted-48">{reg.studentId || '—'}</div>
-                        </div>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={5}>
+                      <div className="empty-panel py-12">
+                        <span className="material-symbols-outlined animate-spin">progress_activity</span>
                       </div>
                     </td>
-                    <td className="py-3 px-md">
-                      <div className="text-ink truncate max-w-[260px]">{reg.competitionTitle}</div>
-                      <div className="text-[11px] text-ink-muted-48">{reg.teamName || '个人'}</div>
-                    </td>
-                    <td className="py-3 px-md text-ink-muted-80 tabular-nums">
-                      {reg.submitDate ? new Date(reg.submitDate).toLocaleDateString() : '—'}
-                    </td>
-                    <td className="py-3 px-md">
-                      <span className={statusChip[reg.status] || 'chip'}>{reg.status}</span>
-                    </td>
-                    <td className="py-3 px-md text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => navigate(`/teacher/student-detail?studentId=${reg.studentId}`)}
-                          className="text-[12px] text-primary hover:text-primary-focus font-medium"
-                        >
-                          详情 →
-                        </motion.button>
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => navigate(`/teacher/student-growth?studentId=${reg.studentId}`)}
-                          className="text-[12px] text-primary hover:text-primary-focus font-medium"
-                        >
-                          成长 →
-                        </motion.button>
+                  </tr>
+                ) : rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={5}>
+                      <div className="empty-panel py-12">
+                        <span className="material-symbols-outlined">search_off</span>
+                        <p className="text-[13px]">暂无匹配的参赛记录</p>
                       </div>
                     </td>
-                  </motion.tr>
-                ))
-              )}
-            </motion.tbody>
-          </table>
+                  </tr>
+                ) : (
+                  rows.map((reg) => (
+                    <tr key={reg.id}>
+                      <td>
+                        <div className="flex items-center gap-3">
+                          <div className="grid h-8 w-8 place-items-center rounded-md bg-surface-tile-1 text-[12px] font-medium text-body-muted">
+                            {reg.studentName[0]}
+                          </div>
+                          <div>
+                            <div className="text-[13px] font-medium text-ink">{reg.studentName}</div>
+                            <div className="text-[11px] text-placeholder">{reg.studentId || '—'}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="max-w-[260px] truncate text-ink">{reg.competitionTitle}</div>
+                        <div className="text-[11px] text-placeholder">{reg.teamName || '个人'}</div>
+                      </td>
+                      <td className="tabular-nums text-body-muted">
+                        {reg.submitDate ? new Date(reg.submitDate).toLocaleDateString() : '—'}
+                      </td>
+                      <td>
+                        <span className={statusChip[reg.status] || 'chip'}>{reg.status}</span>
+                      </td>
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/teacher/student-detail?studentId=${reg.studentId}`)}
+                            className="text-[12.5px] text-body-muted hover:text-ink"
+                          >
+                            详情
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/teacher/student-growth?studentId=${reg.studentId}`)}
+                            className="text-[12.5px] text-body-muted hover:text-ink"
+                          >
+                            成长
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
-    </motion.div>
+    </div>
   );
 }

@@ -15,7 +15,7 @@ import {
 } from '../../api/awardProof';
 import PageHero from '../../components/PageHero';
 import { useStore } from '../../store/useStore';
-import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
+
 
 interface Submission {
   id: string;
@@ -156,7 +156,7 @@ function FilePreview({ fileUrl, fileName }: { fileUrl: string; fileName: string 
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-2 text-ink-muted-48">
+      <div className="flex flex-col items-center justify-center h-full gap-2 text-placeholder">
         <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
         <p className="text-[13px]">加载预览中…</p>
       </div>
@@ -165,11 +165,11 @@ function FilePreview({ fileUrl, fileName }: { fileUrl: string; fileName: string 
 
   if (error || !signedUrl) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-2 text-ink-muted-48">
+      <div className="flex flex-col items-center justify-center h-full gap-2 text-placeholder">
         <span className="material-symbols-outlined text-[40px]">broken_image</span>
         <p className="text-[13px]">预览加载失败</p>
         {signedUrl && (
-          <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="text-primary text-[12px] underline">
+          <a href={signedUrl} target="_blank" rel="noopener noreferrer" className="text-body-muted text-[12px] underline">
             在新标签页打开
           </a>
         )}
@@ -212,7 +212,7 @@ function FilePreview({ fileUrl, fileName }: { fileUrl: string; fileName: string 
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-3 text-ink-muted-48">
+    <div className="flex flex-col items-center justify-center h-full gap-3 text-placeholder">
       <span className="material-symbols-outlined text-[48px]">folder_zip</span>
       <p className="text-[14px] font-medium text-ink">{fileName}</p>
       <p className="text-[12px]">该文件类型不支持在线预览</p>
@@ -243,7 +243,7 @@ function PreviewModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-primary/15 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/20 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <motion.div
@@ -251,19 +251,19 @@ function PreviewModal({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-        className="relative glass-strong flex flex-col overflow-hidden"
+        className="relative section-card flex flex-col overflow-hidden"
         style={{ width: '90vw', height: '88vh', maxWidth: '1100px' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-hairline shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="material-symbols-outlined text-[20px] text-primary shrink-0">description</span>
+            <span className="material-symbols-outlined text-[20px] text-body-muted shrink-0">description</span>
             <span className="text-[14px] font-semibold text-ink truncate">{fileName}</span>
           </div>
           <button
             onClick={onClose}
-            className="text-ink-muted-48 hover:text-ink p-1.5 rounded-lg hover:bg-primary/6 transition"
+            className="text-placeholder hover:text-ink p-1.5 rounded-lg hover:bg-hover-overlay transition"
           >
             <span className="material-symbols-outlined text-[22px]">close</span>
           </button>
@@ -486,13 +486,7 @@ export default function SubmissionAudit() {
   };
 
   return (
-      <motion.div
-        className="py-lg flex flex-col gap-md h-[calc(100vh-100px)]"
-        variants={pageVariants}
-        initial="hidden"
-        animate="visible"
-        transition={pageTransition}
-      >
+      <div className="flex flex-col gap-3 h-[calc(100vh-100px)]">
       {/* Header */}
       <PageHero
         eyebrow="Review"
@@ -501,21 +495,21 @@ export default function SubmissionAudit() {
       />
 
       {/* Three-column */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-md overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row gap-3 overflow-hidden">
         {/* Left: list */}
-        <section className="w-full lg:w-80 glass flex flex-col overflow-hidden shrink-0">
+        <section className="w-full lg:w-80 section-card flex flex-col overflow-hidden shrink-0">
           <div className="p-md border-b border-hairline">
-            <h2 className="text-[15px] font-semibold text-ink mb-3">待审核列表</h2>
+            <h2 className="section-card-title">待审核列表</h2>
             <div className="relative mb-3">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">search</span>
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-placeholder">search</span>
               <input
-                className="input-glass h-9 pl-9 text-[13px] !rounded-pill"
+                className="input-glass h-9 pl-9 text-[13px] !rounded-lg"
                 placeholder="搜索姓名、赛事…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="flex gap-1 p-0.5 bg-primary/6 rounded-pill w-fit">
+            <div className="flex gap-1 p-0.5 bg-surface-tile-1 rounded-md w-fit">
               {([
                 { key: '全部', label: `全部 ${pendingSubmissions.length}` },
                 { key: '报名', label: `报名 ${registrationCount}` },
@@ -526,10 +520,10 @@ export default function SubmissionAudit() {
                 <button
                   key={tab.key}
                   onClick={() => setFilterTab(tab.key)}
-                  className={`px-3 py-1 rounded-pill text-[12px] transition-all ${
+                  className={`px-3 py-1 rounded-lg text-[12px] transition-all ${
                     filterTab === tab.key
                       ? 'bg-canvas text-ink font-medium'
-                      : 'text-ink-muted-80 hover:text-ink'
+                      : 'text-body-muted hover:text-ink'
                   }`}
                 >
                   {tab.label}
@@ -538,7 +532,7 @@ export default function SubmissionAudit() {
             </div>
             <button
               onClick={() => setShowHistory(true)}
-              className="lg:hidden mt-2 text-[12px] text-primary flex items-center gap-1"
+              className="lg:hidden mt-2 text-[12px] text-body-muted hover:text-ink flex items-center gap-1"
             >
               <span className="material-symbols-outlined text-[14px]">history</span>
               已处理记录 ({processedSubmissions.length})
@@ -546,50 +540,46 @@ export default function SubmissionAudit() {
           </div>
           <div className="flex-1 overflow-y-auto">
             {loading ? (
-              <div className="flex justify-center items-center h-full text-ink-muted-48">
+              <div className="flex justify-center items-center h-full text-placeholder">
                 <span className="material-symbols-outlined animate-spin text-[28px]">progress_activity</span>
               </div>
             ) : filteredPending.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-ink-muted-48 py-12 gap-2">
+              <div className="flex flex-col items-center justify-center h-full text-placeholder py-12 gap-2">
                 <span className="material-symbols-outlined text-[36px]">inbox</span>
                 <p className="text-[13px]">暂无待审核</p>
               </div>
             ) : (
-              <motion.div variants={listContainer} initial="hidden" animate="visible">
-              {filteredPending.map((s) => (
-                <motion.button
+              filteredPending.map((s) => (
+                <button
                   key={s.id}
-                  variants={listItem}
+                  type="button"
                   onClick={() => setSelectedId(s.id)}
-                  className={`w-full text-left p-md border-b border-hairline transition relative ${
-                    selectedId === s.id
-                      ? 'bg-primary/5'
-                      : 'hover:bg-primary/6'
+                  className={`list-row list-row-clickable relative w-full !items-start text-left ${
+                    selectedId === s.id ? 'bg-hover-overlay' : ''
                   }`}
                 >
                   {selectedId === s.id && (
-                    <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full bg-primary" />
+                    <span className="absolute bottom-3 left-0 top-3 w-[3px] rounded-md bg-ink" />
                   )}
-                  <div className="flex justify-between items-start mb-1.5">
-                    <span className="text-[14px] font-semibold text-ink">{s.studentName || '未知学生'}</span>
-                    <span className={auditTypeChip(s)}>
-                      {auditTypeLabel(s)}
-                    </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex items-start justify-between gap-2">
+                      <span className="text-[13.5px] font-medium text-ink">{s.studentName || '未知学生'}</span>
+                      <span className={auditTypeChip(s)}>{auditTypeLabel(s)}</span>
+                    </div>
+                    <p className="line-clamp-2 text-[12px] leading-snug text-body-muted">{s.competitionTitle || '未知赛事'}</p>
+                    <p className="mt-1 text-[11px] text-placeholder">
+                      {s.source === 'awardProof' && s.awardLevel ? `${s.awardLevel} · ` : ''}
+                      {s.fileName || '无文件'} · {s.uploadDate || '—'}
+                    </p>
                   </div>
-                  <p className="text-[12px] text-ink-muted-80 line-clamp-2 leading-snug">{s.competitionTitle || '未知赛事'}</p>
-                  <p className="text-[11px] text-ink-muted-48 mt-1">
-                    {s.source === 'awardProof' && s.awardLevel ? `${s.awardLevel} · ` : ''}
-                    {s.fileName || '无文件'} · {s.uploadDate || '—'}
-                  </p>
-                </motion.button>
-              ))}
-              </motion.div>
+                </button>
+              ))
             )}
           </div>
         </section>
 
         {/* Middle: details */}
-        <section className="flex-1 flex flex-col min-w-0 lg:min-w-[400px] gap-md overflow-y-auto pr-1">
+        <section className="flex-1 flex flex-col min-w-0 lg:min-w-[400px] gap-3 overflow-y-auto pr-1">
           <AnimatePresence mode="wait">
           {selected ? (
             <motion.div
@@ -598,10 +588,10 @@ export default function SubmissionAudit() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -12 }}
               transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col gap-md"
+              className="flex flex-col gap-3"
             >
-              <div className="glass p-lg">
-                <h3 className="text-[17px] font-semibold tracking-tight text-ink pb-3 mb-md border-b border-hairline">申报详情</h3>
+              <div className="section-card section-card-body">
+                <h3 className="section-card-title pb-3 mb-3 border-b border-hairline">申报详情</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-6 text-[13px]">
                   <DetailItem label="学生姓名" value={selected.studentName} />
                   <DetailItem label="赛事名称" value={selected.competitionTitle} />
@@ -627,18 +617,18 @@ export default function SubmissionAudit() {
                   )}
                   {selected.reviewNote && (
                     <div className="md:col-span-2">
-                      <span className="text-ink-muted-48 mr-2">审核意见</span>
+                      <span className="text-placeholder mr-2">审核意见</span>
                       <span className="text-ink">{selected.reviewNote}</span>
                     </div>
                   )}
                   {selected.teamMembers && selected.teamMembers.length > 0 && (
                     <div className="md:col-span-2">
-                    <p className="text-[12px] text-ink-muted-48 mb-1.5">关联成员</p>
+                    <p className="text-[12px] text-placeholder mb-1.5">关联成员</p>
                       <div className="flex flex-wrap gap-1.5">
                         {selected.teamMembers.map(m => (
                           <span key={m.studentId} className="chip">
                             {m.studentName}
-                            <span className="text-ink-muted-48 ml-1">{m.studentNo}</span>
+                            <span className="text-placeholder ml-1">{m.studentNo}</span>
                           </span>
                         ))}
                       </div>
@@ -652,10 +642,10 @@ export default function SubmissionAudit() {
               )}
 
               {/* Attachment preview */}
-              <div className="glass p-lg">
+              <div className="section-card section-card-body">
                 <div className="flex items-center justify-between pb-3 mb-md border-b border-hairline">
-                  <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[18px] text-primary">attach_file</span>
+                  <h3 className="section-card-title flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-body-muted">attach_file</span>
                     {selected.source === 'awardProof' ? '证书原图' : '附件材料'}
                   </h3>
                   {selected.fileUrl && (
@@ -670,20 +660,20 @@ export default function SubmissionAudit() {
                 </div>
 
                 {selected.fileUrl ? (
-                  <div className="rounded-xl overflow-hidden border border-hairline bg-canvas"
+                  <div className="rounded-lg overflow-hidden border border-hairline bg-canvas"
                     style={{ height: '420px' }}
                   >
                     <FilePreview fileUrl={selected.fileUrl} fileName={selected.fileName} />
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-10 gap-2 text-ink-muted-48">
+                  <div className="flex flex-col items-center justify-center py-10 gap-2 text-placeholder">
                     <span className="material-symbols-outlined text-[36px]">folder_off</span>
                     <p className="text-[13px]">该申报暂未上传附件</p>
                   </div>
                 )}
 
                 {selected.fileName && (
-                  <p className="text-[11px] text-ink-muted-48 mt-2 flex items-center gap-1">
+                  <p className="text-[11px] text-placeholder mt-2 flex items-center gap-1">
                     <span className="material-symbols-outlined text-[13px]">description</span>
                     {selected.fileName}
                     {selected.fileSize != null && (
@@ -697,24 +687,24 @@ export default function SubmissionAudit() {
                 )}
               </div>
 
-              <div className="glass p-lg">
-                <h3 className="text-[15px] font-semibold text-ink pb-3 mb-md border-b border-hairline">流转记录</h3>
+              <div className="section-card section-card-body">
+                <h3 className="section-card-title pb-3 mb-3 border-b border-hairline">流转记录</h3>
                 <ol className="relative pl-5">
                   <span className="absolute left-1 top-2 bottom-2 w-px bg-hairline" />
                   <li className="relative mb-3">
-                    <span className="absolute -left-[14px] top-1 w-2.5 h-2.5 rounded-full bg-primary" />
+                    <span className="absolute -left-[14px] top-1 w-2 h-2 rounded-md bg-ink" />
                     <p className="text-[13px] text-ink font-medium">学生提交申报</p>
-                    <span className="text-[11px] text-ink-muted-48">{selected.uploadDate}</span>
+                    <span className="text-[11px] text-placeholder">{selected.uploadDate}</span>
                   </li>
                   <li className="relative">
-                    <span className="absolute -left-[14px] top-1 w-2.5 h-2.5 rounded-full bg-canvas border-2 border-primary" />
-                    <p className="text-[13px] text-ink-muted-80 font-medium">教师审核</p>
-                    <span className="text-[11px] text-primary">待处理</span>
+                    <span className="absolute -left-[14px] top-1 w-2 h-2 rounded-md bg-canvas border-2 border-ink" />
+                    <p className="text-[13px] text-body-muted font-medium">教师审核</p>
+                    <span className="text-[11px] text-body-muted">待处理</span>
                   </li>
                 </ol>
               </div>
 
-              <div className="glass p-lg">
+              <div className="section-card section-card-body">
                 <label className="block text-[13px] font-medium text-ink mb-2">审核意见</label>
                 <textarea
                   className="input-glass !h-auto py-2.5 resize-none mb-3"
@@ -725,22 +715,18 @@ export default function SubmissionAudit() {
                 />
                 <div className="flex items-center justify-end flex-wrap gap-3">
                   <div className="flex gap-2">
-                    <motion.button whileTap={{ scale: 0.97 }} className="btn-secondary !py-2 !text-[13px]" onClick={handleReturnForSupplement}>退回补充</motion.button>
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      className="btn-danger !py-2 !text-[13px] !px-5"
+                    <button className="btn-secondary !py-2 !text-[13px]" onClick={handleReturnForSupplement}>退回补充</button>
+                    <button className="btn-danger !py-2 !text-[13px] !px-5"
                       onClick={handleReject}
                     >
                       驳回
-                    </motion.button>
-                    <motion.button
-                      whileTap={{ scale: 0.97 }}
-                      className="btn-primary !py-2 !text-[13px]"
+                    </button>
+                    <button className="btn-primary !py-2 !text-[13px]"
                       onClick={handleApprove}
                     >
                       <span className="material-symbols-outlined text-[16px]">check</span>
                       审核通过
-                    </motion.button>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -750,10 +736,10 @@ export default function SubmissionAudit() {
               key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex-1 glass flex flex-col items-center justify-center text-ink-muted-48 gap-2"
+              className="flex-1 section-card empty-panel"
             >
               <span className="material-symbols-outlined text-[56px] opacity-40">assignment</span>
-              <p className="text-[15px] font-medium text-ink-muted-80">选择左侧列表查看详情</p>
+              <p className="text-[15px] font-medium text-body-muted">选择左侧列表查看详情</p>
               <p className="text-[13px]">点击待审核项目以查看申报信息</p>
             </motion.div>
           )}
@@ -761,48 +747,48 @@ export default function SubmissionAudit() {
         </section>
 
         {/* Right: history */}
-        <section className={`w-full lg:w-72 glass flex flex-col overflow-hidden shrink-0 ${showHistory ? '' : 'hidden lg:flex'}`}>
-          <div className="p-md border-b border-hairline flex items-center justify-between">
-            <h3 className="text-[14px] font-semibold text-ink flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-primary">history</span>
+        <section className={`w-full lg:w-72 section-card flex flex-col overflow-hidden shrink-0 ${showHistory ? '' : 'hidden lg:flex'}`}>
+          <div className="section-card-header">
+            <h3 className="section-card-title flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-body-muted">history</span>
               已处理记录
             </h3>
             <button
+              type="button"
               onClick={() => setShowHistory(false)}
-              className="lg:hidden text-ink-muted-48 hover:text-ink"
+              className="lg:hidden text-placeholder hover:text-ink"
             >
               <span className="material-symbols-outlined text-[18px]">close</span>
             </button>
           </div>
           <div className="flex-1 overflow-y-auto">
             {processedSubmissions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-ink-muted-48 py-8 gap-2">
-                <span className="material-symbols-outlined text-[32px] opacity-40">check_circle</span>
+              <div className="empty-panel py-8">
+                <span className="material-symbols-outlined">check_circle</span>
                 <p className="text-[12px]">暂无已处理记录</p>
               </div>
             ) : (
-              <motion.div variants={listContainer} initial="hidden" animate="visible">
-              {processedSubmissions.map((s, index) => (
-                <motion.div key={`${s.id}-${index}`} variants={listItem} className="p-md border-b border-hairline hover:bg-primary/6 transition">
-                  <div className="flex justify-between items-start mb-1">
-                    <span className="text-[13px] font-semibold text-ink">{s.studentName || '未知'}</span>
-                    <span className={s.status === '审核通过' ? 'chip chip-success' : s.status === '退回补充' ? 'chip chip-warning' : 'chip chip-error'}>
-                      {s.status}
-                    </span>
+              processedSubmissions.map((s, index) => (
+                <div key={`${s.id}-${index}`} className="list-row !items-start">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex items-start justify-between gap-2">
+                      <span className="text-[13px] font-medium text-ink">{s.studentName || '未知'}</span>
+                      <span className={s.status === '审核通过' ? 'chip chip-success' : s.status === '退回补充' ? 'chip chip-warning' : 'chip chip-error'}>
+                        {s.status}
+                      </span>
+                    </div>
+                    <p className="line-clamp-1 text-[12px] text-body-muted">{s.competitionTitle}</p>
+                    {s.reviewNote && (
+                      <p className="mt-1 text-[11px] italic text-placeholder">"{s.reviewNote}"</p>
+                    )}
                   </div>
-                  <p className="text-[12px] text-ink-muted-80 line-clamp-1">{s.competitionTitle}</p>
-                  {s.reviewNote && (
-                    <p className="text-[11px] text-ink-muted-48 mt-1 italic">"{s.reviewNote}"</p>
-                  )}
-                </motion.div>
-              ))}
-              </motion.div>
+                </div>
+              ))
             )}
           </div>
         </section>
       </div>
 
-      {/* Preview modal */}
       {previewFile && (
         <PreviewModal
           fileName={previewFile.fileName}
@@ -810,14 +796,14 @@ export default function SubmissionAudit() {
           onClose={() => setPreviewFile(null)}
         />
       )}
-    </motion.div>
+    </div>
   );
 }
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[12px] text-ink-muted-48 mb-0.5">{label}</p>
+      <p className="text-[12px] text-placeholder mb-0.5">{label}</p>
       <p className="text-[13px] text-ink font-medium">{value}</p>
     </div>
   );
@@ -847,10 +833,10 @@ function AwardProofInsightPanel({ submission }: { submission: Submission }) {
     confidenceItems.find(item => item.field === field || item.label === label);
 
   return (
-    <div className="glass p-lg">
+    <div className="section-card section-card-body">
       <div className="flex items-center justify-between pb-3 mb-md border-b border-hairline">
-        <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2">
-          <span className="material-symbols-outlined text-[18px] text-primary">verified</span>
+        <h3 className="section-card-title flex items-center gap-2">
+          <span className="material-symbols-outlined text-[18px] text-body-muted">verified</span>
           获奖证明核验
         </h3>
         <div className="flex items-center gap-2">
@@ -891,7 +877,7 @@ function AwardProofInsightPanel({ submission }: { submission: Submission }) {
 
       {submission.awardProof?.fileHash && (
         <div className="mt-md rounded-md border border-hairline bg-canvas p-3">
-          <p className="text-[12px] text-ink-muted-48 mb-1">文件 Hash</p>
+          <p className="text-[12px] text-placeholder mb-1">文件 Hash</p>
           <p className="text-[12px] text-ink break-all">{submission.awardProof.fileHash}</p>
         </div>
       )}
@@ -904,12 +890,12 @@ function AwardProofInsightPanel({ submission }: { submission: Submission }) {
           </h4>
           <div className="flex flex-col gap-2">
             {lowConfidenceItems.length > 0 && (
-              <p className="text-[12px] text-ink-muted-80">
+              <p className="text-[12px] text-body-muted">
                 {lowConfidenceItems.map(item => `${item.label} ${formatConfidence(item.confidence)}`).join('、')}
               </p>
             )}
             {riskItems.map((item, index) => (
-              <p key={`${item}-${index}`} className="text-[12px] text-ink-muted-80 flex items-start gap-1.5 leading-relaxed">
+              <p key={`${item}-${index}`} className="text-[12px] text-body-muted flex items-start gap-1.5 leading-relaxed">
                 <span className="material-symbols-outlined text-[14px] text-error mt-0.5 shrink-0">report</span>
                 <span>{item}</span>
               </p>
@@ -923,7 +909,7 @@ function AwardProofInsightPanel({ submission }: { submission: Submission }) {
           <h4 className="text-[13px] font-semibold text-ink mb-2">证据片段</h4>
           <div className="flex flex-col gap-2">
             {evidenceItems.map((item, index) => (
-              <div key={`${item}-${index}`} className="rounded-md border border-hairline bg-canvas p-3 text-[12px] text-ink-muted-80 leading-relaxed">
+              <div key={`${item}-${index}`} className="rounded-md border border-hairline bg-canvas p-3 text-[12px] text-body-muted leading-relaxed">
                 {item}
               </div>
             ))}
@@ -947,10 +933,10 @@ function ProofFieldRow({
 }) {
   return (
     <div className="grid grid-cols-[96px_1fr_auto] gap-3 px-3 py-2.5 border-b border-hairline last:border-0 text-[12px] items-start">
-      <span className="text-ink-muted-48">{label}</span>
+      <span className="text-placeholder">{label}</span>
       <span className="text-ink font-medium break-words">{value}</span>
       {aside && (
-        <span className={warning ? 'text-error font-semibold' : 'text-ink-muted-48'}>
+        <span className={warning ? 'text-error font-semibold' : 'text-placeholder'}>
           {aside}
         </span>
       )}

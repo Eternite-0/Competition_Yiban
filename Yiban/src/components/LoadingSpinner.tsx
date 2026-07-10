@@ -86,23 +86,6 @@ export function InlineLoader({ className = '' }: { className?: string }) {
 }
 
 /**
- * Progress bar for determinate loading.
+ * Progress bar for determinate loading — 使用全局统一样式。
  */
-export function ProgressBar({
-  value,
-  className = '',
-}: {
-  value: number;
-  className?: string;
-}) {
-  return (
-    <div className={`h-1 w-full overflow-hidden rounded-full bg-surface-tile-2 ${className}`}>
-      <motion.div
-        className="h-full rounded-full bg-primary"
-        initial={{ width: 0 }}
-        animate={{ width: `${Math.min(100, Math.max(0, value))}%` }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
-      />
-    </div>
-  );
-}
+export { default as ProgressBar } from './ProgressBar';

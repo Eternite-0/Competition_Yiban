@@ -64,15 +64,15 @@ export default function ChatInputBar({
   return (
     <form
       onSubmit={handleSubmit}
-      className="shrink-0 border-t border-slate-200/50 bg-white/80 px-3 pb-3 pt-2.5 backdrop-blur-md"
+      className="shrink-0 border-t border-hairline bg-canvas px-3 pb-3 pt-2.5"
     >
-      <div className="rounded-[16px] border border-slate-200/60 bg-white p-2.5 transition focus-within:border-indigo-300/60 focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.08)]">
+      <div className="rounded-xl border border-border bg-canvas p-2.5 transition focus-within:border-border-emphasis">
         {attachments.length > 0 && (
           <div className="mb-2 flex gap-2 overflow-x-auto pb-1 no-scrollbar">
             {attachments.map((attachment) => (
               <div
                 key={attachment.id}
-                className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-[12px] border border-slate-200/60 bg-white"
+                className="group relative h-16 w-16 shrink-0 overflow-hidden rounded-[12px] border border-border/60 bg-canvas"
               >
                 <img
                   src={attachment.dataUrl}
@@ -82,7 +82,7 @@ export default function ChatInputBar({
                 <button
                   type="button"
                   onClick={() => onRemoveAttachment(attachment.id)}
-                  className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/50 text-white opacity-0 transition group-hover:opacity-100 hover:bg-black/70"
+                  className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-black/50 text-on-primary opacity-0 transition group-hover:opacity-100 hover:bg-black/70"
                   aria-label={`移除 ${attachment.name}`}
                   title="移除图片"
                 >
@@ -101,7 +101,7 @@ export default function ChatInputBar({
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          className="max-h-24 min-h-9 w-full resize-none bg-transparent px-1.5 py-1 text-[14px] leading-relaxed text-slate-800 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed"
+          className="max-h-24 min-h-9 w-full resize-none bg-transparent px-1.5 py-1 text-[14px] leading-relaxed text-ink outline-none placeholder:text-placeholder disabled:cursor-not-allowed"
           placeholder={disabled ? '正在处理...' : '说出你要完成的任务，查询、整理、导出都可以…'}
           aria-label="输入问题"
         />
@@ -119,7 +119,7 @@ export default function ChatInputBar({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="grid h-8 w-8 place-items-center rounded-[10px] text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              className="grid h-8 w-8 place-items-center rounded-[10px] text-placeholder transition hover:bg-surface-tile-2 hover:text-body"
               aria-label="添加图片附件"
               title="添加图片"
             >
@@ -132,7 +132,7 @@ export default function ChatInputBar({
               type="submit"
               whileTap={{ scale: 0.88 }}
               disabled={!canSubmit}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-sm transition hover:from-indigo-600 hover:to-indigo-700 hover:shadow-md disabled:cursor-not-allowed disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 disabled:shadow-none"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary text-on-primary transition hover:bg-primary-focus disabled:cursor-not-allowed disabled:bg-surface-tile-2 disabled:text-placeholder disabled:opacity-60"
               aria-label="发送"
             >
               <span className="material-symbols-outlined text-[17px]">arrow_upward</span>

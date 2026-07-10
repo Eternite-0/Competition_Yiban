@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { listContainer, listItem } from '../../lib/motion';
 import apiClient from '../../api/client';
 import { uploadToQiniu, downloadFile } from '../../api/qiniu';
 import PageHero from '../../components/PageHero';
+import ProgressBar from '../../components/ProgressBar';
 import Pagination from '../../components/Pagination';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useConfirmModal } from '../../hooks/useConfirmModal';
@@ -379,7 +379,7 @@ export default function ExcellentWorks() {
   const displayedCount = allWorks.filter((w) => w.displayed).length;
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <div className="flex flex-col gap-4">
       {/* Header */}
       <PageHero
         eyebrow="Showcase"
@@ -400,40 +400,32 @@ export default function ExcellentWorks() {
       />
 
       {/* KPI strip */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-md">
+      <div className="stat-grid">
         {[
-          { label: '作品总数', value: allWorks.length, icon: 'auto_awesome' },
-          { label: '已展示', value: displayedCount, icon: 'visibility' },
-          { label: '所属赛事', value: uniqueCompetitions.length, icon: 'event' },
-          { label: '当前选中', value: selectedIds.size, icon: 'check_circle' },
-        ].map((m, i) => (
-          <motion.div
-            key={m.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05, duration: 0.35 }}
-            whileHover={{ scale: 1.02, y: -2 }}
-            className="stat-tile p-lg flex flex-col gap-2 cursor-default"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] text-ink-muted-80">{m.label}</span>
-              <span className="material-symbols-outlined text-[18px] text-primary">{m.icon}</span>
+          { label: '作品总数', value: allWorks.length, icon: 'auto_awesome', hint: '全部作品' },
+          { label: '已展示', value: displayedCount, icon: 'visibility', hint: '前台可见' },
+          { label: '所属赛事', value: uniqueCompetitions.length, icon: 'event', hint: '覆盖赛事' },
+          { label: '当前选中', value: selectedIds.size, icon: 'check_circle', hint: '批量操作' },
+        ].map((m) => (
+          <div key={m.label} className="stat-card">
+            <div className="stat-card-label">{m.label}</div>
+            <div className="stat-card-value">{m.value}</div>
+            <div className="stat-card-hint">
+              <span className="material-symbols-outlined align-middle text-[14px] text-placeholder">{m.icon}</span>
+              {' '}{m.hint}
             </div>
-            <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">
-              {m.value}
-            </span>
-          </motion.div>
+          </div>
         ))}
-      </section>
+      </div>
 
       {/* Filter bar */}
-      <div className="glass-tint flex flex-wrap gap-sm items-center px-md py-3">
+      <div className="filter-bar">
         <div className="relative w-full md:w-[280px]">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-placeholder">
             search
           </span>
           <input
-            className="input-glass h-9 pl-9 text-[13px] !rounded-pill"
+            className="input-glass h-9 pl-9 text-[13px] !rounded-lg"
             placeholder="搜索作品 / 成员 / 赛事"
             value={search}
             onChange={(e) => {
@@ -487,7 +479,7 @@ export default function ExcellentWorks() {
         <div className="flex-1" />
         <button
           onClick={resetFilters}
-          className="h-9 px-3 rounded-pill text-[12px] text-ink-muted-80 hover:text-ink hover:bg-primary/6 transition"
+          className="h-9 px-3 rounded-lg text-[12px] text-body-muted hover:text-ink hover:bg-hover-overlay transition"
         >
           重置筛选
         </button>
@@ -501,11 +493,11 @@ export default function ExcellentWorks() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="glass-tint border-primary/20 flex items-center justify-between px-md py-2.5"
+            className="filter-bar !border-primary/25"
           >
             <span className="text-[13px] text-ink font-medium">
               已选择{' '}
-              <span className="text-primary font-semibold tabular-nums">{selectedIds.size}</span> 项
+              <span className="text-body-muted font-semibold tabular-nums">{selectedIds.size}</span> 项
             </span>
             <div className="flex items-center gap-2">
               <button onClick={() => batchSetDisplay(true)} className="btn-primary !py-1.5 !text-[12px]">
@@ -518,7 +510,7 @@ export default function ExcellentWorks() {
               </button>
               <button
                 onClick={() => setSelectedIds(new Set())}
-                className="text-[12px] text-ink-muted-80 hover:text-ink px-2 py-1.5 rounded-pill hover:bg-primary/6 transition"
+                className="text-[12px] text-body-muted hover:text-ink px-2 py-1.5 rounded-lg hover:bg-hover-overlay transition"
               >
                 取消选择
               </button>
@@ -527,13 +519,16 @@ export default function ExcellentWorks() {
         )}
       </AnimatePresence>
 
-      {/* Table */}
-      <section className="glass overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+      <section className="section-card">
+        <div className="section-card-header">
+          <h2 className="section-card-title">作品列表</h2>
+          <span className="chip tabular-nums">{allWorks.length} 条</span>
+        </div>
+        <div className="data-table-wrap !rounded-none !border-0">
+          <table className="data-table">
             <thead>
-              <tr className="bg-canvas-parchment text-[11px] text-ink-muted-48 border-b border-hairline">
-                <th className="py-3 px-md font-medium w-10">
+              <tr>
+                <th className="w-10">
                   <input
                     type="checkbox"
                     className="w-3.5 h-3.5 rounded-xs accent-primary cursor-pointer"
@@ -541,114 +536,99 @@ export default function ExcellentWorks() {
                     onChange={toggleSelectAll}
                   />
                 </th>
-                <th className="py-3 px-md font-medium">作品名称</th>
-                <th className="py-3 px-md font-medium">所属赛事</th>
-                <th className="py-3 px-md font-medium">学年</th>
-                <th className="py-3 px-md font-medium">审核状态</th>
-                <th className="py-3 px-md font-medium">学生</th>
-                <th className="py-3 px-md font-medium">附件</th>
-                <th className="py-3 px-md font-medium">展示</th>
-                <th className="py-3 px-md font-medium text-right">操作</th>
+                <th>作品名称</th>
+                <th>所属赛事</th>
+                <th>学年</th>
+                <th>审核状态</th>
+                <th>学生</th>
+                <th>附件</th>
+                <th>展示</th>
+                <th className="text-right">操作</th>
               </tr>
             </thead>
-            <motion.tbody className="text-[13px]" variants={listContainer} initial="hidden" animate="visible">
+            <tbody>
               {pagedWorks.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-16 text-center text-ink-muted-48">
-                    <span className="material-symbols-outlined text-[36px] block mb-2 opacity-40">
-                      {loading ? 'hourglass_top' : loadError ? 'cloud_off' : 'search_off'}
-                    </span>
-                    <p>
-                      {loading
-                        ? '加载中…'
-                        : loadError
-                          ? `加载失败：${loadError}`
-                          : allWorks.length === 0
-                            ? '暂无审核通过作品'
-                            : '暂无匹配作品'}
-                    </p>
+                  <td colSpan={9}>
+                    <div className="empty-panel py-12">
+                      <span className={`material-symbols-outlined ${loading ? 'animate-spin' : ''}`}>
+                        {loading ? 'progress_activity' : loadError ? 'cloud_off' : 'search_off'}
+                      </span>
+                      <p className="text-[13px]">
+                        {loading
+                          ? '加载中…'
+                          : loadError
+                            ? `加载失败：${loadError}`
+                            : allWorks.length === 0
+                              ? '暂无审核通过作品'
+                              : '暂无匹配作品'}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 pagedWorks.map((work) => (
-                  <motion.tr
+                  <tr
                     key={work.id}
-                    variants={listItem}
-                    className={`border-b border-hairline last:border-0 transition group ${
-                      selectedIds.has(work.id) ? 'bg-primary/5' : 'hover:bg-primary/6'
-                    }`}
+                    className={selectedIds.has(work.id) ? 'bg-primary-soft/40' : undefined}
                   >
-                    <td className="py-3 px-md" onClick={(e) => e.stopPropagation()}>
+                    <td onClick={(e) => e.stopPropagation()}>
                       <input
                         type="checkbox"
-                        className="w-3.5 h-3.5 rounded-xs accent-primary cursor-pointer"
+                        className="h-3.5 w-3.5 cursor-pointer rounded-xs accent-primary"
                         checked={selectedIds.has(work.id)}
                         onChange={() => toggleSelect(work.id)}
                       />
                     </td>
-                    <td className="py-3 px-md font-medium text-ink truncate max-w-[260px]" title={work.title}>
+                    <td className="max-w-[260px] truncate font-medium" title={work.title}>
                       {work.title}
                     </td>
-                    <td className="py-3 px-md text-ink-muted-80 truncate max-w-[220px]">{work.competition}</td>
-                    <td className="py-3 px-md text-ink-muted-48 tabular-nums">{work.year}</td>
-                    <td className="py-3 px-md">
+                    <td className="max-w-[220px] truncate text-body-muted">{work.competition}</td>
+                    <td className="tabular-nums text-placeholder">{work.year}</td>
+                    <td>
                       <span className={awardChip[work.award] || 'chip'}>{work.award}</span>
                     </td>
-                    <td className="py-3 px-md text-ink-muted-80">{work.author}</td>
-                    <td className="py-3 px-md">
-                      <div
-                        className={`flex items-center gap-1 ${
-                          work.attachments > 0 ? 'text-primary' : 'text-ink-muted-48'
-                        }`}
-                      >
+                    <td className="text-body-muted">{work.author}</td>
+                    <td>
+                      <div className={`flex items-center gap-1 ${work.attachments > 0 ? 'text-body-muted' : 'text-placeholder'}`}>
                         <span className="material-symbols-outlined text-[14px]">attachment</span>
                         <span className="text-[12px] tabular-nums">
                           {work.attachments > 0 ? `${work.attachments}` : '—'}
                         </span>
                       </div>
                     </td>
-                    <td className="py-3 px-md" onClick={(e) => e.stopPropagation()}>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <label className="relative inline-flex cursor-pointer items-center">
                         <input
                           type="checkbox"
-                          className="sr-only peer"
+                          className="peer sr-only"
                           checked={work.displayed}
                           onChange={() => callToggle(work.id, !work.displayed)}
                         />
-                        <div className="w-9 h-5 bg-primary/12 rounded-full peer-checked:bg-primary transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-4 after:h-4 after:bg-white after:rounded-full after:shadow after:transition-transform peer-checked:after:translate-x-4"></div>
+                        <div className="h-5 w-9 rounded-full bg-surface-chip transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-canvas after:shadow after:transition-transform after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-4" />
                       </label>
                     </td>
-                    <td className="py-3 px-md text-right" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        className="text-[12px] text-primary hover:text-primary-focus font-medium mx-1"
-                        onClick={() => setDetailWork(work)}
-                      >
+                    <td className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <button type="button" className="btn-utility !mx-0.5 !h-8 !px-2 !text-[12px]" onClick={() => setDetailWork(work)}>
                         详情
                       </button>
-                      <button
-                        className="text-[12px] text-ink hover:text-primary font-medium mx-1"
-                        onClick={() => openEdit(work)}
-                      >
+                      <button type="button" className="btn-utility !mx-0.5 !h-8 !px-2 !text-[12px]" onClick={() => openEdit(work)}>
                         编辑
                       </button>
-                      <button
-                        className="text-[12px] text-error hover:opacity-70 font-medium mx-1"
-                        onClick={() => handleDelete(work)}
-                      >
+                      <button type="button" className="btn-danger !mx-0.5 !h-8 !px-2 !text-[12px]" onClick={() => handleDelete(work)}>
                         下架
                       </button>
                     </td>
-                  </motion.tr>
+                  </tr>
                 ))
               )}
-            </motion.tbody>
+            </tbody>
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="px-md py-3 border-t border-hairline flex items-center justify-between">
-          <span className="text-[12px] text-ink-muted-48">
-            共 <span className="text-ink font-medium tabular-nums">{filteredWorks.length}</span> 条
+        <div className="flex items-center justify-between border-t border-hairline px-4 py-3">
+          <span className="text-[12px] text-placeholder">
+            共 <span className="font-medium tabular-nums text-ink">{filteredWorks.length}</span> 条
           </span>
           <Pagination current={currentPage} total={filteredWorks.length} pageSize={pageSize} onChange={setCurrentPage} />
         </div>
@@ -661,14 +641,14 @@ export default function ExcellentWorks() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-primary/12 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/20 p-4 backdrop-blur-sm"
             onClick={() => setDetailWork(null)}
           >
             <motion.div
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
-              className="glass-strong w-full max-w-[560px] p-xl"
+              className="section-card w-full max-w-[560px] p-xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-start mb-md">
@@ -677,7 +657,7 @@ export default function ExcellentWorks() {
                 </h3>
                 <button
                   onClick={() => setDetailWork(null)}
-                  className="text-ink-muted-48 hover:text-ink"
+                  className="text-placeholder hover:text-ink"
                 >
                   <span className="material-symbols-outlined">close</span>
                 </button>
@@ -694,9 +674,9 @@ export default function ExcellentWorks() {
                 )}
                 {detailWork.fileUrl && (
                   <div className="col-span-2 mt-2">
-                    <p className="text-[12px] text-ink-muted-48 mb-1">附件</p>
+                    <p className="text-[12px] text-placeholder mb-1">附件</p>
                     <button
-                      className="text-[13px] text-primary hover:text-primary-focus inline-flex items-center gap-1.5 break-all"
+                      className="text-[13px] text-body-muted hover:text-ink inline-flex items-center gap-1.5 break-all"
                       onClick={async () => {
                         try {
                           await downloadFile(detailWork.fileUrl, detailWork.title);
@@ -747,14 +727,14 @@ export default function ExcellentWorks() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-primary/12 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/20 p-4 backdrop-blur-sm"
             onClick={() => setPickerOpen(false)}
           >
             <motion.div
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
-              className="glass-strong w-full max-w-[640px] max-h-[80vh] flex flex-col"
+              className="section-card w-full max-w-[640px] max-h-[80vh] flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-xl pb-md flex justify-between items-start">
@@ -762,25 +742,25 @@ export default function ExcellentWorks() {
                   <h3 className="font-display text-[22px] font-semibold tracking-tight text-ink leading-tight">
                     录入优秀作品
                   </h3>
-                  <p className="text-[13px] text-ink-muted-80 mt-1">
+                  <p className="text-[13px] text-body-muted mt-1">
                     从所有 审核通过 但尚未上架的作品中选择
                   </p>
                 </div>
                 <button
                   onClick={() => setPickerOpen(false)}
-                  className="text-ink-muted-48 hover:text-ink"
+                  className="text-placeholder hover:text-ink"
                 >
                   <span className="material-symbols-outlined">close</span>
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto px-xl">
                 {pickerLoading ? (
-                  <div className="text-center py-12 text-ink-muted-48">
+                  <div className="text-center py-12 text-placeholder">
                     <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
                     <p className="text-[13px] mt-2">加载中…</p>
                   </div>
                 ) : pickerWorks.length === 0 ? (
-                  <div className="text-center py-12 text-ink-muted-48">
+                  <div className="text-center py-12 text-placeholder">
                     <span className="material-symbols-outlined text-[36px] block mb-2 opacity-40">
                       task_alt
                     </span>
@@ -791,7 +771,7 @@ export default function ExcellentWorks() {
                     {pickerWorks.map((w) => (
                       <li
                         key={w.id}
-                        className="py-3 border-b border-hairline last:border-0 flex items-start gap-3 cursor-pointer hover:bg-primary/6 -mx-2 px-2 rounded transition"
+                        className="py-3 border-b border-hairline last:border-0 flex items-start gap-3 cursor-pointer hover:bg-hover-overlay -mx-2 px-2 rounded transition"
                         onClick={() => togglePickerPending(w.id)}
                       >
                         <input
@@ -803,7 +783,7 @@ export default function ExcellentWorks() {
                         />
                         <div className="flex-1 min-w-0">
                           <p className="text-[13px] font-medium text-ink truncate">{w.title}</p>
-                          <p className="text-[11px] text-ink-muted-48 mt-0.5 truncate">
+                          <p className="text-[11px] text-placeholder mt-0.5 truncate">
                             {w.competition} · {w.author} · {w.year}
                           </p>
                         </div>
@@ -813,8 +793,8 @@ export default function ExcellentWorks() {
                 )}
               </div>
               <div className="p-xl pt-md flex justify-between items-center border-t border-hairline">
-                <span className="text-[12px] text-ink-muted-48">
-                  已选 <span className="text-primary font-semibold tabular-nums">{pickerPending.size}</span> 项
+                <span className="text-[12px] text-placeholder">
+                  已选 <span className="text-body-muted font-semibold tabular-nums">{pickerPending.size}</span> 项
                 </span>
                 <div className="flex gap-2">
                   <button
@@ -845,14 +825,14 @@ export default function ExcellentWorks() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-primary/12 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/20 p-4 backdrop-blur-sm"
             onClick={() => !editSaving && setEditWork(null)}
           >
             <motion.div
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
-              className="glass-strong w-full max-w-[560px] p-xl"
+              className="section-card w-full max-w-[560px] p-xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-start mb-md">
@@ -860,13 +840,13 @@ export default function ExcellentWorks() {
                   <h3 className="font-display text-[22px] font-semibold tracking-tight text-ink leading-tight">
                     编辑作品
                   </h3>
-                  <p className="text-[13px] text-ink-muted-80 mt-1 truncate max-w-[420px]">
+                  <p className="text-[13px] text-body-muted mt-1 truncate max-w-[420px]">
                     {editWork.title}
                   </p>
                 </div>
                 <button
                   onClick={() => !editSaving && setEditWork(null)}
-                  className="text-ink-muted-48 hover:text-ink"
+                  className="text-placeholder hover:text-ink"
                 >
                   <span className="material-symbols-outlined">close</span>
                 </button>
@@ -886,10 +866,10 @@ export default function ExcellentWorks() {
                   </label>
                   {editFile ? (
                     <div className="flex items-center gap-3 rounded-md border border-hairline p-3 bg-canvas">
-                      <span className="material-symbols-outlined text-primary icon-fill">description</span>
+                      <span className="material-symbols-outlined text-body-muted">description</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-medium text-ink truncate">{editFile.name}</p>
-                        <p className="text-[11px] text-ink-muted-48">
+                        <p className="text-[11px] text-placeholder">
                           {editFile.size < 1024 * 1024
                             ? `${(editFile.size / 1024).toFixed(0)} KB`
                             : `${(editFile.size / (1024 * 1024)).toFixed(1)} MB`}
@@ -897,7 +877,7 @@ export default function ExcellentWorks() {
                       </div>
                       <button
                         onClick={() => setEditFile(null)}
-                        className="text-ink-muted-48 hover:text-primary"
+                        className="text-placeholder hover:text-ink"
                       >
                         <span className="material-symbols-outlined text-[18px]">close</span>
                       </button>
@@ -907,10 +887,10 @@ export default function ExcellentWorks() {
                       className="rounded-md border-2 border-dashed border-hairline p-4 flex items-center gap-3 cursor-pointer hover:border-primary/50 hover:bg-primary/3 transition"
                       onClick={() => document.getElementById('edit-file-input')?.click()}
                     >
-                      <span className="material-symbols-outlined text-[20px] text-ink-muted-48">cloud_upload</span>
+                      <span className="material-symbols-outlined text-[20px] text-placeholder">cloud_upload</span>
                       <div>
-                        <p className="text-[13px] text-ink-muted-80">点击选择新文件替换当前附件</p>
-                        <p className="text-[11px] text-ink-muted-48">支持图片、PDF、文档等 · 限 50 MB</p>
+                        <p className="text-[13px] text-body-muted">点击选择新文件替换当前附件</p>
+                        <p className="text-[11px] text-placeholder">支持图片、PDF、文档等 · 限 50 MB</p>
                       </div>
                       <input
                         id="edit-file-input"
@@ -933,20 +913,15 @@ export default function ExcellentWorks() {
                   )}
                   {editFileUploading && (
                     <div className="mt-2">
-                      <div className="flex justify-between text-[11px] text-ink-muted-48 mb-1">
+                      <div className="flex justify-between text-[11px] text-placeholder mb-1">
                         <span>上传中…</span>
                         <span className="tabular-nums">{editFileProgress}%</span>
                       </div>
-                      <div className="h-1.5 rounded-full bg-primary/8 overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-primary transition-all duration-300"
-                          style={{ width: `${editFileProgress}%` }}
-                        />
-                      </div>
+                      <ProgressBar value={editFileProgress} size="md" showThumb segments={5} />
                     </div>
                   )}
                   {editWork.fileUrl && !editFile && (
-                    <p className="text-[11px] text-ink-muted-48 mt-1.5">
+                    <p className="text-[11px] text-placeholder mt-1.5">
                       当前附件：{editWork.title}
                     </p>
                   )}
@@ -961,7 +936,7 @@ export default function ExcellentWorks() {
                     value={editNote}
                     onChange={(e) => setEditNote(e.target.value)}
                   />
-                  <p className="text-[11px] text-ink-muted-48 mt-1">
+                  <p className="text-[11px] text-placeholder mt-1">
                     展示于优秀作品墙的评语，会同步给作品作者。
                   </p>
                 </div>
@@ -1000,14 +975,14 @@ export default function ExcellentWorks() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-primary/12 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/20 p-4 backdrop-blur-sm"
             onClick={() => !uploadSaving && setUploadOpen(false)}
           >
             <motion.div
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
-              className="glass-strong w-full max-w-[560px] p-xl"
+              className="section-card w-full max-w-[560px] p-xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-start mb-md">
@@ -1015,13 +990,13 @@ export default function ExcellentWorks() {
                   <h3 className="font-display text-[22px] font-semibold tracking-tight text-ink leading-tight">
                     上传优秀作品
                   </h3>
-                  <p className="text-[13px] text-ink-muted-80 mt-1">
+                  <p className="text-[13px] text-body-muted mt-1">
                     上传文件至七牛云并自动创建展示记录
                   </p>
                 </div>
                 <button
                   onClick={() => !uploadSaving && setUploadOpen(false)}
-                  className="text-ink-muted-48 hover:text-ink"
+                  className="text-placeholder hover:text-ink"
                 >
                   <span className="material-symbols-outlined">close</span>
                 </button>
@@ -1048,10 +1023,10 @@ export default function ExcellentWorks() {
                   <label className="text-[14px] font-medium text-body-muted">文件</label>
                   {uploadFile ? (
                     <div className="flex items-center gap-3 rounded-md border border-hairline p-3 bg-canvas">
-                      <span className="material-symbols-outlined text-primary icon-fill">description</span>
+                      <span className="material-symbols-outlined text-body-muted">description</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-medium text-ink truncate">{uploadFile.name}</p>
-                        <p className="text-[11px] text-ink-muted-48">
+                        <p className="text-[11px] text-placeholder">
                           {uploadFile.size < 1024 * 1024
                             ? `${(uploadFile.size / 1024).toFixed(0)} KB`
                             : `${(uploadFile.size / (1024 * 1024)).toFixed(1)} MB`}
@@ -1059,7 +1034,7 @@ export default function ExcellentWorks() {
                       </div>
                       <button
                         onClick={() => setUploadFile(null)}
-                        className="text-ink-muted-48 hover:text-primary"
+                        className="text-placeholder hover:text-ink"
                       >
                         <span className="material-symbols-outlined text-[18px]">close</span>
                       </button>
@@ -1069,9 +1044,9 @@ export default function ExcellentWorks() {
                       className="rounded-md border-2 border-dashed border-hairline p-8 flex flex-col items-center gap-2 cursor-pointer hover:border-primary/50 hover:bg-primary/3 transition"
                       onClick={() => document.getElementById('admin-upload-input')?.click()}
                     >
-                      <span className="material-symbols-outlined text-[28px] text-ink-muted-48">cloud_upload</span>
-                      <p className="text-[13px] text-ink-muted-80">点击选择文件</p>
-                      <p className="text-[11px] text-ink-muted-48">支持图片、PDF、文档等</p>
+                      <span className="material-symbols-outlined text-[28px] text-placeholder">cloud_upload</span>
+                      <p className="text-[13px] text-body-muted">点击选择文件</p>
+                      <p className="text-[11px] text-placeholder">支持图片、PDF、文档等</p>
                       <input
                         id="admin-upload-input"
                         type="file"
@@ -1098,16 +1073,11 @@ export default function ExcellentWorks() {
 
                 {uploadSaving && (
                   <div>
-                    <div className="flex justify-between text-[11px] text-ink-muted-48 mb-1">
+                    <div className="flex justify-between text-[11px] text-placeholder mb-1">
                       <span>上传中…</span>
                       <span className="tabular-nums">{uploadProgress}%</span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-primary/8 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-primary transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
+                    <ProgressBar value={uploadProgress} size="md" showThumb segments={5} />
                   </div>
                 )}
               </div>
@@ -1158,7 +1128,7 @@ export default function ExcellentWorks() {
 function DetailRow({ label, value, span = 1 }: { label: string; value: string; span?: 1 | 2 }) {
   return (
     <div className={span === 2 ? 'col-span-2' : ''}>
-      <p className="text-[12px] text-ink-muted-48 mb-0.5">{label}</p>
+      <p className="text-[12px] text-placeholder mb-0.5">{label}</p>
       <p className="text-[13px] text-ink font-medium break-words">{value}</p>
     </div>
   );

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useStore } from '../store/useStore';
 import { apiClient } from '../api/client';
 import { panelTransition, panelVariants } from '../lib/motion';
+import { labelForPath } from '../config/navigation';
 
 interface Message {
   id: number;
@@ -15,52 +16,10 @@ interface Message {
   createTime: string;
 }
 
-const titleMap: Record<string, string> = {
-  '/student': '工作台',
-  '/student/competitions': '活动大厅',
-  '/student/calendar': '赛事日历',
-  '/student/teams': '招募大厅',
-  '/student/works': '光荣榜',
-  '/student/registrations': '我的参赛',
-  '/student/growth': '能力雷达',
-  '/student/achievements/upload': '上传成果',
-  '/student/progress': '我的进度',
-  '/teacher': '工作台',
-  '/teacher/college-overview': '学院总览',
-  '/teacher/competitions': '活动大厅',
-  '/teacher/audit': '成果审批',
-  '/teacher/student-competitions': '学生看板',
-  '/teacher/student-growth': '学情分析',
-  '/admin': '工作台',
-  '/admin/competitions': '活动管理',
-  '/admin/publish': '活动发布',
-  '/admin/works': '作品库',
-  '/admin/audit': '系统审核',
-  '/admin/announcements': '公告管理',
-  '/admin/users': '用户管理',
-  '/student/notifications': '消息中心',
-  '/teacher/notifications': '消息中心',
-  '/admin/notifications': '消息中心',
-  '/teacher/student-detail': '学生详情',
-  '/teacher/student-compare': '学生对比',
-};
-
-function resolveTitle(path: string): string {
-  if (titleMap[path]) return titleMap[path];
-  // Match dynamic detail routes
-  if (/^\/student\/competitions\/.+/.test(path)) return '赛事详情';
-  if (/^\/student\/registrations\/workbench\/.+/.test(path)) return '报名工作台';
-  if (/^\/student\/upload\/.+/.test(path)) return '提交作品';
-  if (/^\/admin\/publish\/activity\/.+/.test(path)) return '编辑活动';
-  if (/^\/admin\/publish\/.+/.test(path)) return '编辑赛事';
-  return '易赛通';
-}
-
 interface HeaderProps {
   mobileNavOpen: boolean;
   onToggleMobileNav: () => void;
   desktopSidebarOpen: boolean;
-  onToggleDesktopSidebar: () => void;
 }
 
 interface SearchResult {
@@ -71,13 +30,13 @@ interface SearchResult {
   status?: string;
 }
 
-export default function Header({ mobileNavOpen, onToggleMobileNav, desktopSidebarOpen, onToggleDesktopSidebar }: HeaderProps) {
+export default function Header({ mobileNavOpen, onToggleMobileNav, desktopSidebarOpen }: HeaderProps) {
   const user = useStore((s) => s.currentUser);
   const theme = useStore((s) => s.theme);
   const setTheme = useStore((s) => s.setTheme);
   const location = useLocation();
   const navigate = useNavigate();
-  const title = resolveTitle(location.pathname);
+  const title = labelForPath(location.pathname);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -283,41 +242,51 @@ export default function Header({ mobileNavOpen, onToggleMobileNav, desktopSideba
     return `${d.getMonth() + 1}/${d.getDate()}`;
   }
 
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
+  const themeMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!themeMenuOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (themeMenuRef.current && !themeMenuRef.current.contains(e.target as Node)) {
+        setThemeMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [themeMenuOpen]);
+
+  const themeOptions: Array<{ value: 'light' | 'dark' | 'system'; label: string; icon: string }> = [
+    { value: 'light', label: '浅色', icon: 'light_mode' },
+    { value: 'dark', label: '深色', icon: 'dark_mode' },
+    { value: 'system', label: '跟随系统', icon: 'brightness_auto' },
+  ];
+
   return (
-    <header className={`app-header fixed left-0 right-0 top-0 z-30 flex h-[52px] items-center justify-between border-b border-hairline bg-canvas/80 backdrop-blur-xl px-lg sm:px-page ${desktopSidebarOpen ? 'md:left-[200px]' : 'md:left-0'}`}>
-      <div className="flex items-center gap-3 min-w-0">
+    <header className={`app-header fixed left-0 right-0 top-0 z-30 flex h-[var(--header-height)] items-center justify-between border-b border-hairline bg-canvas px-4 sm:px-6 ${desktopSidebarOpen ? 'md:left-[var(--sidebar-width)]' : 'md:left-0'}`}>
+      <div className={`flex min-w-0 items-center gap-2 ${desktopSidebarOpen ? '' : 'md:pl-12'}`}>
+        {/* 仅移动端汉堡；桌面折叠改在侧栏顶栏 / 左上角展开钮 */}
         <button
           type="button"
           onClick={onToggleMobileNav}
           className="icon-button md:hidden"
           aria-label={mobileNavOpen ? '关闭导航' : '打开导航'}
         >
-          <span className="material-symbols-outlined text-[20px]">
+          <span className="material-symbols-outlined text-[22px]">
             {mobileNavOpen ? 'close' : 'menu'}
           </span>
         </button>
-        <button
-          type="button"
-          onClick={onToggleDesktopSidebar}
-          className="icon-button hidden md:flex"
-          aria-label={desktopSidebarOpen ? '收起侧边栏' : '展开侧边栏'}
-          title={desktopSidebarOpen ? '收起侧边栏' : '展开侧边栏'}
-        >
-          <span className="material-symbols-outlined text-[20px]">
-            menu
-          </span>
-        </button>
-        <span className="sr-only">{title}</span>
+        <h2 className="truncate text-[15px] font-medium tracking-tight text-ink">{title}</h2>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-2">
         <div ref={searchRef} className="relative hidden md:block">
-          <div className="flex h-9 w-[180px] lg:w-[244px] items-center rounded-md border border-hairline bg-canvas-parchment/60 transition-all focus-within:border-primary focus-within:shadow-focus focus-within:bg-canvas" aria-expanded={searchOpen}>
+          <div className="flex h-9 w-[200px] lg:w-[260px] items-center rounded-lg border border-hairline bg-canvas-parchment transition-colors focus-within:border-border-emphasis focus-within:bg-canvas" aria-expanded={searchOpen}>
             <span className="material-symbols-outlined text-[17px] text-placeholder ml-3">search</span>
             <input
               ref={searchInputRef}
               name="globalSearch"
-              className="h-full flex-1 bg-transparent px-2 outline-none text-[14px] font-normal text-ink placeholder:text-placeholder"
+              className="h-full flex-1 bg-transparent px-2 outline-none text-[13px] font-normal text-ink placeholder:text-placeholder"
               placeholder="搜索赛事、团队、作品"
               type="text"
               value={searchQuery}
@@ -327,6 +296,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav, desktopSideba
               aria-haspopup="listbox"
               aria-activedescendant={activeIndex >= 0 ? `search-option-${searchResults[activeIndex]?.id}` : undefined}
             />
+            <kbd className="mr-2 hidden rounded border border-hairline px-1.5 py-0.5 text-[10px] text-placeholder lg:inline">⌘K</kbd>
             {searchLoading && (
               <span className="material-symbols-outlined text-[16px] text-placeholder mr-2 animate-spin">progress_activity</span>
             )}
@@ -482,35 +452,62 @@ export default function Header({ mobileNavOpen, onToggleMobileNav, desktopSideba
           </AnimatePresence>
         </div>
 
-        {/* Theme toggle */}
-        <motion.button
-          type="button"
-          onClick={() => {
-            const order: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
-            const next = order[(order.indexOf(theme) + 1) % order.length];
-            setTheme(next);
-          }}
-          whileTap={{ scale: 0.85, rotate: 180 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-          className="icon-button"
-          aria-label={`当前主题：${theme === 'light' ? '浅色' : theme === 'dark' ? '深色' : '跟随系统'}，点击切换`}
-          title={theme === 'light' ? '浅色模式' : theme === 'dark' ? '深色模式' : '跟随系统'}
-        >
-          <motion.span
-            className="material-symbols-outlined text-[20px]"
-            key={theme}
-            initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
-            animate={{ rotate: 0, opacity: 1, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        {/* Theme menu: light / dark / system */}
+        <div ref={themeMenuRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setThemeMenuOpen((v) => !v)}
+            className="icon-button"
+            aria-label={`当前主题：${theme === 'light' ? '浅色' : theme === 'dark' ? '深色' : '跟随系统'}`}
+            aria-expanded={themeMenuOpen}
+            aria-haspopup="menu"
+            title="外观"
           >
-            {theme === 'light' ? 'light_mode' : theme === 'dark' ? 'dark_mode' : 'brightness_auto'}
-          </motion.span>
-        </motion.button>
+            <span className="material-symbols-outlined text-[20px]">
+              {theme === 'light' ? 'light_mode' : theme === 'dark' ? 'dark_mode' : 'brightness_auto'}
+            </span>
+          </button>
+          <AnimatePresence>
+            {themeMenuOpen && (
+              <motion.div
+                variants={panelVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                transition={panelTransition}
+                role="menu"
+                className="absolute right-0 top-[42px] z-50 w-[160px] overflow-hidden rounded-lg border border-hairline bg-canvas py-1 shadow-float"
+              >
+                {themeOptions.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={theme === opt.value}
+                    onClick={() => {
+                      setTheme(opt.value);
+                      setThemeMenuOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] transition-colors ${
+                      theme === opt.value
+                        ? 'bg-surface-tile-1 text-ink font-medium'
+                        : 'text-body-muted hover:bg-hover-overlay hover:text-ink'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">{opt.icon}</span>
+                    <span className="flex-1">{opt.label}</span>
+                    {theme === opt.value && (
+                      <span className="material-symbols-outlined text-[16px] text-primary">check</span>
+                    )}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-        <div className="group flex cursor-pointer items-center gap-2">
-          <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[12px] font-medium text-on-primary">
-            {user?.name?.[0] ?? 'U'}
-          </div>
+        <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[12px] font-semibold text-on-primary">
+          {user?.name?.[0] ?? 'U'}
         </div>
       </div>
     </header>

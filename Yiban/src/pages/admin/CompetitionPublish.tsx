@@ -474,7 +474,7 @@ export default function CompetitionPublish() {
 
   if (pageLoading) {
     return (
-      <div className="py-section text-center text-ink-muted-48">
+      <div className="py-section text-center text-placeholder">
         <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
         <p className="mt-2 text-[14px]">加载中…</p>
       </div>
@@ -482,7 +482,7 @@ export default function CompetitionPublish() {
   }
 
   return (
-    <div className="py-lg flex flex-col gap-lg pb-32">
+    <div className="flex flex-col gap-4 pb-32">
       <PageHero
         eyebrow={isEdit ? 'Edit' : 'Publish'}
         title={isEdit ? `编辑${text.noun}` : '发布新活动'}
@@ -500,7 +500,7 @@ export default function CompetitionPublish() {
               type="button"
               onClick={() => setActiveTab(tab.key)}
               className={`flex h-9 items-center gap-1.5 rounded-sm px-4 text-[13px] font-medium transition ${
-                activeTab === tab.key ? 'bg-canvas text-primary shadow-sm' : 'text-body-muted hover:text-ink'
+                activeTab === tab.key ? 'bg-canvas text-ink shadow-none' : 'text-body-muted hover:text-ink'
               }`}
             >
               <span className="material-symbols-outlined text-[18px]">{tab.icon}</span>
@@ -511,44 +511,50 @@ export default function CompetitionPublish() {
       )}
 
       {(isEdit || activeTab === 'manual') && (
-        <div className="flex min-w-0 flex-col gap-lg xl:flex-row">
+        <div className="flex min-w-0 flex-col gap-4 xl:flex-row">
           <motion.div className="flex-1 flex flex-col gap-md min-w-0" variants={listContainer} initial="hidden" animate="visible">
             {!isEdit && (
-              <motion.section variants={listItem} className="glass p-lg">
-                <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
-                  <span className="material-symbols-outlined text-[20px] text-primary">category</span>
-                  <h2 className="text-[17px] font-semibold tracking-tight text-ink">活动类型</h2>
+              <motion.section variants={listItem} className="section-card">
+                <div className="section-card-header">
+                  <h2 className="section-card-title flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-body-muted">category</span>
+                    活动类型
+                  </h2>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {activityTypes.map((type) => {
-                    const active = form.activityType === type.value;
-                    return (
-                      <button
-                        key={type.value}
-                        type="button"
-                        onClick={() => handleTypeChange(type.value)}
-                        className={`rounded-sm border p-4 text-left transition ${
-                          active ? 'border-primary bg-primary-soft text-primary' : 'border-hairline bg-canvas hover:border-primary/40'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 text-[14px] font-semibold">
-                          <span className={`material-symbols-outlined text-[20px] ${active ? 'icon-fill' : 'text-placeholder'}`}>{type.icon}</span>
-                          {type.label}
-                        </div>
-                        <p className={`mt-2 text-[12px] leading-5 ${active ? 'text-primary' : 'text-ink-muted-48'}`}>{type.hint}</p>
-                      </button>
-                    );
-                  })}
+                <div className="section-card-body">
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    {activityTypes.map((type) => {
+                      const active = form.activityType === type.value;
+                      return (
+                        <button
+                          key={type.value}
+                          type="button"
+                          onClick={() => handleTypeChange(type.value)}
+                          className={`rounded-md border p-4 text-left transition ${
+                            active ? 'border-primary bg-primary-soft text-ink' : 'border-border bg-canvas hover:border-primary/40'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 text-[14px] font-medium">
+                            <span className={`material-symbols-outlined text-[20px] ${active ? 'text-primary' : 'text-placeholder'}`}>{type.icon}</span>
+                            {type.label}
+                          </div>
+                          <p className={`mt-2 text-[12px] leading-5 ${active ? 'text-body-muted' : 'text-placeholder'}`}>{type.hint}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </motion.section>
             )}
 
-            <motion.section variants={listItem} className="glass p-lg">
-              <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
-                <span className="material-symbols-outlined text-[20px] text-primary">info</span>
-                <h2 className="text-[17px] font-semibold tracking-tight text-ink">基本信息</h2>
+            <motion.section variants={listItem} className="section-card">
+              <div className="section-card-header">
+                <h2 className="section-card-title flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px] text-body-muted">info</span>
+                  基本信息
+                </h2>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+              <div className="section-card-body grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Field label={text.title} required error={errors.title} className="md:col-span-2">
                   <input className="input-glass" placeholder={`输入完整的${text.title}`} value={form.title} onChange={(e) => updateField('title', e.target.value)} />
                 </Field>
@@ -593,7 +599,7 @@ export default function CompetitionPublish() {
                 <Field label="报名时间" required error={errors.regStart} className="md:col-span-2">
                   <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
                     <input className="input-glass min-w-0 flex-1" type="date" value={form.regStart} onChange={(e) => updateField('regStart', e.target.value)} />
-                    <span className="hidden text-ink-muted-48 sm:inline">→</span>
+                    <span className="hidden text-placeholder sm:inline">→</span>
                     <input className="input-glass min-w-0 flex-1" type="date" value={form.regEnd} onChange={(e) => updateField('regEnd', e.target.value)} />
                   </div>
                 </Field>
@@ -601,7 +607,7 @@ export default function CompetitionPublish() {
                 <Field label={text.stage} required error={errors.activityStart} className="md:col-span-2">
                   <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
                     <input className="input-glass min-w-0 flex-1" type="date" value={form.activityStart} onChange={(e) => updateField('activityStart', e.target.value)} />
-                    <span className="hidden text-ink-muted-48 sm:inline">→</span>
+                    <span className="hidden text-placeholder sm:inline">→</span>
                     <input className="input-glass min-w-0 flex-1" type="date" value={form.activityEnd} onChange={(e) => updateField('activityEnd', e.target.value)} />
                   </div>
                 </Field>
@@ -642,15 +648,15 @@ export default function CompetitionPublish() {
                     {form.coverUrl ? (
                       <>
                         <LazyImage src={coverDisplayUrl || form.coverUrl} alt="封面预览" className="absolute inset-0 w-full h-full object-cover" onError={handleCoverLoadError} />
-                        <div className="relative z-10 bg-canvas border border-hairline px-3 py-1.5 rounded-pill text-ink text-[12px]">点击或拖拽以替换封面</div>
+                        <div className="relative z-10 bg-canvas border border-hairline px-3 py-1.5 rounded-lg text-ink text-[12px]">点击或拖拽以替换封面</div>
                       </>
                     ) : (
                       <>
-                        <div className="w-12 h-12 rounded-full bg-primary-soft grid place-items-center text-primary mb-3 group-hover:scale-110 transition">
+                        <div className="w-12 h-12 rounded-md bg-surface-tile-1 grid place-items-center text-placeholder mb-3">
                           <span className="material-symbols-outlined">{uploading ? 'hourglass_top' : 'add_photo_alternate'}</span>
                         </div>
                         <p className="text-[14px] text-ink">{uploading ? '上传中…' : '点击或拖拽上传图片'}</p>
-                        <p className="text-[12px] text-ink-muted-48 mt-1">推荐 16:9，JPG / PNG，最大 5MB</p>
+                        <p className="text-[12px] text-placeholder mt-1">推荐 16:9，JPG / PNG，最大 5MB</p>
                       </>
                     )}
                     <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onCoverInputChange} />
@@ -659,12 +665,14 @@ export default function CompetitionPublish() {
               </div>
             </motion.section>
 
-            <motion.section variants={listItem} className="glass p-lg">
-              <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
-                <span className="material-symbols-outlined text-[20px] text-primary">description</span>
-                <h2 className="text-[17px] font-semibold tracking-tight text-ink">{text.noun}内容</h2>
+            <motion.section variants={listItem} className="section-card">
+              <div className="section-card-header">
+                <h2 className="section-card-title flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px] text-body-muted">description</span>
+                  {text.noun}内容
+                </h2>
               </div>
-              <div className="flex flex-col gap-md">
+              <div className="section-card-body flex flex-col gap-4">
                 <Field label={`${text.noun}简介`} required error={errors.description}>
                   <textarea className="input-glass !h-auto py-2.5 resize-none" rows={3} placeholder={`简要描述${text.noun}背景、目标和参与方式…`} value={form.description} onChange={(e) => updateField('description', e.target.value)} />
                 </Field>
@@ -679,39 +687,39 @@ export default function CompetitionPublish() {
               </div>
             </motion.section>
 
-            <motion.section variants={listItem} className="glass p-lg">
-              <div className="flex items-center gap-2 mb-md pb-3 border-b border-hairline">
-                <span className="material-symbols-outlined text-[20px] text-primary">settings</span>
-                <h2 className="text-[17px] font-semibold tracking-tight text-ink">{text.track}</h2>
+            <motion.section variants={listItem} className="section-card">
+              <div className="section-card-header">
+                <h2 className="section-card-title flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px] text-body-muted">settings</span>
+                  {text.track}
+                </h2>
               </div>
-              <p className="text-[13px] text-ink-muted-80 mb-4">{text.trackHint}</p>
+              <div className="section-card-body">
+              <p className="mb-4 text-[13px] text-body-muted">{text.trackHint}</p>
 
-              <div className="flex flex-wrap gap-2 mb-4">
+              <div className="mb-4 flex flex-wrap gap-2">
                 {defaultTracks[form.activityType].map((track) => {
                   const selected = form.tracks.includes(track);
                   return (
-                    <motion.button
-                      key={track}
+                    <button key={track}
                       type="button"
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.97 }}
                       onClick={() => toggleTrack(track)}
-                      className={`group relative flex items-center gap-2 pl-3 pr-4 py-2 rounded-lg border text-[13px] font-medium transition-all ${
-                        selected ? 'bg-primary text-on-primary border-primary' : 'bg-canvas border-hairline text-ink-muted-80 hover:border-primary/40 hover:text-ink'
+                      className={`group relative flex items-center gap-2 rounded-md border py-2 pl-3 pr-4 text-[13px] font-medium transition-all ${
+                        selected ? 'border-primary bg-primary text-on-primary' : 'border-border bg-canvas text-body-muted hover:border-primary/40 hover:text-ink'
                       }`}
                     >
-                      <span className={`material-symbols-outlined text-[18px] transition-transform ${selected ? 'scale-110' : 'group-hover:scale-105'}`}>
+                      <span className="material-symbols-outlined text-[18px]">
                         {selected ? 'check_circle' : 'add_circle_outline'}
                       </span>
                       {track}
-                    </motion.button>
+                    </button>
                   );
                 })}
               </div>
 
-              <div className="flex items-center gap-2 mb-4">
+              <div className="mb-4 flex items-center gap-2">
                 <div className="relative flex-1">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-ink-muted-48">edit</span>
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-placeholder">edit</span>
                   <input
                     className="input-glass !pl-10"
                     placeholder={`输入自定义${text.track}…`}
@@ -727,21 +735,21 @@ export default function CompetitionPublish() {
                     }}
                   />
                 </div>
-                <span className="text-[12px] text-ink-muted-48">按回车添加</span>
+                <span className="text-[12px] text-placeholder">按回车添加</span>
               </div>
 
               {form.tracks.length > 0 && (
-                <div className="p-3 rounded-lg bg-canvas-parchment/60 border border-hairline">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="material-symbols-outlined text-[16px] text-primary">flag</span>
-                    <span className="text-[12px] font-medium text-ink-muted-80">已选 {form.tracks.length} 项</span>
+                <div className="rounded-md border border-border bg-surface-tile-1 p-3">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-placeholder">flag</span>
+                    <span className="text-[12px] font-medium text-body-muted">已选 {form.tracks.length} 项</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {form.tracks.map((t) => (
-                      <span key={t} className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-md bg-primary/8 border border-primary/20 text-[13px] text-primary font-medium group">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                      <span key={t} className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-md bg-surface-tile-1 border border-primary/20 text-[13px] text-body-muted font-medium group">
+                        <span className="w-1.5 h-1.5 rounded-md bg-primary" />
                         {t}
-                        <button type="button" onClick={() => toggleTrack(t)} className="ml-1 p-0.5 rounded-full hover:bg-primary-soft text-primary hover:text-primary-focus transition">
+                        <button type="button" onClick={() => toggleTrack(t)} className="ml-1 p-0.5 rounded-full hover:bg-surface-tile-1 text-ink hover:text-ink transition">
                           <span className="material-symbols-outlined text-[14px]">close</span>
                         </button>
                       </span>
@@ -749,31 +757,36 @@ export default function CompetitionPublish() {
                   </div>
                 </div>
               )}
+              </div>
             </motion.section>
 
             {isCompetitionEdit && (
-              <motion.section variants={listItem} className="glass p-xl">
-                <h3 className="text-[17px] font-semibold tracking-tight text-ink mb-1 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[20px] text-primary">route</span>
-                  赛事阶段管理
-                </h3>
-                <p className="text-[13px] text-ink-muted-48 mb-4">按需添加赛事阶段，如院赛、校赛、省赛等。不添加阶段则使用默认报名流程。</p>
-                <StageManager competitionId={Number(id)} />
+              <motion.section variants={listItem} className="section-card">
+                <div className="section-card-header">
+                  <h2 className="section-card-title flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-body-muted">route</span>
+                    赛事阶段管理
+                  </h2>
+                </div>
+                <div className="section-card-body">
+                  <p className="mb-4 text-[13px] text-placeholder">按需添加赛事阶段，如院赛、校赛、省赛等。不添加阶段则使用默认报名流程。</p>
+                  <StageManager competitionId={Number(id)} />
+                </div>
               </motion.section>
             )}
           </motion.div>
 
           <div className="w-full shrink-0 xl:w-[340px] 2xl:w-[380px]">
             <div className="flex flex-col gap-3 xl:sticky xl:top-[88px]">
-              <h3 className="text-[12px] text-ink-muted-48 px-1 flex items-center gap-2">
+              <h3 className="text-[12px] text-placeholder px-1 flex items-center gap-2">
                 <span className="material-symbols-outlined text-[14px]">visibility</span>
                 发布效果预览
               </h3>
-              <div className="glass-strong overflow-hidden rounded-lg">
+              <div className="section-card overflow-hidden">
                 <div className="aspect-video bg-canvas-parchment relative overflow-hidden">
                   <LazyImage src={form.coverUrl ? (coverDisplayUrl || form.coverUrl) : ''} alt="封面预览" className="absolute inset-0 w-full h-full object-cover" onError={handleCoverLoadError} />
                   <div className="absolute top-3 left-3 chip chip-success">
-                    <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                    <span className="w-1.5 h-1.5 rounded-md bg-success" />
                     <span>{form.activityType === 'competition' ? '报名中' : '招募中'}</span>
                   </div>
                 </div>
@@ -812,18 +825,18 @@ export default function CompetitionPublish() {
       <div className="fixed bottom-0 left-0 right-0 z-40 md:left-[200px]">
         <div className="bg-canvas border-t border-hairline px-lg py-3">
           <div className="mx-auto flex w-full max-w-[1100px] items-center justify-between gap-3">
-            <motion.button whileTap={{ scale: 0.97 }} type="button" onClick={() => navigate('/admin/competitions')} className="btn-secondary">
+            <button type="button" onClick={() => navigate('/admin/competitions')} className="btn-secondary">
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
               返回
-            </motion.button>
+            </button>
             <div className="flex items-center gap-2">
-              <motion.button whileTap={{ scale: 0.97 }} type="button" onClick={() => handleSubmit('draft')} disabled={loading || uploading} className="btn-secondary disabled:opacity-60">
+              <button type="button" onClick={() => handleSubmit('draft')} disabled={loading || uploading} className="btn-secondary disabled:opacity-60">
                 {isEdit && form.status && form.status !== 'draft' ? '转为草稿' : '保存草稿'}
-              </motion.button>
-              <motion.button whileTap={{ scale: 0.97 }} type="button" onClick={() => handleSubmit('published')} disabled={loading || uploading} className="btn-primary disabled:opacity-60">
+              </button>
+              <button type="button" onClick={() => handleSubmit('published')} disabled={loading || uploading} className="btn-primary disabled:opacity-60">
                 <span className="material-symbols-outlined text-[18px]">publish</span>
                 {loading ? '提交中…' : isEdit && form.status !== 'draft' ? '保存修改' : form.activityType === 'competition' ? '发布赛事' : '上架活动'}
-              </motion.button>
+              </button>
             </div>
           </div>
         </div>
@@ -890,11 +903,11 @@ function StageManager({ competitionId }: { competitionId: number }) {
     <div className="flex flex-col gap-3">
       {stages.map((stage) => (
         <div key={stage.id} className="flex items-center gap-3 p-3 rounded-lg border border-hairline bg-canvas">
-          <span className="w-6 h-6 rounded-full bg-primary-soft text-primary text-[12px] font-medium grid place-items-center">{stage.stageOrder}</span>
+          <span className="w-6 h-6 rounded-md bg-surface-tile-1 text-ink text-[12px] font-medium grid place-items-center">{stage.stageOrder}</span>
           <div className="flex-1 min-w-0">
             <span className="text-[14px] font-medium text-ink">{stage.name}</span>
             {stage.startTime && (
-              <span className="text-[12px] text-ink-muted-48 ml-2">
+              <span className="text-[12px] text-placeholder ml-2">
                 {new Date(stage.startTime).toLocaleDateString('zh-CN')} — {stage.endTime ? new Date(stage.endTime).toLocaleDateString('zh-CN') : ''}
               </span>
             )}
@@ -904,7 +917,7 @@ function StageManager({ competitionId }: { competitionId: number }) {
             <option value="active">进行中</option>
             <option value="closed">已结束</option>
           </select>
-          <button onClick={() => handleDelete(stage.id)} className="p-1 rounded-md text-ink-muted-48 hover:text-error hover:bg-error/8 transition">
+          <button onClick={() => handleDelete(stage.id)} className="p-1 rounded-md text-placeholder hover:text-error hover:bg-error/8 transition">
             <span className="material-symbols-outlined text-[18px]">delete</span>
           </button>
         </div>
@@ -920,7 +933,7 @@ function StageManager({ competitionId }: { competitionId: number }) {
             transition={{ duration: 0.2, ease: smoothEase }}
             className="overflow-hidden"
           >
-            <div className="p-3 rounded-lg border border-primary/30 bg-primary/5 flex flex-col gap-2">
+            <div className="p-3 rounded-lg border border-primary/30 bg-hover-overlay flex flex-col gap-2">
               <input className="input-glass !h-9" placeholder="阶段名称，如：院赛报名、校赛评审" value={newStage.name} onChange={e => setNewStage(s => ({ ...s, name: e.target.value }))} />
               <div className="grid grid-cols-2 gap-2">
                 <input type="date" className="input-glass !h-9" value={newStage.startTime} onChange={e => setNewStage(s => ({ ...s, startTime: e.target.value }))} />
@@ -934,10 +947,10 @@ function StageManager({ competitionId }: { competitionId: number }) {
             </div>
           </motion.div>
         ) : (
-          <motion.button key="add-btn" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} type="button" onClick={() => setShowAdd(true)} className="flex items-center gap-2 text-[13px] text-primary hover:text-primary-focus font-medium">
+          <button key="add-btn" type="button" onClick={() => setShowAdd(true)} className="flex items-center gap-2 text-[13px] text-body-muted hover:text-ink font-medium">
             <span className="material-symbols-outlined text-[18px]">add_circle</span>
             添加阶段
-          </motion.button>
+          </button>
         )}
       </AnimatePresence>
 
@@ -961,9 +974,9 @@ function Field({ label, required, error, children, className = '' }: { label: st
 function PreviewLine({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
     <div className="flex items-start gap-2">
-      <span className="material-symbols-outlined text-[14px] text-ink-muted-48 mt-0.5">{icon}</span>
-      <span className="text-ink-muted-48 mr-1">{label}:</span>
-      <span className="text-ink-muted-80 min-w-0 flex-1 break-words">{value}</span>
+      <span className="material-symbols-outlined text-[14px] text-placeholder mt-0.5">{icon}</span>
+      <span className="text-placeholder mr-1">{label}:</span>
+      <span className="text-body-muted min-w-0 flex-1 break-words">{value}</span>
     </div>
   );
 }

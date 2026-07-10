@@ -1,16 +1,13 @@
-import { useState, useEffect, useMemo, type ReactNode } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import { listActivityCategories } from '../../api/activityCategories';
 import { useStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
 import Pagination from '../../components/Pagination';
-import { CardSkeleton } from '../../components/Skeleton';
 import ErrorState from '../../components/ErrorState';
 import LazyImage from '../../components/LazyImage';
-import { listContainer, listItem, pageTransition, softSpring } from '../../lib/motion';
+import { displayLevel } from '../../lib/levelDisplay';
 import type { ActivityCategory, ActivityType } from '../../types';
 
 type HubItem = {
@@ -63,22 +60,6 @@ const typeLabel: Record<ActivityType, string> = {
   other: '活动',
 };
 
-const typeFallbackIcon: Record<ActivityType, string> = {
-  competition: 'emoji_events',
-  volunteer: 'volunteer_activism',
-  culture_sports: 'sports_soccer',
-  other: 'event_available',
-};
-
-function statusChip(status: string) {
-  switch (status) {
-    case 'published': return 'chip chip-success';
-    case 'draft': return 'chip chip-warning';
-    case 'closed': return 'chip chip-closed';
-    default: return 'chip';
-  }
-}
-
 function statusLabel(status: string) {
   switch (status) {
     case 'published': return '报名中';
@@ -88,14 +69,21 @@ function statusLabel(status: string) {
   }
 }
 
-function levelChip(level?: string) {
-  switch (level) {
-    case '国家级': return 'chip chip-national';
-    case '省级': return 'chip chip-province';
-    case '校级': return 'chip chip-school';
-    case '院级': return 'chip chip-school';
-    default: return 'chip';
-  }
+/** 等级徽章色调（正文区常显，不依赖封面对比度） */
+function levelBadgeTone(level?: string) {
+  const label = displayLevel(level);
+  if (label === '国家级') return 'level-badge-national';
+  if (label === '省级') return 'level-badge-province';
+  if (label === '校级') return 'level-badge-school';
+  if (label === '院级') return 'level-badge-college';
+  return 'level-badge-default';
+}
+
+function statusBadgeTone(status: string) {
+  if (status === 'published') return 'status-badge-open';
+  if (status === 'draft') return 'status-badge-draft';
+  if (status === 'closed') return 'status-badge-closed';
+  return 'status-badge-default';
 }
 
 function formatDate(value?: string) {
@@ -113,10 +101,6 @@ function daysUntil(value?: string) {
   today.setHours(0, 0, 0, 0);
   d.setHours(0, 0, 0, 0);
   return Math.ceil((d.getTime() - today.getTime()) / 86400000);
-}
-
-function stripHtml(value?: string) {
-  return value ? value.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : '';
 }
 
 export default function CompetitionsHub() {
@@ -293,197 +277,242 @@ export default function CompetitionsHub() {
       : '全部活动';
   const activeTypeLabel = ACTIVITY_TYPES.find((type) => type.value === selectedType)?.label || typeLabel[selectedType];
 
+  const typeFallbackIcon: Record<ActivityType, string> = {
+    competition: 'emoji_events',
+    volunteer: 'volunteer_activism',
+    culture_sports: 'sports_soccer',
+    other: 'event_available',
+  };
+
   return (
     <div className="flex flex-col gap-5">
       <PageHero
-        eyebrow="活动大厅"
-        title="活动大厅"
-        description="集中浏览赛事、志愿服务、文体活动与其他活动，按分类、级别和状态快速收拢结果。"
-        contentClassName="max-w-3xl"
+        eyebrow={isAdmin ? '活动运营' : '发现活动'}
+        title={isAdmin ? '活动管理' : '活动大厅'}
+        description={
+          isAdmin
+            ? '管理全部活动的发布状态与内容。'
+            : '筛选感兴趣的赛事与活动，报名后可在「报名与材料」继续完善。'
+        }
         actions={(
-          <div className="grid min-w-[220px] grid-cols-2 gap-2">
-            <SummaryMetric label="当前结果" value={total} />
-            <SummaryMetric label="报名中" value={publishedCount} />
+          <div className="text-[13px] text-body-subtle">
+            共 <span className="font-semibold tabular-nums text-ink">{total}</span> 项
+            <span className="mx-2 text-hairline">|</span>
+            本页报名中 <span className="font-semibold tabular-nums text-ink">{publishedCount}</span>
           </div>
         )}
       />
 
-      <section className="app-command-bar flex flex-col gap-3 p-3">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <FilterGroup label="活动类型">
+      {/* 筛选工具条 */}
+      <section className="rounded-xl border border-hairline bg-canvas p-3 sm:p-4">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <Segmented
-              id="type"
               options={ACTIVITY_TYPES}
               value={selectedType}
               onChange={(v) => { setSelectedType(v as ActivityType); setPage(1); }}
             />
-          </FilterGroup>
-
-          <div className="relative w-full md:max-w-[340px]">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">search</span>
-            <input
-              className="input-glass h-9 pl-9 text-[14px]"
-              placeholder={`搜索${typeLabel[selectedType]}名称`}
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
-            />
+            <div className="relative w-full lg:max-w-[300px]">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-placeholder">search</span>
+              <input
+                className="input-glass h-9 pl-9 text-[14px]"
+                placeholder={`搜索${typeLabel[selectedType]}`}
+                value={searchQuery}
+                onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+              />
+            </div>
           </div>
-        </div>
-
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          <FilterGroup label="级别">
+          <div className="flex flex-wrap items-center gap-2 border-t border-hairline pt-3">
+            <span className="text-[12px] text-placeholder">级别</span>
             <Segmented
-              id="level"
               options={LEVELS}
               value={selectedLevel}
               onChange={(v) => { setSelectedLevel(v); setPage(1); }}
             />
-          </FilterGroup>
-          <FilterGroup label="状态">
+            <span className="ml-2 text-[12px] text-placeholder">状态</span>
             <Segmented
-              id="status"
               options={isAdmin ? STATUSES : STATUSES.filter((s) => s.value !== 'draft')}
               value={selectedStatus}
               onChange={(v) => { setSelectedStatus(v); setPage(1); }}
             />
-          </FilterGroup>
-        </div>
-
-        <div className="flex min-w-0 items-center gap-2 border-t border-hairline pt-3">
-          <span className="shrink-0 text-[12px] text-body-subtle">分类</span>
-          <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 no-scrollbar">
-            {categoryOptions.map((cat) => (
-              <CategoryButton
-                key={cat.value || 'all'}
-                option={cat}
-                active={selectedCategory === cat.value}
-                count={cat.value ? categoryCounts[cat.value] || 0 : total}
-                onClick={() => { setSelectedCategory(cat.value); setPage(1); }}
-              />
-            ))}
           </div>
-          <span className="hidden shrink-0 text-[12px] tabular-nums text-placeholder sm:inline">
-            {Math.max(categoryOptions.length - 1, 0)} 个分类
-          </span>
+          <div className="flex min-w-0 items-center gap-2 border-t border-hairline pt-3">
+            <span className="shrink-0 text-[12px] text-placeholder">分类</span>
+            <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto no-scrollbar">
+              {categoryOptions.map((cat) => (
+                <CategoryButton
+                  key={cat.value || 'all'}
+                  option={cat}
+                  active={selectedCategory === cat.value}
+                  count={cat.value ? categoryCounts[cat.value] || 0 : total}
+                  onClick={() => { setSelectedCategory(cat.value); setPage(1); }}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      <main className="flex min-w-0 flex-col gap-md">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <h2 className="truncate text-[16px] font-medium text-ink">{activeCategoryName}</h2>
-            <p className="text-[13px] text-body-subtle">
-              {activeTypeLabel} · {total} 个结果
-            </p>
-          </div>
-          <p className="text-[12px] text-placeholder">
-            每页 {pageSize} 项
-          </p>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h2 className="text-[15px] font-semibold text-ink">{activeCategoryName}</h2>
+          <p className="mt-0.5 text-[12.5px] text-placeholder">{activeTypeLabel} · {total} 个结果</p>
         </div>
+      </div>
 
-        {loading ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4">
-            {Array.from({ length: 8 }, (_, i) => <CardSkeleton key={i} />)}
-          </div>
-        ) : error ? (
-          <ErrorState
-            message={error}
-            onRetry={() => {
-              setError(null);
-              setPage(1);
-            }}
-          />
-        ) : items.length === 0 ? (
-          <ErrorState
-            variant="not-found"
-            title="暂无活动"
-            message={searchQuery ? '没有找到匹配的活动，请尝试其他关键词' : '暂无符合条件的活动'}
-          />
-        ) : (
-          <motion.div
-            layout
-            variants={listContainer}
-            initial="hidden"
-            animate="visible"
-            className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4"
-          >
-            {items.map((item) => (
-              <motion.div
+      {loading ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="h-[280px] animate-pulse rounded-xl border border-hairline bg-surface-tile-1" />
+          ))}
+        </div>
+      ) : error ? (
+        <ErrorState
+          message={error}
+          onRetry={() => {
+            setError(null);
+            setPage(1);
+          }}
+        />
+      ) : items.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-hairline py-16 text-center text-[13.5px] text-placeholder">
+          {searchQuery ? '没有找到匹配的活动' : '暂无符合条件的活动'}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {items.map((item) => {
+            const isRegistered = item.type === 'competition'
+              ? registeredCompIds.has(String(item.id))
+              : participatedActivityIds.has(String(item.id));
+            const remainingDays = daysUntil(item.endTime);
+            const categoryName = item.category ? categoryMap[item.category]?.name || item.category : '未分类';
+            const levelLabel = displayLevel(item.level);
+            const detailPath = isAdmin
+              ? (item.type === 'competition' ? `/admin/publish/${item.id}` : `/admin/publish/activity/${item.id}`)
+              : `/student/competitions/${item.id}`;
+            const urgent = remainingDays !== null && remainingDays >= 0 && remainingDays <= 7;
+
+            return (
+              <article
                 key={`${item.type}-${item.id}`}
-                layout
-                variants={listItem}
-                whileHover={{ y: -2 }}
-                transition={pageTransition}
-                className="h-full min-w-0"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas shadow-[0_1px_0_rgba(15,23,42,0.03)] transition-[box-shadow,border-color] duration-200 hover:border-primary/20 hover:shadow-[0_12px_32px_rgba(37,99,235,0.08)]"
               >
-                <ActivityCard
-                  item={item}
-                  category={item.category ? categoryMap[item.category] : undefined}
-                  navigate={navigate}
-                  isAdmin={isAdmin}
-                  isRegistered={item.type === 'competition' ? registeredCompIds.has(String(item.id)) : participatedActivityIds.has(String(item.id))}
-                />
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
+                {/* 封面：标签不再叠在图上（避免被缩放/图片遮挡） */}
+                <button
+                  type="button"
+                  className="relative block h-[148px] w-full overflow-hidden bg-gradient-to-br from-primary-soft via-surface-tile-1 to-surface-tile-2 text-left"
+                  onClick={() => navigate(detailPath)}
+                >
+                  <LazyImage
+                    className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]"
+                    src={item.coverUrl}
+                    alt={item.name}
+                    fallbackIcon={typeFallbackIcon[item.type]}
+                  />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/35 to-transparent" />
+                </button>
 
-        {items.length > 0 && (
-          <Pagination current={page} total={total} pageSize={pageSize} onChange={setPage} />
-        )}
-      </main>
-    </div>
-  );
-}
+                <div className="flex flex-1 flex-col px-4 pb-4 pt-3.5">
+                  {/* 等级/状态：正文区常显 */}
+                  <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
+                    <span className={`level-badge ${levelBadgeTone(item.level)}`}>
+                      {levelLabel}
+                    </span>
+                    <span className={`status-badge ${statusBadgeTone(item.status)}`}>
+                      {statusLabel(item.status)}
+                    </span>
+                    {isRegistered ? (
+                      <span className="status-badge status-badge-registered">已报名</span>
+                    ) : null}
+                  </div>
 
-function SummaryMetric({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-sm border border-hairline bg-canvas px-4 py-3">
-      <div className="text-[22px] font-medium leading-none tabular-nums text-ink">{value}</div>
-      <div className="mt-1 text-[12px] text-body-subtle">{label}</div>
-    </div>
-  );
-}
+                  <button type="button" className="text-left" onClick={() => navigate(detailPath)}>
+                    <h3 className="line-clamp-2 min-h-[44px] text-[15px] font-semibold leading-snug tracking-tight text-ink transition-colors group-hover:text-primary">
+                      {item.name}
+                    </h3>
+                  </button>
 
-function FilterGroup({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center">
-      <span className="shrink-0 text-[12px] text-body-subtle">{label}</span>
-      {children}
+                  <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-body-subtle">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px] text-placeholder">category</span>
+                      {typeLabel[item.type]} · {categoryName}
+                    </span>
+                    <span className="text-hairline">·</span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[14px] text-placeholder">event</span>
+                      截止 {formatDate(item.endTime)}
+                    </span>
+                  </div>
+
+                  {urgent ? (
+                    <p className="mt-2 inline-flex w-fit items-center gap-1 rounded-md bg-warning/10 px-2 py-1 text-[12px] font-medium text-warning">
+                      <span className="material-symbols-outlined text-[14px]">schedule</span>
+                      {remainingDays === 0 ? '今天截止' : `还剩 ${remainingDays} 天截止`}
+                    </p>
+                  ) : (
+                    <div className="mt-2 h-[28px]" />
+                  )}
+
+                  <div className="mt-auto flex gap-2 pt-3">
+                    <button type="button" className="btn-secondary min-w-0 flex-1 !h-9" onClick={() => navigate(detailPath)}>
+                      {isAdmin ? '编辑' : '详情'}
+                    </button>
+                    {!isAdmin && (
+                      <button
+                        type="button"
+                        className={`${isRegistered ? 'btn-secondary' : 'btn-primary'} min-w-0 flex-1 !h-9`}
+                        onClick={() => {
+                          if (isRegistered) {
+                            navigate(item.type === 'competition' ? '/student/registrations' : '/student/progress');
+                            return;
+                          }
+                          if (item.type === 'competition') {
+                            navigate(`/student/registrations/workbench/${item.id}`);
+                          } else {
+                            navigate('/student/progress');
+                          }
+                        }}
+                      >
+                        {isRegistered ? '已报名' : item.type === 'competition' ? '立即报名' : '申请参加'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      {items.length > 0 && (
+        <Pagination current={page} total={total} pageSize={pageSize} onChange={setPage} />
+      )}
     </div>
   );
 }
 
 function Segmented({
-  id,
   options,
   value,
   onChange,
 }: {
-  id: string;
   options: { label: string; value: string; icon?: string }[];
   value: string;
   onChange: (v: string) => void;
 }) {
   return (
-    <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-sm border border-hairline bg-canvas-parchment p-1 no-scrollbar">
+    <div className="flex max-w-full items-center gap-1 overflow-x-auto no-scrollbar">
       {options.map((o) => {
         const active = value === o.value;
         return (
           <button
             key={o.value || o.label}
+            type="button"
             onClick={() => onChange(o.value)}
-            className={`relative shrink-0 overflow-hidden rounded-sm px-3 py-1.5 text-[13px] transition ${
-              active ? 'text-ink' : 'text-ink-muted-80 hover:text-ink'
-            }`}
+            className={`chip shrink-0 ${active ? 'chip-primary' : ''}`}
           >
-            {active && (
-              <motion.span layoutId={`segmented-${id}`} className="absolute inset-0 rounded-sm bg-canvas" transition={softSpring} />
-            )}
-            <span className={`relative z-10 flex items-center gap-1.5 whitespace-nowrap ${active ? 'font-semibold' : ''}`}>
-              {o.icon && <span className="material-symbols-outlined text-[16px]">{o.icon}</span>}
-              {o.label}
-            </span>
+            {o.icon && <span className="material-symbols-outlined text-[14px] text-body-muted">{o.icon}</span>}
+            {o.label}
           </button>
         );
       })}
@@ -504,171 +533,15 @@ function CategoryButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`relative flex shrink-0 items-center gap-2 rounded-sm border px-3 py-2 text-[13px] transition-colors ${
-        active
-          ? 'border-primary/20 bg-primary-soft text-primary'
-          : 'border-hairline bg-canvas text-body-muted hover:border-border-emphasis hover:text-ink'
-      }`}
+      className={`chip shrink-0 ${active ? 'chip-primary' : ''}`}
     >
-      {active && (
-        <motion.span layoutId="activity-category-active" className="absolute inset-0 rounded-sm bg-primary-soft" transition={softSpring} />
-      )}
-      <span className="relative z-10 flex min-w-0 items-center gap-2">
-        <span className={`material-symbols-outlined text-[17px] ${active ? 'icon-fill text-primary' : 'text-placeholder'}`}>
-          {option.icon || 'category'}
-        </span>
-        <span className="max-w-[8rem] truncate whitespace-nowrap">{option.label}</span>
+      <span className="material-symbols-outlined text-[14px] text-body-muted">
+        {option.icon || 'category'}
       </span>
-      <span className="relative z-10 rounded-xs bg-surface-chip px-1.5 text-[12px] tabular-nums text-body-subtle">
-        {count}
-      </span>
+      <span className="max-w-[8rem] truncate">{option.label}</span>
+      <span className="tabular-nums text-placeholder">{count}</span>
     </button>
-  );
-}
-
-function ActivityCard({
-  item,
-  category,
-  navigate,
-  isAdmin,
-  isRegistered,
-}: {
-  item: HubItem;
-  category?: ActivityCategory;
-  navigate: ReturnType<typeof useNavigate>;
-  isAdmin: boolean;
-  isRegistered: boolean;
-}) {
-  const remainingDays = daysUntil(item.endTime);
-  const isClosingSoon = remainingDays !== null && remainingDays >= 0 && remainingDays <= 7;
-  const categoryName = category?.name || item.category || '未分类';
-  const categoryIcon = category?.icon || typeFallbackIcon[item.type];
-  const content = stripHtml(item.content) || `查看${typeLabel[item.type]}详情、报名时间与参与要求`;
-  const actionLabel = item.type === 'competition' ? '立即报名' : '申请参加';
-  const primaryTimeLabel = item.type === 'competition' ? '报名截止' : '申请截止';
-  const capacityLabel = item.type === 'competition' ? '团队人数' : '参与上限';
-  const capacityValue = item.type === 'competition'
-    ? `最多 ${item.maxTeamSize ?? '—'} 人`
-    : item.maxParticipants
-      ? `${item.maxParticipants} 人`
-      : '不限';
-  const placeOrStartLabel = item.type === 'volunteer' ? '服务地点' : '开始时间';
-  const placeOrStartValue = item.type === 'volunteer' ? (item.location || '待定') : formatDate(item.activityStart);
-
-  const handlePrimary = async () => {
-    if (isAdmin) {
-      navigate(item.type === 'competition' ? `/admin/publish/${item.id}` : `/admin/publish/activity/${item.id}`);
-      return;
-    }
-    if (isRegistered) {
-      navigate(item.type === 'competition' ? '/student/registrations' : '/student/progress');
-      return;
-    }
-    if (item.type === 'competition') {
-      navigate(`/student/registrations/workbench/${item.id}`);
-      return;
-    }
-    try {
-      await apiClient.post(`/activities/${item.id}/participations`, {
-        track: item.tracks?.[0] || '',
-        memberStudentIds: [],
-        metadata: {},
-      });
-      toast.success('参与申请已提交');
-      navigate('/student/progress');
-    } catch (err: any) {
-      toast.error(err?.message || '提交申请失败');
-    }
-  };
-
-  return (
-    <article className="group flex h-full min-w-0 flex-col rounded-sm border border-hairline bg-canvas p-4 transition-all hover:border-border-emphasis hover:shadow-card-hover">
-      <div className="flex min-w-0 items-start gap-3">
-        <div className="grid h-11 w-11 shrink-0 overflow-hidden rounded-sm bg-surface-tile-2 ring-1 ring-hairline">
-          <LazyImage
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-            src={item.coverUrl}
-            alt={item.name}
-            fallbackIcon={typeFallbackIcon[item.type]}
-          />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-            <span className={statusChip(item.status)}>{statusLabel(item.status)}</span>
-            <span className="chip chip-primary">{typeLabel[item.type]}</span>
-            {item.level ? <span className={levelChip(item.level)}>{item.level}</span> : null}
-          </div>
-          <h4 className="mt-2 min-h-[42px] text-[15px] font-medium leading-[1.4] text-ink line-clamp-2">{item.name}</h4>
-        </div>
-      </div>
-
-      <p className="mt-3 min-h-[38px] text-[12px] leading-[1.55] text-body-subtle line-clamp-2">{content}</p>
-
-      {isClosingSoon ? (
-        <div className="mt-3 rounded-sm border border-hairline bg-primary-soft px-3 py-2 text-[12px] text-primary">
-          {remainingDays === 0 ? '今天截止报名' : `距离报名截止还有 ${remainingDays} 天`}
-        </div>
-      ) : null}
-
-      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 rounded-sm bg-canvas-parchment p-3 text-xs text-body-subtle">
-        <MetaItem icon="calendar_today" label={primaryTimeLabel} value={formatDate(item.endTime)} strong={isClosingSoon} />
-        <MetaItem icon={item.type === 'competition' ? 'groups' : 'person_add'} label={capacityLabel} value={capacityValue} />
-        <MetaItem icon={categoryIcon} label="分类" value={categoryName} />
-        <MetaItem icon={item.type === 'volunteer' ? 'place' : 'flag'} label={placeOrStartLabel} value={placeOrStartValue} />
-      </div>
-
-      {Array.isArray(item.tracks) && item.tracks[0] ? (
-        <div className="mt-3 min-w-0 truncate text-[12px] text-placeholder">
-          {item.tracks[0]}
-        </div>
-      ) : null}
-
-      <div className="mt-auto flex gap-2 border-t border-hairline pt-3">
-          {item.type === 'competition' ? (
-            <>
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={() => navigate(isAdmin ? `/admin/publish/${item.id}` : `/student/competitions/${item.id}`)}
-                className="btn-secondary min-w-0 flex-1 !min-h-9 !py-2 !text-[13px]"
-              >
-                {isAdmin ? '编辑' : '详情'}
-              </motion.button>
-              {!isAdmin && (
-                <motion.button whileTap={{ scale: 0.97 }} onClick={handlePrimary} className="btn-primary min-w-0 flex-1 !min-h-9 !py-2 !text-[13px]">
-                  {isRegistered ? '已报名' : actionLabel}
-                </motion.button>
-              )}
-            </>
-          ) : (
-            <motion.button whileTap={{ scale: 0.97 }} onClick={handlePrimary} className="btn-primary min-w-0 flex-1 !min-h-9 !py-2 !text-[13px]">
-              {isAdmin ? '编辑活动' : isRegistered ? '查看进度' : actionLabel}
-            </motion.button>
-          )}
-      </div>
-    </article>
-  );
-}
-
-function MetaItem({
-  icon,
-  label,
-  value,
-  strong = false,
-}: {
-  icon: string;
-  label: string;
-  value: string;
-  strong?: boolean;
-}) {
-  return (
-    <div className="min-w-0">
-      <div className="flex items-center gap-1.5 text-xs text-slate-500">
-        <span className="material-symbols-outlined text-[14px]">{icon}</span>
-        {label}
-      </div>
-      <div className={`mt-0.5 truncate font-medium ${strong ? 'text-blue-600' : 'text-slate-700'}`}>{value}</div>
-    </div>
   );
 }

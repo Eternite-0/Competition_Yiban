@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { apiClient } from '../api/client';
 import { useStore } from '../store/useStore';
 import PageHero from '../components/PageHero';
 import Pagination from '../components/Pagination';
-import { listContainer, listItem, pageVariants } from '../lib/motion';
 
 interface Message {
   id: number;
@@ -109,83 +108,74 @@ export default function NotificationsPage() {
   const unreadCount = messages.filter((m) => m.isRead === 0).length;
 
   return (
-    <motion.div variants={pageVariants} initial="hidden" animate="visible" className="flex flex-col">
+    <div className="flex flex-col gap-4">
       <PageHero
         title="消息中心"
         description={`共 ${total} 条消息${unreadCount > 0 ? `，${unreadCount} 条未读` : ''}`}
-        className="mb-6"
-        titleClassName="text-[22px] font-medium text-ink"
-        descriptionClassName="mt-1 text-sm text-body-muted"
         actions={
           unreadCount > 0 ? (
-            <motion.button whileTap={{ scale: 0.97 }} onClick={handleMarkAllRead} className="btn-secondary">
+            <button type="button" onClick={handleMarkAllRead} className="btn-secondary">
               <span className="material-symbols-outlined text-[16px]">done_all</span>
               全部已读
-            </motion.button>
+            </button>
           ) : undefined
         }
       />
 
-      <div className="app-panel overflow-hidden">
+      <section className="section-card">
         {loading && messages.length === 0 ? (
-          <div className="flex items-center justify-center py-16 text-body-muted">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent mr-3" />
-            加载中...
+          <div className="empty-panel py-16">
+            <span className="material-symbols-outlined animate-spin text-body-muted">progress_activity</span>
+            <p className="text-[13px]">加载中…</p>
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-placeholder">
-            <span className="material-symbols-outlined text-[48px] mb-3">notifications_none</span>
-            <span className="text-[14px]">暂无消息</span>
+          <div className="empty-panel py-16">
+            <span className="material-symbols-outlined">notifications_none</span>
+            <p className="text-[13px]">暂无消息</p>
           </div>
         ) : (
-          <motion.div variants={listContainer} initial="hidden" animate="visible">
+          <div className="section-card-body tight">
             <AnimatePresence>
               {messages.map((msg) => (
-                <motion.div
+                <div
                   key={msg.id}
-                  variants={listItem}
-                  exit={{ opacity: 0, x: -20, height: 0 }}
-                  transition={{ duration: 0.2 }}
                   onClick={() => handleMarkRead(msg.id)}
-                  className={`group flex items-start gap-3 border-b border-border px-5 py-4 transition-colors last:border-b-0 cursor-pointer hover:bg-primary/[0.03] ${
-                    msg.isRead === 0 ? 'bg-primary/[0.02]' : ''
+                  className={`list-row list-row-clickable items-start ${
+                    msg.isRead === 0 ? 'bg-primary-soft/40' : ''
                   }`}
                 >
-                  <div className="flex-shrink-0 mt-1.5">
+                  <div className="mt-1.5 shrink-0">
                     {msg.isRead === 0 ? (
-                      <span className="block w-2.5 h-2.5 rounded-full bg-primary" />
+                      <span className="block h-2 w-2 rounded-full bg-primary" />
                     ) : (
-                      <span className="block w-2.5 h-2.5 rounded-full bg-ink-muted-20" />
+                      <span className="block h-2 w-2 rounded-full bg-surface-tile-3" />
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[14px] ${msg.isRead === 0 ? 'font-medium text-ink' : 'text-body-muted'}`}>
-                        {msg.title}
-                      </span>
+                    <div className={`text-[13.5px] ${msg.isRead === 0 ? 'font-medium text-ink' : 'text-body-muted'}`}>
+                      {msg.title}
                     </div>
-                    <p className="text-[13px] text-body-muted mt-1 leading-relaxed">
-                      {msg.content}
-                    </p>
-                    <span className="text-[12px] text-placeholder mt-1.5 block">
-                      {formatTime(msg.createTime)}
-                    </span>
+                    <p className="mt-1 text-[13px] leading-relaxed text-body-subtle">{msg.content}</p>
+                    <span className="mt-1.5 block text-[12px] text-placeholder">{formatTime(msg.createTime)}</span>
                   </div>
                   <button
+                    type="button"
                     onClick={(e) => { e.stopPropagation(); handleDelete(msg.id); }}
-                    className="flex-shrink-0 mt-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
+                    className="icon-button !h-8 !w-8 shrink-0"
                     aria-label="删除消息"
                   >
-                    <span className="material-symbols-outlined text-[18px] text-placeholder hover:text-error">delete</span>
+                    <span className="material-symbols-outlined text-[18px]">delete</span>
                   </button>
-                </motion.div>
+                </div>
               ))}
             </AnimatePresence>
-          </motion.div>
+          </div>
         )}
 
-        <Pagination current={page} total={total} pageSize={size} onChange={setPage} />
-      </div>
-    </motion.div>
+        <div className="border-t border-hairline px-4 py-3">
+          <Pagination current={page} total={total} pageSize={size} onChange={setPage} />
+        </div>
+      </section>
+    </div>
   );
 }

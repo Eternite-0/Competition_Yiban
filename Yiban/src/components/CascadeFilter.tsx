@@ -121,10 +121,10 @@ export default function CascadeFilter({
   };
 
   const selectClass =
-    'h-9 min-w-[120px] rounded-sm border border-hairline bg-canvas pl-3 pr-9 text-[14px] font-normal text-ink transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10';
+    'input-glass h-9 min-w-[120px] !py-0 pl-3 pr-9 text-[13px]';
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-wrap items-center gap-2">
       {showCollege && (
         <select name="college" value={college} onChange={(e) => handleCollege(e.target.value)} className={selectClass}>
           <option value="">全部学院</option>

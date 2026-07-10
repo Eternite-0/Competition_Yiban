@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import ProgressBar from '../../components/ProgressBar';
 import CascadeFilter, { type FilterValues } from '../../components/CascadeFilter';
-import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
 
 interface MajorStat {
   major: string;
@@ -30,12 +29,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   A: 'A类 · 科技创新',
   B: 'B类 · 商业创业',
   C: 'C类 · 文化艺术',
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  A: 'bg-primary',
-  B: 'bg-info',
-  C: 'bg-ink-muted-48',
 };
 
 export default function CollegeOverview() {
@@ -89,182 +82,157 @@ export default function CollegeOverview() {
   const majorStats = data?.majorDistribution ?? [];
 
   return (
-    <motion.div
-      className="py-lg flex flex-col gap-lg"
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-      transition={pageTransition}
-    >
+    <div className="flex flex-col gap-4">
       <PageHero
         eyebrow="Overview"
         title="学院总览"
         description="查看学院整体竞赛参与与获奖情况。"
       />
 
-      <CascadeFilter onChange={handleFilterChange} />
+      <div className="filter-bar">
+        <CascadeFilter onChange={handleFilterChange} />
+      </div>
 
       {loading ? (
-        <div className="py-20 grid place-items-center text-ink-muted-48">
-          <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
+        <div className="empty-panel py-16">
+          <span className="material-symbols-outlined animate-spin">progress_activity</span>
+          <p className="text-[13px]">加载中…</p>
         </div>
       ) : !data ? (
-        <div className="py-20 grid place-items-center text-ink-muted-48 gap-2">
-          <span className="material-symbols-outlined text-[40px] opacity-40">error_outline</span>
-          <p className="text-[14px]">暂无数据</p>
+        <div className="empty-panel py-16">
+          <span className="material-symbols-outlined">error_outline</span>
+          <p className="text-[13px]">暂无数据</p>
         </div>
       ) : (
         <>
-          {/* KPI Cards */}
-          <section className="grid grid-cols-2 md:grid-cols-4 gap-md">
-            {kpiCards.map((m, i) => (
-              <motion.div
-                key={m.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05, duration: 0.35 }}
-                whileHover={{ scale: 1.03, y: -2 }}
-                className="stat-tile p-lg flex flex-col gap-2"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[13px] text-ink-muted-80">{m.label}</span>
-                  <span className="material-symbols-outlined text-[18px] text-primary">{m.icon}</span>
+          <div className="stat-grid">
+            {kpiCards.map((m) => (
+              <div key={m.label} className="stat-card">
+                <div className="stat-card-label">{m.label}</div>
+                <div className="stat-card-value">
+                  {m.value}
+                  <span className="ml-1 text-[13px] font-normal text-placeholder">{m.suffix}</span>
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{m.value}</span>
-                  <span className="text-[12px] text-ink-muted-48">{m.suffix}</span>
+                <div className="stat-card-hint">
+                  <span className="material-symbols-outlined text-[14px] align-middle text-placeholder">{m.icon}</span>
                 </div>
-              </motion.div>
+              </div>
             ))}
+          </div>
+
+          <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <section className="section-card">
+              <div className="section-card-header">
+                <h2 className="section-card-title">各年级人数分布</h2>
+              </div>
+              <div className="section-card-body">
+                {gradeEntries.length === 0 ? (
+                  <div className="empty-panel py-8"><p className="text-[13px]">暂无数据</p></div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {gradeEntries.map(([grade, count]) => (
+                      <div key={grade} className="flex items-center gap-3">
+                        <span className="w-16 shrink-0 text-[13px] font-medium text-ink">{grade}级</span>
+                        <ProgressBar
+                          value={(count / maxGradeCount) * 100}
+                          size="sm"
+                          segments={4}
+                          showThumb
+                          instant
+                          className="min-w-0 flex-1"
+                        />
+                        <span className="w-10 text-right text-[13px] font-medium tabular-nums text-ink">{String(count)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="section-card">
+              <div className="section-card-header">
+                <h2 className="section-card-title">竞赛类别分布</h2>
+              </div>
+              <div className="section-card-body">
+                {categoryEntries.length === 0 ? (
+                  <div className="empty-panel py-8"><p className="text-[13px]">暂无数据</p></div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {categoryEntries.map(([cat, count]) => (
+                      <div key={cat} className="flex items-center gap-3">
+                        <span className="w-28 shrink-0 text-[13px] font-medium text-ink">{CATEGORY_LABELS[cat] ?? cat}</span>
+                        <ProgressBar
+                          value={(count / maxCatCount) * 100}
+                          size="sm"
+                          segments={4}
+                          showThumb
+                          instant
+                          className="min-w-0 flex-1"
+                        />
+                        <span className="w-10 text-right text-[13px] font-medium tabular-nums text-ink">{String(count)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
           </section>
 
-          {/* Charts Row */}
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-lg">
-            {/* Grade Distribution */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-              className="glass p-xl"
-            >
-              <h3 className="text-[16px] font-semibold text-ink mb-lg flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-primary">school</span>
-                各年级人数分布
-              </h3>
-              {gradeEntries.length === 0 ? (
-                <p className="text-[13px] text-ink-muted-48 py-6 text-center">暂无数据</p>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {gradeEntries.map(([grade, count]) => (
-                    <div key={grade} className="flex items-center gap-3">
-                      <span className="text-[13px] text-ink w-16 shrink-0 font-medium">{grade}级</span>
-                      <div className="flex-1 h-6 rounded-full bg-primary/8 overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${(count / maxGradeCount) * 100}%` }}
-                          transition={{ duration: 0.6, ease: 'easeOut' }}
-                          className="h-full bg-primary rounded-full"
-                        />
-                      </div>
-                      <span className="text-[13px] text-ink font-semibold tabular-nums w-10 text-right">{String(count)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-
-            {/* Category Distribution */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.4 }}
-              className="glass p-xl"
-            >
-              <h3 className="text-[16px] font-semibold text-ink mb-lg flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-primary">category</span>
-                竞赛类别分布
-              </h3>
-              {categoryEntries.length === 0 ? (
-                <p className="text-[13px] text-ink-muted-48 py-6 text-center">暂无数据</p>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {categoryEntries.map(([cat, count]) => (
-                    <div key={cat} className="flex items-center gap-3">
-                      <span className="text-[13px] text-ink w-28 shrink-0 font-medium">{CATEGORY_LABELS[cat] ?? cat}</span>
-                      <div className="flex-1 h-6 rounded-full bg-primary/8 overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${(count / maxCatCount) * 100}%` }}
-                          transition={{ duration: 0.6, ease: 'easeOut' }}
-                          className={`h-full rounded-full ${CATEGORY_COLORS[cat] ?? 'bg-primary'}`}
-                        />
-                      </div>
-                      <span className="text-[13px] text-ink font-semibold tabular-nums w-10 text-right">{String(count)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          </section>
-
-          {/* Major Table */}
-          <motion.section
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.4 }}
-            className="glass overflow-hidden"
-          >
-            <div className="p-md border-b border-hairline">
-              <h3 className="text-[16px] font-semibold text-ink flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-primary">analytics</span>
-                各专业参赛数据
-              </h3>
+          <section className="section-card">
+            <div className="section-card-header">
+              <h2 className="section-card-title">各专业参赛数据</h2>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-canvas-parchment text-[11px] text-ink-muted-48 border-b border-hairline">
-                    <th className="py-3 px-md font-medium">专业</th>
-                    <th className="py-3 px-md font-medium text-right">学生数</th>
-                    <th className="py-3 px-md font-medium text-right">参赛人次</th>
-                    <th className="py-3 px-md font-medium text-right">获奖数</th>
-                    <th className="py-3 px-md font-medium">参赛率</th>
-                  </tr>
-                </thead>
-                <motion.tbody className="text-[13px]" variants={listContainer} initial="hidden" animate="visible">
-                  {majorStats.length === 0 ? (
+            <div className="section-card-body tight">
+              <div className="data-table-wrap !border-0 !rounded-none">
+                <table className="data-table">
+                  <thead>
                     <tr>
-                      <td colSpan={5} className="py-10 text-center text-ink-muted-48">暂无数据</td>
+                      <th>专业</th>
+                      <th className="text-right">学生数</th>
+                      <th className="text-right">参赛人次</th>
+                      <th className="text-right">获奖数</th>
+                      <th>参赛率</th>
                     </tr>
-                  ) : (
-                    majorStats.map((m) => (
-                      <motion.tr key={m.major} variants={listItem} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
-                        <td className="py-3 px-md font-medium text-ink">{m.major}</td>
-                        <td className="py-3 px-md text-right tabular-nums text-ink">{m.studentCount}</td>
-                        <td className="py-3 px-md text-right tabular-nums text-ink">{m.registrationCount}</td>
-                        <td className="py-3 px-md text-right tabular-nums text-ink">{m.awardCount}</td>
-                        <td className="py-3 px-md">
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 h-2 rounded-full bg-primary/8 overflow-hidden max-w-[120px]">
-                              <div
-                                className="h-full bg-primary rounded-full"
-                                style={{ width: `${(m.participationRate ?? 0) * 100}%` }}
-                              />
-                            </div>
-                            <span className="text-[12px] tabular-nums text-ink-muted-80">
-                              {Math.round((m.participationRate ?? 0) * 100)}%
-                            </span>
-                          </div>
+                  </thead>
+                  <tbody>
+                    {majorStats.length === 0 ? (
+                      <tr>
+                        <td colSpan={5}>
+                          <div className="empty-panel py-10"><p className="text-[13px]">暂无数据</p></div>
                         </td>
-                      </motion.tr>
-                    ))
-                  )}
-                </motion.tbody>
-              </table>
+                      </tr>
+                    ) : (
+                      majorStats.map((m) => (
+                        <tr key={m.major}>
+                          <td className="font-medium">{m.major}</td>
+                          <td className="text-right tabular-nums">{m.studentCount}</td>
+                          <td className="text-right tabular-nums">{m.registrationCount}</td>
+                          <td className="text-right tabular-nums">{m.awardCount}</td>
+                          <td>
+                            <div className="flex min-w-[140px] items-center gap-2">
+                              <ProgressBar
+                                value={Math.round((m.participationRate ?? 0) * 100)}
+                                size="sm"
+                                showThumb
+                                segments={4}
+                                instant
+                                className="min-w-0 flex-1"
+                              />
+                              <span className="w-10 shrink-0 text-right text-[12px] tabular-nums text-body-muted">
+                                {Math.round((m.participationRate ?? 0) * 100)}%
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </motion.section>
+          </section>
         </>
       )}
-    </motion.div>
+    </div>
   );
 }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { router } from './router';
 import { Toaster } from 'sonner';
-import { useStore } from './store/useStore';
+import { resolveTheme, useStore } from './store/useStore';
 import apiClient from './api/client';
 
 function AppShell() {
@@ -32,8 +32,8 @@ function AppShell() {
 
   if (!hydrated) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--color-canvas-parchment)' }}>
-        <span className="material-symbols-outlined animate-spin text-[32px]" style={{ color: 'var(--color-primary)' }}>progress_activity</span>
+      <div className="min-h-screen flex items-center justify-center bg-canvas-parchment text-ink">
+        <span className="material-symbols-outlined animate-spin text-[32px] text-primary">progress_activity</span>
       </div>
     );
   }
@@ -41,10 +41,26 @@ function AppShell() {
   return <RouterProvider router={router} />;
 }
 
+function ThemedToaster() {
+  const theme = useStore((s) => s.theme);
+  const [resolved, setResolved] = useState<'light' | 'dark'>(() => resolveTheme(theme));
+
+  useEffect(() => {
+    setResolved(resolveTheme(theme));
+    if (theme !== 'system') return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => setResolved(resolveTheme('system'));
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, [theme]);
+
+  return <Toaster position="top-center" richColors theme={resolved} />;
+}
+
 export default function App() {
   return (
     <>
-      <Toaster position="top-center" richColors />
+      <ThemedToaster />
       <AppShell />
     </>
   );

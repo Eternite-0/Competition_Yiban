@@ -192,14 +192,14 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
   };
 
   return (
-    <div className="flex flex-col gap-lg">
-      <section className="glass overflow-hidden">
-        <div className="flex items-center justify-between border-b border-hairline px-lg py-md">
+    <div className="flex flex-col gap-4">
+      <section className="section-card">
+        <div className="section-card-header">
           <div>
-            <h2 className="text-[16px] font-medium text-ink">选择导入方式</h2>
+            <h2 className="section-card-title">选择导入方式</h2>
             <p className="mt-1 text-[12px] text-placeholder">上传赛事通知文件或提供公开网页地址</p>
           </div>
-          <div className="flex rounded-sm border border-hairline bg-canvas-parchment p-1">
+          <div className="flex rounded-sm border border-hairline bg-surface-tile-1 p-1">
             {([
               { value: 'file', icon: 'upload_file', label: '文件' },
               { value: 'url', icon: 'link', label: 'URL' },
@@ -214,7 +214,7 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
                 }}
                 className={`flex h-8 items-center gap-1.5 rounded-sm px-3 text-[13px] transition ${
                   mode === item.value
-                    ? 'bg-canvas text-primary shadow-sm'
+                    ? 'bg-canvas text-ink shadow-none'
                     : 'text-body-muted hover:text-ink'
                 }`}
               >
@@ -225,7 +225,7 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
           </div>
         </div>
 
-        <div className="p-lg">
+        <div className="section-card-body">
           <AnimatePresence mode="wait">
             {mode === 'file' ? (
               <motion.div
@@ -252,10 +252,10 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
                   className={`flex min-h-[200px] w-full flex-col items-center justify-center rounded-sm border border-dashed px-lg py-xl text-center transition ${
                     dragging
                       ? 'border-primary bg-primary-soft'
-                      : 'border-hairline bg-canvas-parchment hover:border-primary/50'
+                      : 'border-hairline bg-surface-tile-1 hover:border-primary/50'
                   }`}
                 >
-                  <span className="material-symbols-outlined mb-3 text-[38px] text-primary">
+                  <span className="material-symbols-outlined mb-3 text-[38px] text-body-muted">
                     {file ? 'description' : 'upload_file'}
                   </span>
                   <span className="text-[15px] font-medium text-ink">
@@ -313,7 +313,7 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
           </AnimatePresence>
 
           {error ? (
-            <div className="mt-md flex items-start gap-2 rounded-sm border border-red-200 bg-red-50 px-md py-3 text-[13px] text-error">
+            <div className="mt-md flex items-start gap-2 rounded-sm border border-border bg-surface-tile-1 px-md py-3 text-[13px] text-error">
               <span className="material-symbols-outlined mt-px text-[18px]">error</span>
               <span className="min-w-0 flex-1">{error}</span>
             </div>
@@ -328,10 +328,10 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
                 return (
                   <div key={step} className="flex items-center gap-2">
                     {i > 0 && <span className="text-[11px] text-placeholder">—</span>}
-                    <span className={`material-symbols-outlined text-[16px] ${done ? 'text-success' : current ? 'text-primary animate-spin' : 'text-placeholder'}`}>
+                    <span className={`material-symbols-outlined text-[16px] ${done ? 'text-success' : current ? 'text-body-muted animate-spin' : 'text-placeholder'}`}>
                       {done ? 'check_circle' : current ? 'progress_activity' : 'radio_button_unchecked'}
                     </span>
-                    <span className={`text-[12px] ${done ? 'text-success' : current ? 'text-primary font-medium' : 'text-placeholder'}`}>
+                    <span className={`text-[12px] ${done ? 'text-success' : current ? 'text-body-muted font-medium' : 'text-placeholder'}`}>
                       {labels[step]}
                     </span>
                   </div>
@@ -363,7 +363,7 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="glass overflow-hidden"
+            className="section-card"
           >
             <div className="flex flex-col gap-3 border-b border-hairline px-lg py-md sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
@@ -435,7 +435,7 @@ function DraftResultCard({
 
   return (
     <motion.div variants={listItem} className="grid grid-cols-1 gap-0 lg:grid-cols-[1fr_260px]">
-      <div className="p-lg">
+      <div className="section-card-body">
         <div className="flex flex-wrap items-center gap-2">
           <span className="chip">{sourceLabel(draft.sourceType)}</span>
           {confidence !== null && (
@@ -471,7 +471,7 @@ function DraftResultCard({
           </div>
         )}
         {draft.sourceUrl && (
-          <a href={draft.sourceUrl} target="_blank" rel="noreferrer" className="mt-md inline-flex items-center gap-1 text-[12px] text-primary hover:underline">
+          <a href={draft.sourceUrl} target="_blank" rel="noreferrer" className="mt-md inline-flex items-center gap-1 text-[12px] text-body-muted hover:underline">
             <span className="material-symbols-outlined text-[14px]">link</span>
             {draft.sourceUrl}
           </a>
@@ -485,12 +485,12 @@ function DraftResultCard({
           <QualityRow label="证据片段" value={`${evidenceItems.length} 条`} />
           <QualityRow label="风险提示" value={riskItems.length ? `${riskItems.length} 项` : '未发现'} tone={riskItems.length ? 'warning' : 'success'} />
           {draft.duplicateCompetitionId && (
-            <div className="rounded-sm border border-yellow-200 bg-yellow-50 px-3 py-2 text-[12px] leading-5 text-yellow-800">
+            <div className="rounded-sm border border-border bg-surface-tile-1 px-3 py-2 text-[12px] leading-5 text-body-muted">
               疑似与赛事 #{draft.duplicateCompetitionId} 重复，相似度 {formatConfidence(draft.duplicateScore)}
             </div>
           )}
           {riskItems.slice(0, 3).map((item) => (
-            <div key={`${item.label}-${item.value}`} className="rounded-sm border border-hairline bg-canvas-parchment px-3 py-2 text-[11px] leading-5 text-body-muted">
+            <div key={`${item.label}-${item.value}`} className="rounded-sm border border-hairline bg-surface-tile-1 px-3 py-2 text-[11px] leading-5 text-body-muted">
               {warningLabel(item.value)}
             </div>
           ))}

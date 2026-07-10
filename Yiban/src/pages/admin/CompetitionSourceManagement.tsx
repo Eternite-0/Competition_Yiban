@@ -282,7 +282,7 @@ export default function CompetitionSourceManagement() {
       initial="hidden"
       animate="visible"
       transition={pageTransition}
-      className="flex flex-col gap-lg py-lg pb-24"
+      className="flex flex-col gap-4 pb-24"
     >
       <PageHero
         eyebrow="Competition Sources"
@@ -305,7 +305,7 @@ export default function CompetitionSourceManagement() {
       />
 
       {/* Tab bar */}
-      <div className="flex rounded-sm border border-hairline bg-canvas-parchment p-1 self-start">
+      <div className="flex rounded-sm border border-hairline bg-surface-tile-1 p-1 self-start">
         {([
           { key: 'sources', icon: 'hub', label: '来源管理' },
           { key: 'results', icon: 'analytics', label: `采集结果 (${crawlDrafts.length})` },
@@ -316,7 +316,7 @@ export default function CompetitionSourceManagement() {
             onClick={() => setActiveTab(tab.key)}
             className={`flex h-9 items-center gap-1.5 rounded-sm px-4 text-[13px] font-medium transition ${
               activeTab === tab.key
-                ? 'bg-canvas text-primary shadow-sm'
+                ? 'bg-canvas text-ink shadow-none'
                 : 'text-body-muted hover:text-ink'
             }`}
           >
@@ -328,23 +328,24 @@ export default function CompetitionSourceManagement() {
 
       {activeTab === 'sources' && (
       <>
-      <section className="grid grid-cols-1 divide-y divide-hairline overflow-hidden rounded-md border border-hairline bg-canvas sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <div className="stat-grid !grid-cols-1 sm:!grid-cols-3">
         {[
-          { label: '来源总数', value: sources.length, icon: 'hub', tone: 'text-primary' },
-          { label: '已启用', value: enabledCount, icon: 'toggle_on', tone: 'text-success' },
-          { label: '最近失败', value: failedCount, icon: 'error', tone: failedCount ? 'text-error' : 'text-placeholder' },
+          { label: '来源总数', value: sources.length, icon: 'hub', hint: '全部来源' },
+          { label: '已启用', value: enabledCount, icon: 'toggle_on', hint: '可自动采集' },
+          { label: '最近失败', value: failedCount, icon: 'error', hint: failedCount ? '需关注' : '暂无失败' },
         ].map((item) => (
-          <div key={item.label} className="flex items-center gap-3 px-lg py-md">
-            <span className={`material-symbols-outlined text-[24px] ${item.tone}`}>{item.icon}</span>
-            <div>
-              <p className="text-[11px] text-placeholder">{item.label}</p>
-              <p className="mt-0.5 text-[20px] font-medium text-ink">{item.value}</p>
+          <div key={item.label} className="stat-card">
+            <div className="stat-card-label">{item.label}</div>
+            <div className="stat-card-value">{item.value}</div>
+            <div className="stat-card-hint">
+              <span className="material-symbols-outlined align-middle text-[14px] text-placeholder">{item.icon}</span>
+              {' '}{item.hint}
             </div>
           </div>
         ))}
-      </section>
+      </div>
 
-      <section className="glass-tint flex flex-col gap-3 px-md py-3 sm:flex-row sm:items-center">
+      <section className="filter-bar">
         <div className="relative min-w-0 flex-1 sm:max-w-[420px]">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-placeholder">
             search
@@ -369,33 +370,37 @@ export default function CompetitionSourceManagement() {
         <span className="text-[12px] text-placeholder sm:ml-auto">显示 {filteredSources.length} 条</span>
       </section>
 
-      <section className="glass overflow-hidden">
+      <section className="section-card">
+        <div className="section-card-header">
+          <h2 className="section-card-title">来源列表</h2>
+          <span className="chip tabular-nums">{filteredSources.length} 条</span>
+        </div>
         {loading ? (
-          <div className="grid min-h-[320px] place-items-center text-placeholder">
-            <span className="material-symbols-outlined animate-spin text-[28px]">progress_activity</span>
+          <div className="empty-panel py-16">
+            <span className="material-symbols-outlined animate-spin">progress_activity</span>
           </div>
         ) : filteredSources.length === 0 ? (
-          <div className="flex min-h-[360px] w-full min-w-0 flex-col items-center justify-center px-lg text-center">
-            <span className="material-symbols-outlined text-[46px] text-placeholder">travel_explore</span>
-            <p className="empty-state-copy mt-3 text-[14px] text-ink">暂无赛事来源</p>
-            <p className="empty-state-copy mt-1 text-[12px] text-placeholder">新增公开网页来源后即可触发采集</p>
+          <div className="empty-panel py-16">
+            <span className="material-symbols-outlined">travel_explore</span>
+            <p className="text-[13px]">暂无赛事来源</p>
+            <p className="text-[12px] text-placeholder">新增公开网页来源后即可触发采集</p>
             {!keyword && enabledFilter === 'all' && (
-              <button type="button" className="btn-primary mt-md" onClick={openCreate}>
-                <span className="material-symbols-outlined text-[18px]">add</span>
+              <button type="button" className="btn-primary mt-2" onClick={openCreate}>
+                <span className="material-symbols-outlined">add</span>
                 新增来源
               </button>
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px]">
+          <div className="data-table-wrap !rounded-none !border-0">
+            <table className="data-table min-w-[960px]">
               <thead>
-                <tr className="border-b border-hairline bg-canvas-parchment">
-                  <th className="px-md py-3 text-left text-[11px] font-medium text-placeholder">来源</th>
-                  <th className="px-md py-3 text-left text-[11px] font-medium text-placeholder">类型/频率</th>
-                  <th className="px-md py-3 text-left text-[11px] font-medium text-placeholder">启用状态</th>
-                  <th className="px-md py-3 text-left text-[11px] font-medium text-placeholder">最近采集</th>
-                  <th className="px-md py-3 text-right text-[11px] font-medium text-placeholder">操作</th>
+                <tr>
+                  <th>来源</th>
+                  <th>类型/频率</th>
+                  <th>启用状态</th>
+                  <th>最近采集</th>
+                  <th className="text-right">操作</th>
                 </tr>
               </thead>
               <motion.tbody variants={listContainer} initial="hidden" animate="visible">
@@ -406,7 +411,7 @@ export default function CompetitionSourceManagement() {
                     <motion.tr
                       key={source.id}
                       variants={listItem}
-                      className="border-b border-hairline align-top transition last:border-0 hover:bg-canvas-parchment/70"
+                      className="border-b border-hairline align-top transition last:border-0 hover:bg-hover-overlay"
                     >
                       <td className="px-md py-md">
                         <div className="max-w-[340px]">
@@ -416,7 +421,7 @@ export default function CompetitionSourceManagement() {
                             target="_blank"
                             rel="noreferrer"
                             title={source.url}
-                            className="mt-1 block truncate text-[12px] text-primary hover:underline"
+                            className="mt-1 block truncate text-[12px] text-body-muted hover:underline"
                           >
                             {source.url}
                           </a>
@@ -440,7 +445,7 @@ export default function CompetitionSourceManagement() {
                           <span className={`relative h-5 w-9 rounded-full transition ${
                             isEnabled(source) ? 'bg-primary' : 'bg-hairline'
                           }`}>
-                            <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition ${
+                            <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-canvas shadow-none transition ${
                               isEnabled(source) ? 'left-[18px]' : 'left-0.5'
                             }`} />
                           </span>
@@ -506,7 +511,7 @@ export default function CompetitionSourceManagement() {
 
       {/* Crawl Results Tab */}
       {activeTab === 'results' && (
-        <section className="glass overflow-hidden">
+        <section className="section-card">
           {crawlLoading ? (
             <div className="grid min-h-[320px] place-items-center text-placeholder">
               <span className="material-symbols-outlined animate-spin text-[28px]">progress_activity</span>
@@ -525,7 +530,7 @@ export default function CompetitionSourceManagement() {
                 const statusLabel = draft.status === 'confirmed' ? '已确认' : draft.status === 'ignored' ? '已忽略' : '待审核';
                 const statusClass = draft.status === 'confirmed' ? 'chip-success' : draft.status === 'ignored' ? 'chip-closed' : 'chip-warning';
                 return (
-                  <div key={draft.id} className="flex items-center gap-lg px-lg py-md transition hover:bg-canvas-parchment/70">
+                  <div key={draft.id} className="flex items-center gap-4 px-lg py-md transition hover:bg-hover-overlay">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-[14px] font-medium text-ink">{draft.name || '未命名赛事'}</h3>
@@ -539,7 +544,7 @@ export default function CompetitionSourceManagement() {
                       </div>
                       <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-placeholder">
                         {draft.sourceUrl && (
-                          <a href={draft.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-primary truncate max-w-[300px]">
+                          <a href={draft.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-ink truncate max-w-[300px]">
                             <span className="material-symbols-outlined text-[14px]">link</span>
                             {draft.sourceUrl}
                           </a>
@@ -578,7 +583,7 @@ export default function CompetitionSourceManagement() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/45"
+              className="absolute inset-0 bg-ink/20 backdrop-blur-sm"
               onClick={() => setShowForm(false)}
             />
             <motion.section
@@ -588,7 +593,7 @@ export default function CompetitionSourceManagement() {
               initial={{ opacity: 0, scale: 0.97, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.98, y: 8 }}
-              className="glass-strong relative w-full max-w-[560px] overflow-hidden"
+              className="section-card relative w-full max-w-[560px] overflow-hidden"
             >
               <div className="flex items-center justify-between border-b border-hairline px-lg py-md">
                 <div>
@@ -647,7 +652,7 @@ export default function CompetitionSourceManagement() {
                     ))}
                   </select>
                 </Field>
-                <label className="flex items-center justify-between rounded-sm border border-hairline bg-canvas-parchment px-md py-3 sm:col-span-2">
+                <label className="flex items-center justify-between rounded-sm border border-hairline bg-surface-tile-1 px-md py-3 sm:col-span-2">
                   <span>
                     <span className="block text-[13px] font-medium text-ink">启用来源</span>
                     <span className="mt-0.5 block text-[11px] text-placeholder">停用后不会执行手动或定时采集</span>

@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { listContainer, listItem } from '../../lib/motion';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 import Pagination from '../../components/Pagination';
@@ -57,7 +55,6 @@ export default function UserManagement() {
   const [filterRole, setFilterRole] = useState('');
   const [filterCollege, setFilterCollege] = useState('');
 
-  // Debounce keyword input
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedKeyword(keyword), 300);
     return () => clearTimeout(timer);
@@ -145,51 +142,41 @@ export default function UserManagement() {
   };
 
   const metrics = [
-    { label: '用户总数', value: stats.total, icon: 'group' },
-    { label: '学生', value: stats.students, icon: 'school' },
-    { label: '教师', value: stats.teachers, icon: 'person' },
-    { label: '管理员', value: stats.admins, icon: 'admin_panel_settings' },
+    { label: '用户总数', value: stats.total, icon: 'group', hint: '全部账号' },
+    { label: '学生', value: stats.students, icon: 'school', hint: '学生角色' },
+    { label: '教师', value: stats.teachers, icon: 'person', hint: '教师角色' },
+    { label: '管理员', value: stats.admins, icon: 'admin_panel_settings', hint: '管理角色' },
   ];
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <div className="flex flex-col gap-4">
       <PageHero
-        eyebrow="Administration"
+        eyebrow="管理端"
         title="用户管理"
         description="查看和管理平台所有用户。"
       />
 
-      {/* KPI strip */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-md">
-        {metrics.map((m, i) => (
-          <motion.div
-            key={m.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05, duration: 0.35 }}
-            whileHover={{ scale: 1.02, y: -2 }}
-            className="stat-tile p-lg flex flex-col gap-2 cursor-default"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] text-ink-muted-80">{m.label}</span>
-              <span className="material-symbols-outlined text-[18px] text-primary">{m.icon}</span>
+      <div className="stat-grid">
+        {metrics.map((m) => (
+          <div key={m.label} className="stat-card">
+            <div className="stat-card-label">{m.label}</div>
+            <div className="stat-card-value">{loading ? '—' : m.value}</div>
+            <div className="stat-card-hint">
+              <span className="material-symbols-outlined align-middle text-[14px] text-placeholder">{m.icon}</span>
+              {' '}{m.hint}
             </div>
-            <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">
-              {loading ? '—' : m.value}
-            </span>
-          </motion.div>
+          </div>
         ))}
-      </section>
+      </div>
 
-      {/* Filter bar */}
-      <div className="glass-tint flex flex-wrap gap-sm items-center px-md py-3" role="search">
+      <div className="filter-bar" role="search">
         <div className="relative w-full md:w-[280px]">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-placeholder">
             search
           </span>
           <input
             name="userKeyword"
-            className="input-glass h-9 pl-9 text-[13px] !rounded-pill"
+            className="input-glass h-9 pl-9 text-[13px]"
             placeholder="搜索用户名 / 姓名"
             aria-label="搜索用户名 / 姓名"
             value={keyword}
@@ -201,7 +188,7 @@ export default function UserManagement() {
         </div>
         <select
           name="userRole"
-          className="input-glass h-9 min-w-[120px] text-[14px]"
+          className="input-glass h-9 min-w-[120px] text-[13px]"
           value={filterRole}
           onChange={(e) => {
             setFilterRole(e.target.value);
@@ -215,7 +202,7 @@ export default function UserManagement() {
         </select>
         <input
           name="userCollege"
-          className="input-glass h-9 w-full text-[14px] md:w-[180px]"
+          className="input-glass h-9 w-full text-[13px] md:w-[180px]"
           placeholder="学院筛选"
           value={filterCollege}
           onChange={(e) => {
@@ -224,77 +211,74 @@ export default function UserManagement() {
           }}
         />
         <div className="flex-1" />
-        <button
-          onClick={resetFilters}
-          className="h-9 px-3 rounded-pill text-[12px] text-ink-muted-80 hover:text-ink hover:bg-primary/6 transition"
-        >
+        <button type="button" onClick={resetFilters} className="btn-utility">
           重置筛选
         </button>
       </div>
 
-      {/* Table */}
-      <section className="glass overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+      <section className="section-card">
+        <div className="section-card-header">
+          <h2 className="section-card-title">用户列表</h2>
+          <span className="chip tabular-nums">{total} 条</span>
+        </div>
+        <div className="data-table-wrap !rounded-none !border-0">
+          <table className="data-table">
             <thead>
-              <tr className="bg-canvas-parchment text-[11px] text-ink-muted-48 border-b border-hairline">
-                <th className="py-3 px-md font-medium">用户名</th>
-                <th className="py-3 px-md font-medium">姓名</th>
-                <th className="py-3 px-md font-medium">角色</th>
-                <th className="py-3 px-md font-medium">学院</th>
-                <th className="py-3 px-md font-medium">专业</th>
-                <th className="py-3 px-md font-medium">班级</th>
-                <th className="py-3 px-md font-medium">年级</th>
-                <th className="py-3 px-md font-medium text-right">操作</th>
+              <tr>
+                <th>用户名</th>
+                <th>姓名</th>
+                <th>角色</th>
+                <th>学院</th>
+                <th>专业</th>
+                <th>班级</th>
+                <th>年级</th>
+                <th className="text-right">操作</th>
               </tr>
             </thead>
-            <motion.tbody className="text-[13px]" variants={listContainer} initial="hidden" animate="visible">
+            <tbody>
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-ink-muted-48">
-                    <span className="material-symbols-outlined text-[36px] block mb-2 opacity-40">
-                      {loading ? 'hourglass_top' : 'search_off'}
-                    </span>
-                    <p>{loading ? '加载中…' : '暂无用户数据'}</p>
+                  <td colSpan={8}>
+                    <div className="empty-panel py-12">
+                      <span className="material-symbols-outlined">
+                        {loading ? 'progress_activity' : 'search_off'}
+                      </span>
+                      <p className="text-[13px]">{loading ? '加载中…' : '暂无用户数据'}</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 users.map((user) => (
-                  <motion.tr
-                    key={user.id}
-                    variants={listItem}
-                    className="border-b border-hairline last:border-0 hover:bg-primary/6 transition"
-                  >
-                    <td className="py-3 px-md font-medium text-ink truncate max-w-[180px]">{user.username}</td>
-                    <td className="py-3 px-md text-ink-muted-80">{user.realName || '—'}</td>
-                    <td className="py-3 px-md">
+                  <tr key={user.id}>
+                    <td className="max-w-[180px] truncate font-medium">{user.username}</td>
+                    <td className="text-body-muted">{user.realName || '—'}</td>
+                    <td>
                       <span className={roleChip[user.role] || 'chip'}>{roleLabel[user.role] || user.role}</span>
                     </td>
-                    <td className="py-3 px-md text-ink-muted-80 truncate max-w-[180px]">{user.college || '—'}</td>
-                    <td className="py-3 px-md text-ink-muted-80 truncate max-w-[150px]">{user.major || '—'}</td>
-                    <td className="py-3 px-md text-ink-muted-48">{user.className || '—'}</td>
-                    <td className="py-3 px-md text-ink-muted-48 tabular-nums">{user.grade || '—'}</td>
-                    <td className="py-3 px-md text-right">
+                    <td className="max-w-[180px] truncate text-body-muted">{user.college || '—'}</td>
+                    <td className="max-w-[150px] truncate text-body-muted">{user.major || '—'}</td>
+                    <td className="text-placeholder">{user.className || '—'}</td>
+                    <td className="tabular-nums text-placeholder">{user.grade || '—'}</td>
+                    <td className="text-right">
                       <button
+                        type="button"
                         onClick={() => handleDelete(user)}
-                        className="p-1.5 rounded-md text-ink-muted-48 hover:text-error hover:bg-error/8 transition"
+                        className="icon-button text-error hover:text-error"
                         title="删除用户"
                         aria-label="删除用户"
                       >
                         <span className="material-symbols-outlined text-[16px]">delete</span>
                       </button>
                     </td>
-                  </motion.tr>
+                  </tr>
                 ))
               )}
-            </motion.tbody>
+            </tbody>
           </table>
         </div>
-
-        {/* Pagination */}
-        <div className="px-md py-3 border-t border-hairline flex items-center justify-between">
-          <span className="text-[12px] text-ink-muted-48">
-            共 <span className="text-ink font-medium tabular-nums">{total}</span> 条
+        <div className="flex items-center justify-between border-t border-hairline px-4 py-3">
+          <span className="text-[12px] text-placeholder">
+            共 <span className="font-medium tabular-nums text-ink">{total}</span> 条
           </span>
           <Pagination current={currentPage} total={total} pageSize={pageSize} onChange={setCurrentPage} />
         </div>

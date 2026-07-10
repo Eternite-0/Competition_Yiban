@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
-import { pageVariants, pageTransition, listContainer, listItem } from '../../lib/motion';
+import { displayLevel } from '../../lib/levelDisplay';
 
 const WEEKDAYS = ['一', '二', '三', '四', '五', '六', '日'];
 
@@ -24,7 +23,8 @@ const levelColor: Record<string, { bg: string; dot: string; text: string; chip: 
 };
 
 function getLevelStyle(level: string) {
-  return levelColor[level] ?? { bg: 'bg-surface-chip', dot: 'bg-placeholder', text: 'text-body-muted', chip: 'chip' };
+  const label = displayLevel(level);
+  return levelColor[label] ?? { bg: 'bg-surface-chip', dot: 'bg-placeholder', text: 'text-body-muted', chip: 'chip' };
 }
 
 function toDateKey(d: Date): string {
@@ -77,7 +77,6 @@ export default function CompetitionCalendar() {
     load();
   }, []);
 
-  // Build a map: dateKey -> competitions on that day
   const dayMap = useMemo(() => {
     const map: Record<string, Competition[]> = {};
     for (const c of competitions) {
@@ -97,7 +96,6 @@ export default function CompetitionCalendar() {
     return map;
   }, [competitions]);
 
-  // Calendar grid
   const firstDay = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
   const daysInPrev = new Date(year, month - 1, 0).getDate();
@@ -151,290 +149,152 @@ export default function CompetitionCalendar() {
 
   const selectedCompetitions = selectedDay ? (dayMap[selectedDay] ?? []) : [];
 
+  const monthComps = competitions.filter((c) => {
+    const start = parseDate(c.startTime);
+    const end = parseDate(c.endTime);
+    const inMonth = (d: Date | null) => d && d.getFullYear() === year && d.getMonth() + 1 === month;
+    return inMonth(start) || inMonth(end);
+  }).sort((a, b) => {
+    const da = parseDate(a.endTime) ?? parseDate(a.startTime);
+    const db = parseDate(b.endTime) ?? parseDate(b.startTime);
+    return (da?.getTime() ?? 0) - (db?.getTime() ?? 0);
+  });
+
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-      className="flex flex-col gap-lg py-lg"
-    >
+    <div className="page-stack">
       <PageHero
-        eyebrow="Competition calendar"
+        eyebrow="发现活动"
         title="赛事日历"
-        description="一览本月赛事关键节点，点击日期查看当天的赛事安排。"
+        description="按日期查看关键节点。点选日期，右侧会列出当天赛事。"
       />
 
       {error ? (
-        <motion.section
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass p-xl flex flex-col items-center justify-center py-20 text-center"
-        >
-          <span className="material-symbols-outlined text-[48px] text-ink-muted-48">cloud_off</span>
-          <p className="text-[15px] text-ink-muted-80 mt-4">赛事数据加载失败</p>
-          <button
-            onClick={load}
-            className="mt-4 px-5 py-2 rounded-full text-[13px] font-medium bg-primary text-on-primary hover:opacity-90 transition"
-          >
-            重新加载
-          </button>
-        </motion.section>
+        <p className="py-8 text-[13.5px] text-placeholder">
+          加载失败，
+          <button type="button" className="text-primary hover:underline" onClick={load}>重试</button>
+        </p>
       ) : (
-      <>
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-md">
-        {/* Calendar */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="lg:col-span-8 glass p-xl"
-        >
-          <div className="flex items-center justify-between mb-lg">
-            <h2 className="text-[21px] font-semibold tracking-tight">
-              {year} 年 {month} 月
-            </h2>
-            <div className="flex items-center gap-1 text-[14px] text-ink-muted-80">
-              <button
-                onClick={goPrev}
-                className="w-8 h-8 grid place-items-center rounded-full hover:bg-primary/6 transition"
-              >
-                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-              </button>
-              <button
-                onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth() + 1); setSelectedDay(null); }}
-                className="px-3 py-1 rounded-full text-[13px] font-medium hover:bg-primary/6 transition"
-              >
-                今天
-              </button>
-              <button
-                onClick={goNext}
-                className="w-8 h-8 grid place-items-center rounded-full hover:bg-primary/6 transition"
-              >
-                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Legend */}
-          <div className="flex flex-wrap items-center gap-4 mb-lg text-[12px]">
-            {Object.entries(levelColor).map(([label, c]) => (
-              <div key={label} className="flex items-center gap-1.5">
-                <span className={`w-2.5 h-2.5 rounded-full ${c.dot}`} />
-                <span className="text-ink-muted-80">{label}</span>
-              </div>
-            ))}
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-ink-muted-48/45" />
-              <span className="text-ink-muted-80">其他</span>
-            </div>
-          </div>
-
-          {/* Grid */}
-          <div className="grid grid-cols-7 gap-y-2 gap-x-1 text-center" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-            {WEEKDAYS.map((d) => (
-              <div key={d} className="text-[11px] text-ink-muted-48 font-medium uppercase tracking-widest pb-2">
-                {d}
-              </div>
-            ))}
-            {cells.map((c) => {
-              const events = dayMap[c.key] ?? [];
-              const isToday = c.key === todayKey;
-              const isSelected = c.key === selectedDay;
-              const dateLabel = `${parseInt(c.key.split('-')[1])}月${parseInt(c.key.split('-')[2])}日${events.length > 0 ? `, ${events.length}个赛事` : ''}`;
-              return (
-                <motion.button
-                  key={c.key}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setSelectedDay(isSelected ? null : c.key)}
-                  aria-label={dateLabel}
-                  aria-pressed={isSelected}
-                  className={`group relative h-14 sm:h-16 flex flex-col items-center justify-start pt-1 rounded-sm transition ${
-                    isSelected ? 'bg-primary/8 ring-1 ring-primary/30' : 'hover:bg-primary/4'
-                  }`}
-                >
-                  <span
-                    className={`w-9 h-9 grid place-items-center rounded-full text-[14px] tabular-nums transition ${
-                      isToday
-                        ? 'bg-primary text-on-primary font-semibold'
-                        : c.current
-                          ? isSelected
-                            ? 'text-primary font-semibold'
-                            : 'text-ink hover:bg-primary/6'
-                          : 'text-ink-muted-48/50'
-                    }`}
+        <>
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(260px,0.75fr)]">
+            <div className="calendar-flat" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+              <div className="calendar-flat-head">
+                <h2 className="text-[15px] font-semibold text-ink">
+                  {year} 年 {month} 月
+                </h2>
+                <div className="flex items-center gap-1">
+                  <button type="button" onClick={goPrev} className="icon-button !h-8 !w-8" aria-label="上一月">
+                    <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth() + 1); setSelectedDay(null); }}
+                    className="btn-utility !h-8 !px-3 !text-[12px]"
                   >
-                    {c.day}
-                  </span>
-                  {events.length > 0 && (
-                    <div className="flex items-center gap-0.5 mt-1">
-                      {events.slice(0, 3).map((ev) => {
-                        const s = getLevelStyle(ev.level);
-                        return <span key={ev.id} className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />;
-                      })}
-                      {events.length > 3 && (
-                        <span className="text-[10px] text-ink-muted-48 ml-0.5">+{events.length - 3}</span>
-                      )}
-                    </div>
-                  )}
-                </motion.button>
-              );
-            })}
-          </div>
-        </motion.div>
+                    今天
+                  </button>
+                  <button type="button" onClick={goNext} className="icon-button !h-8 !w-8" aria-label="下一月">
+                    <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                  </button>
+                </div>
+              </div>
+              <div className="calendar-flat-grid">
+                {WEEKDAYS.map((d) => (
+                  <div key={d} className="calendar-flat-dow">{d}</div>
+                ))}
+                {cells.map((c) => {
+                  const events = dayMap[c.key] ?? [];
+                  const isToday = c.key === todayKey;
+                  const isSelected = c.key === selectedDay;
+                  return (
+                    <button
+                      key={c.key}
+                      type="button"
+                      onClick={() => setSelectedDay(isSelected ? null : c.key)}
+                      className={`calendar-flat-cell ${!c.current ? 'is-muted' : ''} ${isToday ? 'is-today' : ''} ${isSelected ? 'is-selected' : ''}`}
+                    >
+                      <div className={`text-[13px] tabular-nums ${isToday ? 'font-semibold text-primary' : ''}`}>
+                        {c.day}
+                      </div>
+                      <div className="mt-1 space-y-0.5">
+                        {events.slice(0, 2).map((ev) => (
+                          <div key={ev.id} className="truncate text-[10px] leading-tight text-body-subtle">
+                            {ev.name}
+                          </div>
+                        ))}
+                        {events.length > 2 ? (
+                          <div className="text-[10px] text-placeholder">+{events.length - 2}</div>
+                        ) : null}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-        {/* Day detail panel */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="lg:col-span-4 glass p-xl flex flex-col"
-        >
-          <h2 className="text-[21px] font-semibold tracking-tight mb-lg">
-            {selectedDay ? (() => {
-              const parts = selectedDay.split('-');
-              return `${parseInt(parts[1])} 月 ${parseInt(parts[2])} 日`;
-            })() : '选择日期'}
-          </h2>
-
-          <AnimatePresence mode="wait">
-            {selectedDay ? (
-              <motion.div
-                key={selectedDay}
-                initial={{ opacity: 0, x: 8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -8 }}
-                transition={{ duration: 0.2 }}
-                className="flex-1"
-              >
-                {loading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  </div>
-                ) : selectedCompetitions.length > 0 ? (
-                  <div className="flex flex-col gap-3">
-                    {selectedCompetitions.map((c) => {
-                      const s = getLevelStyle(c.level);
-                      return (
-                        <div
-                          key={c.id}
-                          className={`p-4 rounded-sm border border-hairline ${s.bg} transition hover:shadow-sm`}
-                        >
-                          <div className="flex items-start gap-3">
-                            <span className={`mt-0.5 w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.dot}`} />
-                            <div className="flex-1 min-w-0">
-                              <div className={`text-[15px] font-medium ${s.text} leading-snug`}>
-                                {c.name}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                                <span className={`chip !py-0.5 !text-[11px] ${s.chip}`}>
-                                  {c.level}
-                                </span>
-                                <span className="text-[12px] text-ink-muted-48">{c.category}</span>
-                              </div>
-                              {c.endTime && (() => {
-                                const ed = parseDate(c.endTime);
-                                return ed ? (
-                                  <div className="flex items-center gap-1 mt-2 text-[12px] text-ink-muted-48">
-                                    <span className="material-symbols-outlined text-[14px]">schedule</span>
-                                    截止: {ed.toLocaleDateString('zh-CN')}
-                                  </div>
-                                ) : null;
-                              })()}
-                            </div>
+            <section className="page-section">
+              <div className="page-section-head">
+                <h2 className="page-section-title">
+                  {selectedDay
+                    ? `${parseInt(selectedDay.split('-')[1], 10)} 月 ${parseInt(selectedDay.split('-')[2], 10)} 日`
+                    : '当日安排'}
+                </h2>
+              </div>
+              {!selectedDay ? (
+                <p className="py-6 text-[13.5px] text-placeholder">点击左侧日期查看安排</p>
+              ) : selectedCompetitions.length === 0 ? (
+                <p className="py-6 text-[13.5px] text-placeholder">当日暂无赛事</p>
+              ) : (
+                <div className="flat-list">
+                  {selectedCompetitions.map((c) => {
+                    const s = getLevelStyle(c.level);
+                    return (
+                      <div key={c.id} className="flat-row items-start">
+                        <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${s.dot}`} />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[14px] font-medium text-ink">{c.name}</div>
+                          <div className="mt-1 text-[12.5px] text-placeholder">
+                            {displayLevel(c.level)} · {c.category || '未分类'}
+                            {c.endTime ? ` · 截止 ${String(c.endTime).slice(0, 10)}` : ''}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex w-full min-w-0 flex-col items-center justify-center py-12 text-center">
-                    <span className="material-symbols-outlined text-[40px] text-ink-muted-48">event_busy</span>
-                    <p className="empty-state-copy mt-3 text-[14px] text-ink-muted-48">当日暂无赛事安排</p>
-                  </div>
-                )}
-              </motion.div>
-            ) : (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex flex-1 min-w-0 flex-col items-center justify-center text-center"
-              >
-                <span className="material-symbols-outlined text-[48px] text-ink-muted-48/50">calendar_month</span>
-                <p className="empty-state-copy mt-3 text-[14px] text-ink-muted-48">点击日历中的日期<br />查看当天赛事</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
-      </section>
-
-      {/* Upcoming competitions list */}
-      <motion.section
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.4 }}
-        className="glass p-xl"
-      >
-        <div className="flex items-center justify-between mb-lg">
-          <h2 className="text-[21px] font-semibold tracking-tight">近期赛事</h2>
-          <span className="text-[13px] text-ink-muted-48">本月所有赛事一览</span>
-        </div>
-
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
           </div>
-        ) : (() => {
-          const monthComps = competitions.filter((c) => {
-            const start = parseDate(c.startTime);
-            const end = parseDate(c.endTime);
-            const inMonth = (d: Date | null) => d && d.getFullYear() === year && d.getMonth() + 1 === month;
-            return inMonth(start) || inMonth(end);
-          }).sort((a, b) => {
-            const da = parseDate(a.endTime) ?? parseDate(a.startTime);
-            const db = parseDate(b.endTime) ?? parseDate(b.startTime);
-            return (da?.getTime() ?? 0) - (db?.getTime() ?? 0);
-          });
 
-          return monthComps.length > 0 ? (
-            <motion.div variants={listContainer} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 gap-md">
-              {monthComps.map((c) => {
-                const s = getLevelStyle(c.level);
-                const end = parseDate(c.endTime);
-                return (
-                  <motion.div
-                    key={c.id}
-                    variants={listItem}
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    transition={pageTransition}
-                    className="flex items-center gap-3 p-4 rounded-sm border border-hairline hover:shadow-sm transition"
-                  >
-                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${s.dot}`} />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[14px] font-medium text-ink truncate">{c.name}</div>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[11px] text-ink-muted-48">{c.level}</span>
-                        {end && (
-                          <span className="text-[11px] text-ink-muted-48">
-                            {end.getMonth() + 1}/{end.getDate()} 截止
-                          </span>
-                        )}
+          <section className="page-section">
+            <div className="page-section-head">
+              <h2 className="page-section-title">本月赛事</h2>
+              <span className="page-section-extra">{monthComps.length} 项</span>
+            </div>
+            {loading ? (
+              <p className="py-6 text-[13.5px] text-placeholder">加载中…</p>
+            ) : monthComps.length === 0 ? (
+              <p className="py-6 text-[13.5px] text-placeholder">本月暂无赛事</p>
+            ) : (
+              <div className="flat-list">
+                {monthComps.map((c) => {
+                  const end = parseDate(c.endTime);
+                  return (
+                    <div key={c.id} className="flat-row">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[14px] font-medium text-ink">{c.name}</div>
+                        <div className="mt-0.5 text-[12.5px] text-placeholder">
+                          {displayLevel(c.level)}
+                          {end ? ` · ${end.getMonth() + 1}/${end.getDate()} 截止` : ''}
+                        </div>
                       </div>
                     </div>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          ) : (
-            <div className="flex w-full min-w-0 flex-col items-center justify-center py-12 text-center">
-              <span className="material-symbols-outlined text-[40px] text-ink-muted-48">emoji_events</span>
-              <p className="empty-state-copy mt-3 text-[14px] text-ink-muted-48">本月暂无赛事</p>
-            </div>
-          );
-        })()}
-      </motion.section>
-      </>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </>
       )}
-    </motion.div>
+    </div>
   );
 }

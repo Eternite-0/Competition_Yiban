@@ -62,7 +62,7 @@ export default function LazyImage({
     <div ref={containerRef} className={`relative ${className}`}>
       {/* Shimmer placeholder */}
       {!showFallback && !loaded && (
-        <div className="absolute inset-0 z-10 bg-slate-100 overflow-hidden">
+        <div className="absolute inset-0 z-10 bg-surface-tile-2 overflow-hidden">
           <div
             className="absolute inset-0"
             style={{
@@ -76,8 +76,8 @@ export default function LazyImage({
 
       {/* Fallback icon */}
       {showFallback && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-100">
-          <span className="material-symbols-outlined text-[40px] text-slate-400">
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface-tile-2">
+          <span className="material-symbols-outlined text-[40px] text-placeholder">
             {fallbackIcon}
           </span>
         </div>

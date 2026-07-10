@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
-import { listContainer, listItem } from '../../lib/motion';
 import PageHero from '../../components/PageHero';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useConfirmModal } from '../../hooks/useConfirmModal';
@@ -61,7 +60,6 @@ export default function MajorManagement() {
       return;
     }
     try {
-      const { default: apiClient } = await import('../../api/client');
       if (editingId) {
         await apiClient.put(`/admin/majors/${editingId}`, formData);
         toast.success('更新成功');
@@ -97,7 +95,6 @@ export default function MajorManagement() {
     });
     if (!confirmed) return;
     try {
-      const { default: apiClient } = await import('../../api/client');
       await apiClient.delete(`/admin/majors/${id}`);
       toast.success('删除成功');
       fetchMajors();
@@ -107,27 +104,23 @@ export default function MajorManagement() {
   };
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <div className="flex flex-col gap-4">
       <PageHero
-        eyebrow="Administration"
+        eyebrow="管理端"
         title="专业管理"
         description="管理各学院的专业信息"
         actions={
-          <button
-            onClick={() => handleOpenModal()}
-            className="h-10 px-4 rounded-pill bg-primary text-on-primary text-[13px] font-medium hover:bg-primary-focus transition flex items-center gap-2"
-          >
-            <span className="material-symbols-outlined text-[18px]">add</span>
+          <button type="button" onClick={() => handleOpenModal()} className="btn-primary">
+            <span className="material-symbols-outlined">add</span>
             新增专业
           </button>
         }
       />
 
-      {/* 筛选 */}
-      <div className="glass-tint flex flex-wrap gap-sm items-center px-md py-3" role="search">
+      <div className="filter-bar" role="search">
         <select
           name="filterCollege"
-          className="input-glass h-9 w-full sm:w-[200px] text-[13px]"
+          className="input-glass h-9 w-full text-[13px] sm:w-[200px]"
           value={filterCollege}
           aria-label="筛选学院"
           onChange={(e) => setFilterCollege(e.target.value)}
@@ -138,133 +131,108 @@ export default function MajorManagement() {
           ))}
         </select>
         <div className="flex-1" />
-        <span className="text-[13px] text-ink-muted-48">
-          共 {majors.length} 个专业
-        </span>
+        <span className="chip tabular-nums">共 {majors.length} 个专业</span>
       </div>
 
-      {/* 表格 */}
-      <div className="glass overflow-hidden">
-        <div className="overflow-x-auto">
+      <section className="section-card">
+        <div className="section-card-header">
+          <h2 className="section-card-title">专业列表</h2>
+        </div>
         {loading ? (
-          <div className="flex items-center justify-center py-xxl">
-            <span className="material-symbols-outlined animate-spin text-[24px] text-primary">progress_activity</span>
+          <div className="empty-panel py-16">
+            <span className="material-symbols-outlined animate-spin">progress_activity</span>
           </div>
         ) : majors.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-xxl text-ink-muted-48">
-            <span className="material-symbols-outlined text-[48px] mb-2">school</span>
-            <p className="text-[14px]">暂无专业数据</p>
+          <div className="empty-panel py-16">
+            <span className="material-symbols-outlined">school</span>
+            <p className="text-[13px]">暂无专业数据</p>
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-hairline">
-                <th className="text-left px-md py-3 text-[12px] font-medium text-ink-muted-48">ID</th>
-                <th className="text-left px-md py-3 text-[12px] font-medium text-ink-muted-48">专业名称</th>
-                <th className="text-left px-md py-3 text-[12px] font-medium text-ink-muted-48">所属学院</th>
-                <th className="text-left px-md py-3 text-[12px] font-medium text-ink-muted-48">状态</th>
-                <th className="text-right px-md py-3 text-[12px] font-medium text-ink-muted-48">操作</th>
-              </tr>
-            </thead>
-            <motion.tbody variants={listContainer} initial="hidden" animate="visible">
-              {majors.map((major) => (
-                <motion.tr
-                  key={major.id}
-                  variants={listItem}
-                  className="border-b border-hairline last:border-0 hover:bg-primary/5 transition"
-                >
-                  <td className="px-md py-3 text-[13px] text-ink">{major.id}</td>
-                  <td className="px-md py-3 text-[13px] text-ink font-medium">{major.name}</td>
-                  <td className="px-md py-3 text-[13px] text-ink">{major.college}</td>
-                  <td className="px-md py-3">
-                    <span className={`chip ${major.status === 'active' ? 'chip-primary' : 'chip-warning'}`}>
-                      {major.status === 'active' ? '启用' : '停用'}
-                    </span>
-                  </td>
-                  <td className="px-md py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleOpenModal(major)}
-                        className="h-9 px-3 rounded-lg text-[12px] text-primary hover:bg-primary/10 transition"
-                      >
-                        编辑
-                      </button>
-                      <button
-                        onClick={() => handleToggleStatus(major)}
-                        className="h-9 px-3 rounded-lg text-[12px] text-yellow-600 hover:bg-yellow-50 transition"
-                      >
-                        {major.status === 'active' ? '停用' : '启用'}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(major.id)}
-                        className="h-9 px-3 rounded-lg text-[12px] text-red-500 hover:bg-red-50 transition"
-                      >
-                        删除
-                      </button>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </motion.tbody>
-          </table>
+          <div className="data-table-wrap !rounded-none !border-0">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>专业名称</th>
+                  <th>所属学院</th>
+                  <th>状态</th>
+                  <th className="text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {majors.map((major) => (
+                  <tr key={major.id}>
+                    <td className="tabular-nums">{major.id}</td>
+                    <td className="font-medium">{major.name}</td>
+                    <td>{major.college}</td>
+                    <td>
+                      <span className={`chip ${major.status === 'active' ? 'chip-primary' : 'chip-warning'}`}>
+                        {major.status === 'active' ? '启用' : '停用'}
+                      </span>
+                    </td>
+                    <td className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button type="button" onClick={() => handleOpenModal(major)} className="btn-utility !h-8 !px-3 !text-[12px]">
+                          编辑
+                        </button>
+                        <button type="button" onClick={() => handleToggleStatus(major)} className="btn-secondary !h-8 !px-3 !text-[12px]">
+                          {major.status === 'active' ? '停用' : '启用'}
+                        </button>
+                        <button type="button" onClick={() => handleDelete(major.id)} className="btn-danger !h-8 !px-3 !text-[12px]">
+                          删除
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-        </div>
-      </div>
+      </section>
 
-      {/* 弹窗 */}
       <AnimatePresence>
         {showModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/20 backdrop-blur-sm"
             role="dialog"
             aria-modal="true"
             aria-labelledby="major-modal-title"
           >
-            <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="glass-strong w-full max-w-[400px] mx-4 p-xl rounded-2xl"
-          >
-            <h3 id="major-modal-title" className="text-[18px] font-semibold text-ink mb-lg">
-              {editingId ? '编辑专业' : '新增专业'}
-            </h3>
-            <div className="flex flex-col gap-3">
-              <input
-                className="input-glass h-[44px] px-4 text-[14px]"
-                placeholder="专业名称"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-              <select
-                className="input-glass h-[44px] px-4 text-[14px]"
-                value={formData.college}
-                onChange={(e) => setFormData({ ...formData, college: e.target.value })}
-              >
-                <option value="">请选择学院</option>
-                {colleges.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+            <div className="section-card mx-4 w-full max-w-[400px]">
+              <div className="section-card-header">
+                <h3 id="major-modal-title" className="section-card-title">
+                  {editingId ? '编辑专业' : '新增专业'}
+                </h3>
+              </div>
+              <div className="section-card-body flex flex-col gap-3">
+                <input
+                  className="input-glass"
+                  placeholder="专业名称"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+                <select
+                  className="input-glass"
+                  value={formData.college}
+                  onChange={(e) => setFormData({ ...formData, college: e.target.value })}
+                >
+                  <option value="">请选择学院</option>
+                  {colleges.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                <div className="mt-1 flex items-center justify-end gap-2">
+                  <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">
+                    取消
+                  </button>
+                  <button type="button" onClick={handleSave} className="btn-primary">
+                    保存
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center justify-end gap-3 mt-lg">
-              <button
-                onClick={() => setShowModal(false)}
-                className="h-[40px] px-4 rounded-pill text-[13px] text-ink hover:bg-primary/10 transition"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleSave}
-                className="h-[40px] px-6 rounded-pill bg-primary text-on-primary text-[13px] font-medium hover:bg-primary-focus transition"
-              >
-                保存
-              </button>
-            </div>
-            </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

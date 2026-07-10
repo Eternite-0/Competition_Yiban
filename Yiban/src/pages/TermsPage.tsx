@@ -9,7 +9,7 @@ export default function TermsPage() {
       {/* 顶栏 */}
       <div className="h-[44px] flex items-center px-xl text-[12px] tracking-tight text-ink bg-canvas border-b border-hairline">
         <Link to="/login" className="flex items-center gap-2 font-medium hover:text-primary transition">
-          <span className="material-symbols-outlined text-[16px] text-primary icon-fill">workspace_premium</span>
+          <span className="material-symbols-outlined text-[16px] text-primary">workspace_premium</span>
           易赛通 · 学生竞赛管理平台
         </Link>
       </div>
@@ -19,13 +19,13 @@ export default function TermsPage() {
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="glass-strong px-xl py-xl"
+          className="section-card section-card-body"
         >
           <h1 className="font-display font-semibold text-[28px] tracking-tight text-ink mb-lg">
             用户注册协议
           </h1>
 
-          <div className="prose prose-sm max-w-none text-ink-muted-80 leading-relaxed space-y-6">
+          <div className="prose prose-sm max-w-none text-body-muted leading-relaxed space-y-6">
             <section>
               <h2 className="text-[16px] font-semibold text-ink mt-lg mb-2">一、总则</h2>
               <p className="text-[14px]">
@@ -129,7 +129,7 @@ export default function TermsPage() {
           <div className="mt-xl pt-lg border-t border-hairline text-center">
             <Link
               to="/register"
-              className="inline-flex items-center gap-2 h-[44px] px-6 rounded-pill bg-primary text-on-primary text-[14px] font-medium hover:bg-primary-focus transition"
+              className="btn-primary"
             >
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
               返回注册

@@ -407,8 +407,8 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
   const activeConversation = conversations.find((item) => String(item.id) === String(conversationId));
   const activeTitle = activeConversation?.title?.trim() || '新建 AI 对话';
   const panelClassName = panelMode === 'sidebar'
-    ? 'ai-assistant-panel ai-assistant-dock fixed inset-x-2 bottom-0 z-50 flex h-[72svh] max-h-[590px] flex-col overflow-hidden rounded-b-none rounded-t-[22px] border border-slate-200/60 bg-white text-slate-900 shadow-[0_-4px_40px_rgba(15,23,42,0.08),0_0_0_1px_rgba(15,23,42,0.03)] md:inset-y-0 md:left-auto md:right-0 md:h-screen md:max-h-none md:rounded-none md:border-y-0 md:border-r-0 md:shadow-none'
-    : 'ai-assistant-panel ai-assistant-float fixed inset-x-2 bottom-0 z-50 flex h-[72svh] max-h-[590px] flex-col overflow-hidden rounded-b-none rounded-t-[22px] border border-slate-200/60 bg-white text-slate-900 shadow-[0_-4px_40px_rgba(15,23,42,0.08),0_0_0_1px_rgba(15,23,42,0.03)] md:inset-auto md:bottom-20 md:right-6 md:h-[min(600px,calc(100vh-140px))] md:w-[400px] md:rounded-[20px] md:shadow-[0_24px_80px_rgba(15,23,42,0.14),0_0_0_1px_rgba(15,23,42,0.04)]';
+    ? 'ai-assistant-panel ai-assistant-dock fixed inset-x-2 bottom-0 z-50 flex h-[72svh] max-h-[590px] flex-col overflow-hidden rounded-b-none rounded-t-[22px] border border-border/60 bg-canvas text-ink shadow-[0_-4px_40px_rgba(15,23,42,0.08),0_0_0_1px_rgba(15,23,42,0.03)] md:inset-y-0 md:left-auto md:right-0 md:h-screen md:max-h-none md:rounded-none md:border-y-0 md:border-r-0 md:shadow-none'
+    : 'ai-assistant-panel ai-assistant-float fixed inset-x-2 bottom-0 z-50 flex h-[72svh] max-h-[590px] flex-col overflow-hidden rounded-b-none rounded-t-[22px] border border-border/60 bg-canvas text-ink shadow-[0_-4px_40px_rgba(15,23,42,0.08),0_0_0_1px_rgba(15,23,42,0.03)] md:inset-auto md:bottom-20 md:right-6 md:h-[min(600px,calc(100vh-140px))] md:w-[400px] md:rounded-[20px] md:shadow-[0_24px_80px_rgba(15,23,42,0.14),0_0_0_1px_rgba(15,23,42,0.04)]';
   const panelMotion = panelMode === 'sidebar'
     ? {
         initial: { opacity: 0, x: 36 },
@@ -427,10 +427,9 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
     <>
       <motion.button
         type="button"
-        whileHover={{ y: -2, scale: 1.05 }}
         whileTap={{ scale: 0.92 }}
         onClick={toggleAssistant}
-        className="ai-assistant-launcher fixed bottom-5 right-4 z-50 grid h-12 w-12 place-items-center rounded-full border border-slate-200/80 bg-white text-slate-700 shadow-[0_8px_30px_rgba(15,23,42,0.12),0_0_0_1px_rgba(15,23,42,0.05)] transition hover:shadow-[0_12px_40px_rgba(15,23,42,0.18)] md:bottom-6 md:right-6"
+        className="ai-assistant-launcher fixed bottom-5 right-4 z-50 grid h-12 w-12 place-items-center rounded-full border border-border/80 bg-canvas text-body shadow-[0_8px_30px_rgba(15,23,42,0.12),0_0_0_1px_rgba(15,23,42,0.05)] transition hover:shadow-[0_12px_40px_rgba(15,23,42,0.18)] md:bottom-6 md:right-6"
         aria-label={open ? '关闭 AI 助手' : '打开 AI 助手'}
         title="AI 助手"
       >
@@ -456,7 +455,7 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
             exit={{ opacity: 0 }}
             transition={panelTransition}
             onClick={closeAssistant}
-            className="fixed inset-0 z-40 bg-slate-950/25 backdrop-blur-[2px] md:hidden dark:bg-black/35"
+            className="fixed inset-0 z-40 bg-ink/30 backdrop-blur-[2px] md:hidden"
             aria-label="关闭 AI 助手"
           />
         )}
@@ -478,17 +477,17 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
             aria-modal="false"
             aria-label="AI 助手"
           >
-            <header className="relative z-10 flex h-12 shrink-0 items-center justify-between gap-2 border-b border-slate-200/50 bg-white/80 px-3 backdrop-blur-md">
+            <header className="relative z-10 flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border/50 bg-canvas/80 px-3 backdrop-blur-md">
               <button
                 type="button"
                 onClick={() => setConversationMenuOpen((value) => !value)}
-                className="inline-flex min-w-0 max-w-[250px] items-center gap-1.5 rounded-[10px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 transition hover:bg-slate-100/80"
+                className="inline-flex min-w-0 max-w-[250px] items-center gap-1.5 rounded-[10px] px-2.5 py-1.5 text-[13px] font-medium text-body transition hover:bg-surface-tile-2/80"
                 aria-expanded={conversationMenuOpen}
                 aria-label="切换 AI 对话"
               >
-                <span className="material-symbols-outlined text-[18px] text-slate-400">chat_bubble</span>
+                <span className="material-symbols-outlined text-[18px] text-placeholder">chat_bubble</span>
                 <span className="truncate">{activeTitle}</span>
-                <span className={`material-symbols-outlined text-[16px] text-slate-400 transition-transform ${conversationMenuOpen ? 'rotate-180' : ''}`}>
+                <span className={`material-symbols-outlined text-[16px] text-placeholder transition-transform ${conversationMenuOpen ? 'rotate-180' : ''}`}>
                   keyboard_arrow_down
                 </span>
               </button>
@@ -496,7 +495,7 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
                 <button
                   type="button"
                   onClick={togglePanelMode}
-                  className="grid h-8 w-8 place-items-center rounded-[9px] text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  className="grid h-8 w-8 place-items-center rounded-[9px] text-placeholder transition hover:bg-surface-tile-2 hover:text-body"
                   aria-label={panelMode === 'sidebar' ? '收回浮层' : '扩展工作区'}
                   title={panelMode === 'sidebar' ? '收回浮层' : '扩展工作区'}
                 >
@@ -507,7 +506,7 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
                 <button
                   type="button"
                   onClick={closeAssistant}
-                  className="grid h-8 w-8 place-items-center rounded-[9px] text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  className="grid h-8 w-8 place-items-center rounded-[9px] text-placeholder transition hover:bg-surface-tile-2 hover:text-body"
                   aria-label="关闭 AI 助手"
                   title="关闭"
                 >
@@ -524,7 +523,7 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -4, scale: 0.98 }}
                   transition={{ duration: 0.14, ease: [0.23, 1, 0.32, 1] }}
-                  className="absolute left-3 top-12 z-30 w-[260px] overflow-hidden rounded-[14px] border border-slate-200/70 bg-white py-1.5 shadow-[0_16px_48px_rgba(15,23,42,0.14)]"
+                  className="absolute left-3 top-12 z-30 w-[260px] overflow-hidden rounded-[14px] border border-border/70 bg-canvas py-1.5 shadow-[0_16px_48px_rgba(15,23,42,0.14)]"
                 >
                   {/* Invisible backdrop to close menu on outside click */}
                   <button
@@ -536,17 +535,17 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
                     <button
                       type="button"
                       onClick={handleReset}
-                      className="flex h-9 w-full items-center gap-2 px-3 text-left text-[13px] font-medium text-slate-800 transition hover:bg-slate-50"
+                      className="flex h-9 w-full items-center gap-2 px-3 text-left text-[13px] font-medium text-ink transition hover:bg-surface-tile-1"
                     >
                       <span className="material-symbols-outlined text-[17px]">add_comment</span>
                       新建对话
                     </button>
-                    <div className="mx-3 my-1 border-t border-slate-100" />
+                    <div className="mx-3 my-1 border-t border-hairline" />
                     <div className="max-h-60 overflow-y-auto">
                       {conversationLoading ? (
-                        <div className="px-3 py-3 text-[12px] text-slate-400">正在加载对话...</div>
+                        <div className="px-3 py-3 text-[12px] text-placeholder">正在加载对话...</div>
                       ) : conversations.length === 0 ? (
-                        <div className="px-3 py-3 text-[12px] text-slate-400">暂无历史对话</div>
+                        <div className="px-3 py-3 text-[12px] text-placeholder">暂无历史对话</div>
                       ) : (
                         conversations.map((conversation) => {
                           const selected = String(conversation.id) === String(conversationId);
@@ -554,13 +553,13 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
                             <div
                               key={conversation.id}
                               className={`group flex items-center ${
-                                selected ? 'bg-primary-soft' : 'hover:bg-slate-50'
+                                selected ? 'bg-primary-soft' : 'hover:bg-surface-tile-1'
                               }`}
                             >
                               <button
                                 type="button"
                                 onClick={() => void handleSelectConversation(String(conversation.id))}
-                                className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left text-[12px] text-slate-600"
+                                className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left text-[12px] text-body-muted"
                               >
                                 <span className="truncate">{conversation.title || conversation.lastMessage || '未命名对话'}</span>
                                 {selected && <span className="material-symbols-outlined ml-auto text-[14px] text-primary">check</span>}
@@ -568,7 +567,7 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
                               <button
                                 type="button"
                                 onClick={() => void handleDeleteConversation(String(conversation.id))}
-                                className="mr-2 grid h-7 w-7 shrink-0 place-items-center rounded-[8px] text-slate-300 transition hover:bg-red-50 hover:text-red-500"
+                                className="mr-2 grid h-7 w-7 shrink-0 place-items-center rounded-[8px] text-placeholder transition hover:bg-danger-bg hover:text-error"
                                 aria-label="删除对话"
                                 title="删除对话"
                               >
@@ -590,7 +589,7 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+                    className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm"
                     onMouseDown={(event) => {
                       if (event.target === event.currentTarget) setCustomizing(false);
                     }}
@@ -600,7 +599,7 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 8, scale: 0.97 }}
                       transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
-                      className="relative w-full max-w-[440px] overflow-hidden rounded-[18px] border border-slate-200 bg-white text-slate-900 shadow-[0_32px_100px_rgba(15,23,42,0.25)]"
+                      className="relative w-full max-w-[440px] overflow-hidden rounded-[18px] border border-border bg-canvas text-ink shadow-[0_32px_100px_rgba(15,23,42,0.25)]"
                       role="dialog"
                       aria-modal="true"
                       aria-label="个性化 AI 助手"
@@ -608,13 +607,13 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
                       <div className="p-6">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h3 className="text-[17px] font-semibold text-slate-900">个性化你的 AI 助手</h3>
-                            <p className="mt-0.5 text-[12px] text-slate-400">选择头像风格和装饰</p>
+                            <h3 className="text-[17px] font-semibold text-ink">个性化你的 AI 助手</h3>
+                            <p className="mt-0.5 text-[12px] text-placeholder">选择头像风格和装饰</p>
                           </div>
                           <button
                             type="button"
                             onClick={() => setCustomizing(false)}
-                            className="grid h-8 w-8 place-items-center rounded-full bg-slate-100 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
+                            className="grid h-8 w-8 place-items-center rounded-full bg-surface-tile-2 text-placeholder transition hover:bg-surface-tile-3 hover:text-body"
                             aria-label="关闭个性化"
                           >
                             <span className="material-symbols-outlined text-[18px]">close</span>
@@ -626,21 +625,21 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
                           <button
                             type="button"
                             onClick={() => setAvatarStyle(cycleAvatarStyle(avatarStyle, -1))}
-                            className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 text-slate-400 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
+                            className="grid h-8 w-8 place-items-center rounded-full border border-border text-placeholder transition hover:border-border-emphasis hover:bg-surface-tile-1 hover:text-body"
                             aria-label="上一个头像"
                           >
                             <span className="material-symbols-outlined text-[18px]">chevron_left</span>
                           </button>
                           <div className="relative">
                             <AvatarFace motion={avatarMotion} style={avatarStyle} preview />
-                            <div className="mt-2 text-center text-[12px] font-medium text-slate-600">
+                            <div className="mt-2 text-center text-[12px] font-medium text-body-muted">
                               {avatarStyleLabels[avatarStyle]}
                             </div>
                           </div>
                           <button
                             type="button"
                             onClick={() => setAvatarStyle(cycleAvatarStyle(avatarStyle, 1))}
-                            className="grid h-8 w-8 place-items-center rounded-full border border-slate-200 text-slate-400 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-700"
+                            className="grid h-8 w-8 place-items-center rounded-full border border-border text-placeholder transition hover:border-border-emphasis hover:bg-surface-tile-1 hover:text-body"
                             aria-label="下一个头像"
                           >
                             <span className="material-symbols-outlined text-[18px]">chevron_right</span>
@@ -649,18 +648,18 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
 
                         {/* Name input */}
                         <div className="mt-5">
-                          <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-400">助手名称</label>
+                          <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-placeholder">助手名称</label>
                           <input
                             value={assistantName}
                             onChange={(event) => setAssistantName(event.target.value.slice(0, 12))}
                             placeholder="给助手起个名字"
-                            className="block h-10 w-full rounded-[11px] border border-slate-200 bg-slate-50/50 px-3 text-[14px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-100"
+                            className="block h-10 w-full rounded-[11px] border border-border bg-surface-tile-1/50 px-3 text-[14px] text-ink outline-none transition placeholder:text-placeholder focus:border-border-emphasis focus:bg-canvas focus:ring-2 focus:ring-primary/15"
                           />
                         </div>
 
                         {/* Avatar style grid */}
                         <div className="mt-5">
-                          <label className="mb-2 block text-[11px] font-medium uppercase tracking-wider text-slate-400">头像装饰</label>
+                          <label className="mb-2 block text-[11px] font-medium uppercase tracking-wider text-placeholder">头像装饰</label>
                           <div className="grid grid-cols-5 gap-1.5">
                             {avatarStyles.map((style) => (
                               <button
@@ -669,8 +668,8 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
                                 onClick={() => setAvatarStyle(style)}
                                 className={`flex h-12 flex-col items-center justify-center gap-0.5 rounded-[11px] border text-[11px] font-medium transition ${
                                   avatarStyle === style
-                                    ? 'border-slate-900 bg-slate-50 text-slate-900 shadow-sm'
-                                    : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50'
+                                    ? 'border-ink bg-surface-tile-1 text-ink shadow-none'
+                                    : 'border-border bg-canvas text-body-subtle hover:border-border-emphasis hover:bg-surface-tile-1'
                                 }`}
                               >
                                 <span className="material-symbols-outlined text-[17px]">
@@ -701,7 +700,7 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
                               setAvatarStyle('classic');
                               setAvatarMotion('calm');
                             }}
-                            className="inline-flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[13px] text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                            className="inline-flex h-9 items-center gap-1.5 rounded-[10px] px-3 text-[13px] text-body-subtle transition hover:bg-surface-tile-2 hover:text-body"
                           >
                             <span className="material-symbols-outlined text-[16px]">restart_alt</span>
                             重置
@@ -709,7 +708,7 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
                           <button
                             type="button"
                             onClick={() => setCustomizing(false)}
-                            className="h-9 rounded-[10px] bg-slate-900 px-5 text-[13px] font-medium text-white shadow-sm transition hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300"
+                            className="h-9 rounded-[10px] bg-ink px-5 text-[13px] font-medium text-on-dark shadow-none transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                           >
                             完成
                           </button>
@@ -785,22 +784,22 @@ function AssistantWelcome({
           aria-label="个性化 AI 头像"
         >
           <AvatarFace motion={avatarMotion} style={avatarStyle} />
-          <span className="pointer-events-none absolute -bottom-1 left-1/2 inline-flex h-6 -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full border border-slate-200/80 bg-white/90 px-2 text-[10px] text-slate-500 opacity-0 shadow-sm backdrop-blur-sm transition group-hover:opacity-100 group-focus-visible:opacity-100">
+          <span className="pointer-events-none absolute -bottom-1 left-1/2 inline-flex h-6 -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full border border-border/80 bg-canvas/90 px-2 text-[10px] text-body-subtle opacity-0 shadow-none backdrop-blur-sm transition group-hover:opacity-100 group-focus-visible:opacity-100">
             <span className="material-symbols-outlined text-[12px]">palette</span>
             装扮
           </span>
         </button>
         <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[11px] text-slate-400">
+          <div className="flex items-center gap-2 text-[11px] text-placeholder">
             <span className={`h-1.5 w-1.5 rounded-full ${status === 'error' ? 'bg-red-500' : 'bg-emerald-500'}`} />
             <span>{assistantName}</span>
-            <span className="text-slate-300">·</span>
+            <span className="text-placeholder">·</span>
             <span>{statusText[status]}</span>
           </div>
-          <h2 className="mt-0.5 text-[18px] font-semibold leading-snug tracking-tight text-slate-900">
+          <h2 className="mt-0.5 text-[18px] font-semibold leading-snug tracking-tight text-ink">
             你好，{displayName}
           </h2>
-          <p className="mt-0.5 text-[13px] text-slate-500">
+          <p className="mt-0.5 text-[13px] text-body-subtle">
             有什么我可以帮你的？
           </p>
         </div>
@@ -848,8 +847,8 @@ function SegmentedControl<T extends string>({
 }: SegmentedControlProps<T>) {
   return (
     <div className="mb-3 last:mb-0">
-      <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400">{label}</div>
-      <div className="grid grid-cols-3 gap-1 rounded-[11px] bg-slate-100/80 p-1">
+      <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-placeholder">{label}</div>
+      <div className="grid grid-cols-3 gap-1 rounded-[11px] bg-surface-tile-2/80 p-1">
         {(Object.keys(options) as T[]).map((key) => (
           <button
             key={key}
@@ -857,8 +856,8 @@ function SegmentedControl<T extends string>({
             onClick={() => onChange(key)}
             className={`h-8 rounded-[9px] text-[12px] font-medium transition ${
               value === key
-                ? 'bg-white text-slate-800 shadow-sm'
-                : 'text-slate-500 hover:bg-white/60 hover:text-slate-800'
+                ? 'bg-canvas text-ink shadow-none'
+                : 'text-body-subtle hover:bg-canvas/60 hover:text-ink'
             }`}
           >
             {options[key]}

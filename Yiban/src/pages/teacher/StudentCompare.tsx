@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
-import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
+import ProgressBar from '../../components/ProgressBar';
 
 interface RadarDim {
   dimension: string;
@@ -133,143 +132,121 @@ export default function StudentCompare() {
 
   if (ids.length === 0) {
     return (
-      <div className="py-lg flex flex-col gap-lg">
+      <div className="flex flex-col gap-4">
         <PageHero eyebrow="Compare" title="学生对比" description="请从学生列表中选择 2-4 名学生进行对比。" />
-        <div className="py-20 grid place-items-center text-ink-muted-48 gap-2">
-          <span className="material-symbols-outlined text-[48px] opacity-40">compare</span>
-          <p className="text-[14px]">未选择学生</p>
-          <button onClick={() => navigate(`${basePath}/student-growth`)} className="btn-primary mt-2 text-[13px]">返回学情分析</button>
+        <div className="empty-panel py-16">
+          <span className="material-symbols-outlined">compare</span>
+          <p className="text-[13px]">未选择学生</p>
+          <button type="button" onClick={() => navigate(`${basePath}/student-growth`)} className="btn-primary mt-2">返回学情分析</button>
         </div>
       </div>
     );
   }
 
   return (
-    <motion.div
-      className="py-lg flex flex-col gap-lg"
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-      transition={pageTransition}
-    >
+    <div className="flex flex-col gap-4">
       <PageHero
         eyebrow="Compare"
         title="学生对比"
         description={`${students.length} 名学生的能力对比分析。`}
         actions={(
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate(-1)} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px]">
-            <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+          <button type="button" onClick={() => navigate(-1)} className="btn-secondary">
+            <span className="material-symbols-outlined">arrow_back</span>
             返回
-          </motion.button>
+          </button>
         )}
       />
 
       {loading ? (
-        <div className="py-20 grid place-items-center text-ink-muted-48">
-          <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
+        <div className="empty-panel py-16">
+          <span className="material-symbols-outlined animate-spin">progress_activity</span>
+          <p className="text-[13px]">加载中…</p>
         </div>
       ) : (
         <>
-          {/* Legend */}
-          <motion.div className="flex flex-wrap gap-4" variants={listContainer} initial="hidden" animate="visible">
+          <div className="filter-bar">
             {students.map((s, i) => (
-              <motion.div key={s.studentId} variants={listItem} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+              <div key={s.studentId} className="flex items-center gap-2">
+                <div className="h-2.5 w-2.5 rounded-md" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
                 <span className="text-[13px] font-medium text-ink">{s.realName}</span>
-                <span className="text-[12px] text-ink-muted-48">{s.className}</span>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* Radar + Stats */}
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-lg">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="glass p-xl"
-            >
-              <h3 className="text-[16px] font-semibold text-ink mb-lg flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-primary">radar</span>
-                能力雷达对比
-              </h3>
-              <div className="aspect-square max-w-[360px] mx-auto">
-                <CompareRadarChart students={students} />
+                <span className="text-[12px] text-placeholder">{s.className}</span>
               </div>
-            </motion.div>
+            ))}
+          </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="glass p-xl"
-            >
-              <h3 className="text-[16px] font-semibold text-ink mb-lg flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-primary">bar_chart</span>
-                数据对比
-              </h3>
-              <div className="flex flex-col gap-6">
-                {/* Competition count */}
+          <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <section className="section-card">
+              <div className="section-card-header">
+                <h2 className="section-card-title">能力雷达对比</h2>
+              </div>
+              <div className="section-card-body">
+                <div className="mx-auto aspect-square max-w-[360px]">
+                  <CompareRadarChart students={students} />
+                </div>
+              </div>
+            </section>
+
+            <section className="section-card">
+              <div className="section-card-header">
+                <h2 className="section-card-title">数据对比</h2>
+              </div>
+              <div className="section-card-body flex flex-col gap-5">
                 <div>
-                  <p className="text-[13px] text-ink-muted-80 mb-2">参赛次数</p>
+                  <p className="mb-2 text-[12px] font-medium text-body-muted">参赛次数</p>
                   <div className="flex flex-col gap-2">
-                    {students.map((s, i) => (
+                    {students.map((s) => (
                       <div key={s.studentId} className="flex items-center gap-3">
-                        <span className="text-[12px] text-ink w-16 truncate shrink-0">{s.realName}</span>
-                        <div className="flex-1 h-5 rounded-full bg-primary/8 overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.min((s.totalCompetitions / Math.max(...students.map(st => st.totalCompetitions), 1)) * 100, 100)}%` }}
-                            transition={{ delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                            className="h-full rounded-full"
-                            style={{ backgroundColor: COLORS[i % COLORS.length] }}
-                          />
-                        </div>
-                        <span className="text-[12px] tabular-nums text-ink font-semibold w-8 text-right">{s.totalCompetitions}</span>
+                        <span className="w-16 shrink-0 truncate text-[12px] text-ink">{s.realName}</span>
+                        <ProgressBar
+                          value={Math.min((s.totalCompetitions / Math.max(...students.map((st) => st.totalCompetitions), 1)) * 100, 100)}
+                          size="sm"
+                          segments={4}
+                          showThumb
+                          instant
+                          className="min-w-0 flex-1"
+                        />
+                        <span className="w-8 text-right text-[12px] font-medium tabular-nums text-ink">{s.totalCompetitions}</span>
                       </div>
                     ))}
                   </div>
                 </div>
-                {/* Awards */}
                 <div>
-                  <p className="text-[13px] text-ink-muted-80 mb-2">获奖数</p>
+                  <p className="mb-2 text-[12px] font-medium text-body-muted">获奖数</p>
                   <div className="flex flex-col gap-2">
-                    {students.map((s, i) => (
+                    {students.map((s) => (
                       <div key={s.studentId} className="flex items-center gap-3">
-                        <span className="text-[12px] text-ink w-16 truncate shrink-0">{s.realName}</span>
-                        <div className="flex-1 h-5 rounded-full bg-primary/8 overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.min((s.awards / Math.max(...students.map(st => st.awards), 1)) * 100, 100)}%` }}
-                            transition={{ delay: i * 0.08, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                            className="h-full rounded-full"
-                            style={{ backgroundColor: COLORS[i % COLORS.length] }}
-                          />
-                        </div>
-                        <span className="text-[12px] tabular-nums text-ink font-semibold w-8 text-right">{s.awards}</span>
+                        <span className="w-16 shrink-0 truncate text-[12px] text-ink">{s.realName}</span>
+                        <ProgressBar
+                          value={Math.min((s.awards / Math.max(...students.map((st) => st.awards), 1)) * 100, 100)}
+                          size="sm"
+                          segments={4}
+                          showThumb
+                          instant
+                          className="min-w-0 flex-1"
+                        />
+                        <span className="w-8 text-right text-[12px] font-medium tabular-nums text-ink">{s.awards}</span>
                       </div>
                     ))}
                   </div>
                 </div>
-                {/* Radar dimensions */}
-                {RADAR_FIELDS.map((f, fi) => (
+                {RADAR_FIELDS.map((f) => (
                   <div key={f.key}>
-                    <p className="text-[13px] text-ink-muted-80 mb-2">{f.label}</p>
+                    <p className="mb-2 text-[12px] font-medium text-body-muted">{f.label}</p>
                     <div className="flex flex-col gap-2">
-                      {students.map((s, i) => {
-                        const dim = s.radar.find(d => d.dimension === f.label);
+                      {students.map((s) => {
+                        const dim = s.radar.find((d) => d.dimension === f.label);
                         return (
                           <div key={s.studentId} className="flex items-center gap-3">
-                            <span className="text-[12px] text-ink w-16 truncate shrink-0">{s.realName}</span>
-                            <div className="flex-1 h-5 rounded-full bg-primary/8 overflow-hidden">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${dim ? dim.score : 0}%` }}
-                                transition={{ delay: (fi * students.length + i) * 0.04, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                                className="h-full rounded-full"
-                                style={{ backgroundColor: COLORS[i % COLORS.length] }}
-                              />
-                            </div>
-                            <span className="text-[12px] tabular-nums text-ink font-semibold w-8 text-right">{dim?.score ?? 0}</span>
+                            <span className="w-16 shrink-0 truncate text-[12px] text-ink">{s.realName}</span>
+                            <ProgressBar
+                              value={dim ? dim.score : 0}
+                              size="sm"
+                              segments={4}
+                              showThumb
+                              instant
+                              className="min-w-0 flex-1"
+                            />
+                            <span className="w-8 text-right text-[12px] font-medium tabular-nums text-ink">{dim?.score ?? 0}</span>
                           </div>
                         );
                       })}
@@ -277,10 +254,10 @@ export default function StudentCompare() {
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </section>
           </section>
         </>
       )}
-    </motion.div>
+    </div>
   );
 }

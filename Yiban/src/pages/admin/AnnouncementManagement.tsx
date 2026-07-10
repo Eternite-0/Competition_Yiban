@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { listContainer, listItem } from '../../lib/motion';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -15,9 +14,9 @@ const typeLabels: Record<AnnouncementType, string> = {
 };
 
 const typeColors: Record<AnnouncementType, string> = {
-  system: 'chip-primary',
-  competition: 'chip-warning',
-  stage: 'chip-success',
+  system: 'chip chip-primary',
+  competition: 'chip chip-warning',
+  stage: 'chip chip-success',
 };
 
 export default function AnnouncementManagement() {
@@ -107,138 +106,194 @@ export default function AnnouncementManagement() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="py-lg flex flex-col gap-lg"
-    >
+    <div className="flex flex-col gap-4">
       <PageHero
-        eyebrow="Announcements"
+        eyebrow="管理端"
         title="公告管理"
         description="发布和管理系统公告、赛事公告，打通信息差。"
         actions={(
-          <button onClick={() => { setShowForm(true); setEditingId(null); setForm({ title: '', content: '', type: 'system', competitionId: '', isPinned: false }); }} className="btn-primary">
-            <span className="material-symbols-outlined text-[18px]">add</span>
+          <button
+            type="button"
+            onClick={() => {
+              setShowForm(true);
+              setEditingId(null);
+              setForm({ title: '', content: '', type: 'system', competitionId: '', isPinned: false });
+            }}
+            className="btn-primary"
+          >
+            <span className="material-symbols-outlined">add</span>
             发布公告
           </button>
         )}
       />
 
-      {/* Form */}
       <AnimatePresence>
         {showForm && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25 }}
-            className="glass p-xl overflow-hidden"
-          >
-          <h3 className="text-[17px] font-semibold text-ink mb-md">{editingId ? '编辑公告' : '发布新公告'}</h3>
-          <div className="flex flex-col gap-md">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-ink">公告类型</label>
-                <select className="input-glass" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value as AnnouncementType }))}>
-                  <option value="system">系统公告</option>
-                  <option value="competition">赛事公告</option>
-                </select>
+          <section className="section-card">
+            <div className="section-card-header">
+              <h2 className="section-card-title">{editingId ? '编辑公告' : '发布新公告'}</h2>
+            </div>
+            <div className="section-card-body flex flex-col gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[13px] font-medium text-ink">公告类型</label>
+                  <select
+                    className="input-glass"
+                    value={form.type}
+                    onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as AnnouncementType }))}
+                  >
+                    <option value="system">系统公告</option>
+                    <option value="competition">赛事公告</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[13px] font-medium text-ink">关联赛事ID（赛事公告必填）</label>
+                  <input
+                    className="input-glass"
+                    placeholder="留空表示系统公告"
+                    value={form.competitionId}
+                    onChange={(e) => setForm((f) => ({ ...f, competitionId: e.target.value }))}
+                  />
+                </div>
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-ink">关联赛事ID（赛事公告必填）</label>
-                <input className="input-glass" placeholder="留空表示系统公告" value={form.competitionId} onChange={e => setForm(f => ({ ...f, competitionId: e.target.value }))} />
+                <label className="text-[13px] font-medium text-ink">
+                  <span className="mr-1 text-error">*</span>标题
+                </label>
+                <input
+                  className="input-glass"
+                  placeholder="公告标题"
+                  value={form.title}
+                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-medium text-ink">
+                  <span className="mr-1 text-error">*</span>内容
+                </label>
+                <textarea
+                  className="input-glass !h-auto resize-none py-2.5"
+                  rows={5}
+                  placeholder="公告内容"
+                  value={form.content}
+                  onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="pinned"
+                  checked={form.isPinned}
+                  onChange={(e) => setForm((f) => ({ ...f, isPinned: e.target.checked }))}
+                  className="rounded"
+                />
+                <label htmlFor="pinned" className="text-[13px] text-ink">置顶</label>
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingId(null);
+                  }}
+                >
+                  取消
+                </button>
+                <button type="button" className="btn-primary" onClick={handleSubmit}>
+                  {editingId ? '保存修改' : '发布'}
+                </button>
               </div>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-medium text-ink"><span className="text-error mr-1">*</span>标题</label>
-              <input className="input-glass" placeholder="公告标题" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-medium text-ink"><span className="text-error mr-1">*</span>内容</label>
-              <textarea className="input-glass !h-auto py-2.5 resize-none" rows={5} placeholder="公告内容" value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} />
-            </div>
-            <div className="flex items-center gap-2">
-              <input type="checkbox" id="pinned" checked={form.isPinned} onChange={e => setForm(f => ({ ...f, isPinned: e.target.checked }))} className="rounded" />
-              <label htmlFor="pinned" className="text-[13px] text-ink">置顶</label>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button className="btn-secondary" onClick={() => { setShowForm(false); setEditingId(null); }}>取消</button>
-              <button className="btn-primary" onClick={handleSubmit}>{editingId ? '保存修改' : '发布'}</button>
-            </div>
-          </div>
-        </motion.div>
+          </section>
         )}
       </AnimatePresence>
 
-      {/* Filter tabs */}
-      <div className="flex gap-1 p-1 bg-primary/6 rounded-pill w-fit">
+      <div className="filter-bar">
         {[
           { value: '', label: '全部' },
           { value: 'system', label: '系统公告' },
           { value: 'competition', label: '赛事公告' },
-        ].map(tab => (
+        ].map((tab) => (
           <button
             key={tab.value}
+            type="button"
             onClick={() => setFilterType(tab.value as AnnouncementType | '')}
-            className={`px-4 py-1.5 rounded-pill text-[13px] font-medium transition ${
-              filterType === tab.value ? 'bg-canvas text-ink' : 'text-ink-muted-80 hover:text-ink'
-            }`}
+            className={filterType === tab.value ? 'btn-primary !h-8 !px-3 !text-[12px]' : 'btn-utility !h-8 !px-3 !text-[12px]'}
           >
             {tab.label}
           </button>
         ))}
+        <div className="flex-1" />
+        <span className="chip tabular-nums">{announcements.length} 条</span>
       </div>
 
-      {/* List */}
       {loading ? (
-        <div className="py-section text-center text-ink-muted-48">
-          <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
+        <div className="empty-panel py-16">
+          <span className="material-symbols-outlined animate-spin">progress_activity</span>
+          <p className="text-[13px]">加载中…</p>
         </div>
       ) : announcements.length === 0 ? (
-        <div className="glass p-xl text-center">
-          <span className="material-symbols-outlined text-[48px] text-ink-muted-48">campaign</span>
-          <p className="text-[15px] text-ink-muted-80 mt-3">暂无公告</p>
+        <div className="empty-panel py-16">
+          <span className="material-symbols-outlined">campaign</span>
+          <p className="text-[13px]">暂无公告</p>
         </div>
       ) : (
-        <div className="glass overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-canvas-parchment">
-                <th className="text-left text-[11px] text-ink-muted-48 font-medium px-lg py-3">标题</th>
-                <th className="text-left text-[11px] text-ink-muted-48 font-medium px-lg py-3">类型</th>
-                <th className="text-left text-[11px] text-ink-muted-48 font-medium px-lg py-3">发布时间</th>
-                <th className="text-right text-[11px] text-ink-muted-48 font-medium px-lg py-3">操作</th>
-              </tr>
-            </thead>
-            <motion.tbody variants={listContainer} initial="hidden" animate="visible">
-              {announcements.map(a => (
-                <motion.tr key={a.id} variants={listItem} className="border-b border-hairline last:border-0 hover:bg-primary/3 transition">
-                  <td className="px-lg py-3">
-                    <div className="flex items-center gap-2">
-                      {a.isPinned && <span className="material-symbols-outlined text-[16px] text-warning">push_pin</span>}
-                      <span className="text-[14px] font-medium text-ink">{a.title}</span>
-                    </div>
-                  </td>
-                  <td className="px-lg py-3">
-                    <span className={`chip !text-[11px] ${typeColors[a.type]}`}>{typeLabels[a.type]}</span>
-                  </td>
-                  <td className="px-lg py-3 text-[13px] text-ink-muted-80">
-                    {new Date(a.createTime).toLocaleDateString('zh-CN')}
-                  </td>
-                  <td className="px-lg py-3 text-right">
-                    <button onClick={() => handleEdit(a)} className="p-1.5 rounded-md text-ink-muted-48 hover:text-primary hover:bg-primary/8 transition">
-                      <span className="material-symbols-outlined text-[18px]">edit</span>
-                    </button>
-                    <button onClick={() => handleDelete(a.id)} className="p-1.5 rounded-md text-ink-muted-48 hover:text-error hover:bg-error/8 transition ml-1">
-                      <span className="material-symbols-outlined text-[18px]">delete</span>
-                    </button>
-                  </td>
-                </motion.tr>
-              ))}
-            </motion.tbody>
-          </table>
-        </div>
+        <section className="section-card">
+          <div className="section-card-header">
+            <h2 className="section-card-title">公告列表</h2>
+          </div>
+          <div className="data-table-wrap !rounded-none !border-0">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>标题</th>
+                  <th>类型</th>
+                  <th>发布时间</th>
+                  <th className="text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {announcements.map((a) => (
+                  <tr key={a.id}>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        {a.isPinned && (
+                          <span className="material-symbols-outlined text-[16px] text-warning">push_pin</span>
+                        )}
+                        <span className="font-medium">{a.title}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={typeColors[a.type]}>{typeLabels[a.type]}</span>
+                    </td>
+                    <td className="text-body-muted">
+                      {new Date(a.createTime).toLocaleDateString('zh-CN')}
+                    </td>
+                    <td className="text-right">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(a)}
+                        className="icon-button"
+                        aria-label="编辑公告"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">edit</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(a.id)}
+                        className="icon-button text-error hover:text-error"
+                        aria-label="删除公告"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
 
       <ConfirmModal
@@ -249,6 +304,6 @@ export default function AnnouncementManagement() {
         message={message}
         variant={variant}
       />
-    </motion.div>
+    </div>
   );
 }

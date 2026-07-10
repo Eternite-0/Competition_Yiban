@@ -1,11 +1,10 @@
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import { uploadToQiniu } from '../../api/qiniu';
 import PageHero from '../../components/PageHero';
-import { pageVariants, pageTransition } from '../../lib/motion';
+import ProgressBar from '../../components/ProgressBar';
 
 type Registration = {
   id: number | string;
@@ -133,216 +132,184 @@ export default function SubmissionUpload() {
 
   if (loading) {
     return (
-      <div className="py-section text-center text-ink-muted-48">
-        <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
-        <p className="mt-2 text-[14px]">加载中…</p>
+      <div className="page-stack">
+        <PageHero eyebrow="成果" title="上传成果" description="正在加载报名信息…" />
+        <p className="py-10 text-center text-[13.5px] text-placeholder">加载中…</p>
       </div>
     );
   }
 
   if (!registration) {
     return (
-      <div className="py-section text-center">
-        <span className="material-symbols-outlined text-[40px] text-ink-muted-48">search_off</span>
-        <p className="mt-3 text-[15px] text-ink-muted-80">报名记录不存在</p>
+      <div className="page-stack">
+        <PageHero eyebrow="成果" title="上传成果" description="未找到对应报名记录。" />
+        <div className="py-10 text-center">
+          <p className="text-[13.5px] text-placeholder">报名记录不存在</p>
+          <button type="button" onClick={() => navigate('/student/registrations')} className="btn-primary mt-4">
+            返回我的报名
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-      transition={pageTransition}
-      className="py-lg flex flex-col gap-lg"
-    >
-      {/* Breadcrumb + actions */}
+    <div className="page-stack">
       <PageHero
+        eyebrow="成果"
         title="上传成果"
+        description="上传赛事成果附件，提交后进入审核流程。"
         prefix={(
-          <nav className="flex items-center gap-1 text-[13px] text-ink-muted-48 mb-1">
-            <button onClick={() => navigate('/student/registrations')} className="hover:text-ink transition">我的报名</button>
+          <nav className="mb-1 flex items-center gap-1 text-[13px] text-placeholder">
+            <button type="button" onClick={() => navigate('/student/registrations')} className="transition hover:text-ink">
+              我的报名
+            </button>
             <span className="material-symbols-outlined text-[16px]">chevron_right</span>
             <span className="text-ink">上传成果</span>
           </nav>
         )}
         actions={(
           <>
-            <motion.button whileTap={{ scale: 0.97 }} className="btn-secondary" onClick={() => navigate('/student/registrations')}>取消</motion.button>
-            <motion.button whileTap={{ scale: 0.97 }}
+            <button type="button" className="btn-secondary" onClick={() => navigate('/student/registrations')}>
+              取消
+            </button>
+            <button
+              type="button"
               onClick={handleSubmit}
               disabled={!file || submitting}
               className="btn-primary"
             >
-              {submitting && <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>}
-              <span className="material-symbols-outlined text-[18px]">send</span>
-              提交审核
-            </motion.button>
+              {submitting ? '提交中…' : '提交审核'}
+            </button>
           </>
         )}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg">
-        {/* Left: form */}
-        <div className="lg:col-span-8 flex flex-col gap-lg">
-          {/* Basic Info */}
-          <section className="glass p-xl">
-            {(registration.status === '审核驳回' || registration.status === '退回补充') && registration.reviewNote && (() => {
-              const note = registration.reviewNote;
-              const isReturn = registration.status === '退回补充' || note.startsWith('【退回补充】');
-              const displayNote = isReturn ? note.replace('【退回补充】', '') : note;
-              return (
-                <div className={`rounded-md p-3 mb-md ${isReturn ? 'bg-warning/5 border border-warning/15' : 'bg-error/5 border border-error/15'}`}>
-                  <div className="flex items-start gap-2">
-                    <span className={`material-symbols-outlined text-[16px] mt-0.5 shrink-0 ${isReturn ? 'text-warning' : 'text-error'}`}>
-                      {isReturn ? 'assignment_return' : 'info'}
-                    </span>
-                    <div>
-                      <p className={`text-[12px] font-medium mb-0.5 ${isReturn ? 'text-warning' : 'text-error'}`}>
-                        {isReturn ? '请根据以下意见补充材料' : '上次驳回原因'}
-                      </p>
-                      <p className="text-[13px] text-ink">{displayNote}</p>
-                    </div>
-                  </div>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <div className="flex flex-col gap-8 lg:col-span-8">
+          <section className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title">基本信息</h3>
+            </div>
+            <div className="flex flex-col gap-3">
+              {(registration.status === '审核驳回' || registration.status === '退回补充') && registration.reviewNote && (() => {
+                const note = registration.reviewNote;
+                const isReturn = registration.status === '退回补充' || note.startsWith('【退回补充】');
+                const displayNote = isReturn ? note.replace('【退回补充】', '') : note;
+                return (
+                  <p className={`text-[13px] leading-relaxed ${isReturn ? 'text-warning' : 'text-error'}`}>
+                    {isReturn ? '补充意见：' : '驳回原因：'}{displayNote}
+                  </p>
+                );
+              })()}
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div className="flex flex-col gap-1.5 md:col-span-2">
+                  <label className="text-[13px] font-medium text-ink">
+                    <span className="mr-1 text-error">*</span>赛事名称
+                  </label>
+                  <input className="input-glass" readOnly value={competitionName || `赛事 #${registration.competitionId}`} />
                 </div>
-              );
-            })()}
-            <h3 className="text-[19px] font-semibold tracking-tight text-ink mb-md pb-md border-b border-hairline">基本信息</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-              <div className="flex flex-col gap-1.5 md:col-span-2">
-                <label className="text-[13px] font-medium text-ink">
-                  <span className="text-error mr-1">*</span>赛事名称
-                </label>
-                <input className="input-glass" readOnly value={competitionName || `赛事 #${registration.competitionId}`} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-ink">
-                  团队名称
-                </label>
-                <input className="input-glass" readOnly value={registration.teamName || '未设置'} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-ink">
-                  报名日期
-                </label>
-                <input className="input-glass" readOnly value={formatDate(registration.submitDate)} />
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[13px] font-medium text-ink">团队名称</label>
+                  <input className="input-glass" readOnly value={registration.teamName || '未设置'} />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[13px] font-medium text-ink">报名日期</label>
+                  <input className="input-glass" readOnly value={formatDate(registration.submitDate)} />
+                </div>
               </div>
             </div>
           </section>
 
-          {/* Upload */}
-          <section className="glass p-xl">
-            <div className="flex items-center justify-between mb-md pb-md border-b border-hairline">
-              <h3 className="text-[19px] font-semibold tracking-tight text-ink">附件材料</h3>
-              <span className="chip">{fileName ? '已上传 1/1' : '已上传 0/1'}</span>
+          <section className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title">附件材料</h3>
+              <span className="page-section-extra">{fileName ? '已上传 1/1' : '已上传 0/1'}</span>
             </div>
-
-            {fileName ? (
-              <motion.div whileHover={{ scale: 1.01 }} transition={pageTransition} className="rounded-md border border-hairline p-3 bg-canvas flex items-center justify-between group hover:border-primary/40 transition">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-md bg-primary/10 grid place-items-center text-primary">
-                    <span className="material-symbols-outlined icon-fill">description</span>
+            <div>
+              {fileName ? (
+                <div className="flat-row">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-medium text-ink">{fileName}</p>
+                    <p className="mt-0.5 text-[11px] text-placeholder">{formatFileSize(fileSize)}</p>
                   </div>
-                  <div>
-                    <p className="text-[14px] font-medium text-ink">{fileName}</p>
-                    <p className="text-[11px] text-ink-muted-48 mt-0.5">{formatFileSize(fileSize)}</p>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setFile(null); setFileName(''); setFileSize(0); }}
+                    className="text-placeholder transition hover:text-primary"
+                    title="删除"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">delete</span>
+                  </button>
                 </div>
-                <button
-                  onClick={() => { setFile(null); setFileName(''); setFileSize(0); }}
-                  className="text-ink-muted-48 hover:text-primary p-2 rounded-md hover:bg-primary/6 transition"
-                  title="删除"
+              ) : (
+                <div
+                  className={`flex cursor-pointer flex-col items-center justify-center border border-dashed px-4 py-10 text-center transition ${
+                    isDragging
+                      ? 'border-primary bg-primary/5'
+                      : 'border-hairline hover:border-primary/50'
+                  }`}
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onClick={() => document.getElementById('file-input')?.click()}
                 >
-                  <span className="material-symbols-outlined text-[20px]">delete</span>
-                </button>
-              </motion.div>
-            ) : (
-              <div
-                className={`rounded-md border-2 border-dashed p-section flex flex-col items-center justify-center text-center transition-all cursor-pointer group ${
-                  isDragging
-                    ? 'border-primary bg-primary/5'
-                    : 'border-hairline bg-canvas hover:border-primary/50 hover:bg-primary/3'
-                }`}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onClick={() => document.getElementById('file-input')?.click()}
-              >
-                <div className={`w-14 h-14 rounded-full grid place-items-center mb-3 transition ${
-                  isDragging ? 'bg-primary/15' : 'bg-canvas-parchment group-hover:bg-primary/10'
-                }`}>
-                  <span className={`material-symbols-outlined text-[28px] ${
-                    isDragging ? 'text-primary' : 'text-ink-muted-48 group-hover:text-primary'
-                  }`}>cloud_upload</span>
-                </div>
-                <p className="text-[15px] font-semibold text-ink mb-1">点击或拖拽文件到这里</p>
-                <p className="text-[12px] text-ink-muted-48">支持 .pdf, .doc, .docx, .jpg, .png, .zip · 限 50 MB</p>
-                <input
-                  id="file-input"
-                  type="file"
-                  className="hidden"
-                  accept=".pdf,.doc,.docx,.zip,.jpg,.jpeg,.png,.gif,.webp"
-                  onChange={handleInputChange}
-                />
-              </div>
-            )}
-            {submitting && (
-              <div className="mt-3">
-                <div className="flex justify-between text-[11px] text-ink-muted-48 mb-1">
-                  <span>上传中…</span>
-                  <span className="tabular-nums">{uploadProgress}%</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-primary/8 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-primary transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
+                  <p className="mb-1 text-[14px] font-medium text-ink">点击或拖拽文件到这里</p>
+                  <p className="text-[12px] text-placeholder">支持 .pdf, .doc, .docx, .jpg, .png, .zip · 限 50 MB</p>
+                  <input
+                    id="file-input"
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.zip,.jpg,.jpeg,.png,.gif,.webp"
+                    onChange={handleInputChange}
                   />
                 </div>
-              </div>
-            )}
+              )}
+              {submitting && (
+                <div className="mt-3">
+                  <div className="mb-2 flex justify-between text-[11px] text-placeholder">
+                    <span>上传中…</span>
+                    <span className="tabular-nums font-medium text-primary">{uploadProgress}%</span>
+                  </div>
+                  <ProgressBar value={uploadProgress} size="md" showThumb segments={5} />
+                </div>
+              )}
+            </div>
           </section>
         </div>
 
-        {/* Right: instructions */}
-        <aside className="lg:col-span-4 flex flex-col gap-md lg:sticky lg:top-[68px] lg:h-fit">
-          <div className="glass p-lg">
-            <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-primary">gavel</span>
-              审核说明
-            </h3>
-            <div className="flex flex-col gap-md">
+        <aside className="flex h-fit flex-col gap-6 lg:sticky lg:top-[68px] lg:col-span-4">
+          <section className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title">审核说明</h3>
+            </div>
+            <div className="flex flex-col gap-4">
               <div>
-                <h4 className="text-[13px] font-medium text-ink mb-1.5 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  材料要求
-                </h4>
-                <p className="text-[12px] text-ink-muted-80 leading-relaxed pl-3 border-l-2 border-primary/20">
+                <h4 className="mb-1.5 text-[13px] font-medium text-ink">材料要求</h4>
+                <p className="text-[12.5px] leading-relaxed text-body-subtle">
                   附件需清晰可见，包含完整的赛事名称、获奖级别、个人姓名及主办方公章。
                 </p>
               </div>
               <div>
-                <h4 className="text-[13px] font-medium text-ink mb-1.5 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-error" />
-                  常见驳回原因
-                </h4>
+                <h4 className="mb-1.5 text-[13px] font-medium text-ink">常见驳回原因</h4>
                 <ul className="flex flex-col gap-1.5">
                   {[
                     '证书图片模糊，无法辨认关键信息',
                     '填写的获奖等级与上传证书不符',
                     '证明材料缺失官方印章或防伪标识',
                   ].map((item) => (
-                    <li key={item} className="text-[12px] text-ink-muted-80 flex items-start gap-1.5 leading-relaxed">
-                      <span className="material-symbols-outlined text-[13px] text-error mt-0.5 shrink-0">close</span>
+                    <li key={item} className="flex items-start gap-1.5 text-[12px] leading-relaxed text-body-subtle">
+                      <span className="text-placeholder">·</span>
                       <span>{item}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             </div>
-          </div>
+          </section>
         </aside>
       </div>
-    </motion.div>
+    </div>
   );
 }

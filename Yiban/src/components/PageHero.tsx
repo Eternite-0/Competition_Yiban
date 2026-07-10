@@ -27,27 +27,25 @@ export default function PageHero({
   density = 'compact',
   surface = 'plain',
 }: PageHeroProps) {
-  const titleSize = 'text-[26px] leading-[1.3] tracking-tight';
-
   return (
     <header
       data-density={density}
       data-surface={surface}
-      className={`page-hero ${className}`.trim()}
+      className={`page-hero mb-1 ${className}`.trim()}
     >
-      <div className="flex flex-col gap-lg sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className={`min-w-0 ${contentClassName}`.trim()}>
           {prefix}
           {eyebrow ? (
-            <span className="text-[12px] font-medium tracking-[0.08em] text-placeholder">
+            <div className="mb-1 text-[12px] font-medium tracking-wide text-placeholder">
               {eyebrow}
-            </span>
+            </div>
           ) : null}
-          <h1 className={`mt-1.5 mb-2 font-display font-medium text-ink ${titleSize} ${titleClassName}`.trim()}>
+          <h1 className={`text-[22px] font-semibold leading-tight tracking-tight text-ink ${titleClassName}`.trim()}>
             {title}
           </h1>
           {description ? (
-            <p className={`max-w-3xl text-[14px] font-normal leading-[1.65] text-body-subtle ${descriptionClassName}`.trim()}>
+            <p className={`mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-body-subtle ${descriptionClassName}`.trim()}>
               {description}
             </p>
           ) : null}

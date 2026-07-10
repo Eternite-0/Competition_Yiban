@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
-import { listContainer, listItem } from '../../lib/motion';
 import { useStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
 import Pagination from '../../components/Pagination';
+import ProgressBar from '../../components/ProgressBar';
 import ConfirmModal from '../../components/ConfirmModal';
 import { useConfirmModal } from '../../hooks/useConfirmModal';
 
@@ -308,287 +307,253 @@ export default function AdminHome() {
   };
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <div className="flex flex-col gap-4">
       <PageHero
-        eyebrow="Workspace"
+        eyebrow="管理端"
         title={`${greetingName}，欢迎回来`}
         description="查看平台运营概览，处理待办事项。"
         actions={(
-          <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate('/admin/publish')} className="btn-primary">
-            <span className="material-symbols-outlined text-[18px]">add</span>
+          <button type="button" onClick={() => navigate('/admin/publish')} className="btn-primary">
+            <span className="material-symbols-outlined">add</span>
             发布新赛事
-          </motion.button>
+          </button>
         )}
       />
 
-      {/* Metrics */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-md">
-        {loading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="stat-tile p-lg flex flex-col gap-2 animate-pulse">
-              <div className="flex items-center justify-between">
-                <div className="h-3 w-16 bg-surface-tile-2 rounded" />
-                <div className="h-[18px] w-[18px] bg-surface-tile-2 rounded" />
+      <div className="stat-grid">
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="stat-card animate-pulse">
+                <div className="h-3 w-16 rounded bg-surface-tile-2" />
+                <div className="h-7 w-16 rounded bg-surface-tile-2" />
+                <div className="h-3 w-12 rounded bg-surface-tile-2" />
               </div>
-              <div className="flex items-baseline gap-1">
-                <div className="h-8 w-20 bg-surface-tile-2 rounded" />
-                <div className="h-3 w-6 bg-surface-tile-2 rounded" />
-              </div>
-            </div>
-          ))
-        ) : metrics.map((m, i) => (
-          <motion.div
-            key={m.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05, duration: 0.4 }}
-            whileHover={{ scale: 1.02, y: -2 }}
-            className="stat-tile p-lg flex flex-col gap-2 cursor-default"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] text-ink-muted-80">{m.label}</span>
-              <span className={`material-symbols-outlined text-[18px] ${
-                m.tone === 'warning' ? 'text-primary' : 'text-primary'
-              }`}>{m.icon}</span>
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{(m as any).loaded === false ? '—' : m.value}</span>
-              <span className="text-[12px] text-ink-muted-48">{m.suffix}</span>
-            </div>
-          </motion.div>
-        ))}
-      </section>
-
-      {/* Main grid */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-lg">
-        {/* Left: Charts + Recent List */}
-        <div className="lg:col-span-8 flex flex-col gap-lg">
-          {/* Charts row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-            {/* Bar chart */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, duration: 0.4 }}
-              className="glass p-lg"
-            >
-              <div className="flex items-center justify-between mb-md">
-                <h3 className="text-[15px] font-semibold tracking-tight text-ink">发布趋势</h3>
-                <span className="text-[11px] text-ink-muted-48">近 6 个月</span>
-              </div>
-              {barData.every((b) => b.value === 0) ? (
-                <div className="h-40 grid place-items-center text-ink-muted-48 gap-2">
-                  <span className="material-symbols-outlined text-[32px] opacity-40">bar_chart</span>
-                  <p className="text-[13px]">暂无数据</p>
+            ))
+          : metrics.map((m) => (
+              <div key={m.label} className="stat-card">
+                <div className="stat-card-label">{m.label}</div>
+                <div className="stat-card-value">
+                  {(m as { loaded?: boolean }).loaded === false ? '—' : m.value}
+                  <span className="ml-1 text-[13px] font-normal text-placeholder">{m.suffix}</span>
                 </div>
-              ) : (
-                <>
-                  <div className="flex items-end gap-2 h-40 border-b border-hairline pb-2">
-                    {barData.map((bar) => {
-                      const isMax = bar.value === maxBar && bar.value > 0;
-                      return (
-                        <div key={bar.label} className="flex-1 flex flex-col items-center gap-2 group">
-                          <span className="text-[11px] tabular-nums text-ink-muted-48 opacity-0 group-hover:opacity-100 transition">
-                            {bar.value}
-                          </span>
-                          <div className="w-full flex justify-center items-end h-full">
-                            <div
-                              className={`w-full max-w-[24px] rounded-t-sm transition-all ${
-                                isMax ? 'bg-primary' : 'bg-primary/12 group-hover:bg-primary/60'
-                              }`}
-                              style={{ height: `${(bar.value / maxBar) * 100}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    {barData.map((d) => (
-                      <span key={d.label} className="flex-1 text-center text-[11px] text-ink-muted-48">{d.label}</span>
-                    ))}
-                  </div>
-                </>
-              )}
-            </motion.div>
+                <div className="stat-card-hint">
+                  <span className="material-symbols-outlined align-middle text-[14px] text-placeholder">{m.icon}</span>
+                </div>
+              </div>
+            ))}
+      </div>
 
-            {/* Level distribution */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-              className="glass p-lg flex flex-col"
-            >
-              <h3 className="text-[15px] font-semibold tracking-tight text-ink mb-md">赛事级别分布</h3>
-              <div className="flex-1 flex flex-col justify-center gap-4">
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="flex flex-col gap-4 lg:col-span-8">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <section className="section-card">
+              <div className="section-card-header">
+                <h2 className="section-card-title">发布趋势</h2>
+                <span className="chip">近 6 个月</span>
+              </div>
+              <div className="section-card-body">
+                {barData.every((b) => b.value === 0) ? (
+                  <div className="empty-panel h-40">
+                    <span className="material-symbols-outlined">bar_chart</span>
+                    <p className="text-[13px]">暂无数据</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex h-40 items-end gap-2 border-b border-hairline pb-2">
+                      {barData.map((bar) => {
+                        const isMax = bar.value === maxBar && bar.value > 0;
+                        return (
+                          <div key={bar.label} className="group flex flex-1 flex-col items-center gap-2">
+                            <span className="text-[11px] tabular-nums text-placeholder opacity-0 transition group-hover:opacity-100">
+                              {bar.value}
+                            </span>
+                            <div className="flex h-full w-full items-end justify-center">
+                              <div
+                                className={`w-full max-w-[24px] rounded-t-sm transition-all ${
+                                  isMax ? 'bg-primary' : 'bg-primary/12 group-hover:bg-primary/60'
+                                }`}
+                                style={{ height: `${(bar.value / maxBar) * 100}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      {barData.map((d) => (
+                        <span key={d.label} className="flex-1 text-center text-[11px] text-placeholder">{d.label}</span>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </section>
+
+            <section className="section-card">
+              <div className="section-card-header">
+                <h2 className="section-card-title">赛事级别分布</h2>
+              </div>
+              <div className="section-card-body flex flex-col justify-center gap-4">
                 {levelDist.map((s) => (
                   <div key={s.label}>
-                    <div className="flex items-center justify-between text-[12px] mb-1.5">
-                      <span className="text-ink-muted-80">{s.label}</span>
-                      <span className="text-ink font-semibold tabular-nums">{s.pct}%</span>
+                    <div className="mb-1.5 flex items-center justify-between text-[12px]">
+                      <span className="text-body-muted">{s.label}</span>
+                      <span className="font-medium tabular-nums text-ink">{s.pct}%</span>
                     </div>
-                    <div className="h-1.5 w-full rounded-full bg-primary/8 overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${s.pct}%` }}
-                        transition={{ delay: 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                        className="h-full bg-primary rounded-full"
-                      />
-                    </div>
+                    <ProgressBar value={s.pct} size="sm" showThumb segments={4} instant />
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </section>
           </div>
 
-          {/* Recent competitions */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25, duration: 0.4 }}
-            className="glass overflow-hidden"
-          >
-            <div className="p-md border-b border-hairline flex items-center justify-between">
-              <h3 className="text-[15px] font-semibold tracking-tight text-ink">最近发布赛事</h3>
-              <button
-                className="text-[12px] text-primary hover:text-primary-focus font-medium"
-                onClick={() => navigate('/admin/competitions')}
-              >
-                查看全部 →
+          <section className="section-card">
+            <div className="section-card-header">
+              <h2 className="section-card-title">最近发布赛事</h2>
+              <button type="button" className="btn-text" onClick={() => navigate('/admin/competitions')}>
+                查看全部
               </button>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
+            <div className="data-table-wrap !rounded-none !border-0">
+              <table className="data-table">
                 <thead>
-                  <tr className="bg-canvas-parchment text-[11px] text-ink-muted-48 border-b border-hairline">
-                    <th className="py-3 px-md font-medium">赛事名称</th>
-                    <th className="py-3 px-md font-medium">级别</th>
-                    <th className="py-3 px-md font-medium">状态</th>
-                    <th className="py-3 px-md font-medium text-right">截止日期</th>
-                    <th className="py-3 px-md font-medium text-right">操作</th>
+                  <tr>
+                    <th>赛事名称</th>
+                    <th>级别</th>
+                    <th>状态</th>
+                    <th className="text-right">截止日期</th>
+                    <th className="text-right">操作</th>
                   </tr>
                 </thead>
-                <motion.tbody className="text-[13px]" variants={listContainer} initial="hidden" animate="visible">
+                <tbody>
                   {loading ? (
-                    Array.from({ length: 3 }).map((_, i) => (
-                      <tr key={i} className="border-b border-hairline last:border-0 animate-pulse">
-                        <td className="py-3 px-md"><div className="h-4 w-40 bg-surface-tile-2 rounded" /></td>
-                        <td className="py-3 px-md"><div className="h-6 w-12 bg-surface-tile-2 rounded-full" /></td>
-                        <td className="py-3 px-md"><div className="h-4 w-16 bg-surface-tile-2 rounded" /></td>
-                        <td className="py-3 px-md text-right"><div className="h-4 w-20 bg-surface-tile-2 rounded ml-auto" /></td>
-                        <td className="py-3 px-md text-right"><div className="h-4 w-12 bg-surface-tile-2 rounded ml-auto" /></td>
-                      </tr>
-                    ))
-                  ) : pagedCompetitions.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-12 text-center text-ink-muted-48 text-[13px]">
-                        暂无赛事数据
+                      <td colSpan={5}>
+                        <div className="empty-panel py-12">
+                          <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                        </div>
                       </td>
                     </tr>
-                  ) : pagedCompetitions.map((comp, idx) => {
-                    const display = statusLabel(comp.status);
-                    return (
-                      <motion.tr key={comp.id ?? idx} variants={listItem} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
-                        <td className="py-3 px-md font-medium text-ink truncate max-w-[260px]">{comp.name || comp.title || '未命名赛事'}</td>
-                        <td className="py-3 px-md">
-                          <span className={levelChipClass(comp.level)}>{comp.level || '校级'}</span>
-                        </td>
-                        <td className="py-3 px-md">
-                          <span className="flex items-center gap-2 text-ink-muted-80">
-                            <span className={`w-1.5 h-1.5 rounded-full ${
-                              comp.status === 'published' ? 'bg-primary' :
-                              comp.status === 'closed' ? 'bg-ink-muted-48/80' :
-                              comp.status === 'draft' ? 'bg-primary/55' : 'bg-ink-muted-48/80'
-                            }`} />
-                            {display}
-                          </span>
-                        </td>
-                        <td className="py-3 px-md text-ink-muted-48 tabular-nums text-right">
-                          {(comp.endTime || comp.deadline || '—').slice(0, 10)}
-                        </td>
-                        <td className="py-3 px-md text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => navigate(`/admin/publish/${comp.id}`)}
-                              className="p-1.5 rounded-md text-ink-muted-48 hover:text-primary hover:bg-primary/8 transition"
-                              title="编辑"
-                              aria-label="编辑"
-                            >
-                              <span className="material-symbols-outlined text-[16px]">edit</span>
-                            </button>
-                            <button
-                              onClick={() => handleToggleStatus(comp)}
-                              className={`p-1.5 rounded-md transition ${
-                                comp.status === 'published'
-                                  ? 'text-ink-muted-48 hover:text-primary hover:bg-primary/8'
-                                  : 'text-ink-muted-48 hover:text-primary hover:bg-primary/8'
-                              }`}
-                              title={comp.status === 'published' ? '下架' : '上架'}
-                              aria-label={comp.status === 'published' ? '下架' : '上架'}
-                            >
-                              <span className="material-symbols-outlined text-[16px]">
-                                {comp.status === 'published' ? 'visibility_off' : 'visibility'}
-                              </span>
-                            </button>
-                            <button
-                              onClick={() => handleDelete(comp.id)}
-                              className="p-1.5 rounded-md text-ink-muted-48 hover:text-error hover:bg-error/8 transition"
-                              title="删除"
-                              aria-label="删除"
-                            >
-                              <span className="material-symbols-outlined text-[16px]">delete</span>
-                            </button>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    );
-                  })}
-                </motion.tbody>
+                  ) : pagedCompetitions.length === 0 ? (
+                    <tr>
+                      <td colSpan={5}>
+                        <div className="empty-panel py-12">
+                          <span className="material-symbols-outlined">event_busy</span>
+                          <p className="text-[13px]">暂无赛事数据</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    pagedCompetitions.map((comp, idx) => {
+                      const display = statusLabel(comp.status);
+                      return (
+                        <tr key={comp.id ?? idx}>
+                          <td className="max-w-[260px] truncate font-medium">{comp.name || comp.title || '未命名赛事'}</td>
+                          <td>
+                            <span className={levelChipClass(comp.level)}>{comp.level || '校级'}</span>
+                          </td>
+                          <td>
+                            <span className="flex items-center gap-2 text-body-muted">
+                              <span
+                                className={`h-1.5 w-1.5 rounded-md ${
+                                  comp.status === 'published'
+                                    ? 'bg-primary'
+                                    : comp.status === 'draft'
+                                      ? 'bg-primary/55'
+                                      : 'bg-placeholder'
+                                }`}
+                              />
+                              {display}
+                            </span>
+                          </td>
+                          <td className="text-right tabular-nums text-placeholder">
+                            {(comp.endTime || comp.deadline || '—').slice(0, 10)}
+                          </td>
+                          <td className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/admin/publish/${comp.id}`)}
+                                className="icon-button"
+                                title="编辑"
+                                aria-label="编辑"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">edit</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleStatus(comp)}
+                                className="icon-button"
+                                title={comp.status === 'published' ? '下架' : '上架'}
+                                aria-label={comp.status === 'published' ? '下架' : '上架'}
+                              >
+                                <span className="material-symbols-outlined text-[16px]">
+                                  {comp.status === 'published' ? 'visibility_off' : 'visibility'}
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(comp.id)}
+                                className="icon-button text-error hover:text-error"
+                                title="删除"
+                                aria-label="删除"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">delete</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
               </table>
             </div>
             {totalCompPages > 1 && (
-              <div className="px-md py-3 border-t border-hairline flex items-center justify-between">
-                <span className="text-[12px] text-ink-muted-48">
-                  共 <span className="text-ink font-medium tabular-nums">{recentCompetitions.length}</span> 条
+              <div className="flex items-center justify-between border-t border-hairline px-4 py-3">
+                <span className="text-[12px] text-placeholder">
+                  共 <span className="font-medium tabular-nums text-ink">{recentCompetitions.length}</span> 条
                 </span>
-                <Pagination current={currentCompPage} total={recentCompetitions.length} pageSize={compPageSize} onChange={setCurrentCompPage} />
+                <Pagination
+                  current={currentCompPage}
+                  total={recentCompetitions.length}
+                  pageSize={compPageSize}
+                  onChange={setCurrentCompPage}
+                />
               </div>
             )}
-          </motion.div>
+          </section>
         </div>
 
-        {/* Right: Tasks */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.4 }}
-          className="lg:col-span-4 glass p-lg flex flex-col gap-md"
-        >
-          <div className="flex items-center justify-between">
-            <h3 className="text-[15px] font-semibold tracking-tight text-ink">待处理事项</h3>
+        <section className="section-card lg:col-span-4">
+          <div className="section-card-header">
+            <h2 className="section-card-title">待处理事项</h2>
             <span className="chip">{pendingTasks.filter((t) => t.link).length || pendingTasks.length} 项</span>
           </div>
-          <motion.div className="flex flex-col" variants={listContainer} initial="hidden" animate="visible">
+          <div className="section-card-body tight">
             {pendingTasks.map((task) => (
-              <motion.div
+              <button
                 key={task.title}
-                variants={listItem}
-                className="py-3 border-b border-hairline last:border-0 group cursor-pointer"
+                type="button"
+                className="list-row list-row-clickable w-full text-left"
                 onClick={() => task.link && navigate(task.link)}
+                disabled={!task.link}
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`w-1.5 h-1.5 rounded-full ${
+                <span
+                  className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${
                     task.tone === 'error' ? 'bg-error' : 'bg-primary'
-                  }`} />
-                  <span className={`text-[13px] font-semibold group-hover:text-primary transition ${
-                    task.tone === 'error' ? 'text-error' : 'text-ink'
-                  }`}>{task.title}</span>
+                  }`}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className={`text-[13px] font-medium ${task.tone === 'error' ? 'text-error' : 'text-ink'}`}>
+                    {task.title}
+                  </div>
+                  <p className="mt-0.5 text-[12px] leading-relaxed text-body-muted">{task.description}</p>
                 </div>
-                <p className="text-[12px] text-ink-muted-80 leading-relaxed pl-3.5">{task.description}</p>
-              </motion.div>
+              </button>
             ))}
-          </motion.div>
-        </motion.div>
+          </div>
+        </section>
       </section>
 
       <ConfirmModal

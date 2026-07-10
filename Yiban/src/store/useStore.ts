@@ -23,13 +23,17 @@ function applyThemeClass(theme: Theme, animate = false) {
   const root = document.documentElement;
 
   if (animate) {
-    // Add transition class, toggle theme, remove after animation completes
     root.classList.add('theme-transition');
     root.classList.toggle('dark', resolved === 'dark');
-    setTimeout(() => root.classList.remove('theme-transition'), 400);
+    window.setTimeout(() => root.classList.remove('theme-transition'), 220);
   } else {
     root.classList.toggle('dark', resolved === 'dark');
   }
+  root.style.colorScheme = resolved;
+}
+
+export function resolveTheme(theme: Theme): 'light' | 'dark' {
+  return theme === 'system' ? getSystemTheme() : theme;
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -51,7 +55,7 @@ export const useStore = create<AppState>((set) => ({
   },
 }));
 
-// Apply theme on initial load
+// Apply theme on initial load (html class may already be set by index.html FOUC script)
 applyThemeClass(useStore.getState().theme);
 
 // Listen for system theme changes when theme is 'system'

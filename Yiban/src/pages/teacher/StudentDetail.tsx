@@ -1,10 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
-import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
+import ProgressBar from '../../components/ProgressBar';
 
 interface StudentInfo {
   id: number;
@@ -187,12 +186,12 @@ export default function StudentDetail() {
 
   if (!studentId) {
     return (
-      <div className="py-lg flex flex-col gap-lg">
+      <div className="flex flex-col gap-4">
         <PageHero eyebrow="Student" title="学生详情" description="请从学生列表中选择一名学生。" />
-        <div className="py-20 grid place-items-center text-ink-muted-48 gap-2">
-          <span className="material-symbols-outlined text-[48px] opacity-40">person_search</span>
-          <p className="text-[14px]">未指定学生</p>
-          <button onClick={() => navigate(`${basePath}/student-competitions`)} className="btn-primary mt-2 text-[13px]">返回学生看板</button>
+        <div className="empty-panel py-16">
+          <span className="material-symbols-outlined">person_search</span>
+          <p className="text-[13px]">未指定学生</p>
+          <button type="button" onClick={() => navigate(`${basePath}/student-competitions`)} className="btn-primary mt-2">返回学生看板</button>
         </div>
       </div>
     );
@@ -220,203 +219,169 @@ export default function StudentDetail() {
       ]
     : [];
   return (
-    <motion.div
-      className="py-lg flex flex-col gap-lg"
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-      transition={pageTransition}
-    >
+    <div className="flex flex-col gap-4">
       <PageHero
         eyebrow="Student"
         title="学生详情"
         description={data?.student ? `${data.student.realName} · ${data.student.college}` : '加载中...'}
         actions={(
           <>
-            <motion.button whileTap={{ scale: 0.97 }} onClick={handleExport} disabled={exporting} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px] disabled:opacity-60">
-              <span className="material-symbols-outlined text-[16px]">{exporting ? 'hourglass_top' : 'download'}</span>
+            <button type="button" onClick={handleExport} disabled={exporting} className="btn-secondary disabled:opacity-60">
+              <span className="material-symbols-outlined">{exporting ? 'hourglass_top' : 'download'}</span>
               {exporting ? '导出中...' : '导出报告'}
-            </motion.button>
-            <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate(-1)} className="btn-secondary h-9 flex items-center gap-1.5 text-[13px]">
-              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+            </button>
+            <button type="button" onClick={() => navigate(-1)} className="btn-utility">
+              <span className="material-symbols-outlined">arrow_back</span>
               返回
-            </motion.button>
+            </button>
           </>
         )}
       />
 
       {loading ? (
-        <div className="py-20 grid place-items-center text-ink-muted-48">
-          <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
+        <div className="empty-panel py-16">
+          <span className="material-symbols-outlined animate-spin">progress_activity</span>
         </div>
       ) : !data ? (
-        <div className="py-20 grid place-items-center text-ink-muted-48 gap-2">
-          <span className="material-symbols-outlined text-[40px] opacity-40">error_outline</span>
-          <p className="text-[14px]">未找到学生数据</p>
+        <div className="empty-panel py-16">
+          <span className="material-symbols-outlined">error_outline</span>
+          <p className="text-[13px]">未找到学生数据</p>
         </div>
       ) : (
         <>
-          {/* Student Info Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass p-xl flex items-center gap-5"
-          >
-            <div className="w-16 h-16 rounded-full bg-canvas-parchment text-ink-muted-80 grid place-items-center font-semibold text-[22px] shrink-0">
-              {data.student.realName[0]}
+          <section className="section-card">
+            <div className="section-card-body flex items-center gap-4">
+              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-md bg-surface-tile-1 text-[20px] font-medium text-body-muted">
+                {data.student.realName[0]}
+              </div>
+              <div className="min-w-0 flex-1">
+                <h2 className="text-[15px] font-medium text-ink">{data.student.realName}</h2>
+                <p className="mt-1 text-[13px] text-body-muted">
+                  学号 {data.student.username} · {data.student.grade}级 · {data.student.major} · {data.student.className}
+                </p>
+                <p className="mt-0.5 text-[12px] text-placeholder">{data.student.college}</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-[20px] font-semibold text-ink">{data.student.realName}</h2>
-              <p className="text-[13px] text-ink-muted-80 mt-1">
-                学号 {data.student.username} · {data.student.grade}级 · {data.student.major} · {data.student.className}
-              </p>
-              <p className="text-[12px] text-ink-muted-48 mt-0.5">{data.student.college}</p>
-            </div>
-          </motion.div>
+          </section>
 
-          {/* KPIs */}
-          <section className="grid grid-cols-2 md:grid-cols-4 gap-md">
-            {kpiCards.map((m, i) => (
-              <motion.button
+          <div className="stat-grid">
+            {kpiCards.map((m) => (
+              <button
                 type="button"
                 key={m.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05, duration: 0.35 }}
-                whileHover={{ scale: 1.03, y: -2 }}
-                onClick={() => m.toggle && setRankMode((mode) => mode === 'rank' ? 'percent' : 'rank')}
-                className="stat-tile p-lg flex flex-col gap-2 text-left"
+                onClick={() => m.toggle && setRankMode((mode) => (mode === 'rank' ? 'percent' : 'rank'))}
+                className="stat-card text-left"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-[13px] text-ink-muted-80">{m.label}</span>
-                  <span className="material-symbols-outlined text-[18px] text-primary">{m.icon}</span>
+                <div className="stat-card-label">{m.label}</div>
+                <div className="stat-card-value">
+                  {m.value}
+                  {m.suffix ? <span className="ml-1 text-[13px] font-normal text-placeholder">{m.suffix}</span> : null}
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{m.value}</span>
-                  <span className="text-[12px] text-ink-muted-48">{m.suffix}</span>
-                </div>
-                {m.hint && <span className="truncate text-[11px] text-ink-muted-48">{m.hint}</span>}
-              </motion.button>
+                {m.hint ? <div className="stat-card-hint truncate">{m.hint}</div> : null}
+              </button>
             ))}
-          </section>
+          </div>
 
-          {/* Radar + Bars */}
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-lg">
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-              className="glass p-xl"
-            >
-              <h3 className="text-[16px] font-semibold text-ink mb-lg flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-primary">radar</span>
-                能力雷达
-              </h3>
-              {radarDims.length > 0 ? (
-                <div className="aspect-square max-w-[300px] mx-auto">
-                  <RadarChart data={radarDims} />
-                </div>
-              ) : (
-                <div className="py-10 grid place-items-center text-ink-muted-48 gap-2">
-                  <span className="material-symbols-outlined text-[28px] opacity-40">radar</span>
-                  <p className="text-[12px]">暂无能力数据</p>
-                </div>
-              )}
-            </motion.div>
+          <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+            <section className="section-card">
+              <div className="section-card-header">
+                <h2 className="section-card-title">能力雷达</h2>
+              </div>
+              <div className="section-card-body">
+                {radarDims.length > 0 ? (
+                  <div className="mx-auto aspect-square max-w-[300px]">
+                    <RadarChart data={radarDims} />
+                  </div>
+                ) : (
+                  <div className="empty-panel py-10">
+                    <span className="material-symbols-outlined">radar</span>
+                    <p className="text-[13px]">暂无能力数据</p>
+                  </div>
+                )}
+              </div>
+            </section>
 
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.4 }}
-              className="glass p-xl"
-            >
-              <h3 className="text-[16px] font-semibold text-ink mb-lg flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-primary">bar_chart</span>
-                能力详情
-              </h3>
-              {radarDims.length > 0 ? (
-                <div className="flex flex-col gap-4">
-                  {radarDims.map((d) => (
-                    <div key={d.dimension}>
-                      <div className="flex justify-between text-[12px] mb-1">
-                        <span className="text-ink-muted-80">{d.dimension}</span>
-                        <span className="text-ink font-semibold tabular-nums">{d.score} / {d.maxScore}</span>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-primary/8 overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${(d.score / d.maxScore) * 100}%` }}
-                          transition={{ duration: 0.6, ease: 'easeOut' }}
-                          className="h-full bg-primary rounded-full"
+            <section className="section-card">
+              <div className="section-card-header">
+                <h2 className="section-card-title">能力详情</h2>
+              </div>
+              <div className="section-card-body">
+                {radarDims.length > 0 ? (
+                  <div className="flex flex-col gap-3">
+                    {radarDims.map((d) => (
+                      <div key={d.dimension}>
+                        <div className="mb-1 flex justify-between text-[12px]">
+                          <span className="text-body-muted">{d.dimension}</span>
+                          <span className="font-medium tabular-nums text-ink">{d.score} / {d.maxScore}</span>
+                        </div>
+                        <ProgressBar
+                          value={(d.score / Math.max(d.maxScore, 1)) * 100}
+                          size="sm"
+                          segments={4}
+                          showThumb
+                          instant
                         />
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-10 grid place-items-center text-ink-muted-48 gap-2">
-                  <p className="text-[12px]">暂无数据</p>
-                </div>
-              )}
-            </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="empty-panel py-10"><p className="text-[13px]">暂无数据</p></div>
+                )}
+              </div>
+            </section>
           </section>
 
-          {/* Competition List */}
-          <motion.section
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.4 }}
-            className="glass overflow-hidden"
-          >
-            <div className="p-md border-b border-hairline flex justify-between items-center">
-              <h3 className="text-[16px] font-semibold text-ink flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-primary">emoji_events</span>
-                参赛记录
-              </h3>
-              <span className="text-[12px] text-ink-muted-48">共 {data.competitions?.length ?? 0} 条</span>
+          <section className="section-card">
+            <div className="section-card-header">
+              <h2 className="section-card-title">参赛记录</h2>
+              <span className="text-[12px] text-placeholder">共 {data.competitions?.length ?? 0} 条</span>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-canvas-parchment text-[11px] text-ink-muted-48 border-b border-hairline">
-                    <th className="py-3 px-md font-medium">赛事</th>
-                    <th className="py-3 px-md font-medium">等级</th>
-                    <th className="py-3 px-md font-medium">团队</th>
-                    <th className="py-3 px-md font-medium">提交时间</th>
-                    <th className="py-3 px-md font-medium">状态</th>
-                  </tr>
-                </thead>
-                <motion.tbody className="text-[13px]" variants={listContainer} initial="hidden" animate="visible">
-                  {(data.competitions ?? []).length === 0 ? (
+            <div className="section-card-body tight">
+              <div className="data-table-wrap !border-0 !rounded-none">
+                <table className="data-table">
+                  <thead>
                     <tr>
-                      <td colSpan={5} className="py-10 text-center text-ink-muted-48">暂无参赛记录</td>
+                      <th>赛事</th>
+                      <th>等级</th>
+                      <th>团队</th>
+                      <th>提交时间</th>
+                      <th>状态</th>
                     </tr>
-                  ) : (
-                    data.competitions.map((c) => (
-                      <motion.tr key={c.registrationId} variants={listItem} className="border-b border-hairline last:border-0 hover:bg-primary/6 transition">
-                        <td className="py-3 px-md">
-                          <div className="text-ink font-medium truncate max-w-[280px]">{c.competitionName}</div>
-                          <div className="text-[11px] text-ink-muted-48">{c.competitionCategory}类</div>
+                  </thead>
+                  <tbody>
+                    {(data.competitions ?? []).length === 0 ? (
+                      <tr>
+                        <td colSpan={5}>
+                          <div className="empty-panel py-10"><p className="text-[13px]">暂无参赛记录</p></div>
                         </td>
-                        <td className="py-3 px-md">
-                          <span className={`chip text-[11px] ${LEVEL_COLORS[c.competitionLevel] ?? ''}`}>{c.competitionLevel}</span>
-                        </td>
-                        <td className="py-3 px-md text-ink-muted-80">{c.teamName || '个人'}</td>
-                        <td className="py-3 px-md text-ink-muted-80 tabular-nums">
-                          {c.submitDate ? new Date(c.submitDate).toLocaleDateString() : '-'}
-                        </td>
-                        <td className="py-3 px-md">
-                          <span className={statusChip[c.status] || 'chip'}>{c.status}</span>
-                        </td>
-                      </motion.tr>
-                    ))
-                  )}
-                </motion.tbody>
-              </table>
+                      </tr>
+                    ) : (
+                      data.competitions.map((c) => (
+                        <tr key={c.registrationId}>
+                          <td>
+                            <div className="max-w-[280px] truncate font-medium text-ink">{c.competitionName}</div>
+                            <div className="text-[11px] text-placeholder">{c.competitionCategory}类</div>
+                          </td>
+                          <td>
+                            <span className={`chip text-[11px] ${LEVEL_COLORS[c.competitionLevel] ?? ''}`}>{c.competitionLevel}</span>
+                          </td>
+                          <td className="text-body-muted">{c.teamName || '个人'}</td>
+                          <td className="tabular-nums text-body-muted">
+                            {c.submitDate ? new Date(c.submitDate).toLocaleDateString() : '-'}
+                          </td>
+                          <td>
+                            <span className={statusChip[c.status] || 'chip'}>{c.status}</span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </motion.section>
+          </section>
         </>
       )}
-    </motion.div>
+    </div>
   );
 }

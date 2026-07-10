@@ -1,11 +1,9 @@
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 import Pagination from '../../components/Pagination';
-import { pageVariants, pageTransition, listContainer, listItem } from '../../lib/motion';
 import { useStore } from '../../store/useStore';
 
 type TeamVO = {
@@ -248,233 +246,225 @@ export default function TeamRecruitment() {
   }
 
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-      className="flex flex-col gap-6"
-    >
-      {/* Page Header */}
+    <div className="page-stack">
       <PageHero
-        eyebrow="Teams"
+        eyebrow="组队"
         title="组队招募中心"
         description="发现优质项目，寻找志同道合的队友。"
-        contentClassName="max-w-2xl"
         actions={(
-          <button onClick={() => setShowCreateModal(true)} className="btn-primary">
-            <span className="material-symbols-outlined text-[18px]">add</span>
+          <button type="button" onClick={() => setShowCreateModal(true)} className="btn-primary">
             创建招募
           </button>
         )}
       />
 
-      {/* Filter Bar */}
-      <div className="glass-tint flex flex-wrap items-center gap-sm px-md py-3">
-        <div className="relative flex-1 min-w-[240px]">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">
-            search
-          </span>
-          <input
-            className="input-glass h-9 pl-9 text-[14px] !rounded-pill"
-            placeholder="搜索赛事、团队或关键字"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-pill bg-canvas border border-hairline text-[12px] text-ink-muted-80">
-          <span className="text-ink-muted-48">赛事</span>
-          <select
-            className="bg-transparent pr-6 font-medium text-ink focus:outline-none"
-            value={selectedCompetitionId}
-            onChange={(e) => { setSelectedCompetitionId(e.target.value); setPage(1); }}
-          >
-            <option value="">不限</option>
-            {competitionOptions.map((c) => (
-              <option key={c.id} value={String(c.id)}>{c.name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Main Grid */}
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Left: Recruitment Cards */}
-        <div className="flex-1 min-w-0 flex flex-col gap-md">
-          <div className="flex justify-between items-center">
-            <span className="text-[14px] text-ink-muted-80">
-              共找到 <strong className="text-primary tabular-nums">{total}</strong> 个招募团队
-            </span>
-            <div className="flex items-center gap-2 text-[13px] text-ink-muted-48">
-              <span>排序</span>
+      <section className="rounded-xl border border-hairline bg-canvas p-3 sm:p-4">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="relative min-w-0 flex-1">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-placeholder">
+                search
+              </span>
+              <input
+                className="input-glass h-9 pl-9 text-[14px]"
+                placeholder="搜索招募内容、队伍或关键字"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-2 text-[13px] text-body-muted">
+                <span className="shrink-0">按赛事筛选</span>
+                <select
+                  className="input-glass h-9 min-w-[200px] max-w-[320px] text-[13px]"
+                  value={selectedCompetitionId}
+                  onChange={(e) => { setSelectedCompetitionId(e.target.value); setPage(1); }}
+                >
+                  <option value="">全部赛事</option>
+                  {competitionOptions.map((c) => (
+                    <option key={c.id} value={String(c.id)}>{c.name}</option>
+                  ))}
+                </select>
+              </label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="cursor-pointer bg-transparent pr-6 font-medium text-primary focus:outline-none"
+                className="input-glass h-9 w-auto text-[13px]"
               >
                 <option>最新发布</option>
                 <option>即将截止</option>
               </select>
             </div>
           </div>
+          {competitionOptions.length > 0 && (
+            <div className="flex min-w-0 items-center gap-2 border-t border-hairline pt-3">
+              <span className="shrink-0 text-[12px] text-placeholder">快捷筛选</span>
+              <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto no-scrollbar">
+                <button
+                  type="button"
+                  onClick={() => { setSelectedCompetitionId(''); setPage(1); }}
+                  className={`chip shrink-0 ${selectedCompetitionId === '' ? 'chip-primary' : ''}`}
+                >
+                  全部
+                </button>
+                {competitionOptions.slice(0, 12).map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    title={c.name}
+                    onClick={() => { setSelectedCompetitionId(String(c.id)); setPage(1); }}
+                    className={`chip max-w-[10rem] shrink-0 truncate ${selectedCompetitionId === String(c.id) ? 'chip-primary' : ''}`}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {selectedCompetitionId ? (
+            <p className="text-[12.5px] text-body-subtle">
+              当前筛选：
+              <span className="font-medium text-ink">
+                {competitionOptions.find((c) => String(c.id) === selectedCompetitionId)?.name || '指定赛事'}
+              </span>
+              <button
+                type="button"
+                className="ml-2 text-primary hover:underline"
+                onClick={() => { setSelectedCompetitionId(''); setPage(1); }}
+              >
+                清除
+              </button>
+            </p>
+          ) : null}
+        </div>
+      </section>
+
+      <div className="grid gap-8 lg:grid-cols-[1fr_260px]">
+        <section className="page-section min-w-0">
+          <div className="page-section-head">
+            <h2 className="page-section-title">招募列表</h2>
+            <span className="page-section-extra">共 {total} 个团队</span>
+          </div>
 
           {loading ? (
-            <div className="flex w-full min-w-0 flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
-              <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
-              <span className="empty-state-copy text-[14px]">加载中…</span>
-            </div>
+            <p className="py-10 text-center text-[13.5px] text-placeholder">加载中…</p>
           ) : error ? (
-            <div className="flex w-full min-w-0 flex-col items-center justify-center py-section gap-2 text-primary">
-              <span className="material-symbols-outlined text-[32px]">error_outline</span>
-              <span className="empty-state-copy text-[14px]">{error}</span>
-            </div>
+            <p className="py-10 text-center text-[13.5px] text-error">{error}</p>
           ) : filtered.length === 0 ? (
-            <div className="flex w-full min-w-0 flex-col items-center justify-center py-section gap-2 text-ink-muted-48">
-              <span className="material-symbols-outlined text-[32px]">search_off</span>
-              <span className="empty-state-copy text-[14px]">暂无招募信息</span>
-            </div>
+            <p className="py-10 text-center text-[13.5px] text-placeholder">暂无招募信息</p>
           ) : (
-            <motion.div variants={listContainer} initial="hidden" animate="visible" className="flex flex-col gap-md">
-            {filtered.map((post) => (
-              <motion.div
-                key={post.id}
-                variants={listItem}
-                whileHover={{ scale: 1.01, y: -2 }}
-                transition={pageTransition}
-                className="bg-white border border-slate-200 rounded-xl p-5 min-h-[140px]"
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-md bg-canvas-parchment border border-hairline text-primary grid place-items-center text-[18px] font-semibold">
-                      {(post.authorName || '匿名')[0]}
+            <div className="flat-list">
+              {filtered.map((post) => (
+                <article key={post.id} className="flat-row !items-start flex-col gap-2 py-4 sm:flex-row sm:items-start">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-[14px] font-medium text-ink">{post.authorName || '匿名用户'} 的队伍</h3>
+                      <span className="chip chip-success">{post.status || '招募中'}</span>
                     </div>
-                    <div>
-                      <h3 className="text-[17px] font-semibold text-ink leading-tight">{post.authorName || '匿名用户'} 的队伍</h3>
-                      <p className="text-[12px] text-ink-muted-48 mt-0.5">所属赛事 · {post.competitionName}</p>
+                    <p className="mt-0.5 text-[12.5px] text-placeholder">
+                      {post.competitionName} · 发布于 {formatDate(post.date)}
+                    </p>
+                    <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-body-subtle">{post.content}</p>
+                    {post.rolesNeeded && post.rolesNeeded.length > 0 ? (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {post.rolesNeeded.map((role) => (
+                          <span key={role} className="chip chip-primary">{role}</span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                  {String(post.authorId) !== String(currentUser?.id) ? (
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setApplyTarget(post);
+                          setApplyForm({ role: post.rolesNeeded?.[0] || '', reason: '' });
+                        }}
+                        className="btn-primary !h-9"
+                      >
+                        申请加入
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setContactTarget(post);
+                          setContactForm({ title: `关于「${post.competitionName}」组队招募`, content: '' });
+                        }}
+                        className="btn-secondary !h-9"
+                      >
+                        联系 TA
+                      </button>
                     </div>
-                  </div>
-                  <span className="chip chip-success">{post.status || '招募中'}</span>
-                </div>
-
-                <p className="line-clamp-2 text-[14px] text-ink-muted-80 mb-md leading-relaxed">{post.content}</p>
-
-                {post.rolesNeeded && post.rolesNeeded.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2 mb-md">
-                    <span className="text-[12px] text-ink-muted-48">急缺角色</span>
-                    {post.rolesNeeded.map((role) => (
-                      <span key={role} className="chip chip-primary">{role}</span>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex justify-between items-center pt-3 border-t border-hairline">
-                  <div className="flex items-center gap-1.5 text-ink-muted-48 text-[12px]">
-                    <span className="material-symbols-outlined text-[14px]">schedule</span>
-                    <span>发布于 {formatDate(post.date)}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {String(post.authorId) !== String(currentUser?.id) && (
-                      <>
-                        <motion.button whileTap={{ scale: 0.97 }}
-                          onClick={() => {
-                            setApplyTarget(post);
-                            setApplyForm({ role: post.rolesNeeded?.[0] || '', reason: '' });
-                          }}
-                          className="btn-primary !py-1.5 !px-4 !text-[13px]"
-                        >
-                          申请加入
-                        </motion.button>
-                        <motion.button whileTap={{ scale: 0.97 }}
-                          onClick={() => {
-                            setContactTarget(post);
-                            setContactForm({ title: `关于「${post.competitionName}」组队招募`, content: '' });
-                          }}
-                          className="btn-secondary !py-1.5 !px-4 !text-[13px]"
-                        >
-                          联系 TA
-                        </motion.button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-            </motion.div>
+                  ) : null}
+                </article>
+              ))}
+            </div>
           )}
 
           <Pagination current={page} total={total} pageSize={pageSize} onChange={setPage} />
-        </div>
+        </section>
 
-        {/* Right: Sidebar */}
-        <aside className="w-full lg:w-[240px] shrink-0 lg:sticky lg:top-6 lg:self-start bg-white border border-slate-200 rounded-xl p-4">
-          {/* My Posts - Captain Application Management */}
-          {currentUser && (
-            <div>
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px] text-primary">post_add</span>
-                  我的帖子
-                </h3>
+        <aside className="flex flex-col gap-6 lg:sticky lg:top-6 lg:self-start">
+          {currentUser ? (
+            <section className="page-section">
+              <div className="page-section-head">
+                <h3 className="page-section-title">我的帖子</h3>
                 <button
+                  type="button"
                   onClick={() => setShowMyPosts(!showMyPosts)}
-                  className="text-[12px] text-primary hover:underline"
+                  className="page-section-extra hover:text-primary"
                 >
                   {showMyPosts ? '收起' : '展开'}
                 </button>
               </div>
-              {showMyPosts && (
-                <div className="flex flex-col gap-2">
-                  {/* NOTE: 只能过滤当前分页内的帖子，后端暂不支持按 authorId 筛选 */}
-                  {teamPosts.filter((p) => String(p.authorId) === String(currentUser.id)).length === 0 ? (
-                    <p className="text-[12px] text-ink-muted-48 py-4 text-center">暂无发布的帖子</p>
-                  ) : (
-                    teamPosts
+              {showMyPosts ? (
+                teamPosts.filter((p) => String(p.authorId) === String(currentUser.id)).length === 0 ? (
+                  <p className="py-4 text-[12.5px] text-placeholder">暂无发布的帖子</p>
+                ) : (
+                  <div className="flat-list">
+                    {teamPosts
                       .filter((p) => String(p.authorId) === String(currentUser.id))
                       .map((post) => (
-                        <div key={post.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-canvas/50 text-[12px]">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-ink font-medium truncate">{post.competitionName}</p>
-                            <p className="text-ink-muted-48 mt-0.5 truncate">{post.content?.slice(0, 30)}...</p>
+                        <div key={post.id} className="flat-row !items-start">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[13px] font-medium text-ink">{post.competitionName}</p>
+                            <p className="mt-0.5 truncate text-[12px] text-placeholder">{post.content?.slice(0, 30)}...</p>
                           </div>
                           <button
+                            type="button"
                             onClick={() => fetchTeamApplications(post)}
-                            className="btn-secondary !py-1 !px-2.5 !text-[11px] shrink-0 ml-2"
+                            className="btn-secondary !h-8 shrink-0 !px-2 !text-[12px]"
                           >
-                            查看申请
+                            申请
                           </button>
                         </div>
-                      ))
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+                      ))}
+                  </div>
+                )
+              ) : null}
+            </section>
+          ) : null}
 
-          {/* My Applications */}
-          <div className="border-t border-slate-100 mt-3 pt-3">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px] text-primary">history_edu</span>
-                我的申请记录
-              </h3>
+          <section className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title">我的申请</h3>
             </div>
             {loadingApps ? (
-              <div className="flex justify-center py-4">
-                <span className="material-symbols-outlined animate-spin text-[20px] text-ink-muted-48">progress_activity</span>
-              </div>
+              <p className="py-4 text-[12.5px] text-placeholder">加载中…</p>
             ) : myApplications.length === 0 ? (
-              <p className="empty-state-copy mx-auto py-4 text-center text-[12px] text-ink-muted-48">暂无申请记录</p>
+              <p className="py-4 text-[12.5px] text-placeholder">暂无申请记录</p>
             ) : (
-              <div className="flex flex-col gap-2">
+              <div className="flat-list">
                 {myApplications.slice(0, 5).map((app) => (
-                  <div key={app.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-canvas/50 text-[12px]">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-ink font-medium truncate">#{app.teamId} · {app.role}</p>
-                      <p className="text-ink-muted-48 mt-0.5">{formatDate(app.createTime)}</p>
+                  <div key={app.id} className="flat-row">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-medium text-ink">#{app.teamId} · {app.role}</p>
+                      <p className="mt-0.5 text-[12px] text-placeholder">{formatDate(app.createTime)}</p>
                     </div>
                     <span className={`chip !text-[11px] ${
                       app.status === 'approved' ? 'chip-success' :
-                      app.status === 'rejected' ? 'chip-error' :
-                      'bg-canvas border border-hairline text-ink-muted-80'
+                      app.status === 'rejected' ? 'chip-error' : ''
                     }`}>
                       {app.status === 'approved' ? '已通过' :
                        app.status === 'rejected' ? '已拒绝' : '审核中'}
@@ -483,37 +473,28 @@ export default function TeamRecruitment() {
                 ))}
               </div>
             )}
-          </div>
+          </section>
 
-          {/* Tips */}
-          <div className="bg-blue-50 rounded-lg p-3 mt-3 text-xs text-blue-700">
-            <h3 className="text-xs font-medium text-blue-700 flex items-center gap-2 mb-2">
-              <span className="material-symbols-outlined text-[18px] text-primary">tips_and_updates</span>
-              组队小贴士
-            </h3>
-            <ul className="flex flex-col gap-2 text-xs text-blue-700 leading-relaxed">
+          <section className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title">组队小贴士</h3>
+            </div>
+            <ul className="flex flex-col gap-1.5 text-[12.5px] leading-relaxed text-body-subtle">
               <li>· 招募内容请详细描述项目方向与团队优势。</li>
               <li>· 使用 "/" 分隔多个角色，例如：前端 / UI / 算法。</li>
               <li>· 选择正确的关联赛事，便于其他同学检索到。</li>
             </ul>
-          </div>
+          </section>
         </aside>
       </div>
 
-      {/* Create Modal */}
       {showCreateModal && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/12 backdrop-blur-sm p-4" role="dialog" aria-modal="true" aria-label="创建招募">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="glass-strong w-full max-w-md p-xl"
-          >
-            <h3 className="text-[24px] font-semibold tracking-tight text-ink mb-md">创建招募</h3>
-
-            <div className="flex flex-col gap-md">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" role="dialog" aria-modal="true" aria-label="创建招募">
+          <div className="w-full max-w-md rounded-lg border border-hairline bg-canvas p-5 shadow-lg">
+            <h3 className="mb-4 border-b border-hairline pb-3 text-[15px] font-medium text-ink">创建招募</h3>
+            <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-ink-muted-80">关联赛事</label>
+                <label className="text-[13px] font-medium text-body-subtle">关联赛事</label>
                 <select
                   className="input-glass"
                   value={createForm.competitionId}
@@ -525,20 +506,18 @@ export default function TeamRecruitment() {
                   ))}
                 </select>
               </div>
-
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-ink-muted-80">招募描述</label>
+                <label className="text-[13px] font-medium text-body-subtle">招募描述</label>
                 <textarea
-                  className="input-glass !h-auto py-2.5 resize-none"
+                  className="input-glass !h-auto resize-none py-2.5"
                   rows={4}
                   placeholder="介绍你的团队和项目…"
                   value={createForm.content}
                   onChange={(e) => setCreateForm({ ...createForm, content: e.target.value })}
                 />
               </div>
-
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-ink-muted-80">需要角色（用 / 分隔）</label>
+                <label className="text-[13px] font-medium text-body-subtle">需要角色（用 / 分隔）</label>
                 <input
                   className="input-glass"
                   placeholder="例如：前端开发 / UI 设计"
@@ -546,63 +525,39 @@ export default function TeamRecruitment() {
                   onChange={(e) => setCreateForm({ ...createForm, rolesNeeded: e.target.value })}
                 />
               </div>
+              <div className="flex justify-end gap-2 border-t border-hairline pt-3">
+                <button type="button" onClick={() => setShowCreateModal(false)} className="btn-secondary">取消</button>
+                <button
+                  type="button"
+                  onClick={handleCreateSubmit}
+                  disabled={creating || !createForm.competitionId || !createForm.content}
+                  className="btn-primary"
+                >
+                  {creating && <span className="material-symbols-outlined animate-spin">progress_activity</span>}
+                  发布招募
+                </button>
+              </div>
             </div>
-
-            <div className="flex justify-end gap-2 mt-lg">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="btn-secondary"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleCreateSubmit}
-                disabled={creating || !createForm.competitionId || !createForm.content}
-                className="btn-primary"
-              >
-                {creating && <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>}
-                发布招募
-              </button>
-            </div>
-          </motion.div>
+          </div>
         </div>,
         document.body
       )}
 
-      {/* Contact TA Modal */}
       {contactTarget && createPortal(
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-primary/12 backdrop-blur-sm"
-          style={{ padding: '16px' }}
-          role="dialog"
-          aria-modal="true"
-          aria-label="联系 TA"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="glass-strong"
-            style={{
-              width: 'min(calc(100vw - 32px), 520px)',
-              padding: '32px',
-              maxHeight: 'calc(100vh - 32px)',
-              overflowY: 'auto',
-              boxSizing: 'border-box',
-            }}
-          >
-            <div className="flex items-center justify-between" style={{ marginBottom: '17px' }}>
-              <h3 className="text-[22px] font-semibold tracking-tight text-ink">联系 TA</h3>
-              <button onClick={() => setContactTarget(null)} className="text-ink-muted-48 hover:text-ink" aria-label="关闭">
-                <span className="material-symbols-outlined text-[22px]">close</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" role="dialog" aria-modal="true" aria-label="联系 TA">
+          <div className="w-full max-w-lg rounded-lg border border-hairline bg-canvas p-5 shadow-lg">
+            <div className="mb-4 flex items-center justify-between border-b border-hairline pb-3">
+              <h3 className="text-[15px] font-medium text-ink">联系 TA</h3>
+              <button type="button" onClick={() => setContactTarget(null)} className="icon-button !h-8 !w-8" aria-label="关闭">
+                <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
-            <p className="text-[13px] text-ink-muted-48" style={{ marginBottom: '17px' }}>
-              向 <strong className="text-ink">{contactTarget.authorName}</strong> 发送站内消息
-            </p>
-            <div className="flex flex-col" style={{ gap: '17px' }}>
-              <div className="flex flex-col" style={{ gap: '6px' }}>
-                <label className="text-[13px] font-medium text-ink-muted-80">标题</label>
+            <div className="flex flex-col gap-4">
+              <p className="text-[13px] text-placeholder">
+                向 <strong className="text-ink">{contactTarget.authorName}</strong> 发送站内消息
+              </p>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-medium text-body-subtle">标题</label>
                 <input
                   className="input-glass"
                   placeholder="消息标题"
@@ -610,86 +565,65 @@ export default function TeamRecruitment() {
                   onChange={(e) => setContactForm({ ...contactForm, title: e.target.value })}
                 />
               </div>
-              <div className="flex flex-col" style={{ gap: '6px' }}>
-                <label className="text-[13px] font-medium text-ink-muted-80">内容</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-medium text-body-subtle">内容</label>
                 <textarea
-                  className="input-glass !h-auto resize-none"
-                  style={{ padding: '12px 20px' }}
+                  className="input-glass !h-auto resize-none py-2.5"
                   rows={5}
                   placeholder="介绍一下自己，表达合作意向…"
                   value={contactForm.content}
                   onChange={(e) => setContactForm({ ...contactForm, content: e.target.value })}
                 />
               </div>
+              <div className="flex justify-end gap-2 border-t border-hairline pt-3">
+                <button type="button" onClick={() => setContactTarget(null)} className="btn-secondary">取消</button>
+                <button
+                  type="button"
+                  onClick={handleContactSend}
+                  disabled={contactSending || !contactForm.title || !contactForm.content}
+                  className="btn-primary"
+                >
+                  {contactSending && <span className="material-symbols-outlined animate-spin">progress_activity</span>}
+                  发送消息
+                </button>
+              </div>
             </div>
-            <div className="flex justify-end" style={{ gap: '8px', marginTop: '24px' }}>
-              <button onClick={() => setContactTarget(null)} className="btn-secondary">取消</button>
-              <button
-                onClick={handleContactSend}
-                disabled={contactSending || !contactForm.title || !contactForm.content}
-                className="btn-primary"
-              >
-                {contactSending && <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>}
-                发送消息
-              </button>
-            </div>
-          </motion.div>
+          </div>
         </div>,
         document.body
       )}
 
-      {/* Apply to Join Modal */}
       {applyTarget && createPortal(
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-primary/12 backdrop-blur-sm"
-          style={{ padding: '16px' }}
-          role="dialog"
-          aria-modal="true"
-          aria-label="申请加入"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="glass-strong"
-            style={{
-              width: 'min(calc(100vw - 32px), 520px)',
-              padding: '32px',
-              maxHeight: 'calc(100vh - 32px)',
-              overflowY: 'auto',
-              boxSizing: 'border-box',
-            }}
-          >
-            <div className="flex items-center justify-between" style={{ marginBottom: '17px' }}>
-              <h3 className="text-[22px] font-semibold tracking-tight text-ink">申请加入</h3>
-              <button onClick={() => setApplyTarget(null)} className="text-ink-muted-48 hover:text-ink" aria-label="关闭">
-                <span className="material-symbols-outlined text-[22px]">close</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" role="dialog" aria-modal="true" aria-label="申请加入">
+          <div className="w-full max-w-lg rounded-lg border border-hairline bg-canvas p-5 shadow-lg">
+            <div className="mb-4 flex items-center justify-between border-b border-hairline pb-3">
+              <h3 className="text-[15px] font-medium text-ink">申请加入</h3>
+              <button type="button" onClick={() => setApplyTarget(null)} className="icon-button !h-8 !w-8" aria-label="关闭">
+                <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
-            <p className="text-[13px] text-ink-muted-48" style={{ marginBottom: '17px' }}>
-              申请加入 <strong className="text-ink">{applyTarget.authorName}</strong> 的队伍（{applyTarget.competitionName}）
-            </p>
-            <div className="flex flex-col" style={{ gap: '17px' }}>
-              <div className="flex flex-col" style={{ gap: '6px' }}>
-                <label className="text-[13px] font-medium text-ink-muted-80">申请角色</label>
+            <div className="flex flex-col gap-4">
+              <p className="text-[13px] text-placeholder">
+                申请加入 <strong className="text-ink">{applyTarget.authorName}</strong> 的队伍（{applyTarget.competitionName}）
+              </p>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-medium text-body-subtle">申请角色</label>
                 {applyTarget.rolesNeeded && applyTarget.rolesNeeded.length > 0 ? (
                   <>
-                    <div className="flex flex-wrap" style={{ gap: '8px' }}>
+                    <div className="flex flex-wrap gap-2">
                       {applyTarget.rolesNeeded.map((role) => (
                         <button
                           key={role}
                           type="button"
                           onClick={() => setApplyForm({ ...applyForm, role })}
                           className={`chip cursor-pointer ${applyForm.role === role ? 'chip-primary' : ''}`}
-                          style={applyForm.role !== role ? { background: 'var(--color-canvas)', borderColor: 'var(--color-hairline)', color: 'var(--color-ink-muted-80)' } : {}}
                         >
                           {role}
                         </button>
                       ))}
                     </div>
                     <input
-                      className="input-glass !text-[13px]"
-                      style={{ height: '40px', marginTop: '4px' }}
+                      className="input-glass mt-1 text-[13px]"
                       placeholder="或输入自定义角色"
                       value={applyTarget.rolesNeeded.includes(applyForm.role) ? '' : applyForm.role}
                       onChange={(e) => setApplyForm({ ...applyForm, role: e.target.value })}
@@ -704,131 +638,121 @@ export default function TeamRecruitment() {
                   />
                 )}
               </div>
-              <div className="flex flex-col" style={{ gap: '6px' }}>
-                <label className="text-[13px] font-medium text-ink-muted-80">申请理由（选填）</label>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-medium text-body-subtle">申请理由（选填）</label>
                 <textarea
-                  className="input-glass !h-auto resize-none"
-                  style={{ padding: '12px 20px' }}
+                  className="input-glass !h-auto resize-none py-2.5"
                   rows={4}
                   placeholder="简单介绍自己的技能和经验…"
                   value={applyForm.reason}
                   onChange={(e) => setApplyForm({ ...applyForm, reason: e.target.value })}
                 />
               </div>
+              <div className="flex justify-end gap-2 border-t border-hairline pt-3">
+                <button type="button" onClick={() => setApplyTarget(null)} className="btn-secondary">取消</button>
+                <button
+                  type="button"
+                  onClick={handleApplySubmit}
+                  disabled={applySubmitting || !applyForm.role}
+                  className="btn-primary"
+                >
+                  {applySubmitting && <span className="material-symbols-outlined animate-spin">progress_activity</span>}
+                  提交申请
+                </button>
+              </div>
             </div>
-            <div className="flex justify-end" style={{ gap: '8px', marginTop: '24px' }}>
-              <button onClick={() => setApplyTarget(null)} className="btn-secondary">取消</button>
-              <button
-                onClick={handleApplySubmit}
-                disabled={applySubmitting || !applyForm.role}
-                className="btn-primary"
-              >
-                {applySubmitting && <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>}
-                提交申请
-              </button>
-            </div>
-          </motion.div>
+          </div>
         </div>,
         document.body
       )}
 
-      {/* Applications Management Modal (Captain) */}
       {applicationsTarget && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/12 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="申请管理">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="glass-strong w-full max-w-lg max-h-[80vh] flex flex-col"
-            style={{ padding: '32px' }}
-          >
-            <div className="flex items-center justify-between" style={{ marginBottom: '17px' }}>
-              <h3 className="text-[20px] font-semibold tracking-tight text-ink">申请管理</h3>
-              <button onClick={() => { setApplicationsTarget(null); setTeamApplications([]); }} className="text-ink-muted-48 hover:text-ink" aria-label="关闭">
-                <span className="material-symbols-outlined text-[20px]">close</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" role="dialog" aria-modal="true" aria-label="申请管理">
+          <div className="flex max-h-[80vh] w-full max-w-lg flex-col rounded-lg border border-hairline bg-canvas p-5 shadow-lg">
+            <div className="mb-3 flex items-center justify-between border-b border-hairline pb-3">
+              <h3 className="text-[15px] font-medium text-ink">申请管理</h3>
+              <button
+                type="button"
+                onClick={() => { setApplicationsTarget(null); setTeamApplications([]); }}
+                className="icon-button !h-8 !w-8"
+                aria-label="关闭"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
-            <p className="text-[13px] text-ink-muted-48" style={{ marginBottom: '17px' }}>
-              帖子：<strong className="text-ink">{applicationsTarget.competitionName}</strong>
-              <span className="ml-2 text-ink-muted-48">{applicationsTarget.content?.slice(0, 40)}...</span>
-            </p>
-
-            <div className="flex-1 overflow-y-auto" style={{ minHeight: '120px' }}>
-              {loadingTeamApps ? (
-                <div className="flex justify-center py-8">
-                  <span className="material-symbols-outlined animate-spin text-[24px] text-ink-muted-48">progress_activity</span>
-                </div>
-              ) : teamApplications.length === 0 ? (
-                <div className="flex w-full min-w-0 flex-col items-center justify-center py-8 gap-2 text-ink-muted-48">
-                  <span className="material-symbols-outlined text-[28px]">inbox</span>
-                  <span className="empty-state-copy text-[13px]">暂无申请</span>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {teamApplications.map((app) => (
-                    <div key={app.id} className="rounded-lg bg-canvas/50 border border-hairline p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-canvas-parchment border border-hairline text-primary grid place-items-center text-[13px] font-semibold">
-                            {String(app.applicantId).slice(-2)}
-                          </div>
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+              <p className="text-[13px] text-placeholder">
+                帖子：<strong className="text-ink">{applicationsTarget.competitionName}</strong>
+                <span className="ml-2">{applicationsTarget.content?.slice(0, 40)}...</span>
+              </p>
+              <div className="min-h-[120px] flex-1 overflow-y-auto">
+                {loadingTeamApps ? (
+                  <p className="py-8 text-center text-[13px] text-placeholder">加载中…</p>
+                ) : teamApplications.length === 0 ? (
+                  <p className="py-8 text-center text-[13px] text-placeholder">暂无申请</p>
+                ) : (
+                  <div className="flat-list">
+                    {teamApplications.map((app) => (
+                      <div key={app.id} className="border-b border-hairline py-3 last:border-b-0">
+                        <div className="mb-2 flex items-start justify-between gap-2">
                           <div>
                             <p className="text-[13px] font-medium text-ink">用户 #{app.applicantId}</p>
-                            <p className="text-[11px] text-ink-muted-48">{formatDate(app.createTime)}</p>
+                            <p className="text-[11px] text-placeholder">{formatDate(app.createTime)}</p>
                           </div>
+                          <span className={`chip !text-[11px] ${
+                            app.status === 'approved' ? 'chip-success' :
+                            app.status === 'rejected' ? 'chip-error' : ''
+                          }`}>
+                            {app.status === 'approved' ? '已通过' :
+                             app.status === 'rejected' ? '已拒绝' : '待审核'}
+                          </span>
                         </div>
-                        <span className={`chip !text-[11px] ${
-                          app.status === 'approved' ? 'chip-success' :
-                          app.status === 'rejected' ? 'chip-error' :
-                          'bg-canvas border border-hairline text-ink-muted-80'
-                        }`}>
-                          {app.status === 'approved' ? '已通过' :
-                           app.status === 'rejected' ? '已拒绝' : '待审核'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-[12px] text-ink-muted-48">申请角色</span>
-                        <span className="chip chip-primary !text-[11px]">{app.role}</span>
-                      </div>
-                      {app.reason && (
-                        <p className="text-[12px] text-ink-muted-80 mb-3 leading-relaxed">{app.reason}</p>
-                      )}
-                      {app.status === 'pending' && (
-                        <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
-                          <button
-                            onClick={() => handleApplicationAction(app.id, 'rejected')}
-                            disabled={handlingAppId === app.id}
-                            className="btn-secondary !py-1 !px-3 !text-[12px]"
-                          >
-                            {handlingAppId === app.id ? (
-                              <span className="material-symbols-outlined animate-spin text-[14px]">progress_activity</span>
-                            ) : '拒绝'}
-                          </button>
-                          <button
-                            onClick={() => handleApplicationAction(app.id, 'approved')}
-                            disabled={handlingAppId === app.id}
-                            className="btn-primary !py-1 !px-3 !text-[12px]"
-                          >
-                            {handlingAppId === app.id ? (
-                              <span className="material-symbols-outlined animate-spin text-[14px]">progress_activity</span>
-                            ) : '通过'}
-                          </button>
+                        <div className="mb-2 flex items-center gap-2">
+                          <span className="text-[12px] text-placeholder">申请角色</span>
+                          <span className="chip chip-primary !text-[11px]">{app.role}</span>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                        {app.reason && (
+                          <p className="mb-3 text-[12px] leading-relaxed text-body-subtle">{app.reason}</p>
+                        )}
+                        {app.status === 'pending' && (
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleApplicationAction(app.id, 'rejected')}
+                              disabled={handlingAppId === app.id}
+                              className="btn-secondary !h-8"
+                            >
+                              拒绝
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleApplicationAction(app.id, 'approved')}
+                              disabled={handlingAppId === app.id}
+                              className="btn-primary !h-8"
+                            >
+                              通过
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end border-t border-hairline pt-3">
+                <button
+                  type="button"
+                  onClick={() => { setApplicationsTarget(null); setTeamApplications([]); }}
+                  className="btn-secondary"
+                >
+                  关闭
+                </button>
+              </div>
             </div>
-
-            <div className="flex justify-end" style={{ marginTop: '17px' }}>
-              <button onClick={() => { setApplicationsTarget(null); setTeamApplications([]); }} className="btn-secondary">关闭</button>
-            </div>
-          </motion.div>
+          </div>
         </div>,
         document.body
       )}
-
-    </motion.div>
+    </div>
   );
 }

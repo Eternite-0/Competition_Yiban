@@ -81,10 +81,10 @@ export function CardSkeleton() {
 /** Stat tile skeleton */
 export function StatSkeleton() {
   return (
-    <div className="stat-tile p-4 flex flex-col justify-between">
-      <Skeleton className="h-3 w-16 mb-3" />
+    <div className="stat-card">
+      <Skeleton className="h-3 w-16" />
       <Skeleton className="h-7 w-12" />
-      <Skeleton className="h-3 w-20 mt-2" />
+      <Skeleton className="h-3 w-20" />
     </div>
   );
 }

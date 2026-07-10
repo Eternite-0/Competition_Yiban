@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
+import ProgressBar from '../../components/ProgressBar';
 import CascadeFilter, { type FilterValues } from '../../components/CascadeFilter';
 import { useStore } from '../../store/useStore';
-import { listContainer, listItem, pageVariants, pageTransition } from '../../lib/motion';
+
 
 function currentAcademicYear() {
   const now = new Date();
@@ -487,13 +487,7 @@ export default function TeacherStudentGrowth() {
   ];
 
   return (
-    <motion.div
-      className="py-lg flex flex-col gap-lg"
-      variants={pageVariants}
-      initial="hidden"
-      animate="visible"
-      transition={pageTransition}
-    >
+    <div className="flex flex-col gap-4">
       <PageHero
         eyebrow="Growth"
         title="学生成长管理"
@@ -502,9 +496,9 @@ export default function TeacherStudentGrowth() {
         actions={(
           <>
             <div className="relative w-[220px]">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">search</span>
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-placeholder">search</span>
               <input
-                className="input-glass h-9 pl-9 text-[13px] !rounded-pill"
+                className="input-glass h-9 pl-9 text-[13px] !rounded-lg"
                 placeholder="搜索姓名或学号"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -533,10 +527,10 @@ export default function TeacherStudentGrowth() {
         )}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="filter-bar justify-between">
         <CascadeFilter onChange={handleFilterChange} fixedCollege={scopeCollege || undefined} showCollege={!scopeCollege} />
-        <label className="flex items-center gap-2 text-[13px] text-ink-muted-80">
-          <span className="material-symbols-outlined text-[17px] text-primary">sort</span>
+        <label className="flex items-center gap-2 text-[13px] text-body-muted">
+          <span className="material-symbols-outlined text-[17px] text-body-muted">sort</span>
           <select
             value={studentSort}
             onChange={(e) => setStudentSort(e.target.value as 'default' | 'comprehensive_desc')}
@@ -550,96 +544,82 @@ export default function TeacherStudentGrowth() {
 
       <section className="flex flex-col gap-sm">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-[15px] font-semibold text-ink flex items-center gap-2">
-            <span className="material-symbols-outlined text-[18px] text-primary">monitoring</span>
+          <h2 className="section-card-title flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px] text-body-muted">monitoring</span>
             当前范围概览
           </h2>
-          <span className="text-[12px] text-ink-muted-48">
+          <span className="text-[12px] text-placeholder">
             {filters.className || filters.major || filters.grade || scopeCollege || '全部学生'}
           </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">
-          {overviewCards.map((card, i) => (
-            <motion.div
-              key={card.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04, duration: 0.3 }}
-              className="stat-tile p-lg"
-            >
+        <div className="stat-grid">
+          {overviewCards.map((card) => (
+            <div key={card.label} className="stat-card">
               <div className="flex justify-between items-start mb-2">
-                <p className="text-[13px] text-ink-muted-80">{card.label}</p>
-                <span className="material-symbols-outlined text-[18px] text-primary">{card.icon}</span>
+                <p className="text-[13px] text-body-muted">{card.label}</p>
+                <span className="material-symbols-outlined text-[18px] text-body-muted">{card.icon}</span>
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{card.value}</span>
-                <span className="text-[12px] text-ink-muted-48">{card.suffix}</span>
+                <span className="text-[12px] text-placeholder">{card.suffix}</span>
               </div>
-              <p className="mt-2 truncate text-[11px] text-ink-muted-48">{card.hint}</p>
-            </motion.div>
+              <p className="mt-2 truncate text-[11px] text-placeholder">{card.hint}</p>
+            </div>
           ))}
         </div>
       </section>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-md">
-        {kpiCards.map((card, i) => (
-          <motion.button
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2.5">
+        {kpiCards.map((card) => (
+          <button
             type="button"
             key={card.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05, duration: 0.35 }}
-            whileHover={{ scale: 1.03, y: -2 }}
             onClick={() => card.toggle && setComprehensiveMode((mode) => mode === 'rank' ? 'percent' : 'rank')}
-            className="stat-tile p-lg text-left"
+            className="stat-card text-left"
           >
             <div className="flex justify-between items-start mb-2">
-              <p className="text-[13px] text-ink-muted-80">{card.label}</p>
-              <span className="material-symbols-outlined text-[18px] text-primary">{card.icon}</span>
+              <p className="text-[13px] text-body-muted">{card.label}</p>
+              <span className="material-symbols-outlined text-[18px] text-body-muted">{card.icon}</span>
             </div>
             <div className="flex items-baseline gap-2">
               <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{card.value}</span>
-              <span className="text-[12px] text-ink-muted-48">{card.suffix}</span>
+              <span className="text-[12px] text-placeholder">{card.suffix}</span>
             </div>
             {'hint' in card && card.hint && (
-              <p className="mt-2 truncate text-[11px] text-ink-muted-48">
+              <p className="mt-2 truncate text-[11px] text-placeholder">
                 {card.hint}{'toggle' in card && card.toggle ? ` · ${comprehensiveMode === 'rank' ? '点击看前百分位' : '点击看排名'}` : ''}
               </p>
             )}
-          </motion.button>
+          </button>
         ))}
       </section>
 
-      <section className="flex flex-col lg:flex-row gap-md min-h-[500px] lg:h-[720px]">
-        <aside className="w-full lg:w-80 max-h-[520px] lg:max-h-none glass overflow-hidden flex flex-col shrink-0">
-          <div className="p-md border-b border-hairline">
-            <h3 className="text-[14px] font-semibold text-ink flex items-center gap-2">
-              <span className="material-symbols-outlined text-[18px] text-primary">groups</span>
+      <section className="flex flex-col lg:flex-row gap-3 min-h-[500px] lg:h-[720px]">
+        <aside className="w-full lg:w-80 max-h-[520px] lg:max-h-none section-card overflow-hidden flex flex-col shrink-0">
+          <div className="section-card-header">
+            <h3 className="section-card-title flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-body-muted">groups</span>
               监管学生
               <span className="chip ml-auto">{filteredStudents.length}</span>
             </h3>
           </div>
           <div className="flex-1 overflow-y-auto p-2">
             {loadingList ? (
-              <div className="py-10 grid place-items-center text-ink-muted-48">
+              <div className="py-10 grid place-items-center text-placeholder">
                 <span className="material-symbols-outlined animate-spin text-[24px]">progress_activity</span>
               </div>
             ) : filteredStudents.length === 0 ? (
-              <div className="py-10 grid place-items-center text-ink-muted-48 gap-2">
+              <div className="py-10 grid place-items-center text-placeholder gap-2">
                 <span className="material-symbols-outlined text-[28px] opacity-40">person_off</span>
                 <p className="text-[12px]">暂无学生</p>
               </div>
             ) : (
-              <motion.div variants={listContainer} initial="hidden" animate="visible">
+              <div>
                 {filteredStudents.map((s) => {
                   const rankPercentText = formatOfficialPercent(s.comprehensiveRankPercent);
                   return (
-                    <motion.div
-                      key={s.studentId}
-                      variants={listItem}
-                      whileHover={{ x: 2 }}
-                      className={`flex items-center gap-2 p-2 rounded-md transition mb-1 ${
-                        selectedId === s.studentId ? 'bg-primary/8' : 'hover:bg-primary/6'
+                    <div key={s.studentId} className={`flex items-center gap-2 p-2 rounded-md transition mb-1 ${
+                        selectedId === s.studentId ? 'bg-hover-overlay' : 'hover:bg-hover-overlay'
                       }`}
                     >
                       <input
@@ -647,63 +627,63 @@ export default function TeacherStudentGrowth() {
                         checked={compareIds.has(s.studentId)}
                         onChange={() => toggleCompare(s.studentId)}
                         onClick={(e) => e.stopPropagation()}
-                        className="w-4 h-4 rounded border-hairline text-primary focus:ring-primary/30 shrink-0 accent-primary"
+                        className="w-4 h-4 rounded border-hairline text-body-muted focus:ring-primary/30 shrink-0 accent-primary"
                       />
                       <button onClick={() => setSelectedId(s.studentId)} className="flex-1 text-left min-w-0">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className={`text-[13px] ${selectedId === s.studentId ? 'text-primary font-semibold' : 'text-ink font-medium'} truncate`}>
+                          <span className={`text-[13px] ${selectedId === s.studentId ? 'text-ink font-semibold' : 'text-ink font-medium'} truncate`}>
                             {s.studentName}
                           </span>
                           {studentSort !== 'default' && s.comprehensiveRank ? (
-                            <span className="ml-auto shrink-0 rounded-sm bg-primary/8 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-primary">
+                            <span className="ml-auto shrink-0 rounded-sm bg-surface-tile-1 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-body-muted">
                               第 {s.comprehensiveRank} 名
                             </span>
                           ) : null}
                         </div>
-                        <div className="text-[11px] text-ink-muted-48 mt-0.5 truncate">
+                        <div className="text-[11px] text-placeholder mt-0.5 truncate">
                           {s.studentNo ?? s.studentId}{s.major ? ` · ${s.major}` : ''}{s.className ? ` · ${s.className}` : ''}
                         </div>
                         {rankPercentText !== '暂无数据' && (
-                          <div className="mt-1 text-[11px] text-ink-muted-60 tabular-nums">
+                          <div className="mt-1 text-[11px] text-body-muted tabular-nums">
                             综测排名 {rankPercentText}
                           </div>
                         )}
                       </button>
-                    </motion.div>
+                    </div>
                   );
                 })}
-              </motion.div>
+              </div>
             )}
           </div>
         </aside>
 
-        <div className="flex-1 glass overflow-hidden flex flex-col">
+        <div className="flex-1 section-card overflow-hidden flex flex-col">
           {!selectedId ? (
-            <div className="flex-1 grid place-items-center text-ink-muted-48 gap-2 p-lg">
-              <span className="material-symbols-outlined text-[48px] opacity-40">insights</span>
-              <p className="text-[15px] font-medium text-ink-muted-80">请从左侧选择学生</p>
-              <p className="text-[13px]">查看成长档案与能力画像</p>
+            <div className="empty-panel flex-1">
+              <span className="material-symbols-outlined">insights</span>
+              <p className="text-[13px] font-medium text-body-muted">请从左侧选择学生</p>
+              <p className="text-[12px] text-placeholder">查看成长档案与能力画像</p>
             </div>
           ) : loadingGrowth ? (
-            <div className="flex-1 grid place-items-center text-ink-muted-48">
-              <span className="material-symbols-outlined animate-spin text-[28px]">progress_activity</span>
+            <div className="empty-panel flex-1">
+              <span className="material-symbols-outlined animate-spin">progress_activity</span>
             </div>
           ) : error ? (
-            <div className="flex-1 grid place-items-center text-error gap-2">
-              <span className="material-symbols-outlined text-[32px]">error_outline</span>
-              <p className="text-[14px]">{error}</p>
+            <div className="empty-panel flex-1 text-error">
+              <span className="material-symbols-outlined">error_outline</span>
+              <p className="text-[13px]">{error}</p>
             </div>
           ) : (
-            <div className="flex-1 overflow-y-auto p-lg flex flex-col gap-lg">
+            <div className="flex flex-1 flex-col gap-4 overflow-y-auto section-card-body">
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full bg-canvas-parchment text-ink-muted-80 grid place-items-center font-semibold text-[18px]">
+                <div className="grid h-12 w-12 place-items-center rounded-md bg-surface-tile-1 text-[16px] font-medium text-body-muted">
                   {(selectedStudent?.studentName || '?')[0]}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[18px] font-semibold text-ink truncate">
+                  <p className="truncate text-[16px] font-medium text-ink">
                     {selectedStudent?.studentName || `学号 ${selectedId}`}
                   </p>
-                  <p className="text-[12px] text-ink-muted-48 truncate">
+                  <p className="truncate text-[12px] text-placeholder">
                     {selectedStudent?.studentNo ?? selectedId}
                     {selectedStudent?.major ? ` · ${selectedStudent.major}` : ''}
                     {selectedStudent?.className ? ` · ${selectedStudent.className}` : ''}
@@ -713,52 +693,45 @@ export default function TeacherStudentGrowth() {
               </div>
 
               <div>
-                <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[18px] text-primary">insights</span>
-                  成长画像五维
-                </h3>
+                <h3 className="section-card-title mb-3">成长画像五维</h3>
                 {growth && growth.radar.length > 0 ? (
-                  <div className="aspect-square max-w-[320px] mx-auto">
+                  <div className="mx-auto aspect-square max-w-[320px]">
                     <RadarChart data={growth.radar} />
                   </div>
                 ) : (
-                  <div className="py-10 grid place-items-center text-ink-muted-48 gap-2">
-                    <span className="material-symbols-outlined text-[28px] opacity-40">insights</span>
-                    <p className="text-[12px]">暂无画像数据</p>
+                  <div className="empty-panel py-10">
+                    <span className="material-symbols-outlined">insights</span>
+                    <p className="text-[13px]">暂无画像数据</p>
                   </div>
                 )}
               </div>
 
               {growth && growth.radar.length > 0 && (
-                <motion.div variants={listContainer} initial="hidden" animate="visible">
-                  <h3 className="text-[15px] font-semibold text-ink mb-md flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[18px] text-primary">bar_chart</span>
-                    画像详情
-                  </h3>
+                <div>
+                  <h3 className="section-card-title mb-3">画像详情</h3>
                   <div className="flex flex-col gap-3">
-                    {growth.radar.map((d, i) => (
-                      <motion.div key={d.dimension} variants={listItem}>
-                        <div className="flex justify-between text-[12px] mb-1">
-                          <span className="text-ink-muted-80">{d.dimension}</span>
-                          <span className="text-ink font-semibold tabular-nums">{d.score} / {d.maxScore}</span>
+                    {growth.radar.map((d) => (
+                      <div key={d.dimension}>
+                        <div className="mb-1 flex justify-between text-[12px]">
+                          <span className="text-body-muted">{d.dimension}</span>
+                          <span className="font-medium tabular-nums text-ink">{d.score} / {d.maxScore}</span>
                         </div>
-                        <div className="h-1 w-full rounded-full bg-primary/8 overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(d.score / Math.max(d.maxScore, 1)) * 100}%` }}
-                            transition={{ delay: i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                            className="h-full bg-primary"
-                          />
-                        </div>
-                      </motion.div>
+                        <ProgressBar
+                          value={(d.score / Math.max(d.maxScore, 1)) * 100}
+                          size="sm"
+                          segments={4}
+                          showThumb
+                          instant
+                        />
+                      </div>
                     ))}
                   </div>
-                </motion.div>
+                </div>
               )}
             </div>
           )}
         </div>
       </section>
-    </motion.div>
+    </div>
   );
 }

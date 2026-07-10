@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import apiClient from '../../api/client';
 import { useStore } from '../../store/useStore';
 import PageHero from '../../components/PageHero';
-import { pageVariants, listContainer, listItem } from '../../lib/motion';
+import ProgressBar from '../../components/ProgressBar';
 
 type RadarData = {
   innovation: number;
@@ -219,13 +218,13 @@ function RadarChart({ data }: { data: { dimension: string; score: number; maxSco
         const point = getPoint(i, maxRadius);
         return <line key={i} x1={cx} y1={cy} x2={point.x} y2={point.y} stroke="var(--color-border)" strokeWidth="1" />;
       })}
-      <polygon points={dataPoints} fill="var(--color-primary)" fillOpacity="0.14" stroke="var(--color-primary)" strokeWidth="2" />
+      <polygon points={dataPoints} fill="var(--color-ink)" fillOpacity="0.08" stroke="var(--color-ink)" strokeWidth="1.5" />
       {data.map((d, i) => {
         const point = getPoint(i, (d.score / d.maxScore) * maxRadius);
         const label = getPoint(i, maxRadius + 18);
         return (
           <g key={d.dimension}>
-            <circle cx={point.x} cy={point.y} r="3.5" fill="var(--color-primary)" />
+            <circle cx={point.x} cy={point.y} r="3" fill="var(--color-ink)" />
             <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="text-[11px]" fill="var(--color-body-subtle)">{d.dimension.replace('能力', '')}</text>
           </g>
         );
@@ -276,9 +275,30 @@ export default function StudentGrowth() {
     fetchGrowth();
   }, [currentUser?.id]);
 
-  if (loading) return <div className="flex w-full min-w-0 flex-col items-center py-section text-center text-ink-muted-48"><span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span><p className="empty-state-copy mt-2 text-[14px]">加载中…</p></div>;
-  if (error) return <div className="flex w-full min-w-0 flex-col items-center py-section text-center text-error"><span className="material-symbols-outlined text-[32px]">error_outline</span><p className="empty-state-copy mt-2 text-[14px]">{error}</p></div>;
-  if (!growth && !profile) return <div className="flex w-full min-w-0 flex-col items-center py-section text-center text-ink-muted-48"><span className="material-symbols-outlined text-[40px]">insights</span><p className="empty-state-copy mt-3 text-[15px]">暂无成长数据</p></div>;
+  if (loading) {
+    return (
+      <div className="page-stack">
+        <PageHero eyebrow="成长" title="我的成长画像" description="加载中…" />
+        <p className="py-10 text-center text-[13.5px] text-placeholder">加载中…</p>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="page-stack">
+        <PageHero eyebrow="成长" title="我的成长画像" description="加载失败" />
+        <p className="py-10 text-center text-[13.5px] text-error">{error}</p>
+      </div>
+    );
+  }
+  if (!growth && !profile) {
+    return (
+      <div className="page-stack">
+        <PageHero eyebrow="成长" title="我的成长画像" description="查看竞赛、志愿、文体活动与认证荣誉沉淀。" />
+        <p className="py-10 text-center text-[13.5px] text-placeholder">暂无成长数据</p>
+      </div>
+    );
+  }
 
   const radarData = profile?.dimensions?.length
     ? profile.dimensions.map((d) => ({
@@ -358,148 +378,161 @@ export default function StudentGrowth() {
   const visibleTimeline = showAllTimeline ? timelineItems : timelineItems.slice(0, 4);
 
   const metrics = [
-    { label: '竞赛实践', value: profile?.totalCompetitions ?? registrations.length ?? growth?.totalCompetitions ?? 0, suffix: '次', icon: 'emoji_events' },
-    { label: '志愿公益', value: formatNumber(profile?.totalVolunteerHours), suffix: '小时', icon: 'volunteer_activism' },
-    { label: '文体活动', value: profile?.totalCultureSports ?? 0, suffix: '次', icon: 'sports_soccer' },
-    { label: '认证荣誉', value: approvedAwards.length || profile?.totalAwards || 0, suffix: '项', icon: 'military_tech' },
+    { label: '竞赛实践', value: profile?.totalCompetitions ?? registrations.length ?? growth?.totalCompetitions ?? 0, suffix: '次', hint: '报名与参与' },
+    { label: '志愿公益', value: formatNumber(profile?.totalVolunteerHours), suffix: '小时', hint: '服务时长' },
+    { label: '文体活动', value: profile?.totalCultureSports ?? 0, suffix: '次', hint: '文体参与' },
+    { label: '认证荣誉', value: approvedAwards.length || profile?.totalAwards || 0, suffix: '项', hint: '已审核通过' },
   ];
 
   return (
-    <motion.div variants={pageVariants} initial="hidden" animate="visible" className="flex flex-col gap-6">
-      <PageHero eyebrow="Growth" title="我的成长画像" description="查看竞赛、志愿、文体活动与认证荣誉沉淀。" contentClassName="max-w-2xl" />
+    <div className="page-stack">
+      <PageHero eyebrow="成长" title="我的成长画像" description="查看竞赛、志愿、文体活动与认证荣誉沉淀。" />
 
-      <section className="glass p-xl flex items-start gap-lg flex-wrap">
-        <div className="w-20 h-20 rounded-full bg-canvas-parchment grid place-items-center shrink-0 border border-hairline">
-          <span className="material-symbols-outlined text-[38px] text-primary icon-fill">person</span>
-        </div>
-        <div className="flex-1 min-w-[260px]">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="font-display text-[22px] font-medium leading-[1.4] text-ink">{currentUser?.name || '同学'}</h2>
-            <span className="chip chip-primary">优势维度：{highest.dimension}</span>
-            {approvedAwards.length > 0 && <span className="chip chip-success">认证荣誉 {approvedAwards.length} 项</span>}
-            {(profile?.totalActivities ?? 0) > 0 && <span className="chip chip-success">校园活动 {profile?.totalActivities} 次</span>}
-            {teamParticipationCount > 0 && <span className="chip">团队参与 {teamParticipationCount} 次</span>}
+      <section className="page-section">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-hairline pb-4">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-[16px] font-medium text-ink">{currentUser?.name || '同学'}</h2>
+              <span className="chip chip-primary">优势：{highest.dimension}</span>
+              {approvedAwards.length > 0 ? <span className="chip chip-success">荣誉 {approvedAwards.length}</span> : null}
+              {(profile?.totalActivities ?? 0) > 0 ? <span className="chip">活动 {profile?.totalActivities}</span> : null}
+              {teamParticipationCount > 0 ? <span className="chip">组队 {teamParticipationCount}</span> : null}
+            </div>
+            <p className="mt-1 text-[13px] text-body-subtle">{currentUser?.department || '学院信息暂未同步'}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5 text-[12px] text-placeholder">
+              <span>国家级 {levelCounts['国家级'] || 0}</span>
+              <span>·</span>
+              <span>省级 {levelCounts['省级'] || 0}</span>
+              <span>·</span>
+              <span>校级 {levelCounts['校级'] || 0}</span>
+            </div>
           </div>
-          <p className="mt-2 text-[14px] text-ink-muted-80">{currentUser?.department || '学院信息暂未同步'}</p>
-          <div className="mt-3 flex flex-wrap gap-2 text-[12px]">
-            <span className="chip">国家级 {levelCounts['国家级'] || 0}</span>
-            <span className="chip">省级 {levelCounts['省级'] || 0}</span>
-            <span className="chip">校级 {levelCounts['校级'] || 0}</span>
+          <div className="text-right">
+            <p className="text-[12px] text-placeholder">能力均值</p>
+            <p className="mt-1 text-[24px] font-semibold tabular-nums tracking-tight text-ink">{averageScore}</p>
           </div>
-        </div>
-        <div className="text-right">
-          <p className="text-[12px] text-placeholder">能力均值</p>
-          <p className="font-display text-[28px] font-medium leading-none text-primary tabular-nums">{averageScore}</p>
         </div>
       </section>
 
-      <motion.section variants={listContainer} initial="hidden" animate="visible" className="grid grid-cols-2 md:grid-cols-4 gap-md">
+      <section className="metric-row" aria-label="成长指标">
         {metrics.map((metric) => (
-          <motion.div key={metric.label} variants={listItem} className="stat-tile flex flex-col gap-2 p-lg">
-            <div className="flex items-center justify-between">
-              <span className="text-[12px] text-body-subtle">{metric.label}</span>
-              <span className="material-symbols-outlined text-[18px] text-primary">{metric.icon}</span>
+          <div key={metric.label} className="metric-item">
+            <div className="metric-item-label">{metric.label}</div>
+            <div className="metric-item-value">
+              {metric.value}
+              <span className="ml-1 text-[12px] font-normal text-placeholder">{metric.suffix}</span>
             </div>
-            <div className="flex items-baseline gap-1">
-              <span className="font-display text-[22px] font-medium leading-none tabular-nums text-ink">{metric.value}</span>
-              <span className="text-[12px] text-placeholder">{metric.suffix}</span>
-            </div>
-          </motion.div>
+            <div className="metric-item-hint">{metric.hint}</div>
+          </div>
         ))}
-      </motion.section>
+      </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-6">
-        <div className="flex flex-col gap-6">
-          <Panel title="校园成长五维" icon="insights" aside={`均值 ${averageScore}`}>
-            <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-5 items-center">
-              <div className="h-[260px] max-w-[280px] mx-auto w-full">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="flex flex-col gap-8">
+          <section className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title">校园成长五维</h3>
+              <span className="page-section-extra">均值 {averageScore}</span>
+            </div>
+            <div className="grid grid-cols-1 items-center gap-4 md:grid-cols-[240px_1fr]">
+              <div className="mx-auto h-[220px] w-full max-w-[240px]">
                 <RadarChart data={radarData} />
               </div>
               <div className="flex flex-col gap-3">
-                {radarData.map((item) => <DimensionRow key={item.dimension} label={item.dimension} score={item.score} hint={item.hint} />)}
+                {radarData.map((item) => (
+                  <DimensionRow key={item.dimension} label={item.dimension} score={item.score} hint={item.hint} />
+                ))}
               </div>
             </div>
-          </Panel>
+          </section>
 
-          <Panel title="参赛记录" icon="emoji_events" aside={`${registrations.length} 条`}>
+          <section className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title">参赛记录</h3>
+              <span className="page-section-extra">{registrations.length} 条</span>
+            </div>
             {registrations.length > 0 ? (
-              <div className="flex flex-col divide-y divide-hairline">
+              <div className="flat-list">
                 {registrations.slice(0, 8).map((reg) => <CompetitionRow key={reg.id} registration={reg} />)}
               </div>
-            ) : <EmptyState text="暂无参赛记录，去赛事大厅报名后会自动沉淀到这里。" />}
-          </Panel>
+            ) : (
+              <p className="py-6 text-[13px] text-placeholder">暂无参赛记录，去赛事大厅报名后会自动沉淀到这里。</p>
+            )}
+          </section>
         </div>
 
-        <div className="flex flex-col gap-6">
-          <Panel title="荣誉记录" icon="workspace_premium" aside={`${approvedAwards.length} 项`}>
+        <div className="flex flex-col gap-8">
+          <section className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title">荣誉记录</h3>
+              <span className="page-section-extra">{approvedAwards.length} 项</span>
+            </div>
             {approvedAwards.length > 0 ? (
-              <div className="flex flex-col divide-y divide-hairline">
+              <div className="flat-list">
                 {approvedAwards.slice(0, 5).map((award) => <HonorRow key={award.id} award={award} />)}
               </div>
             ) : approvedSubmissions.length > 0 ? (
-              <div className="flex flex-col gap-3">
-                <EmptyState text="暂无已认证获奖证明。下面是已审核通过的成果材料；获得奖项后请上传证书。" />
-                <div className="flex flex-col divide-y divide-hairline rounded-md border border-hairline bg-canvas">
-                  {approvedSubmissions.slice(0, 3).map((submission) => <SubmissionRow key={submission.id} submission={submission} />)}
-                </div>
+              <div className="flat-list">
+                <p className="py-3 text-[12.5px] text-placeholder">暂无已认证获奖证明。以下为已通过的成果材料。</p>
+                {approvedSubmissions.slice(0, 3).map((submission) => (
+                  <SubmissionRow key={submission.id} submission={submission} />
+                ))}
               </div>
-            ) : <EmptyState text="暂无荣誉记录。上传获奖证书并通过审核后，将显示具体比赛和奖项。" />}
-          </Panel>
+            ) : (
+              <p className="py-6 text-[13px] text-placeholder">暂无荣誉记录。上传获奖证书并通过审核后显示。</p>
+            )}
+          </section>
 
-          <Panel title="成长时间线" icon="timeline" aside={`${timelineItems.length} 条`}>
+          <section className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title">成长时间线</h3>
+              <span className="page-section-extra">{timelineItems.length} 条</span>
+            </div>
             {timelineItems.length > 0 ? (
               <>
                 <GrowthTimeline items={visibleTimeline} />
-                {timelineItems.length > 4 && (
+                {timelineItems.length > 4 ? (
                   <button
                     type="button"
                     onClick={() => setShowAllTimeline((value) => !value)}
-                    className="mt-3 w-full rounded-md border border-hairline bg-canvas py-2 text-[13px] text-primary hover:bg-canvas-parchment transition cursor-pointer"
+                    className="mt-2 self-start text-[12.5px] text-body-muted hover:text-primary"
                   >
                     {showAllTimeline ? '收起' : `查看更多（${timelineItems.length - 4}）`}
                   </button>
-                )}
+                ) : null}
               </>
-            ) : <EmptyState text="暂无成长时间线。报名、提交成果或认证荣誉后会自动生成。" />}
-          </Panel>
+            ) : (
+              <p className="py-6 text-[13px] text-placeholder">暂无成长时间线。报名、提交成果或认证荣誉后会自动生成。</p>
+            )}
+          </section>
 
-          <Panel title="下一步建议" icon="tips_and_updates">
-            <ul className="flex flex-col gap-2 text-[13px] text-ink-muted-80 leading-relaxed">
-              {suggestions.map((item) => <li key={item} className="flex gap-2"><span className="material-symbols-outlined text-[16px] text-primary mt-0.5">trending_up</span><span>{item}</span></li>)}
+          <section className="page-section">
+            <div className="page-section-head">
+              <h3 className="page-section-title">下一步建议</h3>
+            </div>
+            <ul className="flex flex-col gap-2 text-[13px] leading-relaxed text-body-subtle">
+              {suggestions.map((item) => (
+                <li key={item} className="border-b border-hairline py-2 last:border-b-0">
+                  {item}
+                </li>
+              ))}
             </ul>
-          </Panel>
+          </section>
         </div>
-      </section>
-    </motion.div>
-  );
-}
-
-function Panel({ title, icon, aside, children }: { title: string; icon: string; aside?: string; children: React.ReactNode }) {
-  return (
-    <section className="bg-white border border-slate-200 rounded-xl p-5">
-      <div className="flex items-center justify-between mb-md gap-3">
-        <h3 className="text-[15px] font-semibold text-ink flex items-center gap-2">
-          <span className="material-symbols-outlined text-[18px] text-primary">{icon}</span>
-          {title}
-        </h3>
-        {aside && <span className="chip">{aside}</span>}
       </div>
-      {children}
-    </section>
+    </div>
   );
 }
 
 function DimensionRow({ label, score, hint }: { label: string; score: number; hint: string }) {
   return (
     <div>
-      <div className="flex items-center justify-between gap-3 mb-1">
+      <div className="mb-1.5 flex items-center justify-between gap-3">
         <p className="text-[13px] font-medium text-ink">{label}</p>
-        <span className="text-[13px] font-semibold text-primary tabular-nums">{score}</span>
+        <span className="text-[13px] font-semibold tabular-nums text-primary">{score}</span>
       </div>
-      <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-        <motion.div className="h-full rounded-full bg-primary" initial={{ width: 0 }} animate={{ width: `${Math.min(100, score)}%` }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} />
-      </div>
-      <p className="mt-1 text-[11px] text-ink-muted-48">{hint}</p>
+      <ProgressBar value={Math.min(100, score)} size="sm" segments={4} showThumb instant />
+      <p className="mt-1.5 text-[11px] text-placeholder">{hint}</p>
     </div>
   );
 }
@@ -507,44 +540,41 @@ function DimensionRow({ label, score, hint }: { label: string; score: number; hi
 function CompetitionRow({ registration }: { registration: Registration }) {
   const level = getLevelMeta(registration.competitionLevel);
   return (
-    <div className="py-3 first:pt-0 last:pb-0">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[14px] font-semibold text-ink truncate">{registration.competitionName || `赛事 #${registration.competitionId}`}</p>
-          <p className="mt-1 text-[12px] text-ink-muted-48">{registration.track || '未选赛道'} · {formatDate(registration.submitDate)}</p>
-        </div>
-        <span className={level.chip}>{level.label}</span>
+    <div className="flat-row !items-start">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13.5px] font-medium text-ink">{registration.competitionName || `赛事 #${registration.competitionId}`}</p>
+        <p className="mt-0.5 text-[12px] text-placeholder">
+          {registration.track || '未选赛道'} · {registration.status}
+          {registration.teamName ? ` · 团队 ${registration.teamName}` : ''} · {formatDate(registration.submitDate)}
+        </p>
       </div>
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        <span className="chip">{registration.status}</span>
-        {registration.teamName && <span className="chip">团队：{registration.teamName}</span>}
-      </div>
+      <span className={level.chip}>{level.label}</span>
     </div>
   );
 }
 
 function HonorRow({ award }: { award: AwardProof }) {
   return (
-    <div className="py-3 first:pt-0 last:pb-0">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[14px] font-semibold text-ink truncate">{award.competitionName || '获奖证明'}</p>
-          <p className="mt-1 text-[12px] text-ink-muted-48">获奖人：{award.winnerName || '—'} · {formatDate(award.awardTime || award.createTime)}</p>
-        </div>
-        <span className="chip chip-warning">{formatAwardLevel(award.awardLevel)}</span>
+    <div className="flat-row !items-start">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13.5px] font-medium text-ink">{award.competitionName || '获奖证明'}</p>
+        <p className="mt-0.5 text-[12px] text-placeholder">
+          {award.winnerName || '—'} · {formatDate(award.awardTime || award.createTime)}
+          {award.organizer ? ` · ${award.organizer}` : ''}
+        </p>
       </div>
-      {(award.organizer || award.certificateNo) && (
-        <p className="mt-2 text-[12px] text-ink-muted-48 truncate">{award.organizer || '主办单位未填写'}{award.certificateNo ? ` · 证书编号：${award.certificateNo}` : ''}</p>
-      )}
+      <span className="chip chip-warning">{formatAwardLevel(award.awardLevel)}</span>
     </div>
   );
 }
 
 function SubmissionRow({ submission }: { submission: Submission }) {
   return (
-    <div className="px-3 py-2">
-      <p className="text-[13px] font-medium text-ink truncate">{submission.competitionName || '成果材料'}</p>
-      <p className="mt-1 text-[12px] text-ink-muted-48 truncate">{submission.fileName || '附件'} · {formatDate(submission.uploadDate)}</p>
+    <div className="flat-row">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13px] font-medium text-ink">{submission.competitionName || '成果材料'}</p>
+        <p className="mt-0.5 truncate text-[12px] text-placeholder">{submission.fileName || '附件'} · {formatDate(submission.uploadDate)}</p>
+      </div>
     </div>
   );
 }
@@ -556,17 +586,17 @@ function GrowthTimeline({ items }: { items: TimelineItem[] }) {
         const level = getLevelMeta(item.level);
         return (
           <li key={item.id} className="relative pb-4 last:pb-0">
-            <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-white" />
+            <span className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-ink" />
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[13px] font-semibold text-ink truncate">{item.title}</p>
-                <p className="mt-1 text-[12px] text-ink-muted-48 truncate">{item.subtitle}</p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
+                <p className="truncate text-[13px] font-medium text-ink">{item.title}</p>
+                <p className="mt-0.5 truncate text-[12px] text-placeholder">{item.subtitle}</p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {item.level && <span className={level.chip}>{level.label}</span>}
                   {item.status && <span className="chip">{item.status}</span>}
                 </div>
               </div>
-              <span className="shrink-0 text-[11px] text-placeholder tabular-nums">{formatDate(item.date)}</span>
+              <span className="shrink-0 text-[11px] tabular-nums text-placeholder">{formatDate(item.date)}</span>
             </div>
           </li>
         );
@@ -575,10 +605,4 @@ function GrowthTimeline({ items }: { items: TimelineItem[] }) {
   );
 }
 
-function EmptyState({ text }: { text: string }) {
-  return (
-    <div className="empty-state-copy mx-auto rounded-md border border-dashed border-hairline bg-canvas p-5 text-center text-[13px] text-ink-muted-48">
-      {text}
-    </div>
-  );
-}
+

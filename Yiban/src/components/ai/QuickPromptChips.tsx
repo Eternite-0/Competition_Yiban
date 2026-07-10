@@ -53,11 +53,11 @@ export default function QuickPromptChips({
             transition={{ duration: 0.2, delay: index * 0.04 }}
             disabled={disabled}
             onClick={() => onSelect(item.prompt)}
-            className="group flex h-10 w-full items-center gap-2.5 rounded-[10px] px-3 text-left text-[13px] text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+            className="group flex h-10 w-full items-center gap-2.5 rounded-[10px] px-3 text-left text-[13px] text-body-muted transition hover:bg-surface-tile-1 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
             aria-label={item.prompt}
             title={item.prompt}
           >
-            <span className="material-symbols-outlined text-[18px] text-slate-400 transition group-hover:text-slate-700">
+            <span className="material-symbols-outlined text-[18px] text-placeholder transition group-hover:text-body">
               {item.icon}
             </span>
             <span className="truncate">{item.prompt}</span>

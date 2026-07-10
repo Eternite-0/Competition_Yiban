@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { motion } from 'framer-motion';
 import apiClient from '../api/client';
+import BrandLogo from '../components/BrandLogo';
 
 type RegisterRole = 'student' | 'teacher';
 
@@ -187,48 +188,43 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden text-ink antialiased">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-canvas-parchment" />
+    <div className="auth-shell">
+      <div className="hidden" />
 
       {/* 顶栏 */}
-      <div className="h-[44px] flex items-center px-xl text-[12px] tracking-tight text-ink bg-canvas border-b border-hairline">
-        <Link to="/login" className="flex items-center gap-2 font-medium hover:text-primary transition">
-          <span className="material-symbols-outlined text-[16px] text-primary icon-fill">workspace_premium</span>
-          易赛通 · 学生竞赛管理平台
+      <header className="flex h-14 items-center justify-between border-b border-hairline bg-canvas px-5">
+        <Link to="/login" className="flex items-center">
+          <BrandLogo size={32} withWordmark subtitle="创建账号" />
         </Link>
-      </div>
+        <Link to="/login" className="text-[13px] text-body-muted hover:text-ink">返回登录</Link>
+      </header>
 
-      <div className="min-h-[calc(100vh-44px)] flex items-center justify-center px-xl py-xxl">
+      <div className="flex flex-1 items-center justify-center px-4 py-10">
         <motion.div
-          initial={{ opacity: 0, y: 18 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-[480px]"
+          transition={{ duration: 0.28 }}
+          className="w-full max-w-[420px]"
         >
-          <div className="glass-strong px-xl py-xl">
-            <div className="mb-lg">
-              <h2 className="font-display font-semibold text-[28px] leading-tight tracking-tight text-ink">
-                注册账号
-              </h2>
-              <p className="text-[13px] text-ink-muted-48 mt-1.5">
-                请选择角色并填写注册信息
-              </p>
-            </div>
-
+          <div className="mb-6 text-center">
+            <h1 className="text-[26px] font-semibold tracking-tight text-ink">创建账号</h1>
+            <p className="mt-2 text-[13.5px] text-body-subtle">选择身份并完成注册信息</p>
+          </div>
+          <div className="auth-card !max-w-none">
             {/* 角色切换 */}
-            <div className="flex w-full p-1 mb-lg bg-canvas-parchment rounded-pill border border-hairline">
+            <div className="mb-4 grid grid-cols-2 gap-1 rounded-[10px] bg-surface-tile-1 p-1">
               {(['student', 'teacher'] as const).map((role) => (
                 <button
                   key={role}
                   type="button"
                   onClick={() => setActiveRole(role)}
-                  className={`flex-1 py-2 text-[13px] text-center transition-all rounded-pill ${
+                  className={`h-9 rounded-lg text-[13px] font-medium transition-colors ${
                     activeRole === role
-                      ? 'bg-canvas text-ink font-semibold shadow-sm'
-                      : 'text-ink-muted-48 hover:text-ink'
+                      ? 'bg-canvas text-ink shadow-[0_0_0_1px_var(--color-border)]'
+                      : 'text-body-subtle hover:text-ink'
                   }`}
                 >
-                  {role === 'student' ? '学生注册' : '教师注册'}
+                  {role === 'student' ? '学生' : '教师'}
                 </button>
               ))}
             </div>
@@ -245,7 +241,7 @@ export default function RegisterPage() {
                 {/* 学号查询 */}
                 <div className="flex gap-2">
                   <input
-                    className="input-glass h-[48px] px-4 text-[15px] flex-1"
+                    className="input-glass h-11 px-4 text-[15px] flex-1"
                     placeholder="请输入学号"
                     value={studentNo}
                     aria-label="学号"
@@ -263,7 +259,7 @@ export default function RegisterPage() {
                     type="button"
                     onClick={handleLookupStudent}
                     disabled={lookupLoading}
-                    className="h-[48px] px-4 rounded-pill bg-primary text-on-primary text-[13px] font-medium hover:bg-primary-focus transition disabled:opacity-50"
+                    className="h-11 px-4 btn-primary h-11 shrink-0"
                   >
                     {lookupLoading ? '查询中...' : '查询'}
                   </button>
@@ -271,7 +267,7 @@ export default function RegisterPage() {
 
                 {/* 查询错误 */}
                 {lookupError && (
-                  <div className="text-[13px] text-red-500 bg-red-50 px-3 py-2 rounded-lg">
+                  <div className="rounded-lg border border-danger-border bg-danger-bg px-3 py-2 text-[13px] text-error">
                     {lookupError}
                   </div>
                 )}
@@ -281,9 +277,9 @@ export default function RegisterPage() {
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="bg-primary/5 border border-primary/20 rounded-lg p-4"
+                    className="rounded-lg border border-border bg-surface-tile-1 p-4"
                   >
-                    <div className="text-[12px] text-primary font-medium mb-2">学籍信息</div>
+                    <div className="mb-2 text-[12px] font-medium text-body-muted">学籍信息</div>
                     <div className="grid grid-cols-2 gap-2 text-[13px]">
                       <div><span className="text-ink-muted-48">学院：</span>{studentLookup.college}</div>
                       <div><span className="text-ink-muted-48">专业：</span>{studentLookup.majorName}</div>
@@ -296,7 +292,7 @@ export default function RegisterPage() {
                 {/* 姓名输入 */}
                 {studentLookup && (
                   <input
-                    className="input-glass h-[48px] px-4 text-[15px]"
+                    className="input-glass h-11 px-4 text-[15px]"
                     placeholder="请输入真实姓名（需与学籍一致）"
                     value={studentName}
                     aria-label="真实姓名"
@@ -308,7 +304,7 @@ export default function RegisterPage() {
                 {studentLookup && (
                   <>
                     <input
-                      className="input-glass h-[48px] px-4 text-[15px]"
+                      className="input-glass h-11 px-4 text-[15px]"
                       placeholder="设置密码（至少8位，包含字母和数字）"
                       type="password"
                       value={studentPassword}
@@ -316,7 +312,7 @@ export default function RegisterPage() {
                       onChange={(e) => setStudentPassword(e.target.value)}
                     />
                     <input
-                      className="input-glass h-[48px] px-4 text-[15px]"
+                      className="input-glass h-11 px-4 text-[15px]"
                       placeholder="确认密码"
                       type="password"
                       value={studentConfirmPwd}
@@ -328,15 +324,15 @@ export default function RegisterPage() {
                     <label className="flex items-start gap-2 cursor-pointer">
                       <input
                         type="checkbox"
-                        className="w-[14px] h-[14px] rounded-xs accent-primary cursor-pointer mt-0.5"
+                        className="w-[14px] h-[14px] rounded-xs accent-ink cursor-pointer mt-0.5"
                         checked={agreement}
                         onChange={(e) => setAgreement(e.target.checked)}
                       />
                       <span className="text-[12px] text-ink-muted-80 leading-relaxed">
                         我已阅读并同意
-                        <Link to="/terms" target="_blank" className="text-primary hover:underline mx-1">《注册协议》</Link>
+                        <Link to="/terms" target="_blank" className="text-ink underline decoration-border-emphasis underline-offset-2 mx-1">《注册协议》</Link>
                         和
-                        <span className="text-primary hover:underline mx-1 cursor-pointer">《隐私政策》</span>
+                        <span className="text-ink underline decoration-border-emphasis underline-offset-2 mx-1 cursor-pointer">《隐私政策》</span>
                       </span>
                     </label>
 
@@ -344,7 +340,7 @@ export default function RegisterPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full h-[48px] mt-2 rounded-pill bg-primary text-on-primary text-[15px] font-medium hover:bg-primary-focus active:scale-[0.97] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="btn-primary mt-2 h-11 w-full"
                     >
                       {loading && (
                         <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
@@ -366,21 +362,21 @@ export default function RegisterPage() {
                 }}
               >
                 <input
-                  className="input-glass h-[48px] px-4 text-[15px]"
+                  className="input-glass h-11 px-4 text-[15px]"
                   placeholder="请输入工号"
                   value={teacherUsername}
                   aria-label="工号"
                   onChange={(e) => setTeacherUsername(e.target.value)}
                 />
                 <input
-                  className="input-glass h-[48px] px-4 text-[15px]"
+                  className="input-glass h-11 px-4 text-[15px]"
                   placeholder="请输入真实姓名"
                   value={teacherName}
                   aria-label="真实姓名"
                   onChange={(e) => setTeacherName(e.target.value)}
                 />
                 <select
-                  className="input-glass h-[48px] px-4 text-[15px] appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23666%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-10"
+                  className="input-glass h-11 px-4 text-[15px] appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23666%22%20stroke-width%3D%222%22%3E%3Cpath%20d%3D%22m6%209%206%206%206-6%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat pr-10"
                   value={teacherCollege}
                   aria-label="所属学院"
                   onChange={(e) => setTeacherCollege(e.target.value)}
@@ -391,7 +387,7 @@ export default function RegisterPage() {
                   ))}
                 </select>
                 <input
-                  className="input-glass h-[48px] px-4 text-[15px]"
+                  className="input-glass h-11 px-4 text-[15px]"
                   placeholder="设置密码（至少8位，包含字母和数字）"
                   type="password"
                   value={teacherPassword}
@@ -399,7 +395,7 @@ export default function RegisterPage() {
                   onChange={(e) => setTeacherPassword(e.target.value)}
                 />
                 <input
-                  className="input-glass h-[48px] px-4 text-[15px]"
+                  className="input-glass h-11 px-4 text-[15px]"
                   placeholder="确认密码"
                   type="password"
                   value={teacherConfirmPwd}
@@ -407,14 +403,14 @@ export default function RegisterPage() {
                   onChange={(e) => setTeacherConfirmPwd(e.target.value)}
                 />
 
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 text-[12px] text-yellow-800">
+                <div className="rounded-lg border border-border bg-surface-tile-1 px-3 py-2 text-[12px] text-body-muted">
                   教师账号注册后需要管理员审核，审核通过后方可登录。
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-[48px] mt-2 rounded-pill bg-primary text-on-primary text-[15px] font-medium hover:bg-primary-focus active:scale-[0.97] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="btn-primary mt-2 h-11 w-full"
                 >
                   {loading && (
                     <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
@@ -428,7 +424,7 @@ export default function RegisterPage() {
           {/* 底部链接 */}
           <div className="mt-md text-center text-[13px] text-ink-muted-80">
             已有账号？
-            <Link to="/login" className="text-primary hover:text-primary-focus font-medium ml-1 transition">
+            <Link to="/login" className="text-primary hover:text-ink font-medium ml-1 transition">
               返回登录
             </Link>
           </div>

@@ -51,7 +51,7 @@ function ThinkingIndicator({ progress }: { progress?: AiToolProgress }) {
   }, [progress?.message]);
 
   return (
-    <span className="inline-flex items-center gap-2 text-[12px] font-medium text-slate-500" aria-live="polite">
+    <span className="inline-flex items-center gap-2 text-[12px] font-medium text-body-subtle" aria-live="polite">
       <span className="relative flex h-1.5 w-1.5 rounded-full bg-indigo-400">
         <span className="absolute inset-0 animate-ping rounded-full bg-indigo-300/50" />
       </span>
@@ -120,10 +120,10 @@ function MessageBubble({ message, onRetry }: { message: AssistantChatMessage; on
     ? stripArtifactDownloadLinks(message.content)
     : message.content;
   const containerClassName = isUser
-    ? 'max-w-[82%] rounded-[18px] rounded-br-[6px] bg-slate-100 px-3.5 py-2 text-[13px] leading-[1.65] text-slate-900'
+    ? 'max-w-[82%] rounded-[18px] rounded-br-[6px] bg-surface-tile-2 px-3.5 py-2 text-[13px] leading-[1.65] text-ink'
     : message.status === 'error'
       ? 'max-w-[88%] rounded-[15px] rounded-bl-[5px] border border-red-200/80 bg-red-50/80 px-3.5 py-2.5 text-[13px] leading-[1.68] text-red-700'
-      : 'w-full max-w-none text-[13px] leading-[1.75] text-slate-800';
+      : 'w-full max-w-none text-[13px] leading-[1.75] text-ink';
 
   return (
     <div className={containerClassName}>
@@ -149,25 +149,25 @@ function MessageBubble({ message, onRetry }: { message: AssistantChatMessage; on
       ) : isUser ? (
         <p className="whitespace-pre-wrap break-words">{message.content}</p>
       ) : (
-        <div className="ai-chat-markdown prose prose-sm max-w-none break-words prose-headings:font-semibold prose-headings:text-slate-900 prose-h1:text-[15px] prose-h1:mt-3 prose-h1:mb-1.5 prose-h2:text-[14px] prose-h2:mt-3 prose-h2:mb-1.5 prose-h3:text-[13px] prose-h3:mt-2 prose-h3:mb-1 prose-p:my-1.5 prose-p:leading-[1.75] prose-p:text-slate-800 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-li:text-slate-800 prose-li:leading-[1.7] prose-pre:my-2.5 prose-pre:rounded-[9px] prose-pre:bg-slate-50 prose-pre:border prose-pre:border-slate-200/70 prose-pre:text-[12px] prose-pre:leading-[1.55] prose-code:before:content-none prose-code:after:content-none prose-code:bg-slate-100 prose-code:text-slate-700 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-[12px] prose-code:font-normal prose-blockquote:my-2 prose-blockquote:border-l-slate-200 prose-blockquote:bg-slate-50/70 prose-blockquote:py-1 prose-blockquote:pr-2 prose-blockquote:rounded-r prose-blockquote:text-slate-600 prose-strong:text-slate-900 prose-strong:font-semibold prose-a:text-slate-900 prose-a:underline prose-a:decoration-slate-300 prose-a:underline-offset-2 prose-hr:my-4 prose-hr:border-slate-200/80 prose-img:rounded-[10px]">
+        <div className="ai-chat-markdown prose prose-sm max-w-none break-words prose-headings:font-semibold prose-headings:text-ink prose-h1:text-[15px] prose-h1:mt-3 prose-h1:mb-1.5 prose-h2:text-[14px] prose-h2:mt-3 prose-h2:mb-1.5 prose-h3:text-[13px] prose-h3:mt-2 prose-h3:mb-1 prose-p:my-1.5 prose-p:leading-[1.75] prose-p:text-ink prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-li:text-ink prose-li:leading-[1.7] prose-pre:my-2.5 prose-pre:rounded-[9px] prose-pre:bg-surface-tile-1 prose-pre:border prose-pre:border-border/70 prose-pre:text-[12px] prose-pre:leading-[1.55] prose-code:before:content-none prose-code:after:content-none prose-code:bg-surface-tile-2 prose-code:text-body prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-[12px] prose-code:font-normal prose-blockquote:my-2 prose-blockquote:border-l-border prose-blockquote:bg-surface-tile-1/70 prose-blockquote:py-1 prose-blockquote:pr-2 prose-blockquote:rounded-r prose-blockquote:text-body-muted prose-strong:text-ink prose-strong:font-semibold prose-a:text-ink prose-a:underline prose-a:decoration-border prose-a:underline-offset-2 prose-hr:my-4 prose-hr:border-border/80 prose-img:rounded-[10px]">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
               table: ({ children }) => (
-                <div className="my-2 max-w-full overflow-x-auto rounded-[10px] border border-slate-200/70 bg-white">
+                <div className="my-2 max-w-full overflow-x-auto rounded-[10px] border border-border/70 bg-canvas">
                   <table className="m-0 w-max min-w-full border-collapse text-[12px] leading-5">{children}</table>
                 </div>
               ),
-              thead: ({ children }) => <thead className="bg-slate-50 text-slate-700">{children}</thead>,
-              tr: ({ children }) => <tr className="border-b border-slate-200/70 last:border-b-0">{children}</tr>,
+              thead: ({ children }) => <thead className="bg-surface-tile-1 text-body">{children}</thead>,
+              tr: ({ children }) => <tr className="border-b border-border/70 last:border-b-0">{children}</tr>,
               th: ({ children }) => (
-                <th className="whitespace-nowrap px-2.5 py-2 text-left font-semibold text-slate-700">{children}</th>
+                <th className="whitespace-nowrap px-2.5 py-2 text-left font-semibold text-body">{children}</th>
               ),
               td: ({ children }) => (
-                <td className="whitespace-nowrap px-2.5 py-2 align-top text-slate-700">{children}</td>
+                <td className="whitespace-nowrap px-2.5 py-2 align-top text-body">{children}</td>
               ),
               blockquote: ({ children }) => (
-                <blockquote className="my-2 rounded-r-[10px] border-l-2 border-slate-200 bg-slate-50/80 py-1.5 pl-3 pr-2 text-slate-600">
+                <blockquote className="my-2 rounded-r-[10px] border-l-2 border-border bg-surface-tile-1/80 py-1.5 pl-3 pr-2 text-body-muted">
                   {children}
                 </blockquote>
               ),
@@ -229,7 +229,7 @@ function MessageBubble({ message, onRetry }: { message: AssistantChatMessage; on
             <button
               type="button"
               onClick={onRetry}
-              className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-red-200/80 bg-white px-2.5 text-[12px] text-red-500 transition hover:bg-red-50 hover:border-red-300"
+              className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-red-200/80 bg-canvas px-2.5 text-[12px] text-red-500 transition hover:bg-red-50 hover:border-red-300"
             >
               <span className="material-symbols-outlined text-[14px]">refresh</span>
               重试
@@ -269,21 +269,21 @@ function ComprehensiveScoreCard({ score }: { score: ComprehensiveScoreSummary })
     <button
       type="button"
       onClick={() => setMode((current) => current === 'rank' ? 'percent' : 'rank')}
-      className="mt-2 grid w-full gap-2 rounded-[12px] border border-slate-200/80 bg-white p-3 text-left transition hover:border-slate-300 hover:bg-slate-50"
+      className="mt-2 grid w-full gap-2 rounded-[12px] border border-border/80 bg-canvas p-3 text-left transition hover:border-border-emphasis hover:bg-surface-tile-1"
       title="点击切换排名/百分比"
     >
-      <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-slate-600">
+      <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-body-muted">
         <span className="material-symbols-outlined text-[16px]">leaderboard</span>
         综测排名
       </span>
-      <span className="text-[24px] font-semibold leading-none text-slate-900 tabular-nums">
+      <span className="text-[18px] font-medium leading-none text-ink tabular-nums">
         {value}
       </span>
-      <span className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-400">
+      <span className="flex flex-wrap items-center gap-1.5 text-[11px] text-placeholder">
         <span>{score.rankScope || '本专业'}</span>
         <span>·</span>
         <span>{score.academicYear || '官方综测'}</span>
-        <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500">
+        <span className="ml-auto rounded-full bg-surface-tile-2 px-2 py-0.5 text-[11px] text-body-subtle">
           {mode === 'rank' ? '点击查看百分比' : '点击查看排名'}
         </span>
       </span>
@@ -309,34 +309,34 @@ function DetailTableCards({ tables, onOpen }: { tables: DetailTable[]; onOpen: (
       {tables.map((table) => (
         <div
           key={`${table.title}-${table.total ?? table.rows.length}`}
-          className="rounded-[12px] border border-slate-200/80 bg-white p-3 shadow-sm"
+          className="rounded-[12px] border border-border/80 bg-canvas p-3 shadow-none"
         >
           <div className="flex items-start gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-slate-50 text-slate-600">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-surface-tile-1 text-body-muted">
               <span className="material-symbols-outlined text-[19px]">table_view</span>
             </span>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] font-semibold text-slate-900">{table.title}</div>
-              <div className="mt-0.5 text-[11px] text-slate-400">
+              <div className="truncate text-[13px] font-semibold text-ink">{table.title}</div>
+              <div className="mt-0.5 text-[11px] text-placeholder">
                 {table.academicYear ? `${table.academicYear} · ` : ''}共 {table.total ?? table.rows.length} 条
               </div>
             </div>
             <button
               type="button"
               onClick={() => onOpen(table)}
-              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-[9px] bg-slate-900 px-2.5 text-[11px] font-medium text-white transition hover:bg-slate-700"
+              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-[9px] bg-ink px-2.5 text-[11px] font-medium text-on-primary transition hover:bg-primary-focus"
             >
               <span className="material-symbols-outlined text-[14px]">open_in_new</span>
               查看详细
             </button>
           </div>
           {table.previewRows.length > 0 && (
-            <div className="mt-2 overflow-hidden rounded-[10px] border border-slate-100 bg-slate-50/70">
+            <div className="mt-2 overflow-hidden rounded-[10px] border border-hairline bg-surface-tile-1/70">
               {table.previewRows.slice(0, 3).map((row, index) => (
-                <div key={index} className="flex items-center gap-2 border-b border-slate-100 px-2.5 py-1.5 last:border-b-0">
-                  <span className="w-7 shrink-0 text-[11px] text-slate-400">#{valueToDisplay(row['序号'] ?? index + 1)}</span>
-                  <span className="min-w-0 flex-1 truncate text-[12px] text-slate-700">{valueToDisplay(row['姓名'])}</span>
-                  <span className="shrink-0 text-[11px] tabular-nums text-slate-500">
+                <div key={index} className="flex items-center gap-2 border-b border-hairline px-2.5 py-1.5 last:border-b-0">
+                  <span className="w-7 shrink-0 text-[11px] text-placeholder">#{valueToDisplay(row['序号'] ?? index + 1)}</span>
+                  <span className="min-w-0 flex-1 truncate text-[12px] text-body">{valueToDisplay(row['姓名'])}</span>
+                  <span className="shrink-0 text-[11px] tabular-nums text-body-subtle">
                     综测 {valueToDisplay(row['综测名次'] ?? row['学业名次'])}
                   </span>
                 </div>
@@ -368,7 +368,7 @@ function DetailTableModal({ table, onClose }: { table: DetailTable | null; onClo
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-3 backdrop-blur-md"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-ink/45 p-3 backdrop-blur-md"
       role="dialog"
       aria-modal="true"
       aria-label={table.title}
@@ -376,18 +376,18 @@ function DetailTableModal({ table, onClose }: { table: DetailTable | null; onClo
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[86vh] w-full max-w-[980px] flex-col overflow-hidden rounded-[16px] border border-white/70 bg-white shadow-[0_32px_120px_rgba(15,23,42,0.28)]">
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200/70 px-4 py-3">
+      <div className="flex max-h-[86vh] w-full max-w-[980px] flex-col overflow-hidden rounded-[16px] border border-white/70 bg-canvas shadow-[0_32px_120px_rgba(15,23,42,0.28)]">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border/70 px-4 py-3">
           <div className="min-w-0">
-            <h3 className="truncate text-[16px] font-semibold text-slate-900">{table.title}</h3>
-            <p className="mt-0.5 text-[12px] text-slate-500">
+            <h3 className="truncate text-[16px] font-semibold text-ink">{table.title}</h3>
+            <p className="mt-0.5 text-[12px] text-body-subtle">
               {table.description || '完整表格'}{table.academicYear ? ` · ${table.academicYear}` : ''}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] text-placeholder transition hover:bg-surface-tile-2 hover:text-body"
             aria-label="关闭表格详情"
             title="关闭"
           >
@@ -396,10 +396,10 @@ function DetailTableModal({ table, onClose }: { table: DetailTable | null; onClo
         </div>
         <div className="min-h-0 flex-1 overflow-auto p-3">
           <table className="min-w-[760px] w-full border-separate border-spacing-0 text-left text-[12px]">
-            <thead className="sticky top-0 z-10 bg-white shadow-[0_1px_0_rgba(226,232,240,1)]">
+            <thead className="sticky top-0 z-10 bg-canvas shadow-[0_1px_0_rgba(226,232,240,1)]">
               <tr>
                 {table.columns.map((column) => (
-                  <th key={column} className="whitespace-nowrap px-3 py-2 font-semibold text-slate-600">
+                  <th key={column} className="whitespace-nowrap px-3 py-2 font-semibold text-body-muted">
                     {column}
                   </th>
                 ))}
@@ -407,9 +407,9 @@ function DetailTableModal({ table, onClose }: { table: DetailTable | null; onClo
             </thead>
             <tbody>
               {table.rows.map((row, rowIndex) => (
-                <tr key={rowIndex} className="border-b border-slate-100 odd:bg-slate-50/60">
+                <tr key={rowIndex} className="border-b border-hairline odd:bg-surface-tile-1/60">
                   {table.columns.map((column) => (
-                    <td key={column} className="whitespace-nowrap border-b border-slate-100 px-3 py-2 text-slate-700">
+                    <td key={column} className="whitespace-nowrap border-b border-hairline px-3 py-2 text-body">
                       {valueToDisplay(row[column])}
                     </td>
                   ))}
@@ -425,27 +425,27 @@ function DetailTableModal({ table, onClose }: { table: DetailTable | null; onClo
 
 function ArtifactList({ artifacts }: { artifacts: AiArtifact[] }) {
   return (
-    <div className="mt-2 space-y-2 border-t border-slate-100 pt-2">
+    <div className="mt-2 space-y-2 border-t border-hairline pt-2">
       {artifacts.map((artifact) => (
         <div
           key={`${artifact.type}-${artifact.url}`}
-          className="flex items-center gap-2 rounded-[12px] border border-slate-200/70 bg-slate-50/80 p-2"
+          className="flex items-center gap-2 rounded-[12px] border border-border/70 bg-surface-tile-1/80 p-2"
         >
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-white text-slate-600 shadow-sm">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-canvas text-body-muted shadow-none">
             <span className="material-symbols-outlined text-[19px]">
               {artifact.type === 'xlsx' ? 'table_view' : 'description'}
             </span>
           </span>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[12px] font-medium text-slate-800">{artifact.name}</div>
-            <div className="truncate text-[11px] text-slate-400">
+            <div className="truncate text-[12px] font-medium text-ink">{artifact.name}</div>
+            <div className="truncate text-[11px] text-placeholder">
               {artifact.description || (artifact.type === 'xlsx' ? 'AI 生成表格' : 'AI 生成文档')}
             </div>
           </div>
           <button
             type="button"
             onClick={() => void downloadArtifact(artifact)}
-            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-[9px] bg-slate-900 px-2.5 text-[11px] font-medium text-white transition hover:bg-slate-700"
+            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-[9px] bg-ink px-2.5 text-[11px] font-medium text-on-primary transition hover:bg-primary-focus"
             aria-label={`下载 ${artifact.name}`}
             title="下载文件"
           >
@@ -492,10 +492,10 @@ function SourceSummary({ sources }: { sources: AiSourceSummary[] }) {
   const overflow = sources.length - visible.length;
 
   return (
-    <div className="mt-2 border-t border-slate-100 pt-1.5 text-[11px] leading-5 text-slate-400">
+    <div className="mt-2 border-t border-hairline pt-1.5 text-[11px] leading-5 text-placeholder">
       <span className="mr-1">来源：</span>
       {visible.map((source, index) => (
-        <span key={`${source.label}-${index}`} className="mr-1.5 inline-flex items-center rounded-full bg-slate-50 px-1.5 text-slate-500">
+        <span key={`${source.label}-${index}`} className="mr-1.5 inline-flex items-center rounded-full bg-surface-tile-1 px-1.5 text-body-subtle">
           {source.label}{source.count ? ` ${source.count}` : ''}
         </span>
       ))}

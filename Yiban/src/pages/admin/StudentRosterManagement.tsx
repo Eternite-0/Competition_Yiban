@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
-import { listContainer, listItem } from '../../lib/motion';
 import PageHero from '../../components/PageHero';
 import Pagination from '../../components/Pagination';
 import ConfirmModal from '../../components/ConfirmModal';
@@ -114,7 +113,6 @@ export default function StudentRosterManagement() {
       setColleges(res || []);
     } catch (err) {
       console.error('获取学院列表失败:', err);
-      // 使用默认列表作为后备
       setColleges(['计算机学院', '电子学院', '商学院', '设计学院', '机械学院', '外语学院', '理学院', '文学院']);
     }
   }, []);
@@ -193,7 +191,6 @@ export default function StudentRosterManagement() {
     });
     if (!confirmed) return;
     try {
-      const { default: apiClient } = await import('../../api/client');
       await apiClient.delete(`/admin/roster/${id}`);
       toast.success('删除成功');
       fetchRoster();
@@ -227,66 +224,54 @@ export default function StudentRosterManagement() {
   };
 
   return (
-    <div className="py-lg flex flex-col gap-lg">
+    <div className="flex flex-col gap-4">
       <PageHero
-        eyebrow="Administration"
+        eyebrow="管理端"
         title="花名册管理"
         description="管理学生花名册，支持 Excel 导入"
         actions={
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => { setShowImportModal(true); setImportResult(null); setImportFile(null); }}
-              className="h-10 px-4 rounded-pill bg-canvas border border-hairline text-[13px] text-ink hover:border-primary/30 transition flex items-center gap-2"
+              className="btn-secondary"
             >
-              <span className="material-symbols-outlined text-[18px]">upload_file</span>
+              <span className="material-symbols-outlined">upload_file</span>
               导入 Excel
             </button>
-            <button
-              onClick={() => handleOpenModal()}
-              className="h-10 px-4 rounded-pill bg-primary text-on-primary text-[13px] font-medium hover:bg-primary-focus transition flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-[18px]">add</span>
+            <button type="button" onClick={() => handleOpenModal()} className="btn-primary">
+              <span className="material-symbols-outlined">add</span>
               添加学生
             </button>
           </div>
         }
       />
 
-      {/* 统计卡片 */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-md">
+      <div className="stat-grid">
         {[
-          { label: '花名册总数', value: stats.total, icon: 'group', color: 'text-primary' },
-          { label: '已注册', value: stats.registered, icon: 'check_circle', color: 'text-green-600' },
-          { label: '未注册', value: stats.pending, icon: 'pending', color: 'text-yellow-600' },
-        ].map((m, i) => (
-          <motion.div
-            key={m.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05, duration: 0.35 }}
-            whileHover={{ scale: 1.02, y: -2 }}
-            className="stat-tile p-lg flex flex-col gap-2 cursor-default"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] text-ink-muted-80">{m.label}</span>
-              <span className={`material-symbols-outlined text-[18px] ${m.color}`}>{m.icon}</span>
+          { label: '花名册总数', value: stats.total, icon: 'group', hint: '全部记录' },
+          { label: '已注册', value: stats.registered, icon: 'check_circle', hint: '已开通账号' },
+          { label: '未注册', value: stats.pending, icon: 'pending', hint: '待学生注册' },
+        ].map((m) => (
+          <div key={m.label} className="stat-card">
+            <div className="stat-card-label">{m.label}</div>
+            <div className="stat-card-value">{loading ? '—' : m.value}</div>
+            <div className="stat-card-hint">
+              <span className="material-symbols-outlined align-middle text-[14px] text-placeholder">{m.icon}</span>
+              {' '}{m.hint}
             </div>
-            <span className={`font-display font-medium text-[22px] leading-none tabular-nums ${m.color}`}>
-              {loading ? '—' : m.value}
-            </span>
-          </motion.div>
+          </div>
         ))}
-      </section>
+      </div>
 
-      {/* 筛选 */}
-      <div className="glass-tint flex flex-wrap gap-sm items-center px-md py-3" role="search">
+      <div className="filter-bar" role="search">
         <div className="relative w-full sm:w-[200px]">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-ink-muted-48">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-placeholder">
             search
           </span>
           <input
             name="rosterKeyword"
-            className="input-glass h-9 pl-9 text-[13px] !rounded-pill"
+            className="input-glass h-9 pl-9 text-[13px]"
             placeholder="搜索学号/姓名"
             aria-label="搜索学号/姓名"
             value={filters.keyword}
@@ -295,7 +280,7 @@ export default function StudentRosterManagement() {
         </div>
         <select
           name="filterCollege"
-          className="input-glass h-9 w-full sm:w-[140px] text-[13px]"
+          className="input-glass h-9 w-full text-[13px] sm:w-[140px]"
           value={filters.college}
           aria-label="筛选学院"
           onChange={(e) => setFilters({ ...filters, college: e.target.value, majorId: '' })}
@@ -307,7 +292,7 @@ export default function StudentRosterManagement() {
         </select>
         <select
           name="filterMajor"
-          className="input-glass h-9 w-full sm:w-[140px] text-[13px]"
+          className="input-glass h-9 w-full text-[13px] sm:w-[140px]"
           value={filters.majorId}
           aria-label="筛选专业"
           onChange={(e) => setFilters({ ...filters, majorId: e.target.value })}
@@ -319,7 +304,7 @@ export default function StudentRosterManagement() {
         </select>
         <select
           name="filterGrade"
-          className="input-glass h-9 w-full sm:w-[100px] text-[13px]"
+          className="input-glass h-9 w-full text-[13px] sm:w-[100px]"
           value={filters.grade}
           aria-label="筛选年级"
           onChange={(e) => setFilters({ ...filters, grade: e.target.value })}
@@ -331,7 +316,7 @@ export default function StudentRosterManagement() {
         </select>
         <select
           name="filterStatus"
-          className="input-glass h-9 w-full sm:w-[100px] text-[13px]"
+          className="input-glass h-9 w-full text-[13px] sm:w-[100px]"
           value={filters.status}
           aria-label="筛选状态"
           onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -342,75 +327,67 @@ export default function StudentRosterManagement() {
         </select>
       </div>
 
-      {/* 表格 */}
-      <div className="glass overflow-hidden">
-        <div className="overflow-x-auto">
+      <section className="section-card">
+        <div className="section-card-header">
+          <h2 className="section-card-title">花名册列表</h2>
+          <span className="chip tabular-nums">{pagination.total} 条</span>
+        </div>
         {loading ? (
-          <div className="flex items-center justify-center py-xxl">
-            <span className="material-symbols-outlined animate-spin text-[24px] text-primary">progress_activity</span>
+          <div className="empty-panel py-16">
+            <span className="material-symbols-outlined animate-spin">progress_activity</span>
           </div>
         ) : records.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-xxl text-ink-muted-48">
-            <span className="material-symbols-outlined text-[48px] mb-2">group</span>
-            <p className="text-[14px]">暂无花名册数据</p>
+          <div className="empty-panel py-16">
+            <span className="material-symbols-outlined">group</span>
+            <p className="text-[13px]">暂无花名册数据</p>
           </div>
         ) : (
           <>
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-hairline">
-                  <th className="text-left px-md py-3 text-[12px] font-medium text-ink-muted-48">学号</th>
-                  <th className="text-left px-md py-3 text-[12px] font-medium text-ink-muted-48">姓名</th>
-                  <th className="text-left px-md py-3 text-[12px] font-medium text-ink-muted-48">学院</th>
-                  <th className="text-left px-md py-3 text-[12px] font-medium text-ink-muted-48">专业</th>
-                  <th className="text-left px-md py-3 text-[12px] font-medium text-ink-muted-48">班级</th>
-                  <th className="text-left px-md py-3 text-[12px] font-medium text-ink-muted-48">年级</th>
-                  <th className="text-left px-md py-3 text-[12px] font-medium text-ink-muted-48">状态</th>
-                  <th className="text-right px-md py-3 text-[12px] font-medium text-ink-muted-48">操作</th>
-                </tr>
-              </thead>
-              <motion.tbody variants={listContainer} initial="hidden" animate="visible">
-                {records.map((r) => (
-                  <motion.tr
-                    key={r.id}
-                    variants={listItem}
-                    className="border-b border-hairline last:border-0 hover:bg-primary/5 transition"
-                  >
-                    <td className="px-md py-3 text-[13px] text-ink font-mono">{r.studentNo}</td>
-                    <td className="px-md py-3 text-[13px] text-ink font-medium">{r.realName}</td>
-                    <td className="px-md py-3 text-[13px] text-ink">{r.college}</td>
-                    <td className="px-md py-3 text-[13px] text-ink">{r.majorName || '-'}</td>
-                    <td className="px-md py-3 text-[13px] text-ink">{r.className || '-'}</td>
-                    <td className="px-md py-3 text-[13px] text-ink">{r.grade}级</td>
-                    <td className="px-md py-3">
-                      <span className={`chip ${r.status === 'registered' ? 'chip-primary' : 'chip-warning'}`}>
-                        {r.status === 'registered' ? '已注册' : '未注册'}
-                      </span>
-                    </td>
-                    <td className="px-md py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleOpenModal(r)}
-                          className="h-9 px-3 rounded-lg text-[12px] text-primary hover:bg-primary/10 transition"
-                        >
-                          编辑
-                        </button>
-                        <button
-                          onClick={() => handleDelete(r.id)}
-                          className="h-9 px-3 rounded-lg text-[12px] text-red-500 hover:bg-red-50 transition"
-                        >
-                          删除
-                        </button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                ))}
-              </motion.tbody>
-            </table>
-
-            {/* 分页 */}
-            <div className="flex items-center justify-between px-md py-3 border-t border-hairline">
-              <span className="text-[12px] text-ink-muted-48">
+            <div className="data-table-wrap !rounded-none !border-0">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>学号</th>
+                    <th>姓名</th>
+                    <th>学院</th>
+                    <th>专业</th>
+                    <th>班级</th>
+                    <th>年级</th>
+                    <th>状态</th>
+                    <th className="text-right">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {records.map((r) => (
+                    <tr key={r.id}>
+                      <td className="font-mono">{r.studentNo}</td>
+                      <td className="font-medium">{r.realName}</td>
+                      <td>{r.college}</td>
+                      <td>{r.majorName || '—'}</td>
+                      <td>{r.className || '—'}</td>
+                      <td>{r.grade}级</td>
+                      <td>
+                        <span className={`chip ${r.status === 'registered' ? 'chip-primary' : 'chip-warning'}`}>
+                          {r.status === 'registered' ? '已注册' : '未注册'}
+                        </span>
+                      </td>
+                      <td className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button type="button" onClick={() => handleOpenModal(r)} className="btn-utility !h-8 !px-3 !text-[12px]">
+                            编辑
+                          </button>
+                          <button type="button" onClick={() => handleDelete(r.id)} className="btn-danger !h-8 !px-3 !text-[12px]">
+                            删除
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center justify-between border-t border-hairline px-4 py-3">
+              <span className="text-[12px] text-placeholder">
                 共 {pagination.total} 条记录
               </span>
               <Pagination
@@ -422,180 +399,158 @@ export default function StudentRosterManagement() {
             </div>
           </>
         )}
-        </div>
-      </div>
+      </section>
 
-      {/* 添加/编辑弹窗 */}
       <AnimatePresence>
         {showModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/20 backdrop-blur-sm"
             role="dialog"
             aria-modal="true"
             aria-labelledby="roster-modal-title"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="glass-strong w-full max-w-[480px] mx-4 p-xl rounded-2xl"
-            >
-            <h3 id="roster-modal-title" className="text-[18px] font-semibold text-ink mb-lg">
-              {editingId ? '编辑记录' : '添加学生'}
-            </h3>
-            <div className="flex flex-col gap-3">
-              <input
-                className="input-glass h-[44px] px-4 text-[14px]"
-                placeholder="学号"
-                value={formData.studentNo}
-                onChange={(e) => setFormData({ ...formData, studentNo: e.target.value })}
-                disabled={!!editingId}
-              />
-              <input
-                className="input-glass h-[44px] px-4 text-[14px]"
-                placeholder="姓名"
-                value={formData.realName}
-                onChange={(e) => setFormData({ ...formData, realName: e.target.value })}
-              />
-              <select
-                className="input-glass h-[44px] px-4 text-[14px]"
-                value={formData.college}
-                onChange={(e) => setFormData({ ...formData, college: e.target.value, majorId: '', classId: '' })}
-              >
-                <option value="">请选择学院</option>
-                {colleges.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-              <select
-                className="input-glass h-[44px] px-4 text-[14px]"
-                value={formData.majorId}
-                onChange={(e) => setFormData({ ...formData, majorId: e.target.value, classId: '' })}
-              >
-                <option value="">请选择专业</option>
-                {formMajors.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-              <select
-                className="input-glass h-[44px] px-4 text-[14px]"
-                value={formData.classId}
-                onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
-              >
-                <option value="">请选择班级</option>
-                {formClasses.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-              <select
-                className="input-glass h-[44px] px-4 text-[14px]"
-                value={formData.grade}
-                onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
-              >
-                <option value="">请选择年级</option>
-                {grades.map((g) => (
-                  <option key={g} value={g}>{g}级</option>
-                ))}
-              </select>
+            <div className="section-card mx-4 w-full max-w-[480px]">
+              <div className="section-card-header">
+                <h3 id="roster-modal-title" className="section-card-title">
+                  {editingId ? '编辑记录' : '添加学生'}
+                </h3>
+              </div>
+              <div className="section-card-body flex flex-col gap-3">
+                <input
+                  className="input-glass"
+                  placeholder="学号"
+                  value={formData.studentNo}
+                  onChange={(e) => setFormData({ ...formData, studentNo: e.target.value })}
+                  disabled={!!editingId}
+                />
+                <input
+                  className="input-glass"
+                  placeholder="姓名"
+                  value={formData.realName}
+                  onChange={(e) => setFormData({ ...formData, realName: e.target.value })}
+                />
+                <select
+                  className="input-glass"
+                  value={formData.college}
+                  onChange={(e) => setFormData({ ...formData, college: e.target.value, majorId: '', classId: '' })}
+                >
+                  <option value="">请选择学院</option>
+                  {colleges.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                <select
+                  className="input-glass"
+                  value={formData.majorId}
+                  onChange={(e) => setFormData({ ...formData, majorId: e.target.value, classId: '' })}
+                >
+                  <option value="">请选择专业</option>
+                  {formMajors.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+                <select
+                  className="input-glass"
+                  value={formData.classId}
+                  onChange={(e) => setFormData({ ...formData, classId: e.target.value })}
+                >
+                  <option value="">请选择班级</option>
+                  {formClasses.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+                <select
+                  className="input-glass"
+                  value={formData.grade}
+                  onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                >
+                  <option value="">请选择年级</option>
+                  {grades.map((g) => (
+                    <option key={g} value={g}>{g}级</option>
+                  ))}
+                </select>
+                <div className="mt-1 flex items-center justify-end gap-2">
+                  <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">
+                    取消
+                  </button>
+                  <button type="button" onClick={handleSave} className="btn-primary">
+                    保存
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center justify-end gap-3 mt-lg">
-              <button
-                onClick={() => setShowModal(false)}
-                className="h-[40px] px-4 rounded-pill text-[13px] text-ink hover:bg-primary/10 transition"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleSave}
-                className="h-[40px] px-6 rounded-pill bg-primary text-on-primary text-[13px] font-medium hover:bg-primary-focus transition"
-              >
-                保存
-              </button>
-            </div>
-            </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
-      {/* 导入弹窗 */}
       <AnimatePresence>
         {showImportModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-ink/20 backdrop-blur-sm"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="roster-modal-title"
+            aria-labelledby="import-modal-title"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="glass-strong w-full max-w-[500px] mx-4 p-xl rounded-2xl"
-            >
-            <h3 id="roster-modal-title" className="text-[18px] font-semibold text-ink mb-lg">导入花名册</h3>
-
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4 text-[13px]">
-              <div className="font-medium text-primary mb-2">Excel 格式要求</div>
-              <ul className="list-disc pl-4 space-y-1 text-ink-muted-80">
-                <li>第一行为表头，从第二行开始为数据</li>
-                <li>列顺序：学号、姓名、学院、专业、班级、年级</li>
-                <li>专业和班级如不存在会自动创建</li>
-                <li>重复学号会自动跳过</li>
-              </ul>
-            </div>
-
-            <div className="mb-4">
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                className="text-[13px]"
-              />
-            </div>
-
-            {importResult && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 text-[13px]">
-                <div className="font-medium text-green-800 mb-2">导入结果</div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>成功: <span className="font-semibold text-green-600">{importResult.success}</span></div>
-                  <div>跳过: <span className="font-semibold text-yellow-600">{importResult.skipped}</span></div>
-                  <div>失败: <span className="font-semibold text-red-500">{importResult.failed}</span></div>
+            <div className="section-card mx-4 w-full max-w-[500px]">
+              <div className="section-card-header">
+                <h3 id="import-modal-title" className="section-card-title">导入花名册</h3>
+              </div>
+              <div className="section-card-body">
+                <div className="mb-4 rounded-md border border-border bg-surface-tile-1 p-4 text-[13px]">
+                  <div className="mb-2 font-medium text-primary">Excel 格式要求</div>
+                  <ul className="list-disc space-y-1 pl-4 text-body-muted">
+                    <li>第一行为表头，从第二行开始为数据</li>
+                    <li>列顺序：学号、姓名、学院、专业、班级、年级</li>
+                    <li>专业和班级如不存在会自动创建</li>
+                    <li>重复学号会自动跳过</li>
+                  </ul>
                 </div>
-                {importResult.errors?.length > 0 && (
-                  <div className="mt-2 text-red-500">
-                    {importResult.errors.slice(0, 5).map((e: string, i: number) => (
-                      <div key={i}>{e}</div>
-                    ))}
-                    {importResult.errors.length > 5 && <div>...共 {importResult.errors.length} 条错误</div>}
+
+                <div className="mb-4">
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                    className="text-[13px] text-body-muted"
+                  />
+                </div>
+
+                {importResult && (
+                  <div className="mb-4 rounded-md border border-border bg-surface-tile-1 p-4 text-[13px]">
+                    <div className="mb-2 font-medium text-ink">导入结果</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>成功: <span className="font-semibold text-success">{importResult.success}</span></div>
+                      <div>跳过: <span className="font-semibold text-warning">{importResult.skipped}</span></div>
+                      <div>失败: <span className="font-semibold text-error">{importResult.failed}</span></div>
+                    </div>
+                    {importResult.errors?.length > 0 && (
+                      <div className="mt-2 text-error">
+                        {importResult.errors.slice(0, 5).map((e: string, i: number) => (
+                          <div key={i}>{e}</div>
+                        ))}
+                        {importResult.errors.length > 5 && <div>...共 {importResult.errors.length} 条错误</div>}
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
-            )}
 
-            <div className="flex items-center justify-end gap-3 mt-lg">
-              <button
-                onClick={() => setShowImportModal(false)}
-                className="h-[40px] px-4 rounded-pill text-[13px] text-ink hover:bg-primary/10 transition"
-              >
-                关闭
-              </button>
-              <button
-                onClick={handleImport}
-                disabled={!importFile || importing}
-                className="h-[40px] px-6 rounded-pill bg-primary text-on-primary text-[13px] font-medium hover:bg-primary-focus transition disabled:opacity-50 flex items-center gap-2"
-              >
-                {importing && <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>}
-                {importing ? '导入中...' : '开始导入'}
-              </button>
+                <div className="flex items-center justify-end gap-2">
+                  <button type="button" onClick={() => setShowImportModal(false)} className="btn-secondary">
+                    关闭
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleImport}
+                    disabled={!importFile || importing}
+                    className="btn-primary disabled:opacity-50"
+                  >
+                    {importing && <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>}
+                    {importing ? '导入中...' : '开始导入'}
+                  </button>
+                </div>
+              </div>
             </div>
-            </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
