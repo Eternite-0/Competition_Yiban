@@ -105,6 +105,23 @@ export default function StudentHome() {
     .filter((r) => ['待完善', '退回补充', '审核中', '已提交'].includes(r.status))
     .slice(0, 5);
   const todayLabel = `${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()}`;
+  const focusRegistration = todos[0];
+  const nextCompetition = [...competitions]
+    .filter((item) => item.endTime && new Date(item.endTime).getTime() >= now.getTime())
+    .sort((a, b) => new Date(a.endTime || 0).getTime() - new Date(b.endTime || 0).getTime())[0];
+  const focusTitle = focusRegistration
+    ? focusRegistration.competitionName || focusRegistration.teamName || '继续完善参赛材料'
+    : nextCompetition?.name || '发现适合你的下一场赛事';
+  const focusDescription = focusRegistration
+    ? `${focusRegistration.status} · 进入赛事工作台继续处理`
+    : nextCompetition?.endTime
+      ? `最近截止 ${String(nextCompetition.endTime).slice(0, 10)}`
+      : '竞赛中心会集中展示报名时间、参赛要求和组队信息';
+  const focusPath = focusRegistration
+    ? `/student/registrations/workbench/${focusRegistration.competitionId}`
+    : nextCompetition
+      ? `/student/competitions/${nextCompetition.id}`
+      : '/student/competitions';
 
   if (loading) {
     return (
@@ -118,18 +135,33 @@ export default function StudentHome() {
 
   return (
     <div className="page-stack">
-      <PageHero
-        eyebrow={todayLabel}
-        title={`欢迎回来，${currentUser?.name ?? '同学'}`}
-        description="从发现活动到报名材料、进度与成长，在这里看清下一步。"
-        actions={(
-          <button type="button" onClick={() => navigate('/student/competitions')} className="btn-primary">
-            去活动大厅
-          </button>
-        )}
-      />
+      <section className="student-home-head">
+        <div>
+          <span className="student-home-date">{todayLabel}</span>
+          <h1>你好，{currentUser?.name ?? '同学'}</h1>
+          <p>先处理最重要的一件事，其余参赛信息已经为你归好类。</p>
+        </div>
+        <button type="button" onClick={() => navigate('/student/competitions')} className="btn-secondary">
+          浏览竞赛
+        </button>
+      </section>
 
-      {/* 流程：胶囊步骤，非卡片网格 */}
+      <section className="student-focus-panel">
+        <div className="student-focus-icon" aria-hidden>
+          <span className="material-symbols-outlined">flag</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <span className="student-focus-label">下一步</span>
+          <h2>{focusTitle}</h2>
+          <p>{focusDescription}</p>
+        </div>
+        <button type="button" className="btn-primary" onClick={() => navigate(focusPath)}>
+          {focusRegistration ? '继续处理' : nextCompetition ? '查看赛事' : '进入竞赛中心'}
+          <span className="material-symbols-outlined text-[17px]">arrow_forward</span>
+        </button>
+      </section>
+
+      {/* 统一竞赛生命周期 */}
       <section className="page-section" aria-label="参赛主流程">
         <div className="journey-steps">
           {studentJourney.map((step, idx) => (
@@ -231,13 +263,13 @@ export default function StudentHome() {
       <div className="grid gap-8 lg:grid-cols-2">
         <section className="page-section">
           <div className="page-section-head">
-            <h2 className="page-section-title">推荐活动</h2>
+          <h2 className="page-section-title">近期赛事</h2>
             <button
               type="button"
               className="page-section-extra hover:text-primary"
               onClick={() => navigate('/student/competitions')}
             >
-              活动大厅
+              竞赛中心
             </button>
           </div>
           {hotEvents.length === 0 ? (

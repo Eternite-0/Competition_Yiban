@@ -307,11 +307,11 @@ export default function AdminHome() {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="admin-home operator-home flex flex-col gap-4">
       <PageHero
-        eyebrow="管理端"
-        title={`${greetingName}，欢迎回来`}
-        description="查看平台运营概览，处理待办事项。"
+        eyebrow="平台运营"
+        title="管理工作台"
+        description={`${greetingName}，先处理运营待办，再查看赛事发布与平台数据。`}
         actions={(
           <button type="button" onClick={() => navigate('/admin/publish')} className="btn-primary">
             <span className="material-symbols-outlined">add</span>
@@ -319,6 +319,21 @@ export default function AdminHome() {
           </button>
         )}
       />
+
+      <section className={`operator-focus-bar ${pendingTasks[0]?.tone === 'error' ? 'is-urgent' : ''}`}>
+        <div className="operator-focus-symbol">
+          <span className="material-symbols-outlined">{pendingTasks[0]?.tone === 'error' ? 'priority_high' : 'assignment'}</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <span className="operator-focus-label">运营待办</span>
+          <h2>{pendingTasks[0]?.title || '暂无待办'}</h2>
+          <p>{pendingTasks[0]?.description || '当前平台运行正常。'}</p>
+        </div>
+        <button type="button" className="btn-primary" onClick={() => navigate(pendingTasks[0]?.link || '/admin/competitions')}>
+          {pendingTasks[0]?.link ? '立即处理' : '查看赛事'}
+          <span className="material-symbols-outlined text-[17px]">arrow_forward</span>
+        </button>
+      </section>
 
       <div className="stat-grid">
         {loading

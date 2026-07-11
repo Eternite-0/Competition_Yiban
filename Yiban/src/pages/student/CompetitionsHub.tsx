@@ -287,12 +287,12 @@ export default function CompetitionsHub() {
   return (
     <div className="flex flex-col gap-5">
       <PageHero
-        eyebrow={isAdmin ? '活动运营' : '发现活动'}
-        title={isAdmin ? '活动管理' : '活动大厅'}
+        eyebrow={isAdmin ? '赛事运营' : '发现赛事'}
+        title={isAdmin ? '赛事运营' : '竞赛中心'}
         description={
           isAdmin
-            ? '管理全部活动的发布状态与内容。'
-            : '筛选感兴趣的赛事与活动，报名后可在「报名与材料」继续完善。'
+            ? '统一管理赛事、校园活动、发布状态与报名入口。'
+            : '按级别、类别和截止时间发现赛事，报名后在「我的赛事」继续处理。'
         }
         actions={(
           <div className="text-[13px] text-body-subtle">
@@ -395,12 +395,12 @@ export default function CompetitionsHub() {
             return (
               <article
                 key={`${item.type}-${item.id}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-hairline bg-canvas shadow-[0_1px_0_rgba(15,23,42,0.03)] transition-[box-shadow,border-color] duration-200 hover:border-primary/20 hover:shadow-[0_12px_32px_rgba(37,99,235,0.08)]"
+                className="competition-card group flex flex-col overflow-hidden"
               >
                 {/* 封面：标签不再叠在图上（避免被缩放/图片遮挡） */}
                 <button
                   type="button"
-                  className="relative block h-[148px] w-full overflow-hidden bg-gradient-to-br from-primary-soft via-surface-tile-1 to-surface-tile-2 text-left"
+                  className="competition-cover relative block h-[172px] w-full overflow-hidden text-left"
                   onClick={() => navigate(detailPath)}
                 >
                   <LazyImage

@@ -486,12 +486,12 @@ export default function SubmissionAudit() {
   };
 
   return (
-      <div className="flex flex-col gap-3 h-[calc(100vh-100px)]">
+      <div className="review-workspace-page flex min-h-[680px] flex-col gap-3 lg:h-[calc(100vh-150px)]">
       {/* Header */}
       <PageHero
-        eyebrow="Review"
+        eyebrow="审核工作区"
         title="统一审核中心"
-        description="统一处理报名审核、成果附件、活动材料与 AI 获奖证明，保持审核口径一致并快速反馈结果。"
+        description="在同一工作区处理报名、成果、活动材料与获奖证明。"
       />
 
       {/* Three-column */}
@@ -559,7 +559,7 @@ export default function SubmissionAudit() {
                   }`}
                 >
                   {selectedId === s.id && (
-                    <span className="absolute bottom-3 left-0 top-3 w-[3px] rounded-md bg-ink" />
+                    <span className="absolute bottom-3 left-0 top-3 w-[3px] rounded-md bg-primary" />
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex items-start justify-between gap-2">

@@ -5,6 +5,7 @@ import { useStore } from '../store/useStore';
 import type { UserRole } from '../types';
 import { motion } from 'framer-motion';
 import BrandLogo from '../components/BrandLogo';
+import loginIllustration from '../assets/login_illustration.png';
 
 const roleTabs: { key: UserRole; label: string }[] = [
   { key: 'student', label: '学生' },
@@ -71,30 +72,46 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="auth-shell">
-      <header className="flex h-14 items-center justify-between border-b border-hairline bg-canvas px-5">
-        <BrandLogo size={32} withWordmark subtitle="校园赛事服务平台" />
-        <div className="flex items-center gap-2 text-[12px] text-body-subtle">
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${
-              systemStatus === 'ok' ? 'bg-success' : systemStatus === 'error' ? 'bg-error' : 'bg-placeholder animate-pulse'
-            }`}
-          />
+    <div className="auth-shell auth-shell-redesign">
+      <section className="auth-visual" aria-label="易赛通平台介绍">
+        <div className="auth-visual-top">
+          <BrandLogo size={42} withWordmark wordmarkClassName="!text-white" />
+          <span className="auth-visual-kicker">校园竞赛一体化平台</span>
+        </div>
+        <div className="auth-visual-copy">
+          <span className="auth-visual-eyebrow">DISCOVER · COMPETE · GROW</span>
+          <h1>让每一次参赛<br />都有清晰的下一步</h1>
+          <p>从发现赛事、组队报名到材料审核与成果归档，把校园竞赛流程集中在一个平台。</p>
+          <div className="auth-visual-flow" aria-label="平台流程">
+            <span>发现赛事</span><i />
+            <span>报名参赛</span><i />
+            <span>成果沉淀</span>
+          </div>
+        </div>
+        <img className="auth-visual-art" src={loginIllustration} alt="竞赛与成长线稿插画" />
+      </section>
+
+      <main className="auth-form-area">
+        <header className="auth-mobile-brand">
+          <BrandLogo size={36} withWordmark />
+          <span className="text-[11px] text-placeholder">校园竞赛一体化平台</span>
+        </header>
+        <div className="auth-system-status">
+          <span className={`h-1.5 w-1.5 rounded-full ${
+            systemStatus === 'ok' ? 'bg-success' : systemStatus === 'error' ? 'bg-error' : 'bg-placeholder animate-pulse'
+          }`} />
           {systemStatus === 'ok' ? '服务正常' : systemStatus === 'error' ? '服务异常' : '检测中'}
         </div>
-      </header>
-
-      <main className="flex flex-1 items-center justify-center px-4 py-10">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
-          className="w-full max-w-[400px]"
+          className="auth-form-wrap"
         >
-          <div className="mb-7 flex flex-col items-center text-center">
-            <BrandLogo size={56} className="mb-4" />
-            <h1 className="text-[26px] font-semibold tracking-tight text-ink">登录到易赛通</h1>
-            <p className="mt-2 text-[13.5px] text-body-subtle">校园赛事报名、审核与成长管理平台</p>
+          <div className="auth-form-heading">
+            <span className="auth-form-eyebrow">欢迎回来</span>
+            <h1>登录易赛通</h1>
+            <p>选择你的身份，继续处理竞赛事项。</p>
           </div>
 
           <div className="auth-card">

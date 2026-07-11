@@ -56,7 +56,7 @@ function getAction(reg: Registration) {
     case '审核驳回':
       return { label: '查看原因', primary: false, path: `/student/upload/${reg.id}` };
     case '审核通过':
-      return { label: '成长画像', primary: false, path: '/student/growth' };
+      return { label: '成果档案', primary: false, path: '/student/growth' };
     default:
       return { label: '查看材料', primary: false, path: `/student/upload/${reg.id}` };
   }
@@ -103,9 +103,9 @@ export default function MyRegistrations() {
   return (
     <div className="page-stack">
       <PageHero
-        eyebrow="我的参赛"
-        title="报名与材料"
-        description="统一管理报名状态与材料。点标题进入工作台，右侧按钮处理材料。"
+        eyebrow="个人竞赛工作区"
+        title="我的赛事"
+        description="每场赛事集中展示报名、组队、材料、审核与成果状态。"
       />
 
       <section className="metric-row">

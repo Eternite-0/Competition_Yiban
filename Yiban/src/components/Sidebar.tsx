@@ -42,7 +42,7 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 flex w-[var(--sidebar-width)] flex-col overflow-hidden border-r border-hairline bg-canvas transition-transform duration-200 ease-out ${
+      className={`app-sidebar fixed inset-y-0 left-0 z-50 flex w-[var(--sidebar-width)] flex-col overflow-hidden transition-transform duration-200 ease-out ${
         mobileOpen ? 'translate-x-0' : '-translate-x-[calc(100%+16px)]'
       } ${desktopOpen ? 'md:translate-x-0' : 'md:-translate-x-full'}`}
     >

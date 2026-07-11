@@ -202,14 +202,14 @@ export default function RegistrationWorkbench() {
   const validMembers = isSoloCompetition ? [] : members.map((m) => m.trim()).filter(Boolean);
 
   return (
-    <div className="page-stack">
+    <div className="registration-workbench-page page-stack">
       <PageHero
         eyebrow="报名"
-        title="报名材料填写"
-        description="根据赛事要求完成参赛信息与赛道选择，确认后提交报名。"
+        title="报名工作台"
+        description="在一个页面完成组队、赛道选择和报名确认。"
         prefix={(
           <nav className="mb-1 flex items-center gap-1 text-[13px] text-placeholder">
-            <button type="button" onClick={() => navigate('/student/competitions')} className="transition hover:text-ink">赛事大厅</button>
+            <button type="button" onClick={() => navigate('/student/competitions')} className="transition hover:text-ink">竞赛中心</button>
             <span className="material-symbols-outlined text-[16px]">chevron_right</span>
             <span className="truncate text-body-subtle">{comp.name}</span>
             <span className="material-symbols-outlined text-[16px]">chevron_right</span>
@@ -401,7 +401,7 @@ export default function RegistrationWorkbench() {
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 border-t border-hairline pt-4">
+      <div className="registration-submit-bar flex justify-end gap-2 border-t border-hairline pt-4">
         <button type="button" className="btn-secondary" onClick={() => navigate(-1)}>返回</button>
         <button
           type="button"

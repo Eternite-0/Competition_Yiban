@@ -8,6 +8,8 @@ import AIAssistantWidget, { type AssistantPanelMode } from './ai/AIAssistantWidg
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 import { pageTransition, pageVariants } from '../lib/motion';
+import WorkspaceTabs from './WorkspaceTabs';
+import MobileBottomNav from './MobileBottomNav';
 
 export default function Layout() {
   const location = useLocation();
@@ -89,9 +91,10 @@ export default function Layout() {
           onToggleMobileNav={() => setMobileNavOpen((prev) => !prev)}
           desktopSidebarOpen={desktopSidebarOpen}
         />
-        <main className="flex-1 pt-[var(--header-height)]">
+        <main className="flex-1 pb-[72px] pt-[var(--header-height)] md:pb-0">
           <div className="app-main-frame">
-            <div className="mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-8 sm:pb-10">
+            <div className="app-page-container mx-auto w-full px-4 pt-4 sm:px-6 sm:pt-6 lg:px-8 pb-8 sm:pb-10">
+              <WorkspaceTabs />
               <Breadcrumb />
               <AnimatePresence mode="wait">
                 <motion.div
@@ -112,6 +115,7 @@ export default function Layout() {
         </main>
       </div>
       <AIAssistantWidget onWorkspaceChange={handleAiWorkspaceChange} />
+      <MobileBottomNav />
     </div>
   );
 }

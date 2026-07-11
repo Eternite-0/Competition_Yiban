@@ -482,11 +482,11 @@ export default function CompetitionPublish() {
   }
 
   return (
-    <div className="flex flex-col gap-4 pb-32">
+    <div className="competition-publish-page flex flex-col gap-4 pb-32">
       <PageHero
-        eyebrow={isEdit ? 'Edit' : 'Publish'}
-        title={isEdit ? `编辑${text.noun}` : '发布新活动'}
-        description={isEdit ? `修改${text.noun}信息，保存后立即生效。` : '发布竞赛、志愿服务、文体活动或其他校内活动，并维护可复用的活动分类。'}
+        eyebrow={isEdit ? '赛事运营 · 编辑' : '赛事运营 · 创建'}
+        title={isEdit ? `编辑${text.noun}` : '创建赛事'}
+        description={isEdit ? `修改${text.noun}信息，保存后立即生效。` : '先选择赛事或校园活动类型，再完善报名规则、时间、材料和展示内容。'}
       />
 
       {!isEdit && (
@@ -511,10 +511,20 @@ export default function CompetitionPublish() {
       )}
 
       {(isEdit || activeTab === 'manual') && (
+        <nav className="publish-progress" aria-label="创建赛事步骤">
+          {!isEdit ? <a href="#publish-type"><span>1</span>类型</a> : null}
+          <a href="#publish-basic"><span>{isEdit ? 1 : 2}</span>基本信息</a>
+          <a href="#publish-content"><span>{isEdit ? 2 : 3}</span>内容材料</a>
+          <a href="#publish-track"><span>{isEdit ? 3 : 4}</span>{text.track}</a>
+          <a href="#publish-preview"><span>{isEdit ? 4 : 5}</span>预览发布</a>
+        </nav>
+      )}
+
+      {(isEdit || activeTab === 'manual') && (
         <div className="flex min-w-0 flex-col gap-4 xl:flex-row">
           <motion.div className="flex-1 flex flex-col gap-md min-w-0" variants={listContainer} initial="hidden" animate="visible">
             {!isEdit && (
-              <motion.section variants={listItem} className="section-card">
+              <motion.section id="publish-type" variants={listItem} className="section-card">
                 <div className="section-card-header">
                   <h2 className="section-card-title flex items-center gap-2">
                     <span className="material-symbols-outlined text-[18px] text-body-muted">category</span>
@@ -547,7 +557,7 @@ export default function CompetitionPublish() {
               </motion.section>
             )}
 
-            <motion.section variants={listItem} className="section-card">
+            <motion.section id="publish-basic" variants={listItem} className="section-card">
               <div className="section-card-header">
                 <h2 className="section-card-title flex items-center gap-2">
                   <span className="material-symbols-outlined text-[18px] text-body-muted">info</span>
@@ -665,7 +675,7 @@ export default function CompetitionPublish() {
               </div>
             </motion.section>
 
-            <motion.section variants={listItem} className="section-card">
+            <motion.section id="publish-content" variants={listItem} className="section-card">
               <div className="section-card-header">
                 <h2 className="section-card-title flex items-center gap-2">
                   <span className="material-symbols-outlined text-[18px] text-body-muted">description</span>
@@ -687,7 +697,7 @@ export default function CompetitionPublish() {
               </div>
             </motion.section>
 
-            <motion.section variants={listItem} className="section-card">
+            <motion.section id="publish-track" variants={listItem} className="section-card">
               <div className="section-card-header">
                 <h2 className="section-card-title flex items-center gap-2">
                   <span className="material-symbols-outlined text-[18px] text-body-muted">settings</span>
@@ -776,7 +786,7 @@ export default function CompetitionPublish() {
             )}
           </motion.div>
 
-          <div className="w-full shrink-0 xl:w-[340px] 2xl:w-[380px]">
+          <div id="publish-preview" className="w-full shrink-0 scroll-mt-24 xl:w-[340px] 2xl:w-[380px]">
             <div className="flex flex-col gap-3 xl:sticky xl:top-[88px]">
               <h3 className="text-[12px] text-placeholder px-1 flex items-center gap-2">
                 <span className="material-symbols-outlined text-[14px]">visibility</span>
@@ -822,7 +832,7 @@ export default function CompetitionPublish() {
         }} />
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 md:left-[200px]">
+      <div className="publish-action-bar fixed bottom-0 left-0 right-0 z-40 md:left-[var(--sidebar-width)]">
         <div className="bg-canvas border-t border-hairline px-lg py-3">
           <div className="mx-auto flex w-full max-w-[1100px] items-center justify-between gap-3">
             <button type="button" onClick={() => navigate('/admin/competitions')} className="btn-secondary">

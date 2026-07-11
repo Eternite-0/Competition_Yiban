@@ -216,14 +216,14 @@ export default function CompetitionDetail() {
   );
 
   return (
-    <div className="page-stack">
+    <div className="competition-detail-page page-stack">
       <PageHero
         eyebrow="赛事详情"
         title={comp.name}
         description={`${displayLevel(comp.level)} · ${comp.category}类 · ${statusLabel(comp.status)}`}
         prefix={(
           <nav className="mb-1 flex items-center gap-1 text-[13px] text-placeholder">
-            <button type="button" onClick={() => navigate('/student/competitions')} className="hover:text-ink transition">赛事大厅</button>
+            <button type="button" onClick={() => navigate('/student/competitions')} className="hover:text-ink transition">竞赛中心</button>
             <span className="material-symbols-outlined text-[16px]">chevron_right</span>
             <span className="truncate text-body-subtle">{comp.name}</span>
           </nav>
@@ -232,10 +232,18 @@ export default function CompetitionDetail() {
       />
 
       {comp.coverUrl ? (
-        <div className="relative h-[180px] overflow-hidden rounded-md border border-hairline md:h-[220px]">
+        <div className="competition-detail-cover relative h-[210px] overflow-hidden md:h-[280px]">
           <LazyImage className="h-full w-full object-cover" src={comp.coverUrl} alt={comp.name} fallbackIcon="emoji_events" />
         </div>
-      ) : null}
+      ) : (
+        <div className="competition-detail-cover competition-detail-cover-fallback" aria-hidden>
+          <span>Y</span>
+          <div>
+            <small>{displayLevel(comp.level)} · {comp.category}类</small>
+            <strong>向下一场比赛出发</strong>
+          </div>
+        </div>
+      )}
 
       <section className="metric-row" aria-label="赛事摘要">
         <div className="metric-item">
@@ -377,7 +385,7 @@ export default function CompetitionDetail() {
           </section>
         </div>
 
-        <aside className="flex h-fit flex-col gap-6 lg:sticky lg:top-[68px]">
+        <aside className="competition-detail-aside flex h-fit flex-col gap-6 lg:sticky lg:top-[84px]">
           <section className="page-section">
             <div className="page-section-head">
               <h3 className="page-section-title">{registration ? '报名状态' : '报名入口'}</h3>

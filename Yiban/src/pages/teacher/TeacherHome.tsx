@@ -234,13 +234,17 @@ export default function TeacherHome() {
   ];
 
   const statusTotal = Math.max(1, statusGroups.reduce((sum, item) => sum + item.count, 0));
+  const hasParticipationData = totalRegistrations > 0
+    || monitorRows.length > 0
+    || trend.some((item) => item.count > 0)
+    || recentActivities.length > 0;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="teacher-home operator-home flex flex-col gap-4">
       <PageHero
-        eyebrow="教师端"
-        title={`${scopeLabel}工作台`}
-        description={`${currentUser?.name ?? '老师'}，优先处理审核，再通过学生看板与学情分析跟进。当前覆盖 ${totalStudents} 名学生、${totalRegistrations} 条参赛记录。`}
+        eyebrow={scopeLabel}
+        title="教师工作台"
+        description={`${currentUser?.name ?? '老师'}，这里集中展示审核任务、学生参赛和需要关注的异常状态。`}
         actions={(
           <>
             <button type="button" className="btn-primary" onClick={() => navigate(`${basePath}/audit`)} aria-label="前往审核">
@@ -255,6 +259,21 @@ export default function TeacherHome() {
         )}
       />
 
+      <section className={`operator-focus-bar ${pendingReviews > 0 ? 'is-urgent' : ''}`}>
+        <div className="operator-focus-symbol">
+          <span className="material-symbols-outlined">{pendingReviews > 0 ? 'pending_actions' : 'task_alt'}</span>
+        </div>
+        <div className="min-w-0 flex-1">
+          <span className="operator-focus-label">当前优先事项</span>
+          <h2>{pendingReviews > 0 ? `${pendingReviews} 项审核等待处理` : '审核队列暂无积压'}</h2>
+          <p>{pendingReviews > 0 ? '优先处理临近截止和退回补充的学生材料。' : `当前覆盖 ${totalStudents} 名学生，可继续查看学生竞赛情况。`}</p>
+        </div>
+        <button type="button" className="btn-primary" onClick={() => navigate(`${basePath}/${pendingReviews > 0 ? 'audit' : 'student-competitions'}`)}>
+          {pendingReviews > 0 ? '进入审核' : '查看学生'}
+          <span className="material-symbols-outlined text-[17px]">arrow_forward</span>
+        </button>
+      </section>
+
       <div className="stat-grid">
         {cockpitMetrics.map((metric) => (
           <div key={metric.label} className="stat-card">
@@ -267,6 +286,23 @@ export default function TeacherHome() {
           </div>
         ))}
       </div>
+
+      {!loading && !hasParticipationData ? (
+        <section className="operator-empty-focus">
+          <div className="operator-empty-mark">
+            <span className="material-symbols-outlined">query_stats</span>
+          </div>
+          <div>
+            <h2>当前筛选范围暂无参赛记录</h2>
+            <p>学生完成报名后，这里会展示审核状态、参赛趋势、班级活跃度与风险事项。</p>
+          </div>
+          <div className="operator-empty-actions">
+            <button type="button" className="btn-primary" onClick={() => navigate(`${basePath}/student-competitions`)}>查看学生名单</button>
+            <button type="button" className="btn-secondary" onClick={() => navigate(`${basePath}/competitions`)}>查看赛事</button>
+          </div>
+        </section>
+      ) : (
+        <>
 
       <section className="section-card">
         <div className="section-card-header">
@@ -519,6 +555,8 @@ export default function TeacherHome() {
           )}
         </div>
       </section>
+        </>
+      )}
     </div>
   );
 }

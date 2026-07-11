@@ -24,7 +24,7 @@ export type NavEntry = NavItem | NavGroup;
 
 /** 角色根路径标题 */
 export const roleHomeLabel: Record<AppRole, string> = {
-  student: '工作台',
+  student: '首页',
   teacher: '工作台',
   admin: '工作台',
 };
@@ -35,54 +35,162 @@ export const roleSectionLabel: Record<AppRole, string> = {
   admin: '管理端',
 };
 
-/**
- * 学生：按「发现 → 参赛 → 成长」主流程分组，减少平铺感。
- * 上传成果从主导航下沉：从「我的参赛」进入，避免与报名工作台抢入口。
- */
+/** 学生：核心流程保持分组，日历、组队与自定义成果上传始终可见。 */
 export const studentNav: NavEntry[] = [
-  { icon: 'space_dashboard', label: '工作台', path: '/student', hint: '总览待办与焦点' },
-  { type: 'group', label: '发现活动' },
-  { icon: 'emoji_events', label: '活动大厅', path: '/student/competitions', hint: '浏览并报名' },
-  { icon: 'calendar_month', label: '赛事日历', path: '/student/calendar', hint: '按时间查看' },
-  { icon: 'group_add', label: '组队招募', path: '/student/teams', hint: '找队友' },
-  { icon: 'workspace_premium', label: '光荣榜', path: '/student/works', hint: '优秀作品' },
+  { icon: 'space_dashboard', label: '首页', path: '/student', hint: '待办与临期赛事' },
+  { type: 'group', label: '发现赛事' },
+  { icon: 'emoji_events', label: '竞赛中心', path: '/student/competitions', hint: '浏览并报名赛事' },
+  { icon: 'calendar_month', label: '赛事日历', path: '/student/calendar', hint: '查看报名与比赛时间' },
+  { icon: 'group_add', label: '组队招募', path: '/student/teams', hint: '寻找队友与招募成员' },
+  { icon: 'workspace_premium', label: '优秀成果', path: '/student/works', hint: '查看优秀作品与获奖成果' },
   { type: 'group', label: '我的参赛' },
-  { icon: 'assignment_ind', label: '报名与材料', path: '/student/registrations', hint: '报名状态与工作台' },
-  { icon: 'timeline', label: '进度跟踪', path: '/student/progress', hint: '全流程进度' },
-  { icon: 'insights', label: '成长画像', path: '/student/growth', hint: '能力与综测' },
+  { icon: 'assignment_ind', label: '我的赛事', path: '/student/registrations', hint: '报名、材料与进度' },
+  { icon: 'timeline', label: '进度跟踪', path: '/student/progress', hint: '查看赛事阶段与待办' },
+  { type: 'group', label: '成果与成长' },
+  { icon: 'upload_file', label: '成果上传', path: '/student/achievements/upload', hint: '上传自定义成果与获奖证明' },
+  { icon: 'insights', label: '成果档案', path: '/student/growth', hint: '成果、荣誉与成长' },
 ];
 
 /** 教师：审核与学情为主，活动大厅为辅 */
 export const teacherNav: NavEntry[] = [
   { icon: 'space_dashboard', label: '工作台', path: '/teacher', hint: '学院态势' },
-  { type: 'group', label: '审核与学情' },
+  { type: 'group', label: '审核与指导' },
   { icon: 'fact_check', label: '审核中心', path: '/teacher/audit', hint: '报名/成果审核' },
-  { icon: 'analytics', label: '学院总览', path: '/teacher/college-overview', hint: '数据概览' },
-  { icon: 'school', label: '学生看板', path: '/teacher/student-competitions', hint: '参赛明细' },
-  { icon: 'trending_up', label: '学情分析', path: '/teacher/student-growth', hint: '成长对比' },
-  { type: 'group', label: '活动' },
-  { icon: 'emoji_events', label: '活动大厅', path: '/teacher/competitions', hint: '查看活动' },
+  { type: 'group', label: '学生管理' },
+  { icon: 'analytics', label: '学院总览', path: '/teacher/college-overview', hint: '学院参赛数据概览' },
+  { icon: 'school', label: '学生看板', path: '/teacher/student-competitions', hint: '学生参赛明细' },
+  { icon: 'trending_up', label: '学情分析', path: '/teacher/student-growth', hint: '学生成长与能力对比' },
+  { type: 'group', label: '赛事服务' },
+  { icon: 'emoji_events', label: '赛事大厅', path: '/teacher/competitions', hint: '查看平台赛事' },
 ];
 
 /** 管理端：运营 → 审核 → 基础数据 */
 export const adminNav: NavEntry[] = [
   { icon: 'space_dashboard', label: '工作台', path: '/admin', hint: '运营总览' },
-  { type: 'group', label: '活动运营' },
-  { icon: 'emoji_events', label: '活动管理', path: '/admin/competitions', hint: '列表与上下架' },
-  { icon: 'add_circle', label: '发布活动', path: '/admin/publish', hint: '新建/编辑' },
-  { icon: 'draft', label: '草稿箱', path: '/admin/drafts', hint: '未发布内容' },
-  { icon: 'travel_explore', label: '赛事来源', path: '/admin/competition-sources', hint: '外部来源' },
-  { icon: 'campaign', label: '公告管理', path: '/admin/announcements', hint: '系统公告' },
+  { type: 'group', label: '赛事运营' },
+  { icon: 'emoji_events', label: '赛事管理', path: '/admin/competitions', hint: '赛事列表与上下架' },
+  { icon: 'add_circle', label: '创建赛事', path: '/admin/publish', hint: '手动创建或 AI 导入' },
+  { icon: 'draft', label: '草稿箱', path: '/admin/drafts', hint: '未发布与 AI 草稿' },
+  { icon: 'travel_explore', label: '赛事来源', path: '/admin/competition-sources', hint: '外部来源与采集' },
+  { icon: 'campaign', label: '公告管理', path: '/admin/announcements', hint: '系统与赛事公告' },
   { type: 'group', label: '审核与成果' },
-  { icon: 'fact_check', label: '统一审核', path: '/admin/audit', hint: '待办审核' },
-  { icon: 'how_to_reg', label: '教师注册审核', path: '/admin/registration-audit', hint: '账号开通' },
-  { icon: 'auto_awesome', label: '优秀作品库', path: '/admin/works', hint: '成果展示' },
+  { icon: 'fact_check', label: '统一审核', path: '/admin/audit', hint: '报名、成果与证明审核' },
+  { icon: 'how_to_reg', label: '教师注册审核', path: '/admin/registration-audit', hint: '教师账号开通' },
+  { icon: 'auto_awesome', label: '优秀作品库', path: '/admin/works', hint: '优秀成果展示' },
   { type: 'group', label: '组织与用户' },
-  { icon: 'manage_accounts', label: '用户管理', path: '/admin/users' },
-  { icon: 'group', label: '花名册', path: '/admin/roster' },
-  { icon: 'school', label: '专业管理', path: '/admin/majors' },
-  { icon: 'class', label: '班级管理', path: '/admin/classes' },
+  { icon: 'manage_accounts', label: '用户管理', path: '/admin/users', hint: '平台用户账号' },
+  { icon: 'group', label: '学生花名册', path: '/admin/roster', hint: '学生名册与账号同步' },
+  { icon: 'school', label: '专业管理', path: '/admin/majors', hint: '学院专业配置' },
+  { icon: 'class', label: '班级管理', path: '/admin/classes', hint: '班级基础数据' },
 ];
+
+/** 移动端只显示最核心的四到五个入口，其他功能由工作区标签和抽屉导航承接。 */
+export const mobileNavByRole: Record<AppRole, NavItem[]> = {
+  student: [
+    { icon: 'space_dashboard', label: '首页', path: '/student' },
+    { icon: 'emoji_events', label: '竞赛中心', path: '/student/competitions' },
+    { icon: 'assignment_ind', label: '我的赛事', path: '/student/registrations' },
+    { icon: 'insights', label: '成果档案', path: '/student/growth' },
+  ],
+  teacher: [
+    { icon: 'space_dashboard', label: '工作台', path: '/teacher' },
+    { icon: 'fact_check', label: '审核中心', path: '/teacher/audit' },
+    { icon: 'school', label: '学生看板', path: '/teacher/student-competitions' },
+    { icon: 'analytics', label: '学院总览', path: '/teacher/college-overview' },
+  ],
+  admin: [
+    { icon: 'space_dashboard', label: '工作台', path: '/admin' },
+    { icon: 'emoji_events', label: '赛事运营', path: '/admin/competitions' },
+    { icon: 'fact_check', label: '审核中心', path: '/admin/audit' },
+    { icon: 'auto_awesome', label: '成果展示', path: '/admin/works' },
+    { icon: 'manage_accounts', label: '组织管理', path: '/admin/users' },
+  ],
+};
+
+export interface WorkspaceTab {
+  label: string;
+  path: string;
+  icon?: string;
+}
+
+export interface WorkspaceGroup {
+  label: string;
+  paths: string[];
+  tabs: WorkspaceTab[];
+}
+
+/** 一级导航保持克制，原有功能通过工作区二级导航完整保留。 */
+export const workspaceGroupsByRole: Record<AppRole, WorkspaceGroup[]> = {
+  student: [
+    {
+      label: '竞赛中心',
+      paths: ['/student/competitions', '/student/calendar', '/student/teams', '/student/works'],
+      tabs: [
+        { label: '赛事大厅', path: '/student/competitions', icon: 'emoji_events' },
+        { label: '赛事日历', path: '/student/calendar', icon: 'calendar_month' },
+        { label: '组队招募', path: '/student/teams', icon: 'group_add' },
+        { label: '优秀成果', path: '/student/works', icon: 'workspace_premium' },
+      ],
+    },
+    {
+      label: '我的赛事',
+      paths: ['/student/registrations', '/student/progress', '/student/upload'],
+      tabs: [
+        { label: '报名与材料', path: '/student/registrations', icon: 'assignment_ind' },
+        { label: '进度跟踪', path: '/student/progress', icon: 'timeline' },
+      ],
+    },
+    {
+      label: '成果档案',
+      paths: ['/student/growth', '/student/achievements'],
+      tabs: [
+        { label: '成长概览', path: '/student/growth', icon: 'insights' },
+        { label: '成果上传', path: '/student/achievements/upload', icon: 'upload_file' },
+      ],
+    },
+  ],
+  teacher: [
+    {
+      label: '学生竞赛',
+      paths: ['/teacher/student-competitions', '/teacher/student-growth', '/teacher/student-detail', '/teacher/student-compare'],
+      tabs: [
+        { label: '参赛学生', path: '/teacher/student-competitions', icon: 'school' },
+        { label: '成长分析', path: '/teacher/student-growth', icon: 'trending_up' },
+      ],
+    },
+  ],
+  admin: [
+    {
+      label: '赛事运营',
+      paths: ['/admin/competitions', '/admin/publish', '/admin/drafts', '/admin/competition-sources', '/admin/announcements'],
+      tabs: [
+        { label: '全部赛事', path: '/admin/competitions', icon: 'emoji_events' },
+        { label: '创建赛事', path: '/admin/publish', icon: 'add_circle' },
+        { label: '草稿箱', path: '/admin/drafts', icon: 'draft' },
+        { label: '赛事来源', path: '/admin/competition-sources', icon: 'travel_explore' },
+        { label: '公告', path: '/admin/announcements', icon: 'campaign' },
+      ],
+    },
+    {
+      label: '审核中心',
+      paths: ['/admin/audit', '/admin/registration-audit'],
+      tabs: [
+        { label: '业务审核', path: '/admin/audit', icon: 'fact_check' },
+        { label: '教师注册', path: '/admin/registration-audit', icon: 'how_to_reg' },
+      ],
+    },
+    {
+      label: '组织管理',
+      paths: ['/admin/users', '/admin/roster', '/admin/majors', '/admin/classes'],
+      tabs: [
+        { label: '用户', path: '/admin/users', icon: 'manage_accounts' },
+        { label: '学生名册', path: '/admin/roster', icon: 'group' },
+        { label: '专业', path: '/admin/majors', icon: 'school' },
+        { label: '班级', path: '/admin/classes', icon: 'class' },
+      ],
+    },
+  ],
+};
 
 export const navByRole: Record<AppRole, NavEntry[]> = {
   student: studentNav,
@@ -93,14 +201,14 @@ export const navByRole: Record<AppRole, NavEntry[]> = {
 /** 路径片段 / 完整路径 → 统一中文名（面包屑 + 顶栏） */
 const pathLabelEntries: Array<[string, string]> = [
   // 完整路径优先
-  ['/student', '工作台'],
-  ['/student/competitions', '活动大厅'],
+  ['/student', '首页'],
+  ['/student/competitions', '竞赛中心'],
   ['/student/calendar', '赛事日历'],
   ['/student/teams', '组队招募'],
   ['/student/works', '光荣榜'],
-  ['/student/registrations', '报名与材料'],
+  ['/student/registrations', '我的赛事'],
   ['/student/progress', '进度跟踪'],
-  ['/student/growth', '成长画像'],
+  ['/student/growth', '成果档案'],
   ['/student/achievements/upload', '上传成果'],
   ['/student/notifications', '消息中心'],
   ['/teacher', '工作台'],
@@ -113,8 +221,8 @@ const pathLabelEntries: Array<[string, string]> = [
   ['/teacher/student-compare', '学生对比'],
   ['/teacher/notifications', '消息中心'],
   ['/admin', '工作台'],
-  ['/admin/competitions', '活动管理'],
-  ['/admin/publish', '发布活动'],
+  ['/admin/competitions', '赛事运营'],
+  ['/admin/publish', '创建赛事'],
   ['/admin/drafts', '草稿箱'],
   ['/admin/competition-sources', '赛事来源'],
   ['/admin/announcements', '公告管理'],
@@ -130,12 +238,12 @@ const pathLabelEntries: Array<[string, string]> = [
   ['student', '学生端'],
   ['teacher', '教师端'],
   ['admin', '管理端'],
-  ['competitions', '活动大厅'],
+  ['competitions', '竞赛中心'],
   ['teams', '组队招募'],
-  ['registrations', '报名与材料'],
+  ['registrations', '我的赛事'],
   ['workbench', '报名工作台'],
   ['upload', '提交作品'],
-  ['growth', '成长画像'],
+  ['growth', '成果档案'],
   ['achievements', '成果'],
   ['calendar', '赛事日历'],
   ['works', '光荣榜'],
@@ -146,7 +254,7 @@ const pathLabelEntries: Array<[string, string]> = [
   ['student-growth', '学情分析'],
   ['student-detail', '学生详情'],
   ['student-compare', '学生对比'],
-  ['publish', '发布活动'],
+  ['publish', '创建赛事'],
   ['activity', '通用活动'],
   ['users', '用户管理'],
   ['announcements', '公告管理'],
@@ -166,7 +274,7 @@ export function labelForPath(pathname: string): string {
   if (pathLabelMap.has(clean)) return pathLabelMap.get(clean)!;
 
   // 动态详情
-  if (/^\/student\/competitions\/[^/]+$/.test(clean)) return '活动详情';
+  if (/^\/student\/competitions\/[^/]+$/.test(clean)) return '赛事详情';
   if (/^\/student\/registrations\/workbench\/[^/]+$/.test(clean)) return '报名工作台';
   if (/^\/student\/upload\/[^/]+$/.test(clean)) return '提交作品';
   if (/^\/admin\/publish\/activity\/[^/]+$/.test(clean)) return '编辑活动';
@@ -186,10 +294,10 @@ export function isNavGroup(item: NavEntry): item is NavGroup {
 
 /** 学生主流程：用于工作台与相关页串联 */
 export const studentJourney = [
-  { step: 1, label: '发现活动', path: '/student/competitions', desc: '在活动大厅找到适合的赛事' },
-  { step: 2, label: '报名参赛', path: '/student/registrations', desc: '提交报名并完善材料' },
-  { step: 3, label: '跟踪进度', path: '/student/progress', desc: '查看审核与赛事节点' },
-  { step: 4, label: '沉淀成长', path: '/student/growth', desc: '更新成长画像与综测' },
+  { step: 1, label: '发现赛事', path: '/student/competitions', desc: '找到适合自己的校园赛事' },
+  { step: 2, label: '报名组队', path: '/student/registrations', desc: '填写报名信息并完成组队' },
+  { step: 3, label: '材料与审核', path: '/student/progress', desc: '提交材料并跟踪审核节点' },
+  { step: 4, label: '成果归档', path: '/student/growth', desc: '沉淀作品、荣誉和成长记录' },
 ] as const;
 
 /** 页面间关联推荐（「接下来可以」） */

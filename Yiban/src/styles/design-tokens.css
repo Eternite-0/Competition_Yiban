@@ -1,19 +1,19 @@
 @theme {
   /* ── Primary: brand blue (蓝白基调核心) ── */
-  --color-primary: #2563eb;
-  --color-primary-focus: #1d4ed8;
-  --color-primary-active: #1e40af;
-  --color-primary-soft: #eff6ff;
-  --color-info: #2563eb;
+  --color-primary: #526fd7;
+  --color-primary-focus: #435fc4;
+  --color-primary-active: #354da6;
+  --color-primary-soft: #eef2ff;
+  --color-info: #526fd7;
   --color-success: #16a34a;
   --color-warning: #d97706;
   --color-error: #dc2626;
 
   /* ── Text ── */
-  --color-ink: #1d1d1f;
-  --color-body: #1d1d1f;
-  --color-body-muted: #5b6472;
-  --color-body-subtle: #6b7280;
+  --color-ink: #172033;
+  --color-body: #243047;
+  --color-body-muted: #59657a;
+  --color-body-subtle: #748096;
   --color-body-on-dark: #ffffff;
   --color-primary-on-dark: #2563eb;
   --color-ink-muted-80: #5b6472;
@@ -26,10 +26,10 @@
 
   /* ── Surfaces: 蓝白基调（白底 + 淡蓝灰背景） ── */
   --color-canvas: #ffffff;
-  --color-canvas-parchment: #f5f7fa;
+  --color-canvas-parchment: #f6f7fb;
   --color-surface-pearl: #ffffff;
-  --color-surface-tile-1: #f0f4f8;
-  --color-surface-tile-2: #e8eef5;
+  --color-surface-tile-1: #f1f3f8;
+  --color-surface-tile-2: #e9edf5;
   --color-surface-tile-3: #dce4ee;
   --color-surface-black: #1d1d1f;
   --color-surface-chip: #eef2f7;
@@ -42,8 +42,8 @@
   --color-hover-overlay: rgba(37, 99, 235, 0.05);
 
   /* ── Borders ── */
-  --color-border: #e2e8f0;
-  --color-border-emphasis: #cbd5e1;
+  --color-border: #dfe6f0;
+  --color-border-emphasis: #c6d1e1;
   --color-border-disabled: #f1f5f9;
   --color-divider-soft: #eef2f7;
   --color-hairline: #e8edf3;
@@ -66,15 +66,15 @@
   --color-danger-bg: #fef2f2;
 
   /* ── Typography ── */
-  --font-display: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
-  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  --font-display: "HarmonyOS Sans SC", "Alibaba PuHuiTi 3", "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body: "HarmonyOS Sans SC", "Alibaba PuHuiTi 3", "PingFang SC", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   /* ── Radii ── */
   --radius-xs: 6px;
   --radius-sm: 8px;
   --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
   --radius-pill: 9999px;
   --radius-full: 50%;
 
@@ -94,13 +94,13 @@
   --shadow-card-hover: none;
   --shadow-panel: none;
   --shadow-product: none;
-  --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-float: 0 18px 48px rgba(28, 45, 78, 0.14);
   --shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.18);
   --shadow-frosted: 0 4px 16px rgba(0, 0, 0, 0.06);
 
   /* ── Layout chrome ── */
-  --sidebar-width: 240px;
-  --header-height: 52px;
+  --sidebar-width: 224px;
+  --header-height: 64px;
 }
 
 :root {

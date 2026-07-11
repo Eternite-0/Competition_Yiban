@@ -506,9 +506,6 @@ export default function Header({ mobileNavOpen, onToggleMobileNav, desktopSideba
           </AnimatePresence>
         </div>
 
-        <div className="grid h-8 w-8 place-items-center rounded-full bg-primary text-[12px] font-semibold text-on-primary">
-          {user?.name?.[0] ?? 'U'}
-        </div>
       </div>
     </header>
   );
