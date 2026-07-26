@@ -9,6 +9,7 @@ import com.etsaion.entity.Registration;
 import com.etsaion.entity.ReviewTask;
 import com.etsaion.entity.Submission;
 import com.etsaion.entity.SubmissionStudent;
+import com.etsaion.enums.AuditAction;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.mapper.RegistrationMapper;
 import com.etsaion.mapper.ReviewTaskMapper;
@@ -22,7 +23,9 @@ import com.etsaion.service.StudentStageProgressService;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.SubmissionStudentService;
 import com.etsaion.service.UserService;
+import com.etsaion.service.RegistrationStatusManager;
 import com.etsaion.service.impl.RegistrationServiceImpl;
+import com.etsaion.service.impl.RegistrationStatusManagerImpl;
 import com.etsaion.service.impl.ReviewTaskServiceImpl;
 import com.etsaion.service.impl.SubmissionServiceImpl;
 import com.etsaion.utils.UserContext;
@@ -191,7 +194,7 @@ class AuditFlowContractTest {
 
         f.handle("approve", "ok");
 
-        verify(f.registrationService).audit(eq(1L), eq(2L), eq(true), anyString());
+        verify(f.registrationService).audit(eq(1L), eq(2L), eq(AuditAction.APPROVE), anyString());
     }
 
     @Test
@@ -200,7 +203,7 @@ class AuditFlowContractTest {
 
         f.handle("approve", "ok");
 
-        verify(f.submissionService).reviewSubmission(eq(2L), eq(5L), eq(true), anyString());
+        verify(f.submissionService).reviewSubmission(eq(2L), eq(5L), eq(AuditAction.APPROVE), anyString());
     }
 
     @Test
@@ -209,10 +212,22 @@ class AuditFlowContractTest {
 
         f.handle("return", NOTE);
 
-        // 领域服务必须能区分"退回补充"与"驳回"：非通过，且意见承载退回语义
+        // 退回补充作为独立动作抵达领域服务，而不是"驳回 + 意见带前缀"
         ArgumentCaptor<String> note = ArgumentCaptor.forClass(String.class);
-        verify(f.registrationService).audit(eq(1L), eq(2L), eq(false), note.capture());
-        assertTrue(note.getValue().contains(NOTE));
+        verify(f.registrationService).audit(eq(1L), eq(2L), eq(AuditAction.RETURN), note.capture());
+        assertEquals(NOTE, note.getValue());
+    }
+
+    @Test
+    void workbenchStripsLegacyReturnMarkerFromTheNote() {
+        TaskFixture f = new TaskFixture("registration", 1L);
+
+        // 旧调用方可能仍把标记写进意见里，入口要认得并剥掉
+        f.handle("return", "【退回补充】" + NOTE);
+
+        ArgumentCaptor<String> note = ArgumentCaptor.forClass(String.class);
+        verify(f.registrationService).audit(eq(1L), eq(2L), eq(AuditAction.RETURN), note.capture());
+        assertEquals(NOTE, note.getValue());
     }
 
     @Test
@@ -235,7 +250,7 @@ class AuditFlowContractTest {
 
         f.handle("approve", null);
 
-        verify(f.registrationService).audit(eq(1L), eq(2L), eq(true), any());
+        verify(f.registrationService).audit(eq(1L), eq(2L), eq(AuditAction.APPROVE), any());
     }
 
     @Test
@@ -263,6 +278,17 @@ class AuditFlowContractTest {
     }
 
     // ==================== 测试夹具 ====================
+
+    /**
+     * 真实的状态管理器配 mock 的持久化。
+     * 状态迁移规则是被测行为的一部分，不该被 mock 掉；
+     * 落库与否不影响断言——实体是按引用共享的。
+     */
+    private static RegistrationStatusManager statusManager(RegistrationService registrationService) {
+        RegistrationStatusManagerImpl manager = new RegistrationStatusManagerImpl();
+        ReflectionTestUtils.setField(manager, "registrationService", registrationService);
+        return manager;
+    }
 
     /**
      * 报名审核夹具：一条待审报名 + 全部协作者的 mock。
@@ -303,18 +329,20 @@ class AuditFlowContractTest {
             ReflectionTestUtils.setField(service, "reviewTaskService", reviewTaskService);
             ReflectionTestUtils.setField(service, "studentStageProgressService",
                     mock(StudentStageProgressService.class));
+            ReflectionTestUtils.setField(service, "registrationStatusManager",
+                    statusManager(mock(RegistrationService.class)));
         }
 
         void approve(String note) {
-            service.audit(1L, 2L, true, note);
+            service.audit(1L, 2L, AuditAction.APPROVE, note);
         }
 
         void reject(String note) {
-            service.audit(1L, 2L, false, note);
+            service.audit(1L, 2L, AuditAction.REJECT, note);
         }
 
         void returnForSupplement(String note) {
-            service.audit(1L, 2L, false, "【退回补充】" + note);
+            service.audit(1L, 2L, AuditAction.RETURN, note);
         }
 
         Message capturedMessage() {
@@ -379,18 +407,19 @@ class AuditFlowContractTest {
             ReflectionTestUtils.setField(service, "userService", userService);
             ReflectionTestUtils.setField(service, "submissionStudentService", submissionStudentService);
             ReflectionTestUtils.setField(service, "reviewTaskService", reviewTaskService);
+            ReflectionTestUtils.setField(service, "registrationStatusManager", statusManager(registrationService));
         }
 
         void approve(String note) {
-            service.reviewSubmission(2L, 5L, true, note);
+            service.reviewSubmission(2L, 5L, AuditAction.APPROVE, note);
         }
 
         void reject(String note) {
-            service.reviewSubmission(2L, 5L, false, note);
+            service.reviewSubmission(2L, 5L, AuditAction.REJECT, note);
         }
 
         void returnForSupplement(String note) {
-            service.reviewSubmission(2L, 5L, false, "【退回补充】" + note);
+            service.reviewSubmission(2L, 5L, AuditAction.RETURN, note);
         }
     }
 

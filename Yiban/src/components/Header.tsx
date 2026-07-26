@@ -310,7 +310,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav, desktopSideba
                 animate="visible"
                 exit="exit"
                 transition={panelTransition}
-                className="absolute left-0 top-[42px] z-50 w-[340px] overflow-hidden rounded-lg border border-hairline bg-canvas shadow-float"
+                className="absolute left-0 top-[42px] z-50 w-[340px] overflow-hidden rounded-lg border border-[var(--material-border)] material-thick shadow-3"
               >
                 <div className="border-b border-hairline/80 px-3 py-2">
                   <span className="text-[12px] text-placeholder">搜索结果</span>
@@ -375,7 +375,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav, desktopSideba
                 animate="visible"
                 exit="exit"
                 transition={panelTransition}
-                className="absolute right-0 top-[46px] max-h-[420px] w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-hairline bg-canvas shadow-float"
+                className="absolute right-0 top-[46px] max-h-[420px] w-[340px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-[var(--material-border)] material-thick shadow-3"
               >
                 <div className="flex items-center justify-between border-b border-hairline/80 px-4 py-3">
                   <span className="text-[14px] font-medium text-ink">消息通知</span>
@@ -476,7 +476,7 @@ export default function Header({ mobileNavOpen, onToggleMobileNav, desktopSideba
                 exit="exit"
                 transition={panelTransition}
                 role="menu"
-                className="absolute right-0 top-[42px] z-50 w-[160px] overflow-hidden rounded-lg border border-hairline bg-canvas py-1 shadow-float"
+                className="absolute right-0 top-[42px] z-50 w-[160px] overflow-hidden rounded-lg border border-[var(--material-border)] material-thick py-1 shadow-3"
               >
                 {themeOptions.map((opt) => (
                   <button

@@ -6,17 +6,20 @@ import com.etsaion.config.FlexibleStringListDeserializer;
 import com.etsaion.entity.Competition;
 import com.etsaion.entity.Registration;
 import com.etsaion.entity.Submission;
+import com.etsaion.enums.AuditAction;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.mapper.RegistrationMapper;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.GrowthRecordService;
 import com.etsaion.service.MessageService;
 import com.etsaion.service.RegistrationService;
+import com.etsaion.service.RegistrationStatusManager;
 import com.etsaion.service.ReviewTaskService;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.SubmissionStudentService;
 import com.etsaion.service.impl.GrowthRecordServiceImpl;
 import com.etsaion.service.impl.RegistrationServiceImpl;
+import com.etsaion.service.impl.RegistrationStatusManagerImpl;
 import com.etsaion.service.impl.SubmissionServiceImpl;
 import com.etsaion.vo.StudentGrowthVO;
 import com.fasterxml.jackson.core.JsonParser;
@@ -39,6 +42,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class AdditionalUnitTest {
+
+    /** 真实的状态管理器配 mock 的持久化——状态迁移规则本身是被测行为。 */
+    private static RegistrationStatusManager statusManager() {
+        RegistrationStatusManagerImpl manager = new RegistrationStatusManagerImpl();
+        ReflectionTestUtils.setField(manager, "registrationService", mock(RegistrationService.class));
+        return manager;
+    }
 
     // =========================================================================
     // 1. FlexibleLocalDateTimeDeserializer - 日期解析
@@ -432,8 +442,9 @@ class AdditionalUnitTest {
         ReflectionTestUtils.setField(service, "growthRecordService", growthService);
         ReflectionTestUtils.setField(service, "reviewTaskService", reviewTaskService);
         ReflectionTestUtils.setField(service, "submissionService", subService);
+        ReflectionTestUtils.setField(service, "registrationStatusManager", statusManager());
 
-        service.audit(1L, 2L, true, "通过");
+        service.audit(1L, 2L, AuditAction.APPROVE, "通过");
 
         assertEquals("审核通过", reg.getStatus());
     }
@@ -468,8 +479,9 @@ class AdditionalUnitTest {
         ReflectionTestUtils.setField(service, "growthRecordService", growthService);
         ReflectionTestUtils.setField(service, "reviewTaskService", reviewTaskService);
         ReflectionTestUtils.setField(service, "submissionService", subService);
+        ReflectionTestUtils.setField(service, "registrationStatusManager", statusManager());
 
-        service.audit(1L, 2L, false, "不符合要求");
+        service.audit(1L, 2L, AuditAction.REJECT, "不符合要求");
 
         assertEquals("审核驳回", reg.getStatus());
     }
@@ -504,8 +516,9 @@ class AdditionalUnitTest {
         ReflectionTestUtils.setField(service, "growthRecordService", growthService);
         ReflectionTestUtils.setField(service, "reviewTaskService", reviewTaskService);
         ReflectionTestUtils.setField(service, "submissionService", subService);
+        ReflectionTestUtils.setField(service, "registrationStatusManager", statusManager());
 
-        service.audit(1L, 2L, false, "【退回补充】请补充指导老师信息");
+        service.audit(1L, 2L, AuditAction.RETURN, "请补充指导老师信息");
 
         assertEquals("退回补充", reg.getStatus());
     }
@@ -523,9 +536,10 @@ class AdditionalUnitTest {
 
         when(regMapper.selectById(1L)).thenReturn(reg);
         ReflectionTestUtils.setField(service, "baseMapper", regMapper);
+        ReflectionTestUtils.setField(service, "registrationStatusManager", statusManager());
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> service.audit(1L, 2L, true, null));
+                () -> service.audit(1L, 2L, AuditAction.APPROVE, null));
 
         assertEquals("该报名申请已处理完毕", ex.getMessage());
     }
@@ -537,9 +551,10 @@ class AdditionalUnitTest {
 
         when(regMapper.selectById(999L)).thenReturn(null);
         ReflectionTestUtils.setField(service, "baseMapper", regMapper);
+        ReflectionTestUtils.setField(service, "registrationStatusManager", statusManager());
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> service.audit(999L, 2L, true, null));
+                () -> service.audit(999L, 2L, AuditAction.APPROVE, null));
 
         assertEquals("报名表不存在", ex.getMessage());
     }
@@ -579,8 +594,9 @@ class AdditionalUnitTest {
         ReflectionTestUtils.setField(service, "growthRecordService", growthService);
         ReflectionTestUtils.setField(service, "reviewTaskService", reviewTaskService);
         ReflectionTestUtils.setField(service, "submissionService", subService);
+        ReflectionTestUtils.setField(service, "registrationStatusManager", statusManager());
 
-        service.audit(1L, 2L, true, "通过");
+        service.audit(1L, 2L, AuditAction.APPROVE, "通过");
 
         // Verify the linked submission was updated
         verify(subService).updateById(linkedSub);

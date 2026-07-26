@@ -1,6 +1,7 @@
 package com.etsaion.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -13,12 +14,18 @@ import com.etsaion.entity.Registration;
 import com.etsaion.entity.ReviewTask;
 import com.etsaion.entity.Submission;
 import com.etsaion.entity.User;
+import com.etsaion.enums.AuditAction;
+import com.etsaion.enums.CompetitionStatus;
+import com.etsaion.enums.RegistrationStatus;
+import com.etsaion.enums.ReviewTargetType;
+import com.etsaion.enums.SubmissionStatus;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.mapper.RegistrationMapper;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.GrowthRecordService;
 import com.etsaion.service.MessageService;
 import com.etsaion.service.RegistrationService;
+import com.etsaion.service.RegistrationStatusManager;
 import com.etsaion.service.ReviewTaskService;
 import com.etsaion.service.StudentStageProgressService;
 import com.etsaion.service.SubmissionService;
@@ -66,6 +73,9 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
     @Autowired
     private StudentStageProgressService studentStageProgressService;
 
+    @Autowired
+    private RegistrationStatusManager registrationStatusManager;
+
     @Override
     @Transactional
     public Registration submitRegistration(Long studentId, RegistrationSubmitDTO dto) {
@@ -73,7 +83,7 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         if (comp == null) {
             throw new BusinessException("要报名的赛事不存在");
         }
-        if (!"published".equalsIgnoreCase(comp.getStatus())) {
+        if (!CompetitionStatus.isPublished(comp.getStatus())) {
             throw new BusinessException("该赛事当前未开放报名");
         }
         if (comp.getStartTime() != null && LocalDateTime.now().isBefore(comp.getStartTime())) {
@@ -112,11 +122,12 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
             }
         }
 
+        // 被驳回或退回补充的报名不算占位，学生可以重新提交
         long count = this.count(new LambdaQueryWrapper<Registration>()
                 .eq(Registration::getStudentId, studentId)
                 .eq(Registration::getCompetitionId, dto.getCompetitionId())
-                .ne(Registration::getStatus, "审核驳回")
-                .ne(Registration::getStatus, "退回补充"));
+                .ne(Registration::getStatus, RegistrationStatus.REJECTED.getValue())
+                .ne(Registration::getStatus, RegistrationStatus.RETURNED.getValue()));
         if (count > 0) {
             throw new BusinessException("您已报名参加该赛事，请勿重复申请");
         }
@@ -127,7 +138,7 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         reg.setTeamName(dto.getTeamName());
         reg.setTrack(dto.getTrack());
         reg.setMemberStudentIds(JSONUtil.toJsonStr(new ArrayList<>(memberIds)));
-        reg.setStatus("已提交");
+        reg.setStatus(RegistrationStatus.SUBMITTED.getValue());
         reg.setSubmitDate(LocalDateTime.now());
 
         this.save(reg);
@@ -137,7 +148,8 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         payload.put("teamName", reg.getTeamName());
         payload.put("track", reg.getTrack());
         payload.put("memberStudentIds", new ArrayList<>(memberIds));
-        reviewTaskService.createPending("competition", comp.getId(), "registration", reg.getId(),
+        reviewTaskService.createPending("competition", comp.getId(),
+                ReviewTargetType.REGISTRATION.getValue(), reg.getId(),
                 studentId, "赛事报名审核：" + comp.getName(), comp.getEndTime(), JSONUtil.toJsonStr(payload));
 
         // Initialize first stage progress for this student
@@ -163,7 +175,7 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         Page<Registration> page = new Page<>(current, size);
         LambdaQueryWrapper<Registration> wrapper = new LambdaQueryWrapper<>();
 
-        wrapper.in(Registration::getStatus, "已提交", "审核中");
+        wrapper.in(Registration::getStatus, RegistrationStatus.valuesOf(RegistrationStatus.REVIEWABLE));
 
         // 教师只能看到本学院学生的报名
         String teacherCollege = getTeacherCollege();
@@ -185,14 +197,9 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
 
     @Override
     @Transactional
-    public void audit(Long id, Long teacherId, Boolean approve, String reviewNote) {
+    public void audit(Long id, Long teacherId, AuditAction action, String reviewNote) {
         Registration reg = this.getById(id);
-        if (reg == null) {
-            throw new BusinessException("报名表不存在");
-        }
-        if (!"已提交".equalsIgnoreCase(reg.getStatus()) && !"审核中".equalsIgnoreCase(reg.getStatus())) {
-            throw new BusinessException("该报名申请已处理完毕");
-        }
+        registrationStatusManager.requireReviewable(reg);
 
         // 教师只能审核本学院学生的报名
         String teacherCollege = getTeacherCollege();
@@ -206,20 +213,10 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         Competition comp = competitionService.getById(reg.getCompetitionId());
         String compName = comp != null ? comp.getName() : "未知赛事";
 
-        if (Boolean.TRUE.equals(approve)) {
-            reg.setStatus("审核通过");
-            this.updateById(reg);
-            log.info("报名审核通过: 报名ID={}, 学生ID={}, 赛事={}", id, reg.getStudentId(), compName);
+        registrationStatusManager.applyAudit(reg, action);
+        notifyStudent(reg.getStudentId(), teacherId, action, compName, reviewNote);
 
-            Message msg = new Message();
-            msg.setFromUser(teacherId);
-            msg.setToUser(reg.getStudentId());
-            msg.setTitle("您的赛事报名审核已通过");
-            msg.setContent(String.format("恭喜！您在“%s”中的参赛报名申请已审核通过！", compName));
-            msg.setIsRead(0);
-            msg.setCreateTime(LocalDateTime.now());
-            messageService.save(msg);
-
+        if (action.isApprove()) {
             GrowthRecord record = new GrowthRecord();
             record.setStudentId(reg.getStudentId());
             record.setCompetitionId(reg.getCompetitionId());
@@ -227,41 +224,51 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
             record.setTitle(String.format("完成了在“%s”中的赛事报名与审核", compName));
             record.setHappenTime(LocalDateTime.now());
             growthRecordService.save(record);
-
-        } else {
-            boolean isReturn = reviewNote != null && reviewNote.startsWith("【退回补充】");
-            reg.setStatus(isReturn ? "退回补充" : "审核驳回");
-            this.updateById(reg);
-
-            Message msg = new Message();
-            msg.setFromUser(teacherId);
-            msg.setToUser(reg.getStudentId());
-            if (isReturn) {
-                msg.setTitle("您的赛事报名需要补充材料");
-                msg.setContent(String.format("您在“%s”中的参赛报名申请已被退回补充。请补充以下内容：%s",
-                        compName, reviewNote.replace("【退回补充】", "")));
-            } else {
-                msg.setTitle("您的赛事报名审核已被驳回");
-                msg.setContent(String.format("很遗憾，您在“%s”中的参赛报名申请未通过审核。理由：%s", compName, reviewNote));
-            }
-            msg.setIsRead(0);
-            msg.setCreateTime(LocalDateTime.now());
-            messageService.save(msg);
         }
 
-        reviewTaskService.resolveTarget("registration", id, teacherId, reviewNote);
+        reviewTaskService.resolveTarget(ReviewTargetType.REGISTRATION.getValue(), id, teacherId, reviewNote);
 
-        // Sync linked submission status so it doesn't stay "待审核" forever
+        // 报名有了结论，挂在它下面还没审的成果也随之落定——
+        // 连同成果自己的待办一起结掉，否则那些待办会变成点开就报错的孤儿
         List<Submission> linkedSubs = submissionService.list(
                 new LambdaQueryWrapper<Submission>().eq(Submission::getRegistrationId, id));
         for (Submission sub : linkedSubs) {
-            if ("待审核".equalsIgnoreCase(sub.getStatus())) {
-                sub.setStatus("已审核");
-                sub.setApproved(Boolean.TRUE.equals(approve));
+            if (SubmissionStatus.isPending(sub.getStatus())) {
+                sub.setStatus(SubmissionStatus.REVIEWED.getValue());
+                sub.setApproved(SubmissionStatus.approvedFlagOf(action));
                 sub.setReviewNote(reviewNote);
                 submissionService.updateById(sub);
+                reviewTaskService.resolveTarget(ReviewTargetType.SUBMISSION.getValue(),
+                        sub.getId(), teacherId, reviewNote);
             }
         }
+    }
+
+    private void notifyStudent(Long studentId, Long teacherId, AuditAction action,
+                               String compName, String reviewNote) {
+        Message msg = new Message();
+        msg.setFromUser(teacherId);
+        msg.setToUser(studentId);
+        switch (action) {
+            case APPROVE:
+                msg.setTitle("您的赛事报名审核已通过");
+                msg.setContent(String.format("恭喜！您在“%s”中的参赛报名申请已审核通过！", compName));
+                break;
+            case RETURN:
+                msg.setTitle("您的赛事报名需要补充材料");
+                msg.setContent(String.format("您在“%s”中的参赛报名申请已被退回补充。请补充以下内容：%s",
+                        compName, StrUtil.nullToEmpty(reviewNote)));
+                break;
+            case REJECT:
+            default:
+                msg.setTitle("您的赛事报名审核已被驳回");
+                msg.setContent(String.format("很遗憾，您在“%s”中的参赛报名申请未通过审核。理由：%s",
+                        compName, StrUtil.nullToEmpty(reviewNote)));
+                break;
+        }
+        msg.setIsRead(0);
+        msg.setCreateTime(LocalDateTime.now());
+        messageService.save(msg);
     }
 
     @Override
@@ -297,7 +304,7 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         if (!CollUtil.isEmpty(regIds)) {
             List<ReviewTask> tasks = reviewTaskService.list(
                     new LambdaQueryWrapper<ReviewTask>()
-                            .eq(ReviewTask::getTargetType, "registration")
+                            .eq(ReviewTask::getTargetType, ReviewTargetType.REGISTRATION.getValue())
                             .in(ReviewTask::getTargetId, regIds)
                             .isNotNull(ReviewTask::getReviewNote)
                             .orderByDesc(ReviewTask::getUpdateTime)

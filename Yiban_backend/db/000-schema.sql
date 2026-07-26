@@ -149,7 +149,7 @@ CREATE TABLE `registration` (
   `team_name` varchar(100) DEFAULT NULL COMMENT '战队名称 (个人赛为空)',
   `track` varchar(100) DEFAULT NULL COMMENT '参赛赛道',
   `member_student_ids` varchar(1000) DEFAULT NULL COMMENT 'JSON数组 - 团队成员学生ID',
-  `status` varchar(20) DEFAULT '待完善' COMMENT '待完善/已提交/审核中/审核通过/退回补充/审核驳回',
+  `status` varchar(20) NOT NULL DEFAULT '已提交' COMMENT '已提交/审核中/审核通过/退回补充/审核驳回',
   `submit_date` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_competition_id` (`competition_id`),

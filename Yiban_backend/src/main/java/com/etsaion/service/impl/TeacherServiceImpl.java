@@ -13,6 +13,8 @@ import com.etsaion.entity.GrowthRecord;
 import com.etsaion.entity.ComprehensiveScore;
 import com.etsaion.entity.Activity;
 import com.etsaion.entity.Participation;
+import com.etsaion.enums.RegistrationStatus;
+import com.etsaion.enums.SubmissionStatus;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.service.*;
 import com.etsaion.utils.UserContext;
@@ -174,7 +176,7 @@ public class TeacherServiceImpl implements TeacherService {
         stats.put("activeCoefficient", activeCoeff);
 
         long pendingReviews = regs.stream()
-                .filter(r -> "已提交".equals(r.getStatus()) || "审核中".equals(r.getStatus()))
+                .filter(r -> RegistrationStatus.isReviewable(r.getStatus()))
                 .count();
         stats.put("pendingReviews", pendingReviews);
 
@@ -233,27 +235,6 @@ public class TeacherServiceImpl implements TeacherService {
 
         Page<Registration> raw = registrationService.page(page, wrapper);
         return registrationService.toVOPage(raw);
-    }
-
-    @Override
-    public List<UserVO> listStudents(String keyword, String college, String className, String grade, String major) {
-        String effectiveCollege = scopedCollege(college);
-        String normalizedGrade = normalizeGrade(grade);
-        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>()
-                .eq(User::getRole, "student")
-                .eq(StrUtil.isNotBlank(effectiveCollege), User::getCollege, effectiveCollege)
-                .eq(StrUtil.isNotBlank(className), User::getClassName, className)
-                .eq(StrUtil.isNotBlank(normalizedGrade), User::getGrade, normalizedGrade);
-        applyMajorFilter(wrapper, major);
-
-        if (StrUtil.isNotBlank(keyword)) {
-            wrapper.and(w -> w.like(User::getRealName, keyword)
-                              .or().like(User::getUsername, keyword)
-                              .or().like(User::getMajor, keyword));
-        }
-        wrapper.orderByAsc(User::getId);
-
-        return userService.list(wrapper).stream().map(this::toUserVO).collect(Collectors.toList());
     }
 
     @Override
@@ -409,10 +390,11 @@ public class TeacherServiceImpl implements TeacherService {
         Map<Long, List<Submission>> approvedSubsByRegId = CollUtil.isNotEmpty(allRegIds)
                 ? submissionService.list(new LambdaQueryWrapper<Submission>()
                         .in(Submission::getRegistrationId, allRegIds)
-                        .eq(Submission::getStatus, "已审核")
+                        .eq(Submission::getStatus, SubmissionStatus.REVIEWED.getValue())
                         .eq(Submission::getApproved, true))
                         .stream()
-                        .filter(s -> "已审核".equals(s.getStatus()) && Boolean.TRUE.equals(s.getApproved()))
+                        .filter(s -> SubmissionStatus.REVIEWED == SubmissionStatus.from(s.getStatus())
+                        && Boolean.TRUE.equals(s.getApproved()))
                         .collect(Collectors.groupingBy(Submission::getRegistrationId))
                 : Collections.emptyMap();
 
@@ -590,7 +572,8 @@ public class TeacherServiceImpl implements TeacherService {
         long participatedStudents = allRegs.stream().map(Registration::getStudentId).distinct().count();
         result.put("totalRegistrations", allRegs.size());
         result.put("totalApproved", allApproved.size());
-        result.put("totalPending", allRegs.stream().filter(r -> "已提交".equals(r.getStatus()) || "审核中".equals(r.getStatus())).count());
+        result.put("totalPending", allRegs.stream()
+                .filter(r -> RegistrationStatus.isReviewable(r.getStatus())).count());
         result.put("participationRate", totalStudents == 0 ? 0.0 : Math.round((double) participatedStudents / totalStudents * 100.0) / 100.0);
         result.put("perStudentAvg", totalStudents == 0 ? 0.0 : Math.round((double) allRegs.size() / totalStudents * 100.0) / 100.0);
 
@@ -775,7 +758,7 @@ public class TeacherServiceImpl implements TeacherService {
         List<Registration> registrations = registrationService.list(new LambdaQueryWrapper<Registration>()
                 .in(Registration::getStudentId, studentIds));
         List<Registration> approvedRegistrations = registrations.stream()
-                .filter(r -> "审核通过".equals(r.getStatus()))
+                .filter(r -> RegistrationStatus.APPROVED == RegistrationStatus.from(r.getStatus()))
                 .collect(Collectors.toList());
         approvedRegistrations.forEach(reg -> {
             evidenceByStudent.computeIfPresent(reg.getStudentId(), (id, count) -> count + 1);
@@ -792,7 +775,7 @@ public class TeacherServiceImpl implements TeacherService {
         if (CollUtil.isNotEmpty(approvedRegIds)) {
             List<Submission> approvedSubmissions = submissionService.list(new LambdaQueryWrapper<Submission>()
                     .in(Submission::getRegistrationId, approvedRegIds)
-                    .eq(Submission::getStatus, "已审核")
+                    .eq(Submission::getStatus, SubmissionStatus.REVIEWED.getValue())
                     .eq(Submission::getApproved, true));
             Map<Long, Long> regToStudent = approvedRegistrations.stream()
                     .collect(Collectors.toMap(Registration::getId, Registration::getStudentId, (a, b) -> a));

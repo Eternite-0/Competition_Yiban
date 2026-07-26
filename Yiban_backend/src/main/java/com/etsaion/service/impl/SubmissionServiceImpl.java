@@ -13,12 +13,18 @@ import com.etsaion.entity.Registration;
 import com.etsaion.entity.Submission;
 import com.etsaion.entity.SubmissionStudent;
 import com.etsaion.entity.User;
+import com.etsaion.enums.AuditAction;
+import com.etsaion.enums.CompetitionStatus;
+import com.etsaion.enums.RegistrationStatus;
+import com.etsaion.enums.ReviewTargetType;
+import com.etsaion.enums.SubmissionStatus;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.mapper.SubmissionMapper;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.GrowthRecordService;
 import com.etsaion.service.MessageService;
 import com.etsaion.service.RegistrationService;
+import com.etsaion.service.RegistrationStatusManager;
 import com.etsaion.service.ReviewTaskService;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.SubmissionStudentService;
@@ -68,6 +74,9 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     @Autowired
     private QiniuConfig qiniuConfig;
 
+    @Autowired
+    private RegistrationStatusManager registrationStatusManager;
+
     @Override
     @Transactional
     public Submission submitSubmission(Long studentId, Long registrationId, String fileName, String fileUrl, Long fileSize) {
@@ -80,23 +89,19 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
             throw new BusinessException("您无权为此报名表提交成果附件");
         }
 
-        // Allow submission when registration is submitted, approved, or returned for supplementation
-        if (!"已提交".equalsIgnoreCase(reg.getStatus())
-                && !"审核通过".equalsIgnoreCase(reg.getStatus())
-                && !"退回补充".equalsIgnoreCase(reg.getStatus())) {
+        if (!RegistrationStatus.acceptsSubmission(reg.getStatus())) {
             throw new BusinessException("当前报名状态不允许提交成果，请确认报名已提交、已审核通过或被退回补充");
         }
 
         // Check for existing pending submission on this registration
         long pendingCount = this.count(new LambdaQueryWrapper<Submission>()
                 .eq(Submission::getRegistrationId, registrationId)
-                .eq(Submission::getStatus, "待审核"));
+                .eq(Submission::getStatus, SubmissionStatus.PENDING.getValue()));
         if (pendingCount > 0) {
             throw new BusinessException("该报名已有一个待审核的成果，请等待审核完成后再提交");
         }
 
-        reg.setStatus("审核中");
-        registrationService.updateById(reg);
+        registrationStatusManager.markUnderReview(reg);
 
         Submission sub = new Submission();
         sub.setRegistrationId(registrationId);
@@ -106,7 +111,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         sub.setFileUrl(fileUrl);
         sub.setFileSize(fileSize != null ? fileSize : 0L);
         sub.setUploadDate(LocalDateTime.now());
-        sub.setStatus("待审核");
+        sub.setStatus(SubmissionStatus.PENDING.getValue());
         sub.setReviewNote(null);
         sub.setApproved(null);
         sub.setDisplayed(false);
@@ -121,7 +126,8 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
 
         Competition comp = competitionService.getById(reg.getCompetitionId());
         String compName = comp != null ? comp.getName() : "未知赛事";
-        reviewTaskService.createPending("competition", reg.getCompetitionId(), "submission",
+        reviewTaskService.createPending("competition", reg.getCompetitionId(),
+                ReviewTargetType.SUBMISSION.getValue(),
                 sub.getId(), studentId, "成果审核：" + compName,
                 comp != null ? comp.getCompetitionEnd() : null,
                 JSONUtil.toJsonStr(Map.of(
@@ -141,7 +147,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         if (comp == null) {
             throw new BusinessException("赛事不存在");
         }
-        if ("draft".equalsIgnoreCase(comp.getStatus())) {
+        if (CompetitionStatus.isDraft(comp.getStatus())) {
             throw new BusinessException("该赛事尚未发布");
         }
         if (CollUtil.isEmpty(studentIds)) {
@@ -162,7 +168,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         sub.setFileUrl(fileUrl);
         sub.setFileSize(fileSize != null ? fileSize : 0L);
         sub.setUploadDate(LocalDateTime.now());
-        sub.setStatus("待审核");
+        sub.setStatus(SubmissionStatus.PENDING.getValue());
         sub.setReviewNote(null);
         sub.setApproved(null);
         sub.setDisplayed(false);
@@ -178,7 +184,8 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         }).collect(Collectors.toList());
         submissionStudentService.saveBatch(links);
 
-        reviewTaskService.createPending("competition", competitionId, "submission",
+        reviewTaskService.createPending("competition", competitionId,
+                ReviewTargetType.SUBMISSION.getValue(),
                 sub.getId(), submitterId, "团队成果审核：" + comp.getName(), comp.getCompetitionEnd(),
                 JSONUtil.toJsonStr(Map.of(
                         "competitionName", comp.getName(),
@@ -193,12 +200,12 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
 
     @Override
     @Transactional
-    public void reviewSubmission(Long teacherId, Long submissionId, Boolean approve, String reviewNote) {
+    public void reviewSubmission(Long teacherId, Long submissionId, AuditAction action, String reviewNote) {
         Submission sub = this.getById(submissionId);
         if (sub == null) {
             throw new BusinessException("成果附件记录不存在");
         }
-        if (!"待审核".equalsIgnoreCase(sub.getStatus())) {
+        if (!SubmissionStatus.isPending(sub.getStatus())) {
             throw new BusinessException("该成果已审核过，请勿重复处理");
         }
 
@@ -214,29 +221,20 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         Competition comp = compId != null ? competitionService.getById(compId) : null;
         String compName = comp != null ? comp.getName() : "未知赛事";
 
-        boolean isReturn = reviewNote != null && reviewNote.startsWith("【退回补充】");
-        sub.setStatus("已审核");
+        sub.setStatus(SubmissionStatus.REVIEWED.getValue());
         sub.setReviewNote(reviewNote);
-        // 三个分支必须都是 Boolean：混用 boolean 字面量会让整个表达式按 boolean 求值，
-        // 退回补充分支的 null 会被拆箱成 NPE
-        sub.setApproved(Boolean.TRUE.equals(approve) ? Boolean.TRUE : (isReturn ? null : Boolean.FALSE));
+        sub.setApproved(SubmissionStatus.approvedFlagOf(action));
         this.updateById(sub);
-        log.info("成果审核完成: 提交ID={}, 结果={}, 赛事={}", submissionId, approve ? "通过" : (isReturn ? "退回" : "驳回"), compName);
-        reviewTaskService.resolveTarget("submission", submissionId, teacherId, reviewNote);
+        log.info("成果审核完成: 提交ID={}, 动作={}, 赛事={}", submissionId, action, compName);
+        reviewTaskService.resolveTarget(ReviewTargetType.SUBMISSION.getValue(), submissionId, teacherId, reviewNote);
 
-        // Update registration status if linked
+        // 成果有了结论，它所属的报名也随之落定
         if (sub.getRegistrationId() != null) {
             Registration reg = registrationService.getById(sub.getRegistrationId());
             if (reg != null) {
-                if (Boolean.TRUE.equals(approve)) {
-                    reg.setStatus("审核通过");
-                } else if (isReturn) {
-                    reg.setStatus("退回补充");
-                } else {
-                    reg.setStatus("审核驳回");
-                }
-                registrationService.updateById(reg);
-                reviewTaskService.resolveTarget("registration", reg.getId(), teacherId, reviewNote);
+                registrationStatusManager.applyAudit(reg, action);
+                reviewTaskService.resolveTarget(ReviewTargetType.REGISTRATION.getValue(),
+                        reg.getId(), teacherId, reviewNote);
             }
         }
 
@@ -245,18 +243,19 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
                 new LambdaQueryWrapper<SubmissionStudent>().eq(SubmissionStudent::getSubmissionId, submissionId));
         List<Long> notifyStudentIds = links.stream().map(SubmissionStudent::getStudentId).collect(Collectors.toList());
 
+        String note = StrUtil.nullToEmpty(reviewNote);
         String title;
         String content;
-        if (Boolean.TRUE.equals(approve)) {
+        if (action.isApprove()) {
             title = "您的成果附件已审核通过";
-            content = String.format("恭喜！您在“%s”中提交的成果文件“%s”已审核通过。评语：%s", compName, sub.getFileName(), reviewNote);
-        } else if (isReturn) {
+            content = String.format("恭喜！您在“%s”中提交的成果文件“%s”已审核通过。评语：%s", compName, sub.getFileName(), note);
+        } else if (action == AuditAction.RETURN) {
             title = "您的成果附件需要补充材料";
             content = String.format("您在“%s”中提交的成果文件“%s”已被退回补充。请补充以下内容：%s",
-                    compName, sub.getFileName(), reviewNote.replace("【退回补充】", ""));
+                    compName, sub.getFileName(), note);
         } else {
             title = "您的成果附件已被驳回";
-            content = String.format("很遗憾，您在“%s”中提交的成果文件“%s”未通过审核。驳回理由：%s", compName, sub.getFileName(), reviewNote);
+            content = String.format("很遗憾，您在“%s”中提交的成果文件“%s”未通过审核。驳回理由：%s", compName, sub.getFileName(), note);
         }
 
         for (Long sid : notifyStudentIds) {
@@ -269,7 +268,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
             msg.setCreateTime(LocalDateTime.now());
             messageService.save(msg);
 
-            if (Boolean.TRUE.equals(approve)) {
+            if (action.isApprove()) {
                 // Prevent duplicate growth records for same student+competition+type
                 long existing = growthRecordService.count(new LambdaQueryWrapper<GrowthRecord>()
                         .eq(GrowthRecord::getStudentId, sid)
@@ -311,10 +310,14 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
             wrapper.in(Submission::getSubmitterId, collegeStudentIds);
         }
 
-        if ("审核通过".equals(status)) {
-            wrapper.eq(Submission::getStatus, "已审核").eq(Submission::getApproved, true);
-        } else if ("审核驳回".equals(status)) {
-            wrapper.eq(Submission::getStatus, "已审核").eq(Submission::getApproved, false);
+        // 调用方可以按成果自身的状态筛，也可以按审核结论筛
+        // （结论存在 approved 字段里，状态只有待审核/已审核两种）
+        if (RegistrationStatus.APPROVED.getValue().equals(status)) {
+            wrapper.eq(Submission::getStatus, SubmissionStatus.REVIEWED.getValue())
+                    .eq(Submission::getApproved, true);
+        } else if (RegistrationStatus.REJECTED.getValue().equals(status)) {
+            wrapper.eq(Submission::getStatus, SubmissionStatus.REVIEWED.getValue())
+                    .eq(Submission::getApproved, false);
         } else if (StrUtil.isNotBlank(status)) {
             wrapper.eq(Submission::getStatus, status);
         }
@@ -346,7 +349,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     @Override
     public List<SubmissionVO> listExcellent() {
         List<Submission> list = this.list(new LambdaQueryWrapper<Submission>()
-                .eq(Submission::getStatus, "已审核")
+                .eq(Submission::getStatus, SubmissionStatus.REVIEWED.getValue())
                 .eq(Submission::getApproved, true)
                 .eq(Submission::getDisplayed, true)
                 .orderByDesc(Submission::getUploadDate));
@@ -356,7 +359,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     @Override
     public Page<SubmissionVO> listExcellentPage(int current, int size) {
         Page<Submission> page = this.page(new Page<>(current, size), new LambdaQueryWrapper<Submission>()
-                .eq(Submission::getStatus, "已审核")
+                .eq(Submission::getStatus, SubmissionStatus.REVIEWED.getValue())
                 .eq(Submission::getApproved, true)
                 .eq(Submission::getDisplayed, true)
                 .orderByDesc(Submission::getUploadDate));
@@ -373,7 +376,8 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
             throw new BusinessException("成果附件记录不存在");
         }
         if (Boolean.TRUE.equals(displayed)) {
-            if (!"已审核".equals(sub.getStatus()) || !Boolean.TRUE.equals(sub.getApproved())) {
+            if (SubmissionStatus.from(sub.getStatus()) != SubmissionStatus.REVIEWED
+                    || !Boolean.TRUE.equals(sub.getApproved())) {
                 throw new BusinessException("只能展示审核通过的作品");
             }
         }
@@ -422,7 +426,7 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         sub.setFileUrl(fileUrl);
         sub.setFileSize(fileSize != null ? fileSize : 0L);
         sub.setUploadDate(LocalDateTime.now());
-        sub.setStatus("已审核");
+        sub.setStatus(SubmissionStatus.REVIEWED.getValue());
         sub.setReviewNote(reviewNote);
         sub.setApproved(true);
         sub.setDisplayed(true);

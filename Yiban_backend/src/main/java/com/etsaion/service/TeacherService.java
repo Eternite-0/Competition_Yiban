@@ -13,7 +13,6 @@ public interface TeacherService {
     Map<String, Object> getDashboardStats(String college, String grade, String major, String className);
     Page<RegistrationVO> monitorStudentEvents(int current, int size, String studentName, String status, String className, String college, String grade, String major);
     List<StudentComprehensiveVO> getComprehensiveData(String academicYear, String major);
-    List<UserVO> listStudents(String keyword, String college, String className, String grade, String major);
     Page<UserVO> listStudentsPage(int current, int size, String keyword, String college, String className, String grade, String major);
     Page<UserVO> listStudentsPage(int current, int size, String keyword, String college, String className, String grade, String major, String sort);
 

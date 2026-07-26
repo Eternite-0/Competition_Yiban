@@ -8,6 +8,8 @@ import com.etsaion.entity.Competition;
 import com.etsaion.entity.Participation;
 import com.etsaion.entity.Registration;
 import com.etsaion.entity.Submission;
+import com.etsaion.enums.RegistrationStatus;
+import com.etsaion.enums.SubmissionStatus;
 import com.etsaion.service.ActivityService;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.GrowthProfileService;
@@ -211,7 +213,7 @@ public class GrowthProfileServiceImpl implements GrowthProfileService {
         }
         return submissionService.list(new LambdaQueryWrapper<Submission>()
                         .in(Submission::getRegistrationId, regIds)
-                        .eq(Submission::getStatus, "已审核")
+                        .eq(Submission::getStatus, SubmissionStatus.REVIEWED.getValue())
                         .eq(Submission::getApproved, true))
                 .stream()
                 .filter(s -> Boolean.TRUE.equals(s.getApproved()))
@@ -231,7 +233,8 @@ public class GrowthProfileServiceImpl implements GrowthProfileService {
     }
 
     private boolean isApprovedRegistration(Registration registration) {
-        return registration != null && "审核通过".equals(registration.getStatus());
+        return registration != null
+                && RegistrationStatus.APPROVED == RegistrationStatus.from(registration.getStatus());
     }
 
     private boolean isApprovedParticipation(Participation participation) {

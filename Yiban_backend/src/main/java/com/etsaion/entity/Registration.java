@@ -16,6 +16,6 @@ public class Registration {
     private String teamName; // Name of their team, null for individual signup
     private String track;
     private String memberStudentIds; // JSON array of student ids
-    private String status; // 待完善, 已提交, 审核中, 审核通过, 审核驳回
+    private String status; // 取值见 RegistrationStatus
     private LocalDateTime submitDate;
 }

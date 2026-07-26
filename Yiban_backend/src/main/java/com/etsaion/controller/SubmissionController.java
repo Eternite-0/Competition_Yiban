@@ -5,6 +5,8 @@ import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etsaion.dto.Result;
 import com.etsaion.entity.Submission;
+import com.etsaion.enums.AuditAction;
+import com.etsaion.enums.ReviewNotes;
 import com.etsaion.interceptor.RequireRole;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.utils.UserContext;
@@ -137,11 +139,17 @@ public class SubmissionController {
     @RequireRole({"admin", "teacher"})
     public Result<Void> reviewSubmission(
             @RequestParam Long submissionId,
-            @RequestParam Boolean approve,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) Boolean approve,
             @RequestParam(required = false) String reviewNote) {
 
+        // action 是首选写法；没传时回落到 approve + 审核意见前缀的旧约定
+        AuditAction resolved = action != null && !action.isBlank()
+                ? AuditAction.from(action)
+                : AuditAction.fromLegacy(approve, reviewNote);
+
         Long teacherId = UserContext.getUserId();
-        submissionService.reviewSubmission(teacherId, submissionId, approve, reviewNote);
+        submissionService.reviewSubmission(teacherId, submissionId, resolved, ReviewNotes.strip(reviewNote));
         return Result.success();
     }
 

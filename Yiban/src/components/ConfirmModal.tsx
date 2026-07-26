@@ -39,7 +39,7 @@ export default function ConfirmModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-ink/40"
+            className="absolute inset-0 bg-ink/25 backdrop-blur-[3px]"
             onClick={onClose}
           />
           <motion.div
@@ -47,7 +47,7 @@ export default function ConfirmModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.18 }}
-            className="relative w-full max-w-md overflow-hidden rounded-xl border border-border bg-canvas shadow-float"
+            className="relative w-full max-w-md overflow-hidden rounded-xl border border-[var(--material-border)] material-thick shadow-4"
           >
             <div className="p-5">
               <div className="mb-3 flex items-center gap-3">

@@ -5,6 +5,7 @@ import com.etsaion.dto.AuditDTO;
 import com.etsaion.dto.RegistrationSubmitDTO;
 import com.etsaion.dto.Result;
 import com.etsaion.entity.Registration;
+import com.etsaion.enums.ReviewNotes;
 import com.etsaion.interceptor.RequireRole;
 import com.etsaion.service.RegistrationService;
 import com.etsaion.utils.UserContext;
@@ -60,9 +61,10 @@ public class RegistrationController {
     public Result<Void> auditRegistration(
             @RequestParam Long registrationId,
             @Validated @RequestBody AuditDTO dto) {
-        
+
         Long teacherId = UserContext.getUserId();
-        registrationService.audit(registrationId, teacherId, dto.getApprove(), dto.getReviewNote());
+        registrationService.audit(registrationId, teacherId,
+                dto.resolveAction(), ReviewNotes.strip(dto.getReviewNote()));
         return Result.success();
     }
 }

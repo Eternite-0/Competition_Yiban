@@ -14,6 +14,13 @@ import com.etsaion.entity.Message;
 import com.etsaion.entity.Participation;
 import com.etsaion.entity.ReviewTask;
 import com.etsaion.entity.User;
+import com.etsaion.enums.AuditAction;
+import com.etsaion.enums.ParticipationStatus;
+import com.etsaion.enums.RegistrationStatus;
+import com.etsaion.enums.ReviewNotes;
+import com.etsaion.enums.ReviewTargetType;
+import com.etsaion.enums.ReviewTaskStatus;
+import com.etsaion.enums.SubmissionStatus;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.mapper.ReviewTaskMapper;
 import com.etsaion.service.ActivityService;
@@ -89,7 +96,7 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
         ReviewTask existing = this.getOne(new LambdaQueryWrapper<ReviewTask>()
                 .eq(ReviewTask::getTargetType, targetType)
                 .eq(ReviewTask::getTargetId, targetId)
-                .in(ReviewTask::getStatus, "pending", "processing")
+                .in(ReviewTask::getStatus, ReviewTaskStatus.OPEN)
                 .last("LIMIT 1"));
         if (existing != null) {
             return existing;
@@ -102,7 +109,7 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
         task.setTargetId(targetId);
         task.setSubmitterId(submitterId);
         task.setTitle(title);
-        task.setStatus("pending");
+        task.setStatus(ReviewTaskStatus.PENDING.getValue());
         task.setDeadline(deadline);
         task.setPayloadJson(StrUtil.blankToDefault(payloadJson, "{}"));
         task.setCreateTime(LocalDateTime.now());
@@ -171,9 +178,9 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
                     .select(User::getId))
                     .stream().map(User::getId).collect(Collectors.toList());
             if (collegeStudentIds.isEmpty()) {
-                stats.put("pending", 0L);
-                stats.put("processing", 0L);
-                stats.put("resolved", 0L);
+                for (ReviewTaskStatus status : ReviewTaskStatus.values()) {
+                    stats.put(status.getValue(), 0L);
+                }
                 stats.put("competition", 0L);
                 stats.put("volunteer", 0L);
                 stats.put("culture_sports", 0L);
@@ -184,13 +191,14 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
 
         final java.util.List<Long> ids = collegeStudentIds;
 
-        stats.put("pending", this.count(buildStatsWrapper(ids, "pending", null, null)));
-        stats.put("processing", this.count(buildStatsWrapper(ids, "processing", null, null)));
-        stats.put("resolved", this.count(buildStatsWrapper(ids, "resolved", null, null)));
+        for (ReviewTaskStatus status : ReviewTaskStatus.values()) {
+            stats.put(status.getValue(), this.count(buildStatsWrapper(ids, status.getValue(), null, null)));
+        }
         stats.put("competition", this.count(buildStatsWrapper(ids, null, "competition", null)));
         stats.put("volunteer", this.count(buildStatsWrapper(ids, null, "volunteer", null)));
         stats.put("culture_sports", this.count(buildStatsWrapper(ids, null, "culture_sports", null)));
-        stats.put("overdue", this.count(buildStatsWrapper(ids, "pending", null, true)));
+        stats.put("overdue", this.count(
+                buildStatsWrapper(ids, ReviewTaskStatus.PENDING.getValue(), null, true)));
         return stats;
     }
 
@@ -213,36 +221,34 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
         if (task == null) {
             throw new BusinessException("待办任务不存在");
         }
-        if (!"pending".equalsIgnoreCase(task.getStatus()) && !"processing".equalsIgnoreCase(task.getStatus())) {
+        if (!ReviewTaskStatus.isOpen(task.getStatus())) {
             throw new BusinessException("该待办已处理");
         }
 
-        String action = normalizeAction(dto.getAction());
-        String note = dto.getReviewNote();
+        AuditAction action = AuditAction.from(dto.getAction());
+        // 审核意见一律以纯文本流转；旧调用方可能还带着退回标记，在入口剥掉
+        String note = ReviewNotes.strip(dto.getReviewNote());
         log.info("处理待办任务: taskId={}, 动作={}, 类型={}", taskId, action, task.getTargetType());
-        if (("reject".equals(action) || "return".equals(action)) && StrUtil.isBlank(note)) {
+        if (action.requiresNote() && StrUtil.isBlank(note)) {
             throw new BusinessException("驳回或退回补充时必须填写审核意见");
         }
 
-        if ("registration".equalsIgnoreCase(task.getTargetType())) {
-            try {
-                registrationService.audit(task.getTargetId(), reviewerId, "approve".equals(action),
-                        "return".equals(action) ? "【退回补充】" + note : note);
-            } catch (BusinessException e) {
-                if (e.getMessage() != null && e.getMessage().contains("已处理完毕")) {
-                    // Registration already resolved via submission path — clean up orphaned task
-                    resolveTarget(task.getTargetType(), task.getTargetId(), reviewerId, note);
-                    return;
-                }
-                throw e;
-            }
-        } else if ("submission".equalsIgnoreCase(task.getTargetType())) {
-            submissionService.reviewSubmission(reviewerId, task.getTargetId(), "approve".equals(action),
-                    "return".equals(action) ? "【退回补充】" + note : note);
-        } else if ("participation".equalsIgnoreCase(task.getTargetType())) {
-            resolveParticipation(task, reviewerId, action, note);
-        } else {
+        ReviewTargetType targetType = ReviewTargetType.from(task.getTargetType());
+        if (targetType == null) {
             throw new BusinessException("不支持的待办类型");
+        }
+        switch (targetType) {
+            case REGISTRATION:
+                registrationService.audit(task.getTargetId(), reviewerId, action, note);
+                break;
+            case SUBMISSION:
+                submissionService.reviewSubmission(reviewerId, task.getTargetId(), action, note);
+                break;
+            case PARTICIPATION:
+                resolveParticipation(task, reviewerId, action, note);
+                break;
+            default:
+                throw new BusinessException("不支持的待办类型");
         }
 
         resolveTarget(task.getTargetType(), task.getTargetId(), reviewerId, note);
@@ -265,9 +271,9 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
         List<ReviewTask> tasks = this.list(new LambdaQueryWrapper<ReviewTask>()
                 .eq(ReviewTask::getTargetType, targetType)
                 .eq(ReviewTask::getTargetId, targetId)
-                .in(ReviewTask::getStatus, "pending", "processing"));
+                .in(ReviewTask::getStatus, ReviewTaskStatus.OPEN));
         for (ReviewTask task : tasks) {
-            task.setStatus("resolved");
+            task.setStatus(ReviewTaskStatus.RESOLVED.getValue());
             task.setReviewerId(reviewerId);
             task.setReviewNote(reviewNote);
             task.setUpdateTime(LocalDateTime.now());
@@ -275,14 +281,13 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
         }
     }
 
-    private void resolveParticipation(ReviewTask task, Long reviewerId, String action, String note) {
+    private void resolveParticipation(ReviewTask task, Long reviewerId, AuditAction action, String note) {
         Participation participation = participationService.getById(task.getTargetId());
         if (participation == null) {
             throw new BusinessException("参与记录不存在");
         }
 
-        String newStatus = "approve".equals(action) ? "approved" : ("return".equals(action) ? "returned" : "rejected");
-        participation.setStatus(newStatus);
+        participation.setStatus(ParticipationStatus.resultOf(action).getValue());
         participation.setReviewNote(note);
         participation.setReviewerId(reviewerId);
         participation.setReviewTime(LocalDateTime.now());
@@ -291,18 +296,35 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
         Activity activity = activityService.getById(participation.getActivityId());
         String activityTitle = activity != null ? activity.getTitle() : "未知活动";
 
+        String title;
+        String outcome;
+        switch (action) {
+            case APPROVE:
+                title = "活动报名审核已通过";
+                outcome = "已审核通过";
+                break;
+            case RETURN:
+                title = "活动报名需要补充材料";
+                outcome = "已退回补充";
+                break;
+            case REJECT:
+            default:
+                title = "活动报名审核未通过";
+                outcome = "未通过审核";
+                break;
+        }
+
         Message msg = new Message();
         msg.setFromUser(reviewerId);
         msg.setToUser(participation.getStudentId());
-        msg.setTitle("approve".equals(action) ? "活动报名审核已通过" : ("return".equals(action) ? "活动报名需要补充材料" : "活动报名审核未通过"));
-        msg.setContent(String.format("您提交的“%s”活动报名%s。%s", activityTitle,
-                "approve".equals(action) ? "已审核通过" : ("return".equals(action) ? "已退回补充" : "未通过审核"),
+        msg.setTitle(title);
+        msg.setContent(String.format("您提交的“%s”活动报名%s。%s", activityTitle, outcome,
                 StrUtil.blankToDefault(note, "")));
         msg.setIsRead(0);
         msg.setCreateTime(LocalDateTime.now());
         messageService.save(msg);
 
-        if ("approve".equals(action)) {
+        if (action.isApprove()) {
             GrowthRecord record = new GrowthRecord();
             record.setStudentId(participation.getStudentId());
             record.setCompetitionId(participation.getActivityId());
@@ -318,58 +340,26 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
     public int backfillHistorical() {
         int created = 0;
 
-        // Backfill registrations
-        java.util.List<Registration> allRegs = registrationMapper.selectList(null);
-        for (Registration reg : allRegs) {
+        for (Registration reg : registrationMapper.selectList(null)) {
             Competition comp = competitionService.getById(reg.getCompetitionId());
             String compName = comp != null ? comp.getName() : "未知赛事";
-            LocalDateTime deadline = comp != null ? comp.getEndTime() : null;
             String payload = JSONUtil.toJsonStr(java.util.Map.of(
                     "competitionName", compName,
                     "teamName", StrUtil.nullToEmpty(reg.getTeamName()),
                     "track", StrUtil.nullToEmpty(reg.getTrack())
             ));
-            String title = "赛事报名审核：" + compName;
 
-            if ("已提交".equals(reg.getStatus()) || "审核中".equals(reg.getStatus())) {
-                ReviewTask existing = this.getOne(new LambdaQueryWrapper<ReviewTask>()
-                        .eq(ReviewTask::getTargetType, "registration")
-                        .eq(ReviewTask::getTargetId, reg.getId())
-                        .in(ReviewTask::getStatus, "pending", "processing")
-                        .last("LIMIT 1"));
-                if (existing == null) {
-                    createPending("competition", reg.getCompetitionId(), "registration",
-                            reg.getId(), reg.getStudentId(), title, deadline, payload);
-                    created++;
-                }
-            } else if ("审核通过".equals(reg.getStatus()) || "审核驳回".equals(reg.getStatus()) || "退回补充".equals(reg.getStatus())) {
-                ReviewTask existing = this.getOne(new LambdaQueryWrapper<ReviewTask>()
-                        .eq(ReviewTask::getTargetType, "registration")
-                        .eq(ReviewTask::getTargetId, reg.getId())
-                        .eq(ReviewTask::getStatus, "resolved")
-                        .last("LIMIT 1"));
-                if (existing == null) {
-                    ReviewTask task = new ReviewTask();
-                    task.setActivityType("competition");
-                    task.setActivityId(reg.getCompetitionId());
-                    task.setTargetType("registration");
-                    task.setTargetId(reg.getId());
-                    task.setSubmitterId(reg.getStudentId());
-                    task.setTitle(title);
-                    task.setStatus("resolved");
-                    task.setDeadline(deadline);
-                    task.setPayloadJson(payload);
-                    task.setCreateTime(reg.getSubmitDate());
-                    task.setUpdateTime(reg.getSubmitDate());
-                    this.save(task);
-                    created++;
-                }
+            RegistrationStatus status = RegistrationStatus.from(reg.getStatus());
+            if (status == null) {
+                continue;
             }
+            created += backfillOne(ReviewTargetType.REGISTRATION, reg.getId(), reg.getCompetitionId(),
+                    reg.getStudentId(), "赛事报名审核：" + compName,
+                    comp != null ? comp.getEndTime() : null, payload,
+                    status.isReviewable(), reg.getSubmitDate());
         }
 
-        // Backfill submissions
-        java.util.List<Submission> allSubs = submissionMapper.selectList(null);
-        for (Submission sub : allSubs) {
+        for (Submission sub : submissionMapper.selectList(null)) {
             Long compId = sub.getCompetitionId();
             if (compId == null && sub.getRegistrationId() != null) {
                 Registration reg = registrationMapper.selectById(sub.getRegistrationId());
@@ -377,51 +367,64 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
             }
             Competition comp = compId != null ? competitionService.getById(compId) : null;
             String compName = comp != null ? comp.getName() : "未知赛事";
-            LocalDateTime deadline = comp != null ? comp.getCompetitionEnd() : null;
+
             java.util.Map<String, Object> subPayload = new java.util.HashMap<>();
             subPayload.put("competitionName", compName);
             subPayload.put("fileName", StrUtil.nullToEmpty(sub.getFileName()));
             subPayload.put("registrationId", sub.getRegistrationId());
-            String payload = JSONUtil.toJsonStr(subPayload);
-            String title = "成果审核：" + compName;
 
-            if ("待审核".equals(sub.getStatus())) {
-                ReviewTask existing = this.getOne(new LambdaQueryWrapper<ReviewTask>()
-                        .eq(ReviewTask::getTargetType, "submission")
-                        .eq(ReviewTask::getTargetId, sub.getId())
-                        .in(ReviewTask::getStatus, "pending", "processing")
-                        .last("LIMIT 1"));
-                if (existing == null) {
-                    createPending("competition", compId, "submission",
-                            sub.getId(), sub.getSubmitterId(), title, deadline, payload);
-                    created++;
-                }
-            } else if ("已审核".equals(sub.getStatus())) {
-                ReviewTask existing = this.getOne(new LambdaQueryWrapper<ReviewTask>()
-                        .eq(ReviewTask::getTargetType, "submission")
-                        .eq(ReviewTask::getTargetId, sub.getId())
-                        .eq(ReviewTask::getStatus, "resolved")
-                        .last("LIMIT 1"));
-                if (existing == null) {
-                    ReviewTask task = new ReviewTask();
-                    task.setActivityType("competition");
-                    task.setActivityId(compId);
-                    task.setTargetType("submission");
-                    task.setTargetId(sub.getId());
-                    task.setSubmitterId(sub.getSubmitterId());
-                    task.setTitle(title);
-                    task.setStatus("resolved");
-                    task.setDeadline(deadline);
-                    task.setPayloadJson(payload);
-                    task.setCreateTime(sub.getUploadDate());
-                    task.setUpdateTime(sub.getUploadDate());
-                    this.save(task);
-                    created++;
-                }
+            SubmissionStatus status = SubmissionStatus.from(sub.getStatus());
+            if (status == null) {
+                continue;
             }
+            created += backfillOne(ReviewTargetType.SUBMISSION, sub.getId(), compId,
+                    sub.getSubmitterId(), "成果审核：" + compName,
+                    comp != null ? comp.getCompetitionEnd() : null, JSONUtil.toJsonStr(subPayload),
+                    status == SubmissionStatus.PENDING, sub.getUploadDate());
         }
 
         return created;
+    }
+
+    /**
+     * 给一条历史记录补一个待办：还没审的补 pending，审完的补一条已结案的存档。
+     * 已经有对应待办则跳过，因此可以重复执行。
+     *
+     * @return 是否新建了待办（0 或 1）
+     */
+    private int backfillOne(ReviewTargetType targetType, Long targetId, Long activityId, Long submitterId,
+                            String title, LocalDateTime deadline, String payload,
+                            boolean stillOpen, LocalDateTime happenedAt) {
+        boolean exists = this.getOne(new LambdaQueryWrapper<ReviewTask>()
+                .eq(ReviewTask::getTargetType, targetType.getValue())
+                .eq(ReviewTask::getTargetId, targetId)
+                .in(ReviewTask::getStatus, stillOpen
+                        ? ReviewTaskStatus.OPEN
+                        : List.of(ReviewTaskStatus.RESOLVED.getValue()))
+                .last("LIMIT 1")) != null;
+        if (exists) {
+            return 0;
+        }
+
+        if (stillOpen) {
+            createPending("competition", activityId, targetType.getValue(),
+                    targetId, submitterId, title, deadline, payload);
+        } else {
+            ReviewTask task = new ReviewTask();
+            task.setActivityType("competition");
+            task.setActivityId(activityId);
+            task.setTargetType(targetType.getValue());
+            task.setTargetId(targetId);
+            task.setSubmitterId(submitterId);
+            task.setTitle(title);
+            task.setStatus(ReviewTaskStatus.RESOLVED.getValue());
+            task.setDeadline(deadline);
+            task.setPayloadJson(payload);
+            task.setCreateTime(happenedAt);
+            task.setUpdateTime(happenedAt);
+            this.save(task);
+        }
+        return 1;
     }
 
     private List<ReviewTaskVO> toVOList(List<ReviewTask> tasks) {
@@ -433,7 +436,7 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
 
         // Batch-load submissions for 'submission' targets
         List<Long> subTargetIds = tasks.stream()
-                .filter(t -> "submission".equalsIgnoreCase(t.getTargetType()))
+                .filter(t -> ReviewTargetType.SUBMISSION.matches(t.getTargetType()))
                 .map(ReviewTask::getTargetId).filter(java.util.Objects::nonNull)
                 .distinct().collect(Collectors.toList());
         Map<Long, Submission> subMap = CollUtil.isEmpty(subTargetIds) ? new HashMap<>()
@@ -442,7 +445,7 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
 
         // For 'registration' targets, find the latest linked submission to get fileUrl/fileName
         List<Long> regTargetIds = tasks.stream()
-                .filter(t -> "registration".equalsIgnoreCase(t.getTargetType()))
+                .filter(t -> ReviewTargetType.REGISTRATION.matches(t.getTargetType()))
                 .map(ReviewTask::getTargetId).filter(java.util.Objects::nonNull)
                 .distinct().collect(Collectors.toList());
         Map<Long, Submission> regSubMap = new HashMap<>();
@@ -470,9 +473,9 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
             }
 
             Submission sub = null;
-            if ("submission".equalsIgnoreCase(task.getTargetType())) {
+            if (ReviewTargetType.SUBMISSION.matches(task.getTargetType())) {
                 sub = subMap.get(task.getTargetId());
-            } else if ("registration".equalsIgnoreCase(task.getTargetType())) {
+            } else if (ReviewTargetType.REGISTRATION.matches(task.getTargetType())) {
                 sub = regSubMap.get(task.getTargetId());
             }
             if (sub != null) {
@@ -491,10 +494,4 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
         return JSONUtil.toBean(json, Map.class);
     }
 
-    private String normalizeAction(String action) {
-        if ("approved".equalsIgnoreCase(action) || "approve".equalsIgnoreCase(action)) return "approve";
-        if ("rejected".equalsIgnoreCase(action) || "reject".equalsIgnoreCase(action)) return "reject";
-        if ("returned".equalsIgnoreCase(action) || "return".equalsIgnoreCase(action)) return "return";
-        throw new BusinessException("不支持的审核动作");
-    }
 }

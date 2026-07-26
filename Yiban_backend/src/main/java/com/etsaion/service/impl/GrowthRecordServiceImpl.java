@@ -10,6 +10,7 @@ import com.etsaion.entity.GrowthRecord;
 import com.etsaion.entity.Registration;
 import com.etsaion.entity.Submission;
 import com.etsaion.entity.SubmissionStudent;
+import com.etsaion.enums.SubmissionStatus;
 import com.etsaion.mapper.GrowthRecordMapper;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.GrowthRecordService;
@@ -75,7 +76,7 @@ public class GrowthRecordServiceImpl extends ServiceImpl<GrowthRecordMapper, Gro
         if (CollUtil.isNotEmpty(registrationIds)) {
             registrationSubmissions = submissionService.list(new LambdaQueryWrapper<Submission>()
                     .in(Submission::getRegistrationId, registrationIds)
-                    .eq(Submission::getStatus, "已审核")
+                    .eq(Submission::getStatus, SubmissionStatus.REVIEWED.getValue())
                     .eq(Submission::getApproved, true))
                     .stream()
                     .filter(this::isApprovedSubmission)
@@ -94,7 +95,7 @@ public class GrowthRecordServiceImpl extends ServiceImpl<GrowthRecordMapper, Gro
         List<Submission> linkedSubmissions = CollUtil.isNotEmpty(linkedSubmissionIds)
                 ? submissionService.list(new LambdaQueryWrapper<Submission>()
                         .in(Submission::getId, linkedSubmissionIds)
-                        .eq(Submission::getStatus, "已审核")
+                        .eq(Submission::getStatus, SubmissionStatus.REVIEWED.getValue())
                         .eq(Submission::getApproved, true))
                         .stream()
                         .filter(this::isApprovedSubmission)
