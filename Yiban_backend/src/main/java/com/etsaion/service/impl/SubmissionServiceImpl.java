@@ -217,7 +217,9 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         boolean isReturn = reviewNote != null && reviewNote.startsWith("【退回补充】");
         sub.setStatus("已审核");
         sub.setReviewNote(reviewNote);
-        sub.setApproved(Boolean.TRUE.equals(approve) ? true : (isReturn ? null : false));
+        // 三个分支必须都是 Boolean：混用 boolean 字面量会让整个表达式按 boolean 求值，
+        // 退回补充分支的 null 会被拆箱成 NPE
+        sub.setApproved(Boolean.TRUE.equals(approve) ? Boolean.TRUE : (isReturn ? null : Boolean.FALSE));
         this.updateById(sub);
         log.info("成果审核完成: 提交ID={}, 结果={}, 赛事={}", submissionId, approve ? "通过" : (isReturn ? "退回" : "驳回"), compName);
         reviewTaskService.resolveTarget("submission", submissionId, teacherId, reviewNote);
