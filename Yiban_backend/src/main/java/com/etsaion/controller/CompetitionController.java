@@ -1,15 +1,14 @@
 package com.etsaion.controller;
 
-import cn.hutool.core.collection.CollUtil;
-import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etsaion.dto.EventPublishDTO;
 import com.etsaion.dto.Result;
 import com.etsaion.entity.Competition;
 import com.etsaion.entity.Registration;
+import com.etsaion.enums.CompetitionStatus;
 import com.etsaion.interceptor.RequireRole;
-import com.etsaion.service.ActivityCategoryService;
+import com.etsaion.service.CompetitionPublishService;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.CompetitionStageService;
 import com.etsaion.service.RegistrationService;
@@ -17,12 +16,10 @@ import com.etsaion.utils.UserContext;
 import com.etsaion.vo.CompetitionVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 @Tag(name = "赛事/竞赛管理接口", description = "提供赛事列表查询、详情获取，以及管理员维护赛事接口")
@@ -40,7 +37,7 @@ public class CompetitionController {
     private CompetitionStageService competitionStageService;
 
     @Autowired
-    private ActivityCategoryService activityCategoryService;
+    private CompetitionPublishService competitionPublishService;
 
     @Operation(summary = "查询赛事分页列表 (公开)")
     @GetMapping("/list")
@@ -98,30 +95,7 @@ public class CompetitionController {
     @PostMapping("/admin/publish")
     @RequireRole("admin")
     public Result<CompetitionVO> publishCompetition(@Validated @RequestBody EventPublishDTO dto) {
-        Competition comp = new Competition();
-        BeanUtils.copyProperties(dto, comp, "tags", "tracks");
-        comp.setCategory(activityCategoryService.resolveOrCreate("competition", dto.getCategory()));
-
-        if (CollUtil.isNotEmpty(dto.getTags())) {
-            comp.setTags(JSONUtil.toJsonStr(dto.getTags()));
-        } else {
-            comp.setTags("[]");
-        }
-        if (CollUtil.isNotEmpty(dto.getTracks())) {
-            comp.setTracks(JSONUtil.toJsonStr(dto.getTracks()));
-        } else {
-            comp.setTracks("[]");
-        }
-
-        String status = dto.getStatus();
-        if (status == null || status.isBlank()) {
-            status = "published";
-        }
-        comp.setStatus(status);
-        comp.setCreateTime(LocalDateTime.now());
-        comp.setUpdateTime(LocalDateTime.now());
-
-        competitionService.save(comp);
+        Competition comp = competitionPublishService.create(dto, CompetitionStatus.PUBLISHED.getValue());
         return Result.success(competitionService.toVO(comp));
     }
 
@@ -129,34 +103,7 @@ public class CompetitionController {
     @PutMapping("/admin/update/{id}")
     @RequireRole("admin")
     public Result<CompetitionVO> updateCompetition(@PathVariable Long id, @RequestBody EventPublishDTO dto) {
-        Competition comp = competitionService.getById(id);
-        if (comp == null) {
-            return Result.error("赛事不存在");
-        }
-        // Copy only non-null fields to avoid overwriting with nulls
-        if (dto.getName() != null) comp.setName(dto.getName());
-        if (dto.getLevel() != null) comp.setLevel(dto.getLevel());
-        if (dto.getCategory() != null) comp.setCategory(activityCategoryService.resolveOrCreate("competition", dto.getCategory()));
-        if (dto.getOrganizer() != null) comp.setOrganizer(dto.getOrganizer());
-        if (dto.getStartTime() != null) comp.setStartTime(dto.getStartTime());
-        if (dto.getEndTime() != null) comp.setEndTime(dto.getEndTime());
-        if (dto.getCompetitionStart() != null) comp.setCompetitionStart(dto.getCompetitionStart());
-        if (dto.getCompetitionEnd() != null) comp.setCompetitionEnd(dto.getCompetitionEnd());
-        if (dto.getMaxTeamSize() != null) comp.setMaxTeamSize(dto.getMaxTeamSize());
-        if (dto.getCoverUrl() != null) comp.setCoverUrl(dto.getCoverUrl());
-        if (dto.getSourceUrl() != null) comp.setSourceUrl(dto.getSourceUrl());
-        if (dto.getContent() != null) comp.setContent(dto.getContent());
-        if (CollUtil.isNotEmpty(dto.getTags())) {
-            comp.setTags(JSONUtil.toJsonStr(dto.getTags()));
-        }
-        if (CollUtil.isNotEmpty(dto.getTracks())) {
-            comp.setTracks(JSONUtil.toJsonStr(dto.getTracks()));
-        }
-        if (dto.getStatus() != null && !dto.getStatus().isBlank()) {
-            comp.setStatus(dto.getStatus());
-        }
-        comp.setUpdateTime(LocalDateTime.now());
-        competitionService.updateById(comp);
+        Competition comp = competitionPublishService.update(id, dto);
         return Result.success(competitionService.toVO(comp));
     }
 

@@ -6,9 +6,12 @@ import com.etsaion.entity.Competition;
 import com.etsaion.entity.CompetitionStage;
 import com.etsaion.mapper.AiCompetitionDraftMapper;
 import com.etsaion.service.ActivityCategoryService;
+import com.etsaion.service.CompetitionPublishService;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.CompetitionStageService;
+import com.etsaion.service.ai.DraftDedupService;
 import com.etsaion.service.impl.AiCompetitionDraftServiceImpl;
+import com.etsaion.service.impl.CompetitionPublishServiceImpl;
 import com.etsaion.vo.ai.AiCompetitionDraftVO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import javax.validation.Validation;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -32,6 +36,16 @@ class AiCompetitionDraftFlowTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    private static CompetitionPublishService publishService(CompetitionService competitionService,
+                                                            ActivityCategoryService activityCategoryService) {
+        CompetitionPublishServiceImpl publish = new CompetitionPublishServiceImpl();
+        ReflectionTestUtils.setField(publish, "competitionService", competitionService);
+        ReflectionTestUtils.setField(publish, "activityCategoryService", activityCategoryService);
+        ReflectionTestUtils.setField(publish, "validator",
+                Validation.buildDefaultValidatorFactory().getValidator());
+        return publish;
+    }
+
     @Test
     void confirmDraftCreatesDraftCompetitionAndStages() {
         AiCompetitionDraftMapper mapper = mock(AiCompetitionDraftMapper.class);
@@ -43,6 +57,10 @@ class AiCompetitionDraftFlowTest {
         ReflectionTestUtils.setField(service, "competitionService", competitionService);
         ReflectionTestUtils.setField(service, "competitionStageService", competitionStageService);
         ReflectionTestUtils.setField(service, "activityCategoryService", activityCategoryService);
+        // 用真实的发布服务：草稿确认与人工发布必须写出同样的赛事
+        ReflectionTestUtils.setField(service, "competitionPublishService",
+                publishService(competitionService, activityCategoryService));
+        ReflectionTestUtils.setField(service, "draftDedupService", mock(DraftDedupService.class));
 
         AiCompetitionDraft draft = new AiCompetitionDraft();
         draft.setId(7L);

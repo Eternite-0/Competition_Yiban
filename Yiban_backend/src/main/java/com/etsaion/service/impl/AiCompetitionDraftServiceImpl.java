@@ -6,8 +6,12 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.etsaion.dto.EventPublishDTO;
 import com.etsaion.dto.ai.CompetitionDraftConfirmDTO;
 import com.etsaion.dto.ai.CompetitionDraftParseUrlDTO;
+import com.etsaion.enums.CompetitionStatus;
+import com.etsaion.service.CompetitionPublishService;
+import com.etsaion.service.ai.DraftDedupService;
 import com.etsaion.entity.AiCompetitionDraft;
 import com.etsaion.entity.AiTask;
 import com.etsaion.entity.Competition;
@@ -93,6 +97,12 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
 
     @Autowired
     private CompetitionService competitionService;
+
+    @Autowired
+    private CompetitionPublishService competitionPublishService;
+
+    @Autowired
+    private DraftDedupService draftDedupService;
 
     @Autowired
     private CompetitionStageService competitionStageService;
@@ -579,25 +589,10 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
             throw new BusinessException("草稿赛事名称不能为空");
         }
 
-        Competition competition = new Competition();
-        competition.setName(draft.getName());
-        competition.setLevel(StrUtil.blankToDefault(draft.getLevel(), "校级"));
-        competition.setCategory(activityCategoryService.resolveOrCreate("competition", StrUtil.blankToDefault(draft.getCategory(), "A")));
-        competition.setOrganizer(draft.getOrganizer());
-        competition.setStartTime(draft.getStartTime());
-        competition.setEndTime(draft.getEndTime());
-        competition.setCompetitionStart(draft.getCompetitionStart());
-        competition.setCompetitionEnd(draft.getCompetitionEnd());
-        competition.setMaxTeamSize(draft.getMaxTeamSize() != null ? Math.max(draft.getMaxTeamSize(), 1) : 1);
-        competition.setCoverUrl(draft.getCoverUrl());
-        competition.setSourceUrl(draft.getSourceUrl());
-        competition.setContent(StrUtil.blankToDefault(draft.getContent(), ""));
-        competition.setTags(normalizeJsonArray(draft.getTags()));
-        competition.setTracks(normalizeJsonArray(draft.getTracks()));
-        competition.setStatus("draft");
-        competition.setCreateTime(LocalDateTime.now());
-        competition.setUpdateTime(LocalDateTime.now());
-        competitionService.save(competition);
+        // 走与发布接口相同的通道：同一套默认值、同一套校验。
+        // 直接 save 会写出发布接口写不出的数据。
+        Competition competition = competitionPublishService.create(
+                toPublishDTO(draft), CompetitionStatus.DRAFT.getValue());
 
         createStages(competition.getId(), draft.getStagesJson());
 
@@ -620,6 +615,38 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
         draft.setUpdateTime(LocalDateTime.now());
         this.updateById(draft);
         return toVO(draft);
+    }
+
+    /**
+     * 把草稿翻译成发布请求。
+     *
+     * 草稿字段是抽取出来的，可能缺失；这里补齐发布接口要求的必填项，
+     * 缺失的用与人工发布一致的兜底值。
+     */
+    private EventPublishDTO toPublishDTO(AiCompetitionDraft draft) {
+        EventPublishDTO dto = new EventPublishDTO();
+        dto.setName(draft.getName());
+        dto.setLevel(StrUtil.blankToDefault(draft.getLevel(), "校级"));
+        dto.setCategory(StrUtil.blankToDefault(draft.getCategory(), "A"));
+        dto.setOrganizer(draft.getOrganizer());
+        dto.setStartTime(draft.getStartTime() != null ? draft.getStartTime() : LocalDateTime.now());
+        dto.setEndTime(draft.getEndTime() != null ? draft.getEndTime() : dto.getStartTime().plusMonths(1));
+        dto.setCompetitionStart(draft.getCompetitionStart());
+        dto.setCompetitionEnd(draft.getCompetitionEnd());
+        dto.setMaxTeamSize(draft.getMaxTeamSize() != null ? Math.max(draft.getMaxTeamSize(), 1) : 1);
+        dto.setCoverUrl(draft.getCoverUrl());
+        dto.setSourceUrl(draft.getSourceUrl());
+        dto.setContent(StrUtil.blankToDefault(draft.getContent(), ""));
+        dto.setTags(jsonArrayToList(draft.getTags()));
+        dto.setTracks(jsonArrayToList(draft.getTracks()));
+        return dto;
+    }
+
+    private List<String> jsonArrayToList(String value) {
+        String normalized = normalizeJsonArray(value);
+        return JSONUtil.isTypeJSONArray(normalized)
+                ? JSONUtil.toList(normalized, String.class)
+                : new ArrayList<>();
     }
 
     private AiCompetitionDraft createDraftFromJson(Long aiTaskId, String sourceType, String sourceUrl,
@@ -1176,78 +1203,15 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
     }
 
     private void applyDuplicateRisk(AiCompetitionDraft draft) {
-        Competition duplicate = findDuplicateCompetition(draft);
+        Competition duplicate = draftDedupService.findDuplicateCompetition(draft);
         if (duplicate != null) {
             draft.setDuplicateCompetitionId(duplicate.getId());
             draft.setDuplicateScore(BigDecimal.valueOf(1.0));
             addRisk(draft, "duplicate_competition");
         }
-        if (hasDuplicatePendingDraft(draft)) {
+        if (draftDedupService.hasDuplicatePendingDraft(draft)) {
             addRisk(draft, "duplicate_pending_draft");
         }
-    }
-
-    private Competition findDuplicateCompetition(AiCompetitionDraft draft) {
-        try {
-            if (StrUtil.isNotBlank(draft.getSourceUrl())) {
-                Competition bySource = competitionService.getOne(new LambdaQueryWrapper<Competition>()
-                        .eq(Competition::getSourceUrl, draft.getSourceUrl())
-                        .last("LIMIT 1"));
-                if (bySource != null) {
-                    draft.setDuplicateScore(BigDecimal.ONE);
-                    return bySource;
-                }
-            }
-            if (StrUtil.isBlank(draft.getName())) {
-                return null;
-            }
-            List<Competition> competitions = competitionService.list(new LambdaQueryWrapper<Competition>()
-                    .isNotNull(Competition::getName));
-            if (competitions == null) {
-                return null;
-            }
-            String normalized = normalizeCompetitionName(draft.getName());
-            Competition best = null;
-            double bestScore = 0;
-            for (Competition competition : competitions) {
-                double score = similarity(normalized, normalizeCompetitionName(competition.getName()));
-                if (score > bestScore) {
-                    bestScore = score;
-                    best = competition;
-                }
-            }
-            if (best != null && bestScore >= 0.86) {
-                draft.setDuplicateScore(BigDecimal.valueOf(bestScore));
-                return best;
-            }
-        } catch (Exception ignored) {
-        }
-        return null;
-    }
-
-    private boolean hasDuplicatePendingDraft(AiCompetitionDraft draft) {
-        if (baseMapper == null) {
-            return false;
-        }
-        try {
-            List<AiCompetitionDraft> pending = this.list(new LambdaQueryWrapper<AiCompetitionDraft>()
-                    .in(AiCompetitionDraft::getStatus, "pending_review", "confirmed"));
-            if (pending == null) {
-                return false;
-            }
-            String normalized = normalizeCompetitionName(draft.getName());
-            for (AiCompetitionDraft item : pending) {
-                if (StrUtil.isNotBlank(draft.getSourceUrl()) && draft.getSourceUrl().equals(item.getSourceUrl())) {
-                    return true;
-                }
-                if (StrUtil.isNotBlank(normalized)
-                        && similarity(normalized, normalizeCompetitionName(item.getName())) >= 0.9) {
-                    return true;
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        return false;
     }
 
     private void createStages(Long competitionId, String stagesJson) {
@@ -1684,46 +1648,6 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
             return null;
         }
         return BigDecimal.valueOf(values.stream().mapToDouble(Double::doubleValue).average().orElse(0));
-    }
-
-    private String normalizeCompetitionName(String name) {
-        if (StrUtil.isBlank(name)) {
-            return "";
-        }
-        return name.toLowerCase(Locale.ROOT)
-                .replaceAll("(19|20)\\d{2}", "")
-                .replaceAll("第[一二三四五六七八九十\\d]+届", "")
-                .replaceAll("[\\p{Punct}\\s·•“”‘’（）()【】\\[\\]《》]+", "")
-                .trim();
-    }
-
-    private double similarity(String a, String b) {
-        if (StrUtil.isBlank(a) || StrUtil.isBlank(b)) {
-            return 0;
-        }
-        if (a.equals(b)) {
-            return 1;
-        }
-        int distance = levenshtein(a, b);
-        int max = Math.max(a.length(), b.length());
-        return max == 0 ? 0 : 1.0 - (distance * 1.0 / max);
-    }
-
-    private int levenshtein(String a, String b) {
-        int[] prev = new int[b.length() + 1];
-        int[] curr = new int[b.length() + 1];
-        for (int j = 0; j <= b.length(); j++) prev[j] = j;
-        for (int i = 1; i <= a.length(); i++) {
-            curr[0] = i;
-            for (int j = 1; j <= b.length(); j++) {
-                int cost = a.charAt(i - 1) == b.charAt(j - 1) ? 0 : 1;
-                curr[j] = Math.min(Math.min(curr[j - 1] + 1, prev[j] + 1), prev[j - 1] + cost);
-            }
-            int[] tmp = prev;
-            prev = curr;
-            curr = tmp;
-        }
-        return prev[b.length()];
     }
 
     private String hashPreview(String value) {

@@ -6,6 +6,7 @@ import com.etsaion.exception.BusinessException;
 import com.etsaion.mapper.AiCompetitionDraftMapper;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.ai.AiJsonSchemaService;
+import com.etsaion.service.ai.DraftDedupService;
 import com.etsaion.service.ai.AiTaskService;
 import com.etsaion.service.ai.DocumentContentService;
 import com.etsaion.service.ai.MimoModelClient;
@@ -75,6 +76,7 @@ class AiCompetitionImportQualityTest {
     void createDraftAcceptsEnglishDatesAndAddsInternationalTags() throws Exception {
         AiCompetitionDraftServiceImpl service = new AiCompetitionDraftServiceImpl();
         ReflectionTestUtils.setField(service, "competitionService", mock(CompetitionService.class));
+        ReflectionTestUtils.setField(service, "draftDedupService", mock(DraftDedupService.class));
 
         JsonNode node = objectMapper.readTree("{"
                 + "\"name\":\"Kaggle AI Forecasting Challenge\","
@@ -108,6 +110,7 @@ class AiCompetitionImportQualityTest {
         ReflectionTestUtils.setField(service, "mimoModelClient", modelClient);
         ReflectionTestUtils.setField(service, "aiJsonSchemaService", new AiJsonSchemaService());
         ReflectionTestUtils.setField(service, "competitionService", competitionService);
+        ReflectionTestUtils.setField(service, "draftDedupService", mock(DraftDedupService.class));
 
         AtomicLong ids = new AtomicLong(100);
         when(mapper.insert(any(AiCompetitionDraft.class))).thenAnswer(invocation -> {
