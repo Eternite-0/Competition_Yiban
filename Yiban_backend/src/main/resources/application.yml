@@ -13,6 +13,18 @@ spring:
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    locations: classpath:db/migration
+    # 空库从 V1 自动建起；非空旧库必须先显式执行 db/adopt-flyway.sql。
+    # 禁止自动 baseline，避免把结构不完整的旧库静默标记为最新版本。
+    baseline-on-migrate: false
+    # 已执行的脚本被改动时拒绝启动，而不是让各人的库悄悄分叉。
+    # 若报 checksum mismatch，说明有人改了已发布的迁移——
+    # 正确做法是回滚那次改动并新增一个版本，实在要接受则跑 mvn flyway:repair。
+    validate-on-migrate: true
+    # 禁掉 flyway:clean，避免误执行清空整个库
+    clean-disabled: true
   servlet:
     multipart:
       max-file-size: 50MB

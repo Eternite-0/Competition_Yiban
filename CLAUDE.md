@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```powershell
 cd D:\Project\Competition
 $env:AI_API_KEY = "your-api-key"  # AI 功能必须
-.\scripts\start-local-backend.ps1  # 日常启动，会先检查 3307 项目库
+.\scripts\start-local-backend.ps1  # 日常启动，会先检查项目库连通性
 ```
 
 后端检查命令:
@@ -31,7 +31,10 @@ mvn test -q                           # 静默测试（只看结果）
 mvn test -Dtest=ContractBaselineTest  # 运行单个测试类
 ```
 
-数据库: 本地项目库使用 MySQL `127.0.0.1:3307/etsaion`，用户名/密码为 `root/root`。不要默认连 `localhost:3306`，那是单独的 `MySQL84` 服务，账号和数据目录都可能不同。种子密码均为 `123456`。
+数据库: `127.0.0.1:3307/etsaion`，用户名/密码 `root/root`，种子密码均为 `123456`。
+不要静默连接 3306；需要其他实例时显式设置 `$env:DB_PORT` 或完整的 `$env:DB_URL`。
+启动脚本会自动探测 mysql.exe（也可用 `$env:MYSQL_BIN` 指定）。建表与种子数据由
+Flyway 在启动时自动完成，见"数据库迁移"一节。
 AI 配置: `AI_API_KEY`(必须), `AI_BASE_URL`, `AI_MODEL` 在 `application.yml` 的 `ai.*` 节点。
 
 停止后端: `Stop-Process -Name java -Force`
@@ -161,26 +164,37 @@ AI 助手采用 OpenAI Function Calling 架构，模型按需调用工具获取�
 
 ### 数据库迁移
 
-迁移脚本在 `Yiban_backend/db/`:
+**Flyway 管理，后端启动时自动执行**，脚本在 `Yiban_backend/src/main/resources/db/migration/`：
 
-```bash
-# 两步完成全新初始化（幂等，可重复运行）
-mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot etsaion < db/000-schema.sql   # 全量建表 (15 张表)
-mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot etsaion < db/001-data.sql     # 种子数据 + review_task 回填
-
-# Docker 启动自动执行，无需手动操作
-# migrate-*.sql 已全部合并进 schema，仅保留用于已有数据库升级
+```
+V1__schema.sql             27 张表的结构
+V2__reference_data.sql     活动分类、AI 采集源（应用运行必需）
+V3__seed_students.sql      院系、班级、花名册、账号
+V4__seed_scores.sql        官方综测成绩
+V5__seed_competitions.sql  赛事、活动、公告
 ```
 
-已有数据库升级到当前版本还需执行（幂等）：
+全新环境建个空库启动即可，不用手工跑 SQL：
 
-```bash
-mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot etsaion < db/migrate-017-schema-version.sql
-mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot etsaion < db/migrate-018-drop-draft-registration-status.sql
+```sql
+CREATE DATABASE etsaion DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 ```
 
-`schema_version` 表记录已执行的脚本；新增 `migrate-*.sql` 请在末尾追加一条
-`INSERT IGNORE INTO schema_version` 登记自己。
+**已有 etsaion 库**需要先认领一次，否则 Flyway 会拒绝在非空且无迁移历史的库上启动：
+
+```bash
+Get-Content -Raw -Encoding UTF8 .\Yiban_backend\db\adopt-flyway.sql |
+  mysql --protocol=TCP -h 127.0.0.1 -P 3307 -u root -proot etsaion
+```
+
+改结构请**新增** `V6__*.sql`，不要动已有脚本——Flyway 校验 checksum，
+改动会让别人的库启动失败。详见 `Yiban_backend/db/README.md`。
+
+`flyway.version` 锁在已验证的 7.15.0，以兼容项目仍在使用的 MySQL 5.7 baseline。
+所有开发环境统一升级到 MySQL 8.x 后再升级 Flyway。
+
+旧的 `db/000-schema.sql` 等已归档到 `db/legacy/`，不要再执行——
+它每张表前都有 `DROP TABLE`，会清空数据。
 
 ## 核心数据模型
 

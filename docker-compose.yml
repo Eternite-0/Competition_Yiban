@@ -11,7 +11,6 @@ services:
       TZ: "Asia/Shanghai"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./Yiban_backend/db:/docker-entrypoint-initdb.d
     networks:
       - etsaion-network
     restart: unless-stopped

@@ -60,51 +60,45 @@
 ### 环境要求
 - JDK 17+
 - Node.js 18+
-- MySQL 8.0+
+- Maven 3.8+
+- MySQL 5.7 或 8.x
 
-### 1. 数据库初始化
+完整说明见 [本地开发启动指引](docs/LOCAL-DEVELOPMENT.md)。项目数据库默认使用
+`127.0.0.1:3307/etsaion`（`root/root`），不要静默连接本机另一套 3306 服务。
 
-```bash
-# 创建数据库
-mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot -e "CREATE DATABASE IF NOT EXISTS etsaion DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;"
+### 1. 准备数据库
 
-# 初始化表结构和种子数据
-mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot etsaion < Yiban_backend/db/000-schema.sql
-mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot etsaion < Yiban_backend/db/001-data.sql
+已有 3307 MySQL 可直接进入下一步；否则可用 Docker 启动：
+
+```powershell
+docker compose -f .\Yiban_backend\docker-compose.yml up -d mysql
 ```
 
-> 💡 种子数据包含管理员、教师、学生测试账号及示例赛事数据。
+数据库只需为空。后端启动时，Flyway 会自动执行仓库内的 V1–V5 baseline，完成
+27 张表、花名册、综测成绩和测试数据初始化，不再手工运行旧 SQL。
 
 ### 2. 后端启动
 
-```bash
-cd Yiban_backend
-
-# 复制配置文件（可选，已有默认配置）
-cp src/main/resources/application.yml.example src/main/resources/application.yml
-
-# 修改数据库连接（如需要）
-# 编辑 src/main/resources/application.yml
-
-# 启动后端
-..\scripts\start-local-backend.ps1
+```powershell
+$env:AI_API_KEY = [Environment]::GetEnvironmentVariable('AI_API_KEY', 'User')
+.\scripts\start-local-backend.ps1
 ```
 
-后端默认运行在 `http://localhost:8080`。
+脚本会自动创建空的 `etsaion` 库、检查 Flyway 状态并启动后端。启动后验证：
+
+```powershell
+Invoke-RestMethod http://localhost:8080/api/health
+```
 
 ### 3. 前端启动
 
-```bash
-cd Yiban
-
-# 安装依赖
+```powershell
+Set-Location .\Yiban
 npm install
-
-# 启动开发服务器
 npm run dev
 ```
 
-前端默认运行在 `http://localhost:5173`，通过 Vite 代理将 `/api` 请求转发到后端。
+前端运行在 `http://localhost:3000`，通过 Vite 代理将 `/api` 和 `/files` 转发到后端。
 
 ## 测试账号
 
@@ -143,10 +137,12 @@ Competition/
 │   └── vite.config.ts
 │
 ├── Yiban_backend/                  # 后端 Spring Boot 应用
-│   ├── db/                         # 数据库脚本
-│   │   ├── 000-schema.sql          # 表结构 (15张表)
-│   │   ├── 001-data.sql            # 种子数据
-│   │   └── migrate-*.sql           # 历史迁移 (已合并)
+│   ├── db/                         # 数据库说明、接管脚本与旧脚本归档
+│   │   ├── README.md               # Flyway 使用约定
+│   │   ├── adopt-flyway.sql        # 已有 baseline 数据库一次性认领
+│   │   └── legacy/                 # Flyway 之前的脚本，仅供追溯
+│   ├── src/main/resources/db/migration/
+│   │   └── V1__...sql ~ V5__...sql # 当前数据库 baseline
 │   ├── src/main/java/com/etsaion/
 │   │   ├── controller/             # REST 控制器 (18个)
 │   │   ├── service/                # 业务逻辑层
@@ -167,7 +163,7 @@ Competition/
 
 ## 数据库设计
 
-### 核心表 (15张)
+### 主要业务表（当前共 27 张）
 
 | 表名 | 说明 |
 |------|------|
@@ -189,7 +185,7 @@ Competition/
 
 ### 状态流转
 
-**报名状态**：`待完善` → `已提交` → `审核中` → `审核通过` / `退回补充` / `审核驳回`
+**报名状态**：`已提交` → `审核中` → `审核通过` / `退回补充` / `审核驳回`
 
 **成果状态**：`待审核` → `已审核` (通过/驳回由 approved 字段区分)
 
@@ -234,16 +230,13 @@ mvn test -q
 - 业务规则：报名状态流转、成果审核、成长数据计算
 - 工具类：日期解析、字符串数组解析
 
-## Docker 部署 (可选)
+## Docker 本地依赖（可选）
 
-```bash
-cd Yiban_backend
-
-# 启动 MySQL 和 Redis
-docker-compose up -d
-
-# 数据库会自动初始化（首次启动时）
+```powershell
+docker compose -f .\Yiban_backend\docker-compose.yml up -d mysql redis
 ```
+
+容器只提供 MySQL/Redis；数据库结构和种子数据仍由后端内置 Flyway 初始化。
 
 ## 许可证
 

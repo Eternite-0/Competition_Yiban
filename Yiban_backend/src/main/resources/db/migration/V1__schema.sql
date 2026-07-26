@@ -1,0 +1,480 @@
+-- 全量表结构（27 张表）。
+--
+-- 数据库的起点：Flyway 在空库上执行它建出全部表。与旧的 db/000-schema.sql 不同，
+-- 这里没有 DROP TABLE，不会清数据。
+--
+-- 迁移脚本一旦提交就不要再改——Flyway 校验 checksum，改动会让别人的库启动失败。
+-- 需要调整结构请新增 V*__*.sql。
+--
+-- 外键检查在建表期间关闭：表按字母序输出，被引用的表未必排在前面。
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+CREATE TABLE `activity` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `type` varchar(30) NOT NULL DEFAULT 'competition' COMMENT 'competition/volunteer',
+  `title` varchar(200) NOT NULL,
+  `level` varchar(20) DEFAULT NULL,
+  `category` varchar(50) DEFAULT NULL,
+  `organizer` varchar(200) DEFAULT NULL,
+  `start_time` datetime DEFAULT NULL COMMENT '鎶ュ悕寮??',
+  `end_time` datetime DEFAULT NULL COMMENT '鎶ュ悕鎴??',
+  `activity_start` datetime DEFAULT NULL,
+  `activity_end` datetime DEFAULT NULL,
+  `max_team_size` int(11) DEFAULT '1',
+  `max_participants` int(11) DEFAULT NULL,
+  `cover_url` varchar(500) DEFAULT NULL,
+  `content` text,
+  `tags` varchar(500) DEFAULT NULL COMMENT 'JSON鏁扮粍 - 鏍囩?',
+  `tracks` varchar(1000) DEFAULT NULL COMMENT 'JSON鏁扮粍 - 璧涢亾/宀椾綅',
+  `location` varchar(200) DEFAULT NULL,
+  `service_hours` decimal(6,2) DEFAULT NULL COMMENT '蹇楁効鏈嶅姟鏃堕暱',
+  `status` varchar(20) DEFAULT 'draft' COMMENT 'draft/published/closed/archived',
+  `config_json` text COMMENT '娲诲姩宸?紓鍖栭厤缃',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_type_status` (`type`,`status`),
+  KEY `idx_end_time` (`end_time`),
+  KEY `idx_type_category` (`type`,`category`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COMMENT='缁熶竴娲诲姩琛';
+CREATE TABLE `activity_category` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `type` varchar(30) NOT NULL DEFAULT 'competition' COMMENT 'competition/volunteer/culture_sports/other',
+  `code` varchar(50) NOT NULL COMMENT '分类编码，activity/competition.category 存此值',
+  `name` varchar(50) NOT NULL COMMENT '分类名称',
+  `icon` varchar(50) DEFAULT 'category' COMMENT 'Material Symbols 图标名',
+  `sort_order` int(11) DEFAULT '100',
+  `status` varchar(20) DEFAULT 'active' COMMENT 'active/disabled',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_type_code` (`type`,`code`),
+  UNIQUE KEY `uk_type_name` (`type`,`name`),
+  KEY `idx_type_status` (`type`,`status`)
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COMMENT='活动分类字典表';
+CREATE TABLE `ai_competition_draft` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `ai_task_id` bigint(20) DEFAULT NULL,
+  `competition_id` bigint(20) DEFAULT NULL COMMENT '确认保存后关联competition',
+  `source_type` varchar(30) DEFAULT NULL,
+  `source_url` varchar(1000) DEFAULT NULL,
+  `source_title` varchar(300) DEFAULT NULL,
+  `name` varchar(200) DEFAULT NULL,
+  `level` varchar(20) DEFAULT NULL,
+  `category` varchar(50) DEFAULT NULL,
+  `organizer` varchar(200) DEFAULT NULL,
+  `start_time` datetime DEFAULT NULL,
+  `end_time` datetime DEFAULT NULL,
+  `competition_start` datetime DEFAULT NULL,
+  `competition_end` datetime DEFAULT NULL,
+  `max_team_size` int(11) DEFAULT '1',
+  `cover_url` varchar(500) DEFAULT NULL,
+  `content` longtext,
+  `tags` varchar(500) DEFAULT NULL,
+  `tracks` varchar(1000) DEFAULT NULL,
+  `stages_json` longtext,
+  `field_confidence_json` longtext,
+  `evidence_json` longtext,
+  `risk_flags_json` longtext,
+  `duplicate_competition_id` bigint(20) DEFAULT NULL,
+  `duplicate_score` decimal(5,4) DEFAULT NULL,
+  `status` varchar(30) DEFAULT 'pending_review' COMMENT 'pending_review/confirmed/ignored/merged',
+  `reviewer_id` bigint(20) DEFAULT NULL,
+  `review_note` varchar(500) DEFAULT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_ai_task` (`ai_task_id`),
+  KEY `idx_competition` (`competition_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI赛事草稿表';
+CREATE TABLE `ai_conversation` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `user_id` bigint(20) NOT NULL,
+  `role` varchar(20) NOT NULL,
+  `title` varchar(200) DEFAULT NULL,
+  `last_message_at` datetime DEFAULT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_time` (`user_id`,`last_message_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI对话会话表';
+CREATE TABLE `ai_message` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `conversation_id` bigint(20) NOT NULL,
+  `role` varchar(20) NOT NULL COMMENT 'user/assistant/tool/system',
+  `content` longtext NOT NULL,
+  `tool_name` varchar(100) DEFAULT NULL,
+  `tool_result_json` longtext,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_conversation` (`conversation_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI对话消息表';
+CREATE TABLE `ai_task` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `task_type` varchar(50) NOT NULL COMMENT 'competition_doc_parse/certificate_recognition/crawler_parse/chat',
+  `status` varchar(30) NOT NULL DEFAULT 'pending' COMMENT 'pending/running/succeeded/failed/cancelled',
+  `source_type` varchar(30) DEFAULT NULL COMMENT 'file/image/url/text/chat',
+  `source_url` varchar(1000) DEFAULT NULL,
+  `source_hash` varchar(128) DEFAULT NULL,
+  `requester_id` bigint(20) DEFAULT NULL,
+  `requester_role` varchar(20) DEFAULT NULL,
+  `prompt_version` varchar(50) DEFAULT NULL,
+  `model_name` varchar(100) DEFAULT 'mimo-v2.5',
+  `confidence` decimal(5,4) DEFAULT NULL,
+  `raw_result_json` longtext,
+  `result_json` longtext,
+  `error_message` varchar(1000) DEFAULT NULL,
+  `start_time` datetime DEFAULT NULL,
+  `finish_time` datetime DEFAULT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_task_status` (`task_type`,`status`),
+  KEY `idx_requester` (`requester_id`),
+  KEY `idx_source_hash` (`source_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI任务表';
+CREATE TABLE `announcement` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `competition_id` bigint(20) DEFAULT NULL COMMENT '鍏宠仈璧涗簨ID锛孨ULL琛ㄧず绯荤粺鍏?憡',
+  `stage_id` bigint(20) DEFAULT NULL COMMENT '鍏宠仈闃舵?ID锛孨ULL琛ㄧず璧涗簨绾у叕鍛',
+  `title` varchar(200) NOT NULL COMMENT '鍏?憡鏍囬?',
+  `content` text NOT NULL COMMENT '鍏?憡鍐呭?',
+  `author_id` bigint(20) NOT NULL COMMENT '鍙戝竷鑰匢D',
+  `type` varchar(20) NOT NULL DEFAULT 'system' COMMENT 'system/competition/stage',
+  `is_pinned` tinyint(4) NOT NULL DEFAULT '0' COMMENT '鏄?惁缃?《',
+  `status` varchar(20) NOT NULL DEFAULT 'published' COMMENT 'draft/published',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_competition` (`competition_id`),
+  KEY `idx_type_status` (`type`,`status`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4;
+CREATE TABLE `award_proof` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `ai_task_id` bigint(20) DEFAULT NULL,
+  `submitter_id` bigint(20) NOT NULL,
+  `competition_id` bigint(20) DEFAULT NULL,
+  `competition_name` varchar(200) DEFAULT NULL,
+  `award_level` varchar(100) DEFAULT NULL,
+  `award_time` datetime DEFAULT NULL,
+  `organizer` varchar(200) DEFAULT NULL,
+  `winner_name` varchar(100) DEFAULT NULL,
+  `certificate_no` varchar(100) DEFAULT NULL,
+  `seal_text` varchar(300) DEFAULT NULL,
+  `file_name` varchar(255) DEFAULT NULL,
+  `file_url` varchar(1000) NOT NULL,
+  `file_hash` varchar(128) DEFAULT NULL,
+  `confidence` decimal(5,4) DEFAULT NULL,
+  `field_confidence_json` longtext,
+  `evidence_json` longtext,
+  `risk_flags_json` longtext,
+  `status` varchar(30) DEFAULT 'pending' COMMENT 'pending/approved/rejected/returned',
+  `review_note` varchar(500) DEFAULT NULL,
+  `reviewer_id` bigint(20) DEFAULT NULL,
+  `review_time` datetime DEFAULT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_submitter` (`submitter_id`),
+  KEY `idx_competition` (`competition_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_file_hash` (`file_hash`),
+  KEY `idx_ai_task` (`ai_task_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='获奖证明表';
+CREATE TABLE `award_proof_student` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `award_proof_id` bigint(20) NOT NULL,
+  `student_id` bigint(20) NOT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_award_student` (`award_proof_id`,`student_id`),
+  KEY `idx_student` (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='获奖证明学生关联表';
+CREATE TABLE `class_info` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL COMMENT '鐝?骇鍚嶇О',
+  `college` varchar(100) NOT NULL COMMENT '鎵?睘瀛﹂櫌',
+  `major_id` bigint(20) DEFAULT NULL COMMENT '鍏宠仈涓撲笟ID',
+  `grade` varchar(10) DEFAULT NULL COMMENT '骞寸骇(鍏ュ?骞翠唤)',
+  `status` varchar(20) DEFAULT 'active' COMMENT 'active/inactive',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_major` (`major_id`),
+  KEY `idx_college` (`college`),
+  KEY `idx_grade` (`grade`),
+  KEY `idx_status` (`status`),
+  CONSTRAINT `fk_class_major` FOREIGN KEY (`major_id`) REFERENCES `major` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=169 DEFAULT CHARSET=utf8mb4 COMMENT='鐝?骇琛';
+CREATE TABLE `competition` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `name` varchar(200) NOT NULL,
+  `level` varchar(20) DEFAULT NULL COMMENT '国家级/省级/校级/院级',
+  `category` varchar(50) DEFAULT NULL,
+  `start_time` datetime DEFAULT NULL COMMENT '报名开始',
+  `end_time` datetime DEFAULT NULL COMMENT '报名截止',
+  `competition_start` datetime DEFAULT NULL,
+  `competition_end` datetime DEFAULT NULL,
+  `max_team_size` int(11) DEFAULT '1',
+  `cover_url` varchar(500) DEFAULT NULL,
+  `source_url` varchar(500) DEFAULT NULL COMMENT '璧涗簨瀹樼綉/鍏?憡閾炬帴',
+  `content` text COMMENT '富文本赛事简介/要求',
+  `organizer` varchar(200) DEFAULT NULL COMMENT '涓诲姙鍗曚綅',
+  `tags` varchar(500) DEFAULT NULL COMMENT 'JSON鏁扮粍 - 璧涗簨鏍囩?',
+  `tracks` varchar(1000) DEFAULT NULL COMMENT 'JSON鏁扮粍 - 璧涢亾鍒楄〃',
+  `status` varchar(20) DEFAULT 'draft' COMMENT 'draft/published/closed',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COMMENT='赛事/竞赛表';
+CREATE TABLE `competition_source` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `name` varchar(200) NOT NULL,
+  `url` varchar(1000) NOT NULL,
+  `source_type` varchar(30) DEFAULT 'custom' COMMENT 'whitelist/school/government/enterprise/custom',
+  `crawl_frequency` varchar(30) DEFAULT 'manual' COMMENT 'manual/daily/weekly',
+  `language` varchar(30) DEFAULT 'auto' COMMENT 'auto/zh/en/mixed',
+  `crawl_depth` int(11) DEFAULT '0' COMMENT '采集深度，第一版默认只抓当前页',
+  `max_pages` int(11) DEFAULT '5' COMMENT '单来源最多解析页数',
+  `allow_patterns` varchar(1000) DEFAULT NULL COMMENT '允许链接规则，换行或逗号分隔',
+  `deny_patterns` varchar(1000) DEFAULT NULL COMMENT '排除链接规则，换行或逗号分隔',
+  `enabled` tinyint(4) DEFAULT '1',
+  `last_crawl_time` datetime DEFAULT NULL,
+  `last_crawl_status` varchar(30) DEFAULT NULL,
+  `last_error_message` varchar(1000) DEFAULT NULL,
+  `last_success_count` int(11) DEFAULT '0' COMMENT '最近一次成功生成草稿数',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_enabled` (`enabled`),
+  KEY `idx_type` (`source_type`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COMMENT='赛事采集来源表';
+CREATE TABLE `competition_stage` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `competition_id` bigint(20) NOT NULL COMMENT '鍏宠仈璧涗簨ID',
+  `name` varchar(100) NOT NULL COMMENT '闃舵?鍚嶇О',
+  `stage_order` int(11) NOT NULL DEFAULT '1' COMMENT '闃舵?鎺掑簭',
+  `start_time` datetime DEFAULT NULL COMMENT '闃舵?寮??鏃堕棿',
+  `end_time` datetime DEFAULT NULL COMMENT '闃舵?缁撴潫鏃堕棿',
+  `description` text COMMENT '闃舵?璇存槑/鏉愭枡瑕佹眰',
+  `status` varchar(20) NOT NULL DEFAULT 'upcoming' COMMENT 'upcoming/active/closed',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_competition` (`competition_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4;
+CREATE TABLE `comprehensive_score` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `academic_year` varchar(30) NOT NULL,
+  `student_no` varchar(50) NOT NULL,
+  `real_name` varchar(50) DEFAULT NULL,
+  `college` varchar(100) DEFAULT NULL,
+  `major` varchar(100) DEFAULT NULL,
+  `grade` varchar(20) DEFAULT NULL,
+  `class_name` varchar(100) DEFAULT NULL,
+  `moral_raw_score` decimal(8,4) DEFAULT NULL,
+  `moral_final_score` decimal(8,4) DEFAULT NULL,
+  `sports_raw_score` decimal(8,4) DEFAULT NULL,
+  `sports_final_score` decimal(8,4) DEFAULT NULL,
+  `ability_raw_score` decimal(8,4) DEFAULT NULL,
+  `ability_final_score` decimal(8,4) DEFAULT NULL,
+  `academic_score` decimal(8,4) DEFAULT NULL,
+  `comprehensive_score` decimal(8,4) DEFAULT NULL,
+  `moral_rank` int(11) DEFAULT NULL,
+  `moral_rank_percent` decimal(10,8) DEFAULT NULL,
+  `sports_rank` int(11) DEFAULT NULL,
+  `sports_rank_percent` decimal(10,8) DEFAULT NULL,
+  `ability_rank` int(11) DEFAULT NULL,
+  `ability_rank_percent` decimal(10,8) DEFAULT NULL,
+  `academic_rank` int(11) DEFAULT NULL,
+  `academic_rank_percent` decimal(10,8) DEFAULT NULL,
+  `comprehensive_rank` int(11) DEFAULT NULL COMMENT 'official rank within grade and major',
+  `comprehensive_rank_percent` decimal(10,8) DEFAULT NULL COMMENT 'official percentile within grade and major',
+  `source_file` varchar(255) DEFAULT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_year_student` (`academic_year`,`student_no`),
+  KEY `idx_student_no` (`student_no`),
+  KEY `idx_scope_rank` (`academic_year`,`grade`,`major`,`comprehensive_rank`),
+  KEY `idx_college_major` (`college`,`major`,`grade`)
+) ENGINE=InnoDB AUTO_INCREMENT=865 DEFAULT CHARSET=utf8mb4 COMMENT='official comprehensive score';
+CREATE TABLE `growth_record` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `student_id` bigint(20) NOT NULL,
+  `competition_id` bigint(20) NOT NULL,
+  `record_type` varchar(20) DEFAULT NULL COMMENT 'competition/award/certificate',
+  `title` varchar(200) DEFAULT NULL,
+  `happen_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='成长记录表';
+CREATE TABLE `major` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL COMMENT '涓撲笟鍚嶇О',
+  `college` varchar(100) NOT NULL COMMENT '鎵?睘瀛﹂櫌',
+  `status` varchar(20) DEFAULT 'active' COMMENT 'active/inactive',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_college` (`college`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8mb4 COMMENT='涓撲笟琛';
+CREATE TABLE `message` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `from_user` bigint(20) DEFAULT '0' COMMENT '0表示系统',
+  `to_user` bigint(20) NOT NULL,
+  `title` varchar(200) NOT NULL,
+  `content` text,
+  `is_read` tinyint(4) DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='消息表';
+CREATE TABLE `participation` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `activity_id` bigint(20) NOT NULL,
+  `student_id` bigint(20) NOT NULL,
+  `team_name` varchar(100) DEFAULT NULL,
+  `track` varchar(100) DEFAULT NULL,
+  `member_student_ids` varchar(1000) DEFAULT NULL COMMENT 'JSON鏁扮粍 - 鍥㈤槦鎴愬憳瀛︾敓ID',
+  `metadata_json` text COMMENT '蹇楁効宀椾綅銆佸湴鐐广?绛惧埌绛夋墿灞曚俊鎭',
+  `status` varchar(20) DEFAULT 'submitted' COMMENT 'submitted/in_review/approved/rejected/returned/cancelled',
+  `submit_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `review_note` varchar(500) DEFAULT NULL,
+  `reviewer_id` bigint(20) DEFAULT NULL,
+  `review_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_activity_student` (`activity_id`,`student_id`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='缁熶竴娲诲姩鍙備笌璁板綍琛';
+CREATE TABLE `registration` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `competition_id` bigint(20) NOT NULL,
+  `student_id` bigint(20) NOT NULL,
+  `team_name` varchar(100) DEFAULT NULL COMMENT '战队名称 (个人赛为空)',
+  `track` varchar(100) DEFAULT NULL COMMENT '鍙傝禌璧涢亾',
+  `member_student_ids` varchar(1000) DEFAULT NULL COMMENT 'JSON鏁扮粍 - 鍥㈤槦鎴愬憳瀛︾敓ID',
+  `status` varchar(20) NOT NULL DEFAULT '已提交' COMMENT '已提交/审核中/审核通过/退回补充/审核驳回',
+  `submit_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='报名表';
+CREATE TABLE `review_task` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `activity_type` varchar(30) DEFAULT 'competition',
+  `activity_id` bigint(20) DEFAULT NULL,
+  `target_type` varchar(30) NOT NULL COMMENT 'registration/submission/participation',
+  `target_id` bigint(20) NOT NULL,
+  `submitter_id` bigint(20) DEFAULT NULL,
+  `title` varchar(200) NOT NULL,
+  `status` varchar(20) DEFAULT 'pending' COMMENT 'pending/processing/resolved',
+  `review_note` varchar(500) DEFAULT NULL,
+  `reviewer_id` bigint(20) DEFAULT NULL,
+  `deadline` datetime DEFAULT NULL,
+  `payload_json` text,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_target_open` (`target_type`,`target_id`,`status`),
+  KEY `idx_status_deadline` (`status`,`deadline`),
+  KEY `idx_activity_type` (`activity_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='缁熶竴瀹℃牳寰呭姙琛';
+CREATE TABLE `student_roster` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `student_no` varchar(50) NOT NULL COMMENT '瀛﹀彿',
+  `real_name` varchar(50) NOT NULL COMMENT '濮撳悕',
+  `college` varchar(100) DEFAULT NULL COMMENT '瀛﹂櫌',
+  `major_id` bigint(20) DEFAULT NULL COMMENT '鍏宠仈涓撲笟ID',
+  `class_id` bigint(20) DEFAULT NULL COMMENT '鍏宠仈鐝?骇ID',
+  `grade` varchar(10) DEFAULT NULL COMMENT '骞寸骇(鍏ュ?骞翠唤)',
+  `status` varchar(20) DEFAULT 'pending' COMMENT 'pending(鏈?敞鍐?/registered(宸叉敞鍐?',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_student_no` (`student_no`),
+  KEY `idx_major` (`major_id`),
+  KEY `idx_class` (`class_id`),
+  KEY `idx_grade` (`grade`),
+  KEY `idx_status` (`status`),
+  KEY `idx_college` (`college`),
+  CONSTRAINT `fk_roster_class` FOREIGN KEY (`class_id`) REFERENCES `class_info` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_roster_major` FOREIGN KEY (`major_id`) REFERENCES `major` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=895 DEFAULT CHARSET=utf8mb4 COMMENT='瀛︾敓鑺卞悕鍐岃〃';
+CREATE TABLE `student_stage_progress` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `student_id` bigint(20) NOT NULL COMMENT '瀛︾敓ID',
+  `competition_id` bigint(20) NOT NULL COMMENT '璧涗簨ID',
+  `stage_id` bigint(20) NOT NULL COMMENT '闃舵?ID',
+  `registration_id` bigint(20) DEFAULT NULL COMMENT '鍏宠仈鎶ュ悕ID',
+  `status` varchar(20) NOT NULL DEFAULT 'not_started' COMMENT 'not_started/in_progress/submitted/passed/failed',
+  `submit_time` datetime DEFAULT NULL COMMENT '鎻愪氦鏃堕棿',
+  `review_time` datetime DEFAULT NULL COMMENT '瀹℃牳鏃堕棿',
+  `review_note` varchar(500) DEFAULT NULL COMMENT '瀹℃牳鎰忚?',
+  `reviewer_id` bigint(20) DEFAULT NULL COMMENT '瀹℃牳浜篒D',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_student_stage` (`student_id`,`stage_id`),
+  KEY `idx_student_comp` (`student_id`,`competition_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE `submission` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `registration_id` bigint(20) DEFAULT NULL,
+  `competition_id` bigint(20) DEFAULT NULL COMMENT '鍏宠仈璧涗簨ID锛堢嫭绔嬫彁浜ゆ椂浣跨敤锛',
+  `submitter_id` bigint(20) DEFAULT NULL COMMENT '瀹為檯涓婁紶鑰呯殑瀛︾敓ID',
+  `file_name` varchar(255) NOT NULL,
+  `file_url` varchar(500) NOT NULL,
+  `file_size` bigint(20) DEFAULT '0' COMMENT '文件大小 (Bytes)',
+  `upload_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `status` varchar(20) DEFAULT '待审核' COMMENT '待审核/已审核',
+  `review_note` varchar(500) DEFAULT NULL COMMENT '教师评语',
+  `approved` tinyint(4) DEFAULT NULL COMMENT '宸插?鏍告椂 1=閫氳繃, 0=椹冲洖; 寰呭?鏍镐负 NULL',
+  `displayed` tinyint(4) DEFAULT '0' COMMENT '鏄?惁灞曠ず鍦ㄤ紭绉?綔鍝佸?',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='成果附件上传表';
+CREATE TABLE `submission_student` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `submission_id` bigint(20) NOT NULL COMMENT '鎴愭灉闄勪欢ID',
+  `student_id` bigint(20) NOT NULL COMMENT '鍏宠仈瀛︾敓ID',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_sub_student` (`submission_id`,`student_id`),
+  KEY `idx_student_id` (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='鎴愭灉-瀛︾敓鍏宠仈琛?紙鏀?寔鍥㈤槦鎻愪氦锛';
+CREATE TABLE `team_application` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `team_id` bigint(20) NOT NULL COMMENT '关联的招募帖ID',
+  `applicant_id` bigint(20) NOT NULL,
+  `role` varchar(50) DEFAULT NULL COMMENT '申请角色',
+  `reason` varchar(255) DEFAULT NULL COMMENT '申请理由',
+  `status` varchar(20) DEFAULT 'pending' COMMENT 'pending/approved/rejected',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='组队申请表';
+CREATE TABLE `team_post` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `author_id` bigint(20) NOT NULL COMMENT '发布者/学生ID',
+  `competition_id` bigint(20) NOT NULL,
+  `content` text COMMENT '招募帖内容',
+  `roles_needed` varchar(255) DEFAULT NULL COMMENT 'JSON数组 - 所需角色',
+  `date` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '发布时间',
+  `status` varchar(20) DEFAULT '招募中' COMMENT '招募中/已满员',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='组队招募贴表';
+CREATE TABLE `user` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL COMMENT '学号/工号',
+  `password` varchar(255) NOT NULL,
+  `real_name` varchar(50) DEFAULT NULL,
+  `role` varchar(20) DEFAULT 'student' COMMENT 'admin/student/teacher',
+  `college` varchar(100) DEFAULT NULL,
+  `major` varchar(100) DEFAULT NULL,
+  `class_name` varchar(50) DEFAULT NULL,
+  `grade` varchar(10) DEFAULT NULL COMMENT '骞寸骇(鍏ュ?骞翠唤)',
+  `status` varchar(20) DEFAULT 'active' COMMENT 'active/pending_approval/rejected',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_username` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=1058 DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+
+SET FOREIGN_KEY_CHECKS = 1;

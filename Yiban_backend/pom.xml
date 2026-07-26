@@ -22,6 +22,7 @@
         <poi.version>5.2.5</poi.version>
         <pdfbox.version>2.0.31</pdfbox.version>
         <jsoup.version>1.17.2</jsoup.version>
+        <flyway.version>7.15.0</flyway.version>
         <jwt.version>0.11.5</jwt.version>
         <springdoc.version>1.7.0</springdoc.version>
     </properties>
@@ -57,6 +58,15 @@
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- Flyway：启动时把 db/migration 下缺的迁移补上。
+             项目本地 baseline 仍需兼容 MySQL 5.7，因此锁定已验证的 7.15.0。
+             升级所有开发环境到 MySQL 8.x 后再统一升级 Flyway。 -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <version>${flyway.version}</version>
         </dependency>
 
         <!-- Lombok -->

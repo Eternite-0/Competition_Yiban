@@ -141,11 +141,7 @@ frontend:
 # 进入 MySQL 容器
 docker exec -it etsaion-mysql mysql -u root -p
 
-# 或者用外部工具连接
-# 主机: 你的服务器IP
-# 端口: 3306
-# 用户: root
-# 密码: etsaion2024
+# 根目录 docker-compose 默认不暴露 MySQL 到公网；需要查看时使用上面的 docker exec。
 ```
 
 ---
@@ -155,7 +151,7 @@ docker exec -it etsaion-mysql mysql -u root -p
 - **操作系统**: Ubuntu 20.04+ / CentOS 7+ / Debian 10+
 - **内存**: 4GB 以上（构建时需要较多内存）
 - **硬盘**: 30GB 以上
-- **端口**: 80, 3306（MySQL 可选外部访问）
+- **端口**: 80、443（MySQL 默认仅在 Docker 网络内部访问）
 
 ### 防火墙配置
 
@@ -184,9 +180,6 @@ sudo firewall-cmd --reload
 ├── restart.sh              # 重启脚本
 ├── rebuild.sh              # 重新构建脚本
 ├── logs.sh                 # 日志脚本
-├── db/                     # 数据库初始化脚本
-│   ├── 000-schema.sql
-│   └── 001-data.sql
 ├── Yiban/                  # 前端源码
 │   ├── Dockerfile
 │   ├── nginx.conf
@@ -194,6 +187,8 @@ sudo firewall-cmd --reload
 │   └── package.json
 └── Yiban_backend/          # 后端源码
     ├── Dockerfile
+    ├── db/                 # Flyway 指引、已有库认领与旧脚本归档
+    ├── src/main/resources/db/migration/  # V1-V5 baseline 及后续迁移
     ├── src/
     └── pom.xml
 ```
