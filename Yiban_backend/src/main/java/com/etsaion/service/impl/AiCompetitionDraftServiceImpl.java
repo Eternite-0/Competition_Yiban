@@ -11,6 +11,8 @@ import com.etsaion.dto.ai.CompetitionDraftConfirmDTO;
 import com.etsaion.dto.ai.CompetitionDraftParseUrlDTO;
 import com.etsaion.enums.CompetitionStatus;
 import com.etsaion.service.CompetitionPublishService;
+import com.etsaion.service.ai.CompetitionScheduleExtractor;
+import com.etsaion.service.ai.CompetitionScheduleExtractor.TimeWindow;
 import com.etsaion.service.ai.DraftDedupService;
 import com.etsaion.entity.AiCompetitionDraft;
 import com.etsaion.entity.AiTask;
@@ -103,6 +105,9 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
 
     @Autowired
     private DraftDedupService draftDedupService;
+
+    @Autowired
+    private CompetitionScheduleExtractor scheduleExtractor;
 
     @Autowired
     private CompetitionStageService competitionStageService;
@@ -702,15 +707,15 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
         enrichTagsFromSource(draft, sourceText);
         enrichContentFromSource(draft, sourceText);
 
-        List<TimeWindow> registrationWindows = extractRegistrationWindows(sourceText);
+        List<TimeWindow> registrationWindows = scheduleExtractor.extractRegistrationWindows(sourceText);
         if (!registrationWindows.isEmpty()) {
             LocalDateTime start = registrationWindows.stream()
-                    .map(window -> window.start)
+                    .map(window -> window.getStart())
                     .filter(time -> time != null)
                     .min(LocalDateTime::compareTo)
                     .orElse(null);
             LocalDateTime end = registrationWindows.stream()
-                    .map(window -> window.end)
+                    .map(window -> window.getEnd())
                     .filter(time -> time != null)
                     .max(LocalDateTime::compareTo)
                     .orElse(null);
@@ -731,14 +736,14 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
                     .collect(Collectors.joining("；")));
         }
 
-        List<TimeWindow> approximateCompetitionWindows = extractApproximateCompetitionWindows(sourceText);
+        List<TimeWindow> approximateCompetitionWindows = scheduleExtractor.extractApproximateCompetitionWindows(sourceText);
         if (!approximateCompetitionWindows.isEmpty()) {
             LocalDateTime start = approximateCompetitionWindows.stream()
-                    .map(window -> window.start)
+                    .map(window -> window.getStart())
                     .min(LocalDateTime::compareTo)
                     .orElse(null);
             LocalDateTime end = approximateCompetitionWindows.stream()
-                    .map(window -> window.end)
+                    .map(window -> window.getEnd())
                     .max(LocalDateTime::compareTo)
                     .orElse(null);
             if (start != null) draft.setCompetitionStart(start);
@@ -764,11 +769,11 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
             return;
         }
         LocalDateTime start = registrationWindows.stream()
-                .map(window -> window.start)
+                .map(window -> window.getStart())
                 .min(LocalDateTime::compareTo)
                 .orElse(null);
         LocalDateTime end = registrationWindows.stream()
-                .map(window -> window.end)
+                .map(window -> window.getEnd())
                 .max(LocalDateTime::compareTo)
                 .orElse(null);
         if (draft.getStartTime() == null && start != null) {
@@ -788,11 +793,11 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
             return;
         }
         LocalDateTime start = competitionWindows.stream()
-                .map(window -> window.start)
+                .map(window -> window.getStart())
                 .min(LocalDateTime::compareTo)
                 .orElse(null);
         LocalDateTime end = competitionWindows.stream()
-                .map(window -> window.end)
+                .map(window -> window.getEnd())
                 .max(LocalDateTime::compareTo)
                 .orElse(null);
         if (draft.getCompetitionStart() == null && start != null) {
@@ -802,7 +807,7 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
             draft.setCompetitionEnd(end);
         }
         boolean hasApproximate = competitionWindows.stream()
-                .anyMatch(window -> APPROX_MONTH_TEXT_PATTERN.matcher(window.source).find());
+                .anyMatch(window -> APPROX_MONTH_TEXT_PATTERN.matcher(window.getSource()).find());
         if (hasApproximate) {
             addRisk(draft, "approximate_competition_time");
         }
@@ -960,111 +965,6 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
         return String.join("。", snippets);
     }
 
-    private List<TimeWindow> extractRegistrationWindows(String sourceText) {
-        List<TimeWindow> windows = new ArrayList<>();
-        if (StrUtil.isBlank(sourceText)) {
-            return windows;
-        }
-        Matcher matcher = REGISTRATION_RANGE_PATTERN.matcher(sourceText);
-        while (matcher.find()) {
-            LocalDateTime start = parseSourceDateTime(matcher.group(2), null, false);
-            Integer startYear = start == null ? null : start.getYear();
-            LocalDateTime end = parseSourceDateTime(matcher.group(3), startYear, true);
-            if (start == null || end == null) continue;
-            String name = registrationStageName(matcher.group(1), windows.size() + 1);
-            windows.add(new TimeWindow(name, start, end, matcher.group(0)));
-        }
-        Matcher deadlineMatcher = SUBMISSION_DEADLINE_PATTERN.matcher(sourceText);
-        while (deadlineMatcher.find()) {
-            if (!deadlineMatcher.group(1).contains("提交作品截止")) continue;
-            LocalDateTime deadline = parseSourceDateTime(deadlineMatcher.group(2), null, true);
-            if (deadline == null) continue;
-            windows.add(new TimeWindow(registrationStageName(deadlineMatcher.group(1), windows.size() + 1),
-                    deadline, deadline, deadlineMatcher.group(0)));
-        }
-        return dedupeWindows(windows);
-    }
-
-    private List<TimeWindow> extractApproximateCompetitionWindows(String sourceText) {
-        List<TimeWindow> windows = new ArrayList<>();
-        if (StrUtil.isBlank(sourceText)) {
-            return windows;
-        }
-        Matcher matcher = APPROX_COMPETITION_TIME_PATTERN.matcher(sourceText);
-        while (matcher.find()) {
-            int year = Integer.parseInt(matcher.group(2));
-            int month = Integer.parseInt(matcher.group(3));
-            String qualifier = StrUtil.blankToDefault(matcher.group(4), "");
-            TimeWindow window = approximateMonthWindow(competitionStageName(matcher.group(1)), year, month, qualifier, matcher.group(0));
-            if (window != null) {
-                windows.add(window);
-            }
-        }
-        return dedupeWindows(windows);
-    }
-
-    private TimeWindow approximateMonthWindow(String name, int year, int month, String qualifier, String source) {
-        if (month < 1 || month > 12) {
-            return null;
-        }
-        YearMonth yearMonth = YearMonth.of(year, month);
-        int startDay = 1;
-        int endDay = yearMonth.lengthOfMonth();
-        if ("上旬".equals(qualifier)) {
-            endDay = 10;
-        } else if ("中旬".equals(qualifier)) {
-            startDay = 11;
-            endDay = 20;
-        } else if ("下旬".equals(qualifier)) {
-            startDay = 21;
-        } else if ("中上旬".equals(qualifier)) {
-            endDay = 20;
-        }
-        LocalDateTime start = LocalDateTime.of(LocalDate.of(year, month, startDay), LocalTime.MIN);
-        LocalDateTime end = LocalDateTime.of(LocalDate.of(year, month, endDay), LocalTime.of(23, 59, 59));
-        return new TimeWindow(name, start, end, source);
-    }
-
-    private LocalDateTime parseSourceDateTime(String raw, Integer fallbackYear, boolean endOfDayWhenTimeMissing) {
-        Matcher matcher = SOURCE_DATE_TIME_PATTERN.matcher(StrUtil.blankToDefault(raw, ""));
-        if (!matcher.find()) {
-            return parseTime(raw);
-        }
-        int year = matcher.group(1) != null ? Integer.parseInt(matcher.group(1)) : fallbackYear == null ? 0 : fallbackYear;
-        if (year == 0) {
-            return null;
-        }
-        int month = Integer.parseInt(matcher.group(2));
-        int day = Integer.parseInt(matcher.group(3));
-        boolean hasHour = matcher.group(4) != null;
-        int hour = hasHour ? Integer.parseInt(matcher.group(4)) : endOfDayWhenTimeMissing ? 23 : 0;
-        int minute = matcher.group(5) == null ? (endOfDayWhenTimeMissing && !hasHour ? 59 : 0) : Integer.parseInt(matcher.group(5));
-        int second = matcher.group(6) == null ? (endOfDayWhenTimeMissing && !hasHour ? 59 : 0) : Integer.parseInt(matcher.group(6));
-        return LocalDateTime.of(year, month, day, hour, minute, second);
-    }
-
-    private String registrationStageName(String rawContext, int order) {
-        String context = StrUtil.blankToDefault(rawContext, "")
-                .replaceAll(".*[（(]\\d+[）)]", "")
-                .replaceAll("^[\\s\\d.、]+", "")
-                .replace("全国选拔赛报名时间", "")
-                .replace("报名及提交作品时间", "报名及提交作品")
-                .replace("报名时间", "报名")
-                .replaceAll("\\s+", "")
-                .trim();
-        if (StrUtil.isBlank(context) || context.length() > 40) {
-            return "报名窗口" + order;
-        }
-        return context;
-    }
-
-    private String competitionStageName(String rawContext) {
-        String context = StrUtil.blankToDefault(rawContext, "");
-        if (context.contains("选拔赛")) return "全国选拔赛";
-        if (context.contains("总决赛") || context.contains("决赛")) return "全国总决赛";
-        return StrUtil.blankToDefault(context.replace("时间", "").replaceAll("\\s+", "").trim(), "比赛阶段");
-    }
-
     private void mergeStages(AiCompetitionDraft draft, List<TimeWindow> windows) {
         if (windows.isEmpty()) {
             return;
@@ -1082,10 +982,10 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
         for (TimeWindow window : windows) {
             if (hasStage(stages, window)) continue;
             ObjectNode stage = objectMapper.createObjectNode();
-            stage.put("name", window.name);
-            stage.put("startTime", formatTime(window.start));
-            stage.put("endTime", formatTime(window.end));
-            stage.put("description", window.source);
+            stage.put("name", window.getName());
+            stage.put("startTime", formatTime(window.getStart()));
+            stage.put("endTime", formatTime(window.getEnd()));
+            stage.put("description", window.getSource());
             stages.add(stage);
         }
         draft.setStagesJson(stages.toString());
@@ -1093,26 +993,13 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
 
     private boolean hasStage(ArrayNode stages, TimeWindow window) {
         for (JsonNode stage : stages) {
-            if (window.name.equals(stage.path("name").asText())
-                    && formatTime(window.start).equals(stage.path("startTime").asText())
-                    && formatTime(window.end).equals(stage.path("endTime").asText())) {
+            if (window.getName().equals(stage.path("name").asText())
+                    && formatTime(window.getStart()).equals(stage.path("startTime").asText())
+                    && formatTime(window.getEnd()).equals(stage.path("endTime").asText())) {
                 return true;
             }
         }
         return false;
-    }
-
-    private List<TimeWindow> dedupeWindows(List<TimeWindow> windows) {
-        List<TimeWindow> result = new ArrayList<>();
-        for (TimeWindow window : windows) {
-            boolean duplicate = result.stream().anyMatch(item -> item.name.equals(window.name)
-                    && item.start.equals(window.start)
-                    && item.end.equals(window.end));
-            if (!duplicate) {
-                result.add(window);
-            }
-        }
-        return result;
     }
 
     private void addEvidence(AiCompetitionDraft draft, String key, String value) {
@@ -1164,26 +1051,7 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
     }
 
     private String formatTime(LocalDateTime time) {
-        return time == null ? "" : time.format(NORMALIZED_TIME_FORMATTER);
-    }
-
-    private static class TimeWindow {
-        private final String name;
-        private final LocalDateTime start;
-        private final LocalDateTime end;
-        private final String source;
-
-        private TimeWindow(String name, LocalDateTime start, LocalDateTime end, String source) {
-            this.name = StrUtil.blankToDefault(name, "阶段");
-            this.start = start;
-            this.end = end;
-            this.source = StrUtil.blankToDefault(source, "").replaceAll("\\s+", " ").trim();
-        }
-
-        private String evidenceText() {
-            return name + "：" + start.format(NORMALIZED_TIME_FORMATTER) + " 至 "
-                    + end.format(NORMALIZED_TIME_FORMATTER) + "（" + source + "）";
-        }
+        return CompetitionScheduleExtractor.formatTime(time);
     }
 
     private void applyQualityRisks(AiCompetitionDraft draft) {
@@ -1397,10 +1265,10 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
                         StrUtil.blankToDefault(stage.path("name").asText(null), "阶段" + order), timeRange);
                 if (approximate != null) {
                     if (!hasNonBlank(stage, "startTime")) {
-                        stage.put("startTime", formatTime(approximate.start));
+                        stage.put("startTime", formatTime(approximate.getStart()));
                     }
                     if (!hasNonBlank(stage, "endTime")) {
-                        stage.put("endTime", formatTime(approximate.end));
+                        stage.put("endTime", formatTime(approximate.getEnd()));
                     }
                 }
             } else if (item.isTextual()) {
@@ -1417,8 +1285,8 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
                 stage.put("description", raw);
                 TimeWindow approximate = approximateMonthWindowFromText(stage.path("name").asText("阶段" + order), raw);
                 if (approximate != null) {
-                    putIfMissing(stage, "startTime", formatTime(approximate.start));
-                    putIfMissing(stage, "endTime", formatTime(approximate.end));
+                    putIfMissing(stage, "startTime", formatTime(approximate.getStart()));
+                    putIfMissing(stage, "endTime", formatTime(approximate.getEnd()));
                 }
             }
             if (stage != null) {
@@ -1436,7 +1304,8 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
         }
         int year = Integer.parseInt(matcher.group(1));
         int month = Integer.parseInt(matcher.group(2));
-        return approximateMonthWindow(name, year, month, StrUtil.blankToDefault(matcher.group(3), ""), matcher.group(0));
+        return scheduleExtractor.approximateMonthWindow(
+                name, year, month, StrUtil.blankToDefault(matcher.group(3), ""), matcher.group(0));
     }
 
     private void addStageIfAbsent(ArrayNode stages, ObjectNode stage) {

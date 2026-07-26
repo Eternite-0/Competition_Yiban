@@ -9,6 +9,7 @@ import com.etsaion.service.ActivityCategoryService;
 import com.etsaion.service.CompetitionPublishService;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.CompetitionStageService;
+import com.etsaion.service.ai.CompetitionScheduleExtractor;
 import com.etsaion.service.ai.DraftDedupService;
 import com.etsaion.service.impl.AiCompetitionDraftServiceImpl;
 import com.etsaion.service.impl.CompetitionPublishServiceImpl;
@@ -55,6 +56,7 @@ class AiCompetitionDraftFlowTest {
         AiCompetitionDraftServiceImpl service = new AiCompetitionDraftServiceImpl();
         ReflectionTestUtils.setField(service, "baseMapper", mapper);
         ReflectionTestUtils.setField(service, "competitionService", competitionService);
+        ReflectionTestUtils.setField(service, "scheduleExtractor", new CompetitionScheduleExtractor());
         ReflectionTestUtils.setField(service, "competitionStageService", competitionStageService);
         ReflectionTestUtils.setField(service, "activityCategoryService", activityCategoryService);
         // 用真实的发布服务：草稿确认与人工发布必须写出同样的赛事
@@ -137,6 +139,7 @@ class AiCompetitionDraftFlowTest {
         CompetitionService competitionService = mock(CompetitionService.class);
         AiCompetitionDraftServiceImpl service = new AiCompetitionDraftServiceImpl();
         ReflectionTestUtils.setField(service, "competitionService", competitionService);
+        ReflectionTestUtils.setField(service, "scheduleExtractor", new CompetitionScheduleExtractor());
 
         JsonNode node = objectMapper.readTree("{"
                 + "\"source_title\":\"AI 通知\","
@@ -185,6 +188,7 @@ class AiCompetitionDraftFlowTest {
         CompetitionService competitionService = mock(CompetitionService.class);
         AiCompetitionDraftServiceImpl service = new AiCompetitionDraftServiceImpl();
         ReflectionTestUtils.setField(service, "competitionService", competitionService);
+        ReflectionTestUtils.setField(service, "scheduleExtractor", new CompetitionScheduleExtractor());
 
         JsonNode node = objectMapper.readTree("{"
                 + "\"赛事名称\":\"2026 年全国大学生人工智能创新应用挑战赛\","
@@ -237,6 +241,7 @@ class AiCompetitionDraftFlowTest {
         CompetitionService competitionService = mock(CompetitionService.class);
         AiCompetitionDraftServiceImpl service = new AiCompetitionDraftServiceImpl();
         ReflectionTestUtils.setField(service, "competitionService", competitionService);
+        ReflectionTestUtils.setField(service, "scheduleExtractor", new CompetitionScheduleExtractor());
 
         JsonNode node = objectMapper.readTree("{"
                 + "\"competitionName\":\"2026 年全国大学生人工智能创新应用挑战赛\","
@@ -281,6 +286,7 @@ class AiCompetitionDraftFlowTest {
     void autoFillCorrectionsCompleteLanqiaoRegistrationAndApproximateCompetitionTimes() throws Exception {
         AiCompetitionDraftServiceImpl service = new AiCompetitionDraftServiceImpl();
         ReflectionTestUtils.setField(service, "competitionService", mock(CompetitionService.class));
+        ReflectionTestUtils.setField(service, "scheduleExtractor", new CompetitionScheduleExtractor());
 
         JsonNode node = objectMapper.readTree("{"
                 + "\"name\":\"第十七届蓝桥杯全国软件和信息技术专业人才大赛\","
@@ -327,6 +333,7 @@ class AiCompetitionDraftFlowTest {
     void autoFillCorrectionsKeepExactCompetitionDates() throws Exception {
         AiCompetitionDraftServiceImpl service = new AiCompetitionDraftServiceImpl();
         ReflectionTestUtils.setField(service, "competitionService", mock(CompetitionService.class));
+        ReflectionTestUtils.setField(service, "scheduleExtractor", new CompetitionScheduleExtractor());
 
         JsonNode node = objectMapper.readTree("{"
                 + "\"name\":\"精确日期测试赛\","
@@ -352,6 +359,7 @@ class AiCompetitionDraftFlowTest {
     void autoFillCorrectionsHandleDateOnlyRegistrationRange() throws Exception {
         AiCompetitionDraftServiceImpl service = new AiCompetitionDraftServiceImpl();
         ReflectionTestUtils.setField(service, "competitionService", mock(CompetitionService.class));
+        ReflectionTestUtils.setField(service, "scheduleExtractor", new CompetitionScheduleExtractor());
 
         JsonNode node = objectMapper.readTree("{\"name\":\"日期区间测试赛\",\"category\":\"科技\"}");
         AiCompetitionDraft draft = ReflectionTestUtils.invokeMethod(service, "createDraftFromJson",
@@ -369,6 +377,7 @@ class AiCompetitionDraftFlowTest {
     void createDraftFromJsonMergesStructuredRegistrationAndApproximateRanges() throws Exception {
         AiCompetitionDraftServiceImpl service = new AiCompetitionDraftServiceImpl();
         ReflectionTestUtils.setField(service, "competitionService", mock(CompetitionService.class));
+        ReflectionTestUtils.setField(service, "scheduleExtractor", new CompetitionScheduleExtractor());
 
         JsonNode node = objectMapper.readTree("{"
                 + "\"name\":\"结构化窗口测试赛\","
