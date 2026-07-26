@@ -174,28 +174,102 @@ public class DocumentContentService {
         int detailCount = 0;
         StringBuilder attachmentText = new StringBuilder();
         StringBuilder detailText = new StringBuilder();
+        // Score candidates so list pages (赛氪/官网首页)能多发现详情链接
+        List<ScoredLink> scored = new ArrayList<>();
         for (Element link : links) {
             String href = link.absUrl("href");
-            String label = StrUtil.blankToDefault(link.text(), href);
-            if (StrUtil.isBlank(href) || href.startsWith("javascript:") || href.startsWith("mailto:")) {
+            String label = StrUtil.blankToDefault(link.text(), "").trim();
+            if (StrUtil.isBlank(href) || href.startsWith("javascript:") || href.startsWith("mailto:")
+                    || href.startsWith("#") || href.startsWith("tel:")) {
                 continue;
             }
             String lower = (href + " " + label).toLowerCase(Locale.ROOT);
             if (isAttachment(lower) && attachmentCount < 12) {
                 attachmentCount++;
                 result.addLink(href);
-                appendLine(attachmentText, attachmentCount + ". " + label + " " + href);
-            } else if (looksLikeCompetitionDetail(lower) && detailCount < 20) {
-                detailCount++;
-                result.addLink(href);
-                appendLine(detailText, detailCount + ". " + label + " " + href);
+                appendLine(attachmentText, attachmentCount + ". " + (StrUtil.blankToDefault(label, href)) + " " + href);
+                continue;
             }
+            int score = competitionLinkScore(href, label);
+            if (score > 0) {
+                scored.add(new ScoredLink(href, label, score));
+            }
+        }
+        scored.sort((a, b) -> Integer.compare(b.score, a.score));
+        for (ScoredLink item : scored) {
+            if (detailCount >= 40) {
+                break;
+            }
+            if (result.getLinks().contains(item.href)) {
+                continue;
+            }
+            detailCount++;
+            result.addLink(item.href);
+            appendLine(detailText, detailCount + ". "
+                    + (StrUtil.blankToDefault(item.label, item.href)) + " " + item.href);
         }
         if (attachmentText.length() > 0) {
             result.appendText("\n附件链接：\n" + attachmentText);
         }
         if (detailText.length() > 0) {
             result.appendText("\n可能的详情页链接：\n" + detailText);
+        }
+    }
+
+    /**
+     * 公开：从已解析页面取出适合继续爬取的赛事相关链接（按相关度排序）。
+     */
+    public List<String> rankCompetitionLinks(ExtractedDocument document, int limit) {
+        if (document == null || document.getLinks() == null || document.getLinks().isEmpty()) {
+            return List.of();
+        }
+        int cap = Math.max(1, Math.min(limit, 50));
+        List<String> links = document.getLinks();
+        // links 已在 collect 时按分数大致排序；这里再截断
+        return links.stream().limit(cap).collect(Collectors.toList());
+    }
+
+    private int competitionLinkScore(String href, String label) {
+        String lowerHref = StrUtil.blankToDefault(href, "").toLowerCase(Locale.ROOT);
+        String lowerLabel = StrUtil.blankToDefault(label, "").toLowerCase(Locale.ROOT);
+        String combined = lowerHref + " " + lowerLabel;
+        if (combined.contains("login") || combined.contains("register") || combined.contains("signup")
+                || combined.contains("about") || combined.contains("contact") || combined.contains("privacy")
+                || combined.contains("javascript") || label.length() > 80) {
+            return 0;
+        }
+        int score = 0;
+        if (looksLikeCompetitionDetail(combined)) {
+            score += 5;
+        }
+        String[] strong = {"竞赛", "大赛", "比赛", "挑战赛", "hackathon", "contest", "competition",
+                "challenge", "报名", "赛项", "赛道", "国赛", "省赛", "蓝桥", "挑战杯", "建模", "电赛"};
+        for (String word : strong) {
+            if (combined.contains(word.toLowerCase(Locale.ROOT))) {
+                score += 3;
+            }
+        }
+        if (lowerHref.contains("/contest") || lowerHref.contains("/competition")
+                || lowerHref.contains("/contest/") || lowerHref.contains("dasai")
+                || lowerHref.contains("saikr") || lowerHref.contains("/news/")
+                || lowerHref.contains("/notice") || lowerHref.contains("article")) {
+            score += 2;
+        }
+        if (label.length() >= 4 && label.length() <= 40) {
+            score += 1;
+        }
+        return score;
+    }
+
+    private static final class ScoredLink {
+        private final String href;
+        private final String label;
+        private final int score;
+
+        private ScoredLink(String href, String label, int score) {
+            this.href = href;
+            this.label = label;
+            this.score = score;
         }
     }
 
@@ -338,7 +412,9 @@ public class DocumentContentService {
     private boolean looksLikeCompetitionDetail(String value) {
         return value.contains("competition") || value.contains("contest") || value.contains("challenge")
                 || value.contains("hackathon") || value.contains("竞赛") || value.contains("赛事")
-                || value.contains("比赛") || value.contains("挑战赛") || value.contains("报名");
+                || value.contains("比赛") || value.contains("挑战赛") || value.contains("报名")
+                || value.contains("大赛") || value.contains("国赛") || value.contains("省赛")
+                || value.contains("选拔") || value.contains("赛项") || value.contains("通知");
     }
 
     private String contentTypeForImage(String name) {

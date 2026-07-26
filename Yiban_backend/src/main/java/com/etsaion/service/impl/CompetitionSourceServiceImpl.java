@@ -53,8 +53,9 @@ public class CompetitionSourceServiceImpl extends ServiceImpl<CompetitionSourceM
         source.setSourceType(StrUtil.blankToDefault(dto.getSourceType(), "custom"));
         source.setCrawlFrequency(StrUtil.blankToDefault(dto.getCrawlFrequency(), "manual"));
         source.setLanguage(StrUtil.blankToDefault(dto.getLanguage(), "auto"));
-        source.setCrawlDepth(dto.getCrawlDepth() != null ? Math.max(dto.getCrawlDepth(), 0) : 0);
-        source.setMaxPages(dto.getMaxPages() != null ? Math.min(Math.max(dto.getMaxPages(), 1), 20) : 5);
+        // 默认跟一层详情链接，单源最多 10 页，避免列表站只抓首页
+        source.setCrawlDepth(dto.getCrawlDepth() != null ? Math.max(dto.getCrawlDepth(), 0) : 1);
+        source.setMaxPages(dto.getMaxPages() != null ? Math.min(Math.max(dto.getMaxPages(), 1), 20) : 10);
         source.setAllowPatterns(dto.getAllowPatterns());
         source.setDenyPatterns(dto.getDenyPatterns());
         source.setEnabled(Boolean.FALSE.equals(dto.getEnabled()) ? 0 : 1);

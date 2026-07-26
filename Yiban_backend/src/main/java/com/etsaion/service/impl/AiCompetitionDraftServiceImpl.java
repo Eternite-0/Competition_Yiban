@@ -176,6 +176,35 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
         throw new BusinessException(warning);
     }
 
+    @Override
+    @Transactional
+    public int ingestCrawledPage(Long adminId, String sourceType, String sourceUrl, String sourceTitle,
+                                 DocumentContentService.ExtractedDocument document) {
+        if (document == null) {
+            return 0;
+        }
+        String text = StrUtil.blankToDefault(document.getText(), "");
+        if (StrUtil.isBlank(text) && (document.getImageDataUrls() == null || document.getImageDataUrls().isEmpty())) {
+            return 0;
+        }
+        if (hasPendingDraftForUrl(sourceUrl)) {
+            return 0;
+        }
+        if (!looksLikeCompetitionPage(sourceTitle, text)) {
+            return 0;
+        }
+
+        try {
+            AiCompetitionParseResultVO result = parseDocument(adminId,
+                    StrUtil.blankToDefault(sourceType, "crawler"),
+                    sourceUrl, sourceTitle, document);
+            return result == null || result.getDrafts() == null ? 0 : result.getDrafts().size();
+        } catch (BusinessException e) {
+            // 采集链路单页失败不阻断其它页
+            return 0;
+        }
+    }
+
     private AiCompetitionParseResultVO parseDocument(Long adminId,
                                                      String sourceType,
                                                      String sourceUrl,
@@ -195,11 +224,37 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
 
         AiModelResponseVO response = callCompetitionParser(sourceUrl, sourceTitle, text, document);
         if (!response.isSuccess()) {
+            // 无 AI 或模型失败：规则兜底，保证来源采集/URL 导入仍能出草稿
+            AiCompetitionParseResultVO fallback = saveRuleBasedDrafts(
+                    task.getId(), adminId, sourceType, sourceUrl, sourceTitle, text, document);
+            if (!fallback.getDrafts().isEmpty()) {
+                aiTaskService.markSucceeded(task.getId(),
+                        "{\"mode\":\"rule_based\",\"error\":\""
+                                + StrUtil.maxLength(StrUtil.blankToDefault(response.getErrorMessage(), ""), 200)
+                                + "\"}",
+                        "{\"competitions\":" + fallback.getDrafts().size() + "}",
+                        BigDecimal.valueOf(0.45));
+                return fallback;
+            }
             aiTaskService.markFailed(task.getId(), response.getErrorMessage());
             throw new BusinessException(response.getErrorMessage());
         }
 
-        JsonNode root = aiJsonSchemaService.validateCompetitionParseResult(response.getContent());
+        JsonNode root;
+        try {
+            root = aiJsonSchemaService.validateCompetitionParseResult(response.getContent());
+        } catch (BusinessException e) {
+            AiCompetitionParseResultVO fallback = saveRuleBasedDrafts(
+                    task.getId(), adminId, sourceType, sourceUrl, sourceTitle, text, document);
+            if (!fallback.getDrafts().isEmpty()) {
+                aiTaskService.markSucceeded(task.getId(), response.getRawResponse(),
+                        "{\"mode\":\"rule_based_after_schema_fail\"}", BigDecimal.valueOf(0.45));
+                return fallback;
+            }
+            aiTaskService.markFailed(task.getId(), e.getMessage());
+            throw e;
+        }
+
         BigDecimal confidence = averageRootConfidence(root);
         aiTaskService.markSucceeded(task.getId(), response.getRawResponse(), root.toString(), confidence);
 
@@ -212,6 +267,13 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
 
         JsonNode competitions = root.path("competitions");
         if (!competitions.isArray() || competitions.size() == 0) {
+            AiCompetitionParseResultVO fallback = saveRuleBasedDrafts(
+                    task.getId(), adminId, sourceType, sourceUrl, sourceTitle, text, document);
+            if (!fallback.getDrafts().isEmpty()) {
+                result.getDrafts().addAll(fallback.getDrafts());
+                result.getWarnings().add("rule_based_fallback");
+                return result;
+            }
             result.getWarnings().add("no_competitions_detected");
             return result;
         }
@@ -226,6 +288,174 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
             result.getDrafts().add(toVO(draft));
         }
         return result;
+    }
+
+    private AiCompetitionParseResultVO saveRuleBasedDrafts(Long taskId,
+                                                           Long adminId,
+                                                           String sourceType,
+                                                           String sourceUrl,
+                                                           String sourceTitle,
+                                                           String text,
+                                                           DocumentContentService.ExtractedDocument document) {
+        AiCompetitionParseResultVO result = new AiCompetitionParseResultVO();
+        result.setTaskId(taskId);
+        result.setSourceType(sourceType);
+        result.setSourceUrl(sourceUrl);
+        result.setSourceTitle(sourceTitle);
+        if (document != null && document.getWarnings() != null) {
+            result.getWarnings().addAll(document.getWarnings());
+        }
+        result.getWarnings().add("rule_based_extract");
+
+        if (hasPendingDraftForUrl(sourceUrl) || !looksLikeCompetitionPage(sourceTitle, text)) {
+            result.getWarnings().add("no_competitions_detected");
+            return result;
+        }
+
+        AiCompetitionDraft draft = buildRuleBasedDraft(taskId, sourceType, sourceUrl, sourceTitle, text);
+        if (draft == null || StrUtil.isBlank(draft.getName())) {
+            result.getWarnings().add("no_competitions_detected");
+            return result;
+        }
+        if (document != null) {
+            document.getWarnings().forEach(warning -> addRisk(draft, warning));
+        }
+        addRisk(draft, "rule_based_extract");
+        applyAutoFillCorrections(draft, text);
+        applyQualityRisks(draft);
+        applyDuplicateRisk(draft);
+        this.save(draft);
+        result.getDrafts().add(toVO(draft));
+        return result;
+    }
+
+    private AiCompetitionDraft buildRuleBasedDraft(Long taskId, String sourceType, String sourceUrl,
+                                                   String sourceTitle, String text) {
+        String name = extractCompetitionName(sourceTitle, text);
+        if (StrUtil.isBlank(name) || name.length() < 4) {
+            return null;
+        }
+        // 过滤站点首页/导航类标题
+        if (isGenericSiteTitle(name)) {
+            String fromBody = extractCompetitionNameFromBody(text);
+            if (StrUtil.isNotBlank(fromBody)) {
+                name = fromBody;
+            } else {
+                return null;
+            }
+        }
+
+        AiCompetitionDraft draft = new AiCompetitionDraft();
+        draft.setAiTaskId(taskId);
+        draft.setSourceType(StrUtil.blankToDefault(sourceType, "crawler"));
+        draft.setSourceUrl(sourceUrl);
+        draft.setSourceTitle(StrUtil.blankToDefault(sourceTitle, name));
+        draft.setName(StrUtil.maxLength(name, 200));
+        draft.setLevel(normalizeCompetitionLevel(null, text + " " + name));
+        draft.setCategory(normalizeCompetitionCategory(null, text + " " + name));
+        draft.setOrganizer(extractOrganizer(text));
+        draft.setContent(buildContentFromSource(text));
+        draft.setMaxTeamSize(1);
+        draft.setTags("[]");
+        draft.setTracks("[]");
+        draft.setFieldConfidenceJson("{\"name\":0.55,\"content\":0.4,\"level\":0.35,\"category\":0.35}");
+        draft.setEvidenceJson("{\"name\":\"" + escapeJson(name) + "\"}");
+        draft.setStatus("pending_review");
+        draft.setCreateTime(LocalDateTime.now());
+        draft.setUpdateTime(LocalDateTime.now());
+        return draft;
+    }
+
+    private String extractCompetitionName(String sourceTitle, String text) {
+        String title = StrUtil.blankToDefault(sourceTitle, "").trim();
+        title = title.replaceAll("(?i)^来源标题[:：]\\s*", "");
+        title = title.replaceAll("\\s*[-_|｜].*$", "").trim();
+        if (StrUtil.isNotBlank(title) && !isGenericSiteTitle(title) && title.length() >= 4) {
+            return title;
+        }
+        return extractCompetitionNameFromBody(text);
+    }
+
+    private String extractCompetitionNameFromBody(String text) {
+        if (StrUtil.isBlank(text)) {
+            return null;
+        }
+        String[] lines = text.split("[\\r\\n]+");
+        Pattern named = Pattern.compile(
+                ".{0,40}?(?:全国|中国|国际|省级|大学生)?[^\\n]{0,40}?(?:竞赛|大赛|比赛|挑战赛|hackathon|contest)[^\\n]{0,30}",
+                Pattern.CASE_INSENSITIVE);
+        for (String line : lines) {
+            String cleaned = line.replaceAll("^来源标题[:：]\\s*", "")
+                    .replaceAll("^\\d+\\.\\s*", "")
+                    .trim();
+            if (cleaned.length() < 6 || cleaned.length() > 80) {
+                continue;
+            }
+            if (cleaned.startsWith("附件链接") || cleaned.startsWith("可能的详情页")
+                    || cleaned.startsWith("摘要") || cleaned.startsWith("发布时间")) {
+                continue;
+            }
+            Matcher matcher = named.matcher(cleaned);
+            if (matcher.find()) {
+                return matcher.group().trim();
+            }
+        }
+        return null;
+    }
+
+    private boolean isGenericSiteTitle(String name) {
+        String n = StrUtil.blankToDefault(name, "").trim();
+        if (n.isEmpty()) {
+            return true;
+        }
+        return n.matches(".*(首页|主页|网站|官网|登录|注册|关于我们|联系我们).*")
+                || n.equalsIgnoreCase("home")
+                || n.equalsIgnoreCase("index")
+                || n.length() < 4;
+    }
+
+    private String extractOrganizer(String text) {
+        if (StrUtil.isBlank(text)) {
+            return null;
+        }
+        Matcher matcher = Pattern.compile(
+                "(?:主办单位|主办方|主办|承办单位|承办)[:：\\s]*([^\\n。；;]{2,80})")
+                .matcher(text);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        return null;
+    }
+
+    private boolean looksLikeCompetitionPage(String sourceTitle, String text) {
+        String corpus = (StrUtil.blankToDefault(sourceTitle, "") + " " + StrUtil.blankToDefault(text, ""))
+                .toLowerCase(Locale.ROOT);
+        if (corpus.length() < 40) {
+            return false;
+        }
+        return containsAnyText(corpus,
+                "竞赛", "大赛", "比赛", "挑战赛", "赛事", "报名", "hackathon",
+                "competition", "contest", "challenge", "国赛", "省赛", "选拔赛");
+    }
+
+    private boolean hasPendingDraftForUrl(String sourceUrl) {
+        if (StrUtil.isBlank(sourceUrl) || baseMapper == null) {
+            return false;
+        }
+        try {
+            Long count = this.count(new LambdaQueryWrapper<AiCompetitionDraft>()
+                    .eq(AiCompetitionDraft::getSourceUrl, sourceUrl)
+                    .in(AiCompetitionDraft::getStatus, "pending_review", "confirmed"));
+            return count != null && count > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private String escapeJson(String value) {
+        return StrUtil.blankToDefault(value, "")
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"");
     }
 
     private AiModelResponseVO callCompetitionParser(String sourceUrl,

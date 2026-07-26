@@ -22,6 +22,14 @@ public interface AiCompetitionDraftService extends IService<AiCompetitionDraft> 
                                               Consumer<Map<String, String>> onProgress);
     AiCompetitionParseResultVO parseUrlBatchWithProgress(Long adminId, CompetitionDraftParseUrlDTO dto,
                                                          Consumer<Map<String, String>> onProgress);
+
+    /**
+     * 采集单页：优先 AI，失败或未配置 Key 时用规则抽取。
+     * 返回本页新生成的草稿条数（重复 URL 返回 0）。
+     */
+    int ingestCrawledPage(Long adminId, String sourceType, String sourceUrl, String sourceTitle,
+                          DocumentContentService.ExtractedDocument document);
+
     Page<AiCompetitionDraftVO> listDrafts(int current, int size, String status, String keyword);
     AiCompetitionDraftVO getDraftDetail(Long id);
     AiCompetitionDraftVO updateDraft(Long id, AiCompetitionDraftVO dto);

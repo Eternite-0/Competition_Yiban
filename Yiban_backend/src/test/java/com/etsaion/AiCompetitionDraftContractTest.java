@@ -30,6 +30,7 @@ class AiCompetitionDraftContractTest {
         assertTrue(hasMethod(draftService, "parseFileBatch"));
         assertTrue(hasMethod(draftService, "parseUrl"));
         assertTrue(hasMethod(draftService, "parseUrlBatch"));
+        assertTrue(hasMethod(draftService, "ingestCrawledPage"));
         assertTrue(hasMethod(draftService, "listDrafts"));
         assertTrue(hasMethod(draftService, "getDraftDetail"));
         assertTrue(hasMethod(draftService, "updateDraft"));
