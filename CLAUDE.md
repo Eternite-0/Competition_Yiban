@@ -63,6 +63,7 @@ npm run lint                    # ESLint 检查
 controller/     → REST 端点，18 个控制器
 service/        → 业务逻辑
 service/ai/     → AI 子系统 (AssistantToolRegistry, MimoModelClient, AiChatService)
+enums/          → 状态与审核动作的唯一定义，见下方"状态与权限的单一来源"
 mapper/         → MyBatis-Plus 数据访问
 entity/         → 数据库实体 (25 张表)
 dto/            → 请求 DTO
@@ -135,6 +136,23 @@ AI 助手采用 OpenAI Function Calling 架构，模型按需调用工具获取�
 - `@RequireRole("admin")` 注解控制端点权限，支持多角色 `"admin", "teacher"`
 - 响应拦截器自动处理 401 → 清除 token + logout
 
+### 状态与权限的单一来源
+
+这几处是刻意收口的，新增代码请走它们，不要另起一套：
+
+| 关注点 | 唯一实现 | 说明 |
+|---|---|---|
+| 状态字面量 | `enums/` 各枚举 | 不要再写中文状态字符串 |
+| 审核动作 | `AuditAction` | approve / reject / return 三态 |
+| 报名状态变更 | `RegistrationStatusManager` | 唯一写入方，含转换合法性校验 |
+| 谁能看某个学生 | `StudentAccessPolicy` | admin 不限；教师限本学院（含更名别名）；教师无学院则拒绝；学生只能看自己 |
+| 赛事写入 | `CompetitionPublishService` | 人工发布与 AI 草稿确认共用，校验在服务层执行 |
+| 参赛活跃度加权 | `ActivityScore` | 排名与导出共用，区别于 `comprehensive_score` 表的官方综测分 |
+| 审核入口 | `/api/{admin｜teacher}/workbench/tasks/{id}/action` | 覆盖 registration / submission / participation / award_proof |
+
+`/api/registration/audit` 与 `/api/submission/review` 已标记 `@Deprecated`，
+仍可用（前端在用），新调用方请走统一工作台。
+
 ### API 响应约定
 
 - 统一格式: `{ code: 200, message: "success", data: ... }`
@@ -154,13 +172,26 @@ mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot etsaion < db/00
 # migrate-*.sql 已全部合并进 schema，仅保留用于已有数据库升级
 ```
 
+已有数据库升级到当前版本还需执行（幂等）：
+
+```bash
+mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot etsaion < db/migrate-017-schema-version.sql
+mysql --protocol=TCP --host=127.0.0.1 --port=3307 -u root -proot etsaion < db/migrate-018-drop-draft-registration-status.sql
+```
+
+`schema_version` 表记录已执行的脚本；新增 `migrate-*.sql` 请在末尾追加一条
+`INSERT IGNORE INTO schema_version` 登记自己。
+
 ## 核心数据模型
 
 ### 报名状态 (Registration)
-`待完善` → `已提交` → `审核中` → `审核通过` / `退回补充` / `审核驳回`
+`已提交` → `审核中` → `审核通过` / `退回补充` / `审核驳回`
+
+> 旧的 `待完善` 已移除（migrate-018）：后端从未写入过它，只有建表默认值和前端分支。
 
 ### 成果状态 (Submission)
-`待审核` → `已审核` (通过/驳回/退回补充由 approved + reviewNote 区分)
+`待审核` → `已审核`，审核结论由 `approved` 承载：
+`true` 通过 / `false` 驳回 / `null` 退回补充（未定）
 
 ### 活动参与状态 (Participation)
 `submitted` → `in_review` → `approved` / `returned` / `rejected` / `cancelled`
@@ -223,7 +254,8 @@ targetType: `registration` / `submission` / `participation`
 - 前端状态管理用 Zustand (`src/store/useStore.ts`)
 - 赛事内容字段 `content` 存储 HTML，前端用 `dangerouslySetInnerHTML` + sanitize 渲染
 - 封面图 `coverUrl` 可能为 null 或不可访问，前端需 onError fallback
-- "退回补充" 是独立状态，不是 "审核驳回" 的子状态
+- "退回补充" 是独立状态，不是 "审核驳回" 的子状态；后端用 `AuditAction.RETURN` 表达，
+  不要再靠 `【退回补充】` 文本前缀判断（该前缀只在 `ReviewNotes` 里保留，用于兼容旧调用方）
 - 前端动效使用 Framer Motion，配置在 `src/lib/motion.ts`
 - Toast 通知使用 Sonner
 

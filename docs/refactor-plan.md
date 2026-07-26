@@ -1,7 +1,42 @@
 # 易赛通平台重构计划
 
 > 基于 2026-07-26 对全代码库的三路并行调研（报名流程 / 赛事域与 AI 草稿 / 教师端与整体架构）。
-> 所有文件行号以当日工作区为准（含未提交改动）。
+> 下方"现状诊断"记录的是重构前的状态，文件行号以当日工作区为准。
+
+## 执行状态（2026-07-26）
+
+| 阶段 | 状态 | 说明 |
+|---|---|---|
+| Phase 0 安全网 | ✅ 已完成 | `AuditFlowContractTest` + `schema_version` 表 |
+| Phase 1 状态收口 | ✅ 已完成 | `enums/` 包 + `RegistrationStatusManager` |
+| Phase 2 审核单轨化 | ✅ 已完成 | `WorkbenchControllerSupport` + 获奖证明并入待办 |
+| Phase 3 学生数据统一 | ✅ 已完成 | `StudentAccessPolicy` + `ActivityScore` + `/api/meta` |
+| Phase 4 前端 API 层 | ⏸ 搁置 | 前端由他人并行改造中，待解冻 |
+| Phase 5 页面组件收敛 | ⏸ 搁置 | 同上 |
+| Phase 6 AI 草稿隔离 | ✅ 已完成 | `CompetitionPublishService` + `DraftDedupService` + `CompetitionScheduleExtractor` |
+
+后端测试 134 → 181 个，全绿。所有后端改动对既有前端保持 HTTP 契约兼容：
+端点路径不变，旧参数（`approve` + `【退回补充】` 前缀意见）继续接受，同时新增显式 `action`。
+
+### 顺带修掉的线上缺陷
+
+1. **成果"退回补充"必定 500**。`SubmissionServiceImpl` 里
+   `? true : (isReturn ? null : false)` 混用 `boolean` 字面量与 `Boolean`，
+   按 JLS 15.25 整个条件表达式按 `boolean` 求值，退回分支的 `null` 被拆箱成 NPE。
+2. **孤儿待办反向未覆盖**。审核报名会把关联成果标为已审核却不结掉成果的待办，
+   点开抛"该成果已审核过"。原有的 `contains("已处理完毕")` 补丁只兜了另一个方向。
+3. **获奖证明待办点开即报错**。待办一直在创建，`handleTask` 却不认这个 targetType。
+4. **教师无学院时越权**。`GrowthController` 的 `teacher.getCollege() != null` 写法
+   把没填学院的教师放行到全校数据，与 `TeacherServiceImpl` 的拒绝语义相反。
+5. **注册页学院下拉永远走硬编码**。匿名调 admin-only 的 `/admin/colleges` 必然 401，
+   异常被 catch 吞掉。
+
+### 已知但未改动
+
+`SUBMISSION_DEADLINE_PATTERN` 同时匹配"提交作品截止"与"作品提交截止"，
+但随后的判断只放行前者，后一种写法被匹配到又丢弃。看着像笔误，
+但改动会影响已抓取通知的解析结果，应作为单独的决定。
+现状已记录在 `CompetitionScheduleExtractorTest`。
 
 ---
 
