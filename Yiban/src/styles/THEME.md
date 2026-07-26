@@ -24,16 +24,23 @@ macOS 走 SF 可变字体，`590` 即 Semibold。但 **Windows 中文回落到 M
 
 ## 字阶
 
+业务页**一律用语义类**，不要再写 `text-[13px]` 这类任意值（唯一例外：`material-symbols-outlined` 上的 `text-[Npx]` 是图标尺寸，保持原样）。
+
 | Token | 尺寸 | 用途 |
 |-------|------|------|
+| `text-caption-2` | 11px | 眉标、角标 |
 | `text-caption` | 12px | 辅助说明、时间戳 |
-| `text-footnote` | 13px | 次级标签 |
-| `text-body` | 15px | 正文（body 基准） |
+| `text-footnote` | 13px | 次级标签、列表副文本 |
+| `text-subhead` | 15px | 正文（body 基准） |
 | `text-callout` | 16px | 强调正文 |
 | `text-title-3` | 18px | 区块标题 |
 | `text-title-2` | 22px | 页面副标题 |
 | `text-title-1` | 28px | 页面标题 |
 | `text-hero` | 34px | 营销大标题 |
+
+⚠️ **不能定义 `--text-body`** —— 已有 `--color-body`，两者都生成 `.text-body`，颜色会赢，字号 token 变成死代码。15px 用 `text-subhead`。
+
+字阶类自带 `line-height`，需要覆盖时加 `leading-*`（优先级更高）。
 
 ## 圆角与高度
 

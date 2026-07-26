@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local screenshot / codemod scratch
+.shots/
+.shot-*.mjs
+.consolidate*.mjs
