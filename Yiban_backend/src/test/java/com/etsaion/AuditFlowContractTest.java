@@ -14,6 +14,7 @@ import com.etsaion.exception.BusinessException;
 import com.etsaion.mapper.RegistrationMapper;
 import com.etsaion.mapper.ReviewTaskMapper;
 import com.etsaion.mapper.SubmissionMapper;
+import com.etsaion.service.AwardProofService;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.GrowthRecordService;
 import com.etsaion.service.MessageService;
@@ -231,6 +232,26 @@ class AuditFlowContractTest {
     }
 
     @Test
+    void workbenchAwardProofTaskDelegatesToAwardProofService() {
+        // 获奖证明的待办一直在建，但工作台不认这个类型，点开就报"不支持的待办类型"，
+        // 逼得调用方另开一路数据源和一个专用端点
+        TaskFixture f = new TaskFixture("award_proof", 7L);
+        UserContext.set(new UserContext.UserInfo(2L, "teacher"));
+
+        f.handle("approve", "证书属实");
+
+        verify(f.awardProofService).reviewAwardProof(
+                eq(2L), eq("teacher"), eq(7L), eq(AuditAction.APPROVE), anyString());
+    }
+
+    @Test
+    void workbenchRefusesTaskTypesItCannotDispatch() {
+        TaskFixture f = new TaskFixture("something_else", 1L);
+
+        assertThrows(BusinessException.class, () -> f.handle("approve", "ok"));
+    }
+
+    @Test
     void workbenchRejectWithoutNoteIsRefused() {
         TaskFixture f = new TaskFixture("registration", 1L);
 
@@ -429,6 +450,7 @@ class AuditFlowContractTest {
         final ReviewTaskMapper reviewTaskMapper = mock(ReviewTaskMapper.class);
         final RegistrationService registrationService = mock(RegistrationService.class);
         final SubmissionService submissionService = mock(SubmissionService.class);
+        final AwardProofService awardProofService = mock(AwardProofService.class);
         final UserService userService = mock(UserService.class);
         final ReviewTask task = new ReviewTask();
 
@@ -445,6 +467,7 @@ class AuditFlowContractTest {
             ReflectionTestUtils.setField(service, "baseMapper", reviewTaskMapper);
             ReflectionTestUtils.setField(service, "registrationService", registrationService);
             ReflectionTestUtils.setField(service, "submissionService", submissionService);
+            ReflectionTestUtils.setField(service, "awardProofService", awardProofService);
             ReflectionTestUtils.setField(service, "userService", userService);
         }
 

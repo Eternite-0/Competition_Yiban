@@ -25,7 +25,8 @@ const ok = (data) => ({ status: 200, contentType: 'application/json', body: JSON
 const browser = await chromium.launch({ headless: true, channel: 'msedge', args: ['--no-sandbox'] });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
 
-await ctx.route('**/api/**', (route) => {
+// 必须锚定到根路径：'**/api/**' 会误伤 Vite 的 /src/api/client.ts 模块 URL
+await ctx.route('http://localhost:3000/api/**', (route) => {
   const url = route.request().url();
   if (url.includes('/auth/me')) return route.fulfill(ok(USER));
   if (url.includes('/competition/detail')) return route.fulfill(ok({ ...COMPS[0], content: '<h2>竞赛简介</h2><p>本竞赛旨在培养学生的数学建模能力与团队协作精神，面向全校本科生开放。</p><h3>参赛要求</h3><ul><li>全日制在校本科生</li><li>每队 3 人，需指定队长</li><li>需在截止前提交完整论文</li></ul>' }));

@@ -313,8 +313,9 @@ class ContractBaselineTest {
         assertEquals(LocalTime.MIDNIGHT, dto.getCompetitionStart().toLocalTime());
     }
 
+    /** 端点可能来自基类，看的是对外契约而非声明位置。 */
     private boolean hasMethod(Class<?> type, String name) {
-        return Arrays.stream(type.getDeclaredMethods())
+        return Arrays.stream(type.getMethods())
                 .map(Method::getName)
                 .anyMatch(name::equals);
     }

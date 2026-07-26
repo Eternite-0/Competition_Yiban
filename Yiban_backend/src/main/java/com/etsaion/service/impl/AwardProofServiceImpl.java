@@ -18,6 +18,10 @@ import com.etsaion.entity.Competition;
 import com.etsaion.entity.GrowthRecord;
 import com.etsaion.entity.Message;
 import com.etsaion.entity.User;
+import com.etsaion.enums.AuditAction;
+import com.etsaion.enums.AwardProofStatus;
+import com.etsaion.enums.ReviewNotes;
+import com.etsaion.enums.ReviewTargetType;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.mapper.AwardProofMapper;
 import com.etsaion.service.AwardProofService;
@@ -212,28 +216,34 @@ public class AwardProofServiceImpl extends ServiceImpl<AwardProofMapper, AwardPr
     @Override
     @Transactional
     public void reviewAwardProof(Long reviewerId, String role, AwardProofReviewDTO dto) {
-        AwardProof proof = requireProof(dto.getId());
-        if (!"pending".equalsIgnoreCase(proof.getStatus())) {
+        reviewAwardProof(reviewerId, role, dto.getId(),
+                AuditAction.from(dto.getAction()), ReviewNotes.strip(dto.getReviewNote()));
+    }
+
+    @Override
+    @Transactional
+    public void reviewAwardProof(Long reviewerId, String role, Long proofId, AuditAction action, String reviewNote) {
+        AwardProof proof = requireProof(proofId);
+        if (!AwardProofStatus.isPending(proof.getStatus())) {
             throw new BusinessException("该获奖证明已审核过，请勿重复处理");
         }
         if ("teacher".equalsIgnoreCase(role) && !canTeacherAccessProof(reviewerId, proof)) {
             throw new BusinessException(403, "无权审核其他学院学生的获奖证明");
         }
-
-        String action = normalizeAction(dto.getAction());
-        if (("rejected".equals(action) || "returned".equals(action)) && StrUtil.isBlank(dto.getReviewNote())) {
+        if (action.requiresNote() && StrUtil.isBlank(reviewNote)) {
             throw new BusinessException("驳回或退回补充时必须填写审核意见");
         }
 
-        proof.setStatus(action);
-        proof.setReviewNote(dto.getReviewNote());
+        proof.setStatus(AwardProofStatus.resultOf(action).getValue());
+        proof.setReviewNote(reviewNote);
         proof.setReviewerId(reviewerId);
         proof.setReviewTime(LocalDateTime.now());
         proof.setUpdateTime(LocalDateTime.now());
         this.updateById(proof);
-        reviewTaskService.resolveTarget("award_proof", proof.getId(), reviewerId, dto.getReviewNote());
+        reviewTaskService.resolveTarget(ReviewTargetType.AWARD_PROOF.getValue(),
+                proof.getId(), reviewerId, reviewNote);
 
-        notifyAndWriteGrowth(proof, reviewerId, action, dto.getReviewNote());
+        notifyAndWriteGrowth(proof, reviewerId, action, reviewNote);
     }
 
     private Map<String, Object> certificateSchemaHint() {
@@ -313,14 +323,27 @@ public class AwardProofServiceImpl extends ServiceImpl<AwardProofMapper, AwardPr
         }
     }
 
-    private void notifyAndWriteGrowth(AwardProof proof, Long reviewerId, String action, String note) {
+    private void notifyAndWriteGrowth(AwardProof proof, Long reviewerId, AuditAction action, String note) {
         List<Long> studentIds = linkedStudentIds(proof.getId());
-        String title = "approved".equals(action)
-                ? "您的获奖证明已审核通过"
-                : ("returned".equals(action) ? "您的获奖证明需要补充材料" : "您的获奖证明已被驳回");
+        String title;
+        String outcome;
+        switch (action) {
+            case APPROVE:
+                title = "您的获奖证明已审核通过";
+                outcome = "已审核通过。";
+                break;
+            case RETURN:
+                title = "您的获奖证明需要补充材料";
+                outcome = "已退回补充。";
+                break;
+            case REJECT:
+            default:
+                title = "您的获奖证明已被驳回";
+                outcome = "未通过审核。";
+                break;
+        }
         String content = "您提交的“" + proof.getCompetitionName() + " - " + proof.getAwardLevel() + "”获奖证明"
-                + ("approved".equals(action) ? "已审核通过。" : ("returned".equals(action) ? "已退回补充。" : "未通过审核。"))
-                + StrUtil.blankToDefault(note, "");
+                + outcome + StrUtil.blankToDefault(note, "");
 
         for (Long studentId : studentIds) {
             Message msg = new Message();
@@ -332,7 +355,7 @@ public class AwardProofServiceImpl extends ServiceImpl<AwardProofMapper, AwardPr
             msg.setCreateTime(LocalDateTime.now());
             messageService.save(msg);
 
-            if ("approved".equals(action) && proof.getCompetitionId() != null) {
+            if (action.isApprove() && proof.getCompetitionId() != null) {
                 long existing = growthRecordService.count(new LambdaQueryWrapper<GrowthRecord>()
                         .eq(GrowthRecord::getStudentId, studentId)
                         .eq(GrowthRecord::getCompetitionId, proof.getCompetitionId())
@@ -442,13 +465,6 @@ public class AwardProofServiceImpl extends ServiceImpl<AwardProofMapper, AwardPr
             vo.setStudents(new ArrayList<>());
         }
         return vo;
-    }
-
-    private String normalizeAction(String action) {
-        if ("approve".equalsIgnoreCase(action) || "approved".equalsIgnoreCase(action)) return "approved";
-        if ("reject".equalsIgnoreCase(action) || "rejected".equalsIgnoreCase(action)) return "rejected";
-        if ("return".equalsIgnoreCase(action) || "returned".equalsIgnoreCase(action)) return "returned";
-        throw new BusinessException("不支持的审核动作");
     }
 
     private String normalizeFileHash(String providedHash, String fileUrl) {

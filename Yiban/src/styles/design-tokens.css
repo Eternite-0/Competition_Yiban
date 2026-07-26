@@ -89,9 +89,12 @@
   --text-hero: 34px;
   --text-hero--line-height: 1.15;
 
-  /* 字重：SF 的 medium/semibold 落在 510 / 590，比 500/600 更贴近苹果观感 */
+  /* 字重：Apple 平台 SF 是可变字体，590 即 Semibold。
+     Windows 中文回落 Microsoft YaHei 只有 400/700 两档，按 CSS 字重匹配规则
+     >500 的值一律向上取整到 700 —— 所以「中等」必须写 500（回落为 400），
+     不能写 510，否则 Windows 上会整片变粗。 */
   --font-weight-normal: 400;
-  --font-weight-medium: 510;
+  --font-weight-medium: 500;
   --font-weight-semibold: 590;
   --font-weight-bold: 680;
 

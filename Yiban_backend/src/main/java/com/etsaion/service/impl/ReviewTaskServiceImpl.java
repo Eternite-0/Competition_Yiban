@@ -24,6 +24,7 @@ import com.etsaion.enums.SubmissionStatus;
 import com.etsaion.exception.BusinessException;
 import com.etsaion.mapper.ReviewTaskMapper;
 import com.etsaion.service.ActivityService;
+import com.etsaion.service.AwardProofService;
 import com.etsaion.service.GrowthRecordService;
 import com.etsaion.service.MessageService;
 import com.etsaion.service.ParticipationService;
@@ -79,6 +80,10 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
     @Autowired
     @Lazy
     private SubmissionService submissionService;
+
+    @Autowired
+    @Lazy
+    private AwardProofService awardProofService;
 
     @Autowired
     private CompetitionService competitionService;
@@ -246,6 +251,10 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
                 break;
             case PARTICIPATION:
                 resolveParticipation(task, reviewerId, action, note);
+                break;
+            case AWARD_PROOF:
+                awardProofService.reviewAwardProof(reviewerId, UserContext.getUserRole(),
+                        task.getTargetId(), action, note);
                 break;
             default:
                 throw new BusinessException("不支持的待办类型");

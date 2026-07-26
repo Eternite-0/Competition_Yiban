@@ -7,7 +7,8 @@ public enum ReviewTargetType {
 
     REGISTRATION("registration"),
     SUBMISSION("submission"),
-    PARTICIPATION("participation");
+    PARTICIPATION("participation"),
+    AWARD_PROOF("award_proof");
 
     private final String value;
 

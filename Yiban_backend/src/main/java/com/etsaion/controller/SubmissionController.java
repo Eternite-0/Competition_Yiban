@@ -134,7 +134,12 @@ public class SubmissionController {
         return Result.success(list);
     }
 
-    @Operation(summary = "教师/管理员审批成果接口")
+    /**
+     * @deprecated 审核请走统一工作台 {@code POST /api/{admin|teacher}/workbench/tasks/{id}/action}，
+     *             它是所有待办类型的单一入口。本端点保留给尚未迁移的调用方。
+     */
+    @Deprecated
+    @Operation(summary = "教师/管理员审批成果接口（已废弃，请用统一工作台）")
     @PostMapping("/review")
     @RequireRole({"admin", "teacher"})
     public Result<Void> reviewSubmission(
