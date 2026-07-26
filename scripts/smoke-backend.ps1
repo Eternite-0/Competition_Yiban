@@ -271,12 +271,16 @@ Write-Host "`n=== 15. 审核通过后的消息通知 ===" -ForegroundColor Cyan
 $msgs = Api 'GET' '/message/list' $stu1 $null
 # 该端点返回分页对象
 $records = if ($msgs.json.data.records) { $msgs.json.data.records } else { $msgs.json.data }
-$retMsg = $records | Where-Object { $_.title -like '*补充*' } | Select-Object -First 1
+$retMsgs = @($records | Where-Object { $_.title -like '*补充*' })
 $okMsg = $records | Where-Object { $_.title -like '*通过*' } | Select-Object -First 1
-Check '退回补充产生站内消息' ($null -ne $retMsg) '未找到退回类消息'
+Check '退回补充产生站内消息' ($retMsgs.Count -gt 0) '未找到退回类消息'
 Check '审核通过产生站内消息' ($null -ne $okMsg) '未找到通过类消息'
-Check '消息正文不含内部前缀' ($retMsg -and $retMsg.content -notlike '*【退回补充】*') "content=$($retMsg.content)"
-Check '消息正文保留教师原话' ($retMsg -and $retMsg.content -like '*指导老师*' -or $retMsg.content -like '*答辩*') "content=$($retMsg.content)"
+# 前缀是内部状态标记，任何一条通知都不该泄漏它
+$leaked = $retMsgs | Where-Object { $_.content -like '*【退回补充】*' }
+Check '消息正文不含内部前缀' ($null -eq $leaked) "leaked=$($leaked | Select-Object -First 1 | ForEach-Object { $_.content })"
+# 教师写的意见要原样出现在通知里（本轮退回用过"指导老师""答辩""旧格式调用"三种）
+$carried = $retMsgs | Where-Object { $_.content -like '*指导老师*' -or $_.content -like '*答辩*' -or $_.content -like '*旧格式调用*' }
+Check '消息正文保留教师原话' ($null -ne $carried) "无一条带上教师意见"
 
 Write-Host "`n========== 结果 ==========" -ForegroundColor Cyan
 Write-Host ("通过 " + $script:pass + " / 失败 " + $script:fail)
