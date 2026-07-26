@@ -96,12 +96,12 @@ export default function CollegeOverview() {
       {loading ? (
         <div className="empty-panel py-16">
           <span className="material-symbols-outlined animate-spin">progress_activity</span>
-          <p className="text-[13px]">加载中…</p>
+          <p className="text-footnote">加载中…</p>
         </div>
       ) : !data ? (
         <div className="empty-panel py-16">
           <span className="material-symbols-outlined">error_outline</span>
-          <p className="text-[13px]">暂无数据</p>
+          <p className="text-footnote">暂无数据</p>
         </div>
       ) : (
         <>
@@ -111,7 +111,7 @@ export default function CollegeOverview() {
                 <div className="stat-card-label">{m.label}</div>
                 <div className="stat-card-value">
                   {m.value}
-                  <span className="ml-1 text-[13px] font-normal text-placeholder">{m.suffix}</span>
+                  <span className="ml-1 text-footnote font-normal text-placeholder">{m.suffix}</span>
                 </div>
                 <div className="stat-card-hint">
                   <span className="material-symbols-outlined text-[14px] align-middle text-placeholder">{m.icon}</span>
@@ -127,12 +127,12 @@ export default function CollegeOverview() {
               </div>
               <div className="section-card-body">
                 {gradeEntries.length === 0 ? (
-                  <div className="empty-panel py-8"><p className="text-[13px]">暂无数据</p></div>
+                  <div className="empty-panel py-8"><p className="text-footnote">暂无数据</p></div>
                 ) : (
                   <div className="flex flex-col gap-3">
                     {gradeEntries.map(([grade, count]) => (
                       <div key={grade} className="flex items-center gap-3">
-                        <span className="w-16 shrink-0 text-[13px] font-medium text-ink">{grade}级</span>
+                        <span className="w-16 shrink-0 text-footnote font-medium text-ink">{grade}级</span>
                         <ProgressBar
                           value={(count / maxGradeCount) * 100}
                           size="sm"
@@ -141,7 +141,7 @@ export default function CollegeOverview() {
                           instant
                           className="min-w-0 flex-1"
                         />
-                        <span className="w-10 text-right text-[13px] font-medium tabular-nums text-ink">{String(count)}</span>
+                        <span className="w-10 text-right text-footnote font-medium tabular-nums text-ink">{String(count)}</span>
                       </div>
                     ))}
                   </div>
@@ -155,12 +155,12 @@ export default function CollegeOverview() {
               </div>
               <div className="section-card-body">
                 {categoryEntries.length === 0 ? (
-                  <div className="empty-panel py-8"><p className="text-[13px]">暂无数据</p></div>
+                  <div className="empty-panel py-8"><p className="text-footnote">暂无数据</p></div>
                 ) : (
                   <div className="flex flex-col gap-3">
                     {categoryEntries.map(([cat, count]) => (
                       <div key={cat} className="flex items-center gap-3">
-                        <span className="w-28 shrink-0 text-[13px] font-medium text-ink">{CATEGORY_LABELS[cat] ?? cat}</span>
+                        <span className="w-28 shrink-0 text-footnote font-medium text-ink">{CATEGORY_LABELS[cat] ?? cat}</span>
                         <ProgressBar
                           value={(count / maxCatCount) * 100}
                           size="sm"
@@ -169,7 +169,7 @@ export default function CollegeOverview() {
                           instant
                           className="min-w-0 flex-1"
                         />
-                        <span className="w-10 text-right text-[13px] font-medium tabular-nums text-ink">{String(count)}</span>
+                        <span className="w-10 text-right text-footnote font-medium tabular-nums text-ink">{String(count)}</span>
                       </div>
                     ))}
                   </div>
@@ -198,7 +198,7 @@ export default function CollegeOverview() {
                     {majorStats.length === 0 ? (
                       <tr>
                         <td colSpan={5}>
-                          <div className="empty-panel py-10"><p className="text-[13px]">暂无数据</p></div>
+                          <div className="empty-panel py-10"><p className="text-footnote">暂无数据</p></div>
                         </td>
                       </tr>
                     ) : (
@@ -218,7 +218,7 @@ export default function CollegeOverview() {
                                 instant
                                 className="min-w-0 flex-1"
                               />
-                              <span className="w-10 shrink-0 text-right text-[12px] tabular-nums text-body-muted">
+                              <span className="w-10 shrink-0 text-right text-caption tabular-nums text-body-muted">
                                 {Math.round((m.participationRate ?? 0) * 100)}%
                               </span>
                             </div>

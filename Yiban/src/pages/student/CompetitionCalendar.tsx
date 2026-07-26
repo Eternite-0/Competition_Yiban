@@ -169,7 +169,7 @@ export default function CompetitionCalendar() {
       />
 
       {error ? (
-        <p className="py-8 text-[13.5px] text-placeholder">
+        <p className="py-8 text-footnote text-placeholder">
           加载失败，
           <button type="button" className="text-primary hover:underline" onClick={load}>重试</button>
         </p>
@@ -178,7 +178,7 @@ export default function CompetitionCalendar() {
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1.4fr)_minmax(260px,0.75fr)]">
             <div className="calendar-flat" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
               <div className="calendar-flat-head">
-                <h2 className="text-[15px] font-semibold text-ink">
+                <h2 className="text-subhead font-semibold text-ink">
                   {year} 年 {month} 月
                 </h2>
                 <div className="flex items-center gap-1">
@@ -188,7 +188,7 @@ export default function CompetitionCalendar() {
                   <button
                     type="button"
                     onClick={() => { setYear(today.getFullYear()); setMonth(today.getMonth() + 1); setSelectedDay(null); }}
-                    className="btn-utility !h-8 !px-3 !text-[12px]"
+                    className="btn-utility !h-8 !px-3 !text-caption"
                   >
                     今天
                   </button>
@@ -212,17 +212,17 @@ export default function CompetitionCalendar() {
                       onClick={() => setSelectedDay(isSelected ? null : c.key)}
                       className={`calendar-flat-cell ${!c.current ? 'is-muted' : ''} ${isToday ? 'is-today' : ''} ${isSelected ? 'is-selected' : ''}`}
                     >
-                      <div className={`text-[13px] tabular-nums ${isToday ? 'font-semibold text-primary' : ''}`}>
+                      <div className={`text-footnote tabular-nums ${isToday ? 'font-semibold text-primary' : ''}`}>
                         {c.day}
                       </div>
                       <div className="mt-1 space-y-0.5">
                         {events.slice(0, 2).map((ev) => (
-                          <div key={ev.id} className="truncate text-[10px] leading-tight text-body-subtle">
+                          <div key={ev.id} className="truncate text-caption-2 leading-tight text-body-subtle">
                             {ev.name}
                           </div>
                         ))}
                         {events.length > 2 ? (
-                          <div className="text-[10px] text-placeholder">+{events.length - 2}</div>
+                          <div className="text-caption-2 text-placeholder">+{events.length - 2}</div>
                         ) : null}
                       </div>
                     </button>
@@ -240,9 +240,9 @@ export default function CompetitionCalendar() {
                 </h2>
               </div>
               {!selectedDay ? (
-                <p className="py-6 text-[13.5px] text-placeholder">点击左侧日期查看安排</p>
+                <p className="py-6 text-footnote text-placeholder">点击左侧日期查看安排</p>
               ) : selectedCompetitions.length === 0 ? (
-                <p className="py-6 text-[13.5px] text-placeholder">当日暂无赛事</p>
+                <p className="py-6 text-footnote text-placeholder">当日暂无赛事</p>
               ) : (
                 <div className="flat-list">
                   {selectedCompetitions.map((c) => {
@@ -251,8 +251,8 @@ export default function CompetitionCalendar() {
                       <div key={c.id} className="flat-row items-start">
                         <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${s.dot}`} />
                         <div className="min-w-0 flex-1">
-                          <div className="text-[14px] font-medium text-ink">{c.name}</div>
-                          <div className="mt-1 text-[12.5px] text-placeholder">
+                          <div className="text-subhead font-medium text-ink">{c.name}</div>
+                          <div className="mt-1 text-caption text-placeholder">
                             {displayLevel(c.level)} · {c.category || '未分类'}
                             {c.endTime ? ` · 截止 ${String(c.endTime).slice(0, 10)}` : ''}
                           </div>
@@ -271,9 +271,9 @@ export default function CompetitionCalendar() {
               <span className="page-section-extra">{monthComps.length} 项</span>
             </div>
             {loading ? (
-              <p className="py-6 text-[13.5px] text-placeholder">加载中…</p>
+              <p className="py-6 text-footnote text-placeholder">加载中…</p>
             ) : monthComps.length === 0 ? (
-              <p className="py-6 text-[13.5px] text-placeholder">本月暂无赛事</p>
+              <p className="py-6 text-footnote text-placeholder">本月暂无赛事</p>
             ) : (
               <div className="flat-list">
                 {monthComps.map((c) => {
@@ -281,8 +281,8 @@ export default function CompetitionCalendar() {
                   return (
                     <div key={c.id} className="flat-row">
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-[14px] font-medium text-ink">{c.name}</div>
-                        <div className="mt-0.5 text-[12.5px] text-placeholder">
+                        <div className="truncate text-subhead font-medium text-ink">{c.name}</div>
+                        <div className="mt-0.5 text-caption text-placeholder">
                           {displayLevel(c.level)}
                           {end ? ` · ${end.getMonth() + 1}/${end.getDate()} 截止` : ''}
                         </div>

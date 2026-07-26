@@ -122,7 +122,7 @@ function RadarChart({ data }: { data: RadarDim[] }) {
         const angle = angleStep * i - Math.PI / 2;
         const labelR = maxRadius + 18;
         return (
-          <text key={i} x={cx + labelR * Math.cos(angle)} y={cy + labelR * Math.sin(angle)} textAnchor="middle" dominantBaseline="middle" className="text-[10px] font-medium" fill="var(--color-ink)">
+          <text key={i} x={cx + labelR * Math.cos(angle)} y={cy + labelR * Math.sin(angle)} textAnchor="middle" dominantBaseline="middle" className="text-caption-2 font-medium" fill="var(--color-ink)">
             {d.dimension}
           </text>
         );
@@ -190,7 +190,7 @@ export default function StudentDetail() {
         <PageHero eyebrow="Student" title="学生详情" description="请从学生列表中选择一名学生。" />
         <div className="empty-panel py-16">
           <span className="material-symbols-outlined">person_search</span>
-          <p className="text-[13px]">未指定学生</p>
+          <p className="text-footnote">未指定学生</p>
           <button type="button" onClick={() => navigate(`${basePath}/student-competitions`)} className="btn-primary mt-2">返回学生看板</button>
         </div>
       </div>
@@ -245,21 +245,21 @@ export default function StudentDetail() {
       ) : !data ? (
         <div className="empty-panel py-16">
           <span className="material-symbols-outlined">error_outline</span>
-          <p className="text-[13px]">未找到学生数据</p>
+          <p className="text-footnote">未找到学生数据</p>
         </div>
       ) : (
         <>
           <section className="section-card">
             <div className="section-card-body flex items-center gap-4">
-              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-md bg-surface-tile-1 text-[20px] font-medium text-body-muted">
+              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-md bg-surface-tile-1 text-title-3 font-medium text-body-muted">
                 {data.student.realName[0]}
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-[15px] font-medium text-ink">{data.student.realName}</h2>
-                <p className="mt-1 text-[13px] text-body-muted">
+                <h2 className="text-subhead font-medium text-ink">{data.student.realName}</h2>
+                <p className="mt-1 text-footnote text-body-muted">
                   学号 {data.student.username} · {data.student.grade}级 · {data.student.major} · {data.student.className}
                 </p>
-                <p className="mt-0.5 text-[12px] text-placeholder">{data.student.college}</p>
+                <p className="mt-0.5 text-caption text-placeholder">{data.student.college}</p>
               </div>
             </div>
           </section>
@@ -275,7 +275,7 @@ export default function StudentDetail() {
                 <div className="stat-card-label">{m.label}</div>
                 <div className="stat-card-value">
                   {m.value}
-                  {m.suffix ? <span className="ml-1 text-[13px] font-normal text-placeholder">{m.suffix}</span> : null}
+                  {m.suffix ? <span className="ml-1 text-footnote font-normal text-placeholder">{m.suffix}</span> : null}
                 </div>
                 {m.hint ? <div className="stat-card-hint truncate">{m.hint}</div> : null}
               </button>
@@ -295,7 +295,7 @@ export default function StudentDetail() {
                 ) : (
                   <div className="empty-panel py-10">
                     <span className="material-symbols-outlined">radar</span>
-                    <p className="text-[13px]">暂无能力数据</p>
+                    <p className="text-footnote">暂无能力数据</p>
                   </div>
                 )}
               </div>
@@ -310,7 +310,7 @@ export default function StudentDetail() {
                   <div className="flex flex-col gap-3">
                     {radarDims.map((d) => (
                       <div key={d.dimension}>
-                        <div className="mb-1 flex justify-between text-[12px]">
+                        <div className="mb-1 flex justify-between text-caption">
                           <span className="text-body-muted">{d.dimension}</span>
                           <span className="font-medium tabular-nums text-ink">{d.score} / {d.maxScore}</span>
                         </div>
@@ -325,7 +325,7 @@ export default function StudentDetail() {
                     ))}
                   </div>
                 ) : (
-                  <div className="empty-panel py-10"><p className="text-[13px]">暂无数据</p></div>
+                  <div className="empty-panel py-10"><p className="text-footnote">暂无数据</p></div>
                 )}
               </div>
             </section>
@@ -334,7 +334,7 @@ export default function StudentDetail() {
           <section className="section-card">
             <div className="section-card-header">
               <h2 className="section-card-title">参赛记录</h2>
-              <span className="text-[12px] text-placeholder">共 {data.competitions?.length ?? 0} 条</span>
+              <span className="text-caption text-placeholder">共 {data.competitions?.length ?? 0} 条</span>
             </div>
             <div className="section-card-body tight">
               <div className="data-table-wrap !border-0 !rounded-none">
@@ -352,7 +352,7 @@ export default function StudentDetail() {
                     {(data.competitions ?? []).length === 0 ? (
                       <tr>
                         <td colSpan={5}>
-                          <div className="empty-panel py-10"><p className="text-[13px]">暂无参赛记录</p></div>
+                          <div className="empty-panel py-10"><p className="text-footnote">暂无参赛记录</p></div>
                         </td>
                       </tr>
                     ) : (
@@ -360,10 +360,10 @@ export default function StudentDetail() {
                         <tr key={c.registrationId}>
                           <td>
                             <div className="max-w-[280px] truncate font-medium text-ink">{c.competitionName}</div>
-                            <div className="text-[11px] text-placeholder">{c.competitionCategory}类</div>
+                            <div className="text-caption-2 text-placeholder">{c.competitionCategory}类</div>
                           </td>
                           <td>
-                            <span className={`chip text-[11px] ${LEVEL_COLORS[c.competitionLevel] ?? ''}`}>{c.competitionLevel}</span>
+                            <span className={`chip text-caption-2 ${LEVEL_COLORS[c.competitionLevel] ?? ''}`}>{c.competitionLevel}</span>
                           </td>
                           <td className="text-body-muted">{c.teamName || '个人'}</td>
                           <td className="tabular-nums text-body-muted">

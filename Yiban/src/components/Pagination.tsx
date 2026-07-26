@@ -48,7 +48,7 @@ export default function Pagination({ current, total, pageSize, onChange }: Pagin
               key={p}
               type="button"
               onClick={() => onChange(p)}
-              className={`grid h-8 min-w-8 place-items-center rounded-md px-2 text-[13px] tabular-nums transition-colors ${
+              className={`grid h-8 min-w-8 place-items-center rounded-md px-2 text-footnote tabular-nums transition-colors ${
                 p === current
                   ? 'bg-primary font-medium text-on-primary'
                   : 'text-body-muted hover:bg-primary-soft hover:text-primary'
@@ -60,7 +60,7 @@ export default function Pagination({ current, total, pageSize, onChange }: Pagin
         )}
       </span>
 
-      <span className="px-2 text-[13px] tabular-nums text-body-muted sm:hidden">
+      <span className="px-2 text-footnote tabular-nums text-body-muted sm:hidden">
         {current} / {totalPages}
       </span>
 

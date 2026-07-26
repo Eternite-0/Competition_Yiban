@@ -26,6 +26,7 @@ import com.etsaion.service.MessageService;
 import com.etsaion.service.RegistrationService;
 import com.etsaion.service.RegistrationStatusManager;
 import com.etsaion.service.ReviewTaskService;
+import com.etsaion.service.StudentAccessPolicy;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.SubmissionStudentService;
 import com.etsaion.service.UserService;
@@ -76,6 +77,9 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
 
     @Autowired
     private RegistrationStatusManager registrationStatusManager;
+
+    @Autowired
+    private StudentAccessPolicy studentAccessPolicy;
 
     @Override
     @Transactional
@@ -293,20 +297,13 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
         LambdaQueryWrapper<Submission> wrapper = new LambdaQueryWrapper<>();
 
         // 教师只能看到本学院学生的成果
-        String teacherCollege = getTeacherCollege();
-        if (teacherCollege != null) {
-            java.util.List<Long> collegeStudentIds = userService.list(
-                    new LambdaQueryWrapper<User>()
-                            .eq(User::getRole, "student")
-                            .eq(User::getCollege, teacherCollege)
-                            .select(User::getId))
-                    .stream().map(User::getId).collect(Collectors.toList());
+        List<Long> collegeStudentIds = studentAccessPolicy.scopedStudentIds();
+        if (collegeStudentIds != null) {
             if (collegeStudentIds.isEmpty()) {
                 Page<SubmissionVO> emptyPage = new Page<>(current, size, 0);
-                emptyPage.setRecords(new java.util.ArrayList<>());
+                emptyPage.setRecords(new ArrayList<>());
                 return emptyPage;
             }
-            // 按 submitterId 过滤
             wrapper.in(Submission::getSubmitterId, collegeStudentIds);
         }
 
@@ -435,27 +432,11 @@ public class SubmissionServiceImpl extends ServiceImpl<SubmissionMapper, Submiss
     }
 
     /**
-     * 获取当前教师的学院
-     */
-    private String getTeacherCollege() {
-        String role = com.etsaion.utils.UserContext.getUserRole();
-        if ("admin".equalsIgnoreCase(role)) return null;
-        if (!"teacher".equalsIgnoreCase(role)) return null;
-        Long userId = com.etsaion.utils.UserContext.getUserId();
-        if (userId == null) return null;
-        User teacher = userService.getById(userId);
-        return teacher != null ? teacher.getCollege() : null;
-    }
-
-    /**
      * 校验教师是否有权操作指定学生
      */
     private void validateTeacherCollegeAccess(Long studentId) {
-        String teacherCollege = getTeacherCollege();
-        if (teacherCollege == null) return; // admin 不限制
-        if (studentId == null) return;
-        User student = userService.getById(studentId);
-        if (student == null || !teacherCollege.equals(student.getCollege())) {
+        if (studentId == null || !studentAccessPolicy.isCollegeScoped()) return;
+        if (!studentAccessPolicy.canAccess(userService.getById(studentId))) {
             throw new BusinessException(403, "无权审核其他学院学生的成果");
         }
     }

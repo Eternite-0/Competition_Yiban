@@ -37,11 +37,11 @@ export default function BrandLogo({
       />
       {withWordmark ? (
         <div className="min-w-0 flex flex-col leading-tight">
-          <span className={`brand-wordmark truncate text-[16px] font-semibold tracking-tight text-ink ${wordmarkClassName}`.trim()}>
+          <span className={`brand-wordmark truncate text-callout font-semibold tracking-tight text-ink ${wordmarkClassName}`.trim()}>
             易赛通
           </span>
           {subtitle ? (
-            <span className="truncate text-[11px] text-placeholder">{subtitle}</span>
+            <span className="truncate text-caption-2 text-placeholder">{subtitle}</span>
           ) : null}
         </div>
       ) : null}

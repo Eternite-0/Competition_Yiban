@@ -81,7 +81,7 @@ function CompareRadarChart({ students }: { students: StudentData[] }) {
         const angle = angleStep * i - Math.PI / 2;
         const labelR = maxRadius + 18;
         return (
-          <text key={i} x={cx + labelR * Math.cos(angle)} y={cy + labelR * Math.sin(angle)} textAnchor="middle" dominantBaseline="middle" className="text-[10px] font-medium" fill="var(--color-ink)">
+          <text key={i} x={cx + labelR * Math.cos(angle)} y={cy + labelR * Math.sin(angle)} textAnchor="middle" dominantBaseline="middle" className="text-caption-2 font-medium" fill="var(--color-ink)">
             {f.label}
           </text>
         );
@@ -136,7 +136,7 @@ export default function StudentCompare() {
         <PageHero eyebrow="Compare" title="学生对比" description="请从学生列表中选择 2-4 名学生进行对比。" />
         <div className="empty-panel py-16">
           <span className="material-symbols-outlined">compare</span>
-          <p className="text-[13px]">未选择学生</p>
+          <p className="text-footnote">未选择学生</p>
           <button type="button" onClick={() => navigate(`${basePath}/student-growth`)} className="btn-primary mt-2">返回学情分析</button>
         </div>
       </div>
@@ -160,7 +160,7 @@ export default function StudentCompare() {
       {loading ? (
         <div className="empty-panel py-16">
           <span className="material-symbols-outlined animate-spin">progress_activity</span>
-          <p className="text-[13px]">加载中…</p>
+          <p className="text-footnote">加载中…</p>
         </div>
       ) : (
         <>
@@ -168,8 +168,8 @@ export default function StudentCompare() {
             {students.map((s, i) => (
               <div key={s.studentId} className="flex items-center gap-2">
                 <div className="h-2.5 w-2.5 rounded-md" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                <span className="text-[13px] font-medium text-ink">{s.realName}</span>
-                <span className="text-[12px] text-placeholder">{s.className}</span>
+                <span className="text-footnote font-medium text-ink">{s.realName}</span>
+                <span className="text-caption text-placeholder">{s.className}</span>
               </div>
             ))}
           </div>
@@ -192,11 +192,11 @@ export default function StudentCompare() {
               </div>
               <div className="section-card-body flex flex-col gap-5">
                 <div>
-                  <p className="mb-2 text-[12px] font-medium text-body-muted">参赛次数</p>
+                  <p className="mb-2 text-caption font-medium text-body-muted">参赛次数</p>
                   <div className="flex flex-col gap-2">
                     {students.map((s) => (
                       <div key={s.studentId} className="flex items-center gap-3">
-                        <span className="w-16 shrink-0 truncate text-[12px] text-ink">{s.realName}</span>
+                        <span className="w-16 shrink-0 truncate text-caption text-ink">{s.realName}</span>
                         <ProgressBar
                           value={Math.min((s.totalCompetitions / Math.max(...students.map((st) => st.totalCompetitions), 1)) * 100, 100)}
                           size="sm"
@@ -205,17 +205,17 @@ export default function StudentCompare() {
                           instant
                           className="min-w-0 flex-1"
                         />
-                        <span className="w-8 text-right text-[12px] font-medium tabular-nums text-ink">{s.totalCompetitions}</span>
+                        <span className="w-8 text-right text-caption font-medium tabular-nums text-ink">{s.totalCompetitions}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <p className="mb-2 text-[12px] font-medium text-body-muted">获奖数</p>
+                  <p className="mb-2 text-caption font-medium text-body-muted">获奖数</p>
                   <div className="flex flex-col gap-2">
                     {students.map((s) => (
                       <div key={s.studentId} className="flex items-center gap-3">
-                        <span className="w-16 shrink-0 truncate text-[12px] text-ink">{s.realName}</span>
+                        <span className="w-16 shrink-0 truncate text-caption text-ink">{s.realName}</span>
                         <ProgressBar
                           value={Math.min((s.awards / Math.max(...students.map((st) => st.awards), 1)) * 100, 100)}
                           size="sm"
@@ -224,20 +224,20 @@ export default function StudentCompare() {
                           instant
                           className="min-w-0 flex-1"
                         />
-                        <span className="w-8 text-right text-[12px] font-medium tabular-nums text-ink">{s.awards}</span>
+                        <span className="w-8 text-right text-caption font-medium tabular-nums text-ink">{s.awards}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 {RADAR_FIELDS.map((f) => (
                   <div key={f.key}>
-                    <p className="mb-2 text-[12px] font-medium text-body-muted">{f.label}</p>
+                    <p className="mb-2 text-caption font-medium text-body-muted">{f.label}</p>
                     <div className="flex flex-col gap-2">
                       {students.map((s) => {
                         const dim = s.radar.find((d) => d.dimension === f.label);
                         return (
                           <div key={s.studentId} className="flex items-center gap-3">
-                            <span className="w-16 shrink-0 truncate text-[12px] text-ink">{s.realName}</span>
+                            <span className="w-16 shrink-0 truncate text-caption text-ink">{s.realName}</span>
                             <ProgressBar
                               value={dim ? dim.score : 0}
                               size="sm"
@@ -246,7 +246,7 @@ export default function StudentCompare() {
                               instant
                               className="min-w-0 flex-1"
                             />
-                            <span className="w-8 text-right text-[12px] font-medium tabular-nums text-ink">{dim?.score ?? 0}</span>
+                            <span className="w-8 text-right text-caption font-medium tabular-nums text-ink">{dim?.score ?? 0}</span>
                           </div>
                         );
                       })}

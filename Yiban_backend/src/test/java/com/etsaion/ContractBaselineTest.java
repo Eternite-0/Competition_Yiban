@@ -15,15 +15,18 @@ import com.etsaion.entity.Registration;
 import com.etsaion.entity.ReviewTask;
 import com.etsaion.entity.Submission;
 import com.etsaion.entity.User;
+import com.etsaion.exception.BusinessException;
 import com.etsaion.interceptor.RequireRole;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.GrowthRecordService;
 import com.etsaion.service.RegistrationService;
 import com.etsaion.service.ReviewTaskService;
+import com.etsaion.service.StudentAccessPolicy;
 import com.etsaion.service.SubmissionStudentService;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.impl.GrowthRecordServiceImpl;
 import com.etsaion.service.impl.RegistrationServiceImpl;
+import com.etsaion.service.impl.StudentAccessPolicyImpl;
 import com.etsaion.service.impl.TeacherServiceImpl;
 import com.etsaion.service.UserService;
 import com.etsaion.utils.UserContext;
@@ -43,6 +46,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -94,12 +98,66 @@ class ContractBaselineTest {
     @Test
     void studentCannotReadAnotherStudentsGrowth() {
         GrowthController controller = new GrowthController();
+        UserService userService = mock(UserService.class);
+        User otherStudent = new User();
+        otherStudent.setId(2L);
+        when(userService.getById(2L)).thenReturn(otherStudent);
+
         ReflectionTestUtils.setField(controller, "growthRecordService", mock(GrowthRecordService.class));
+        ReflectionTestUtils.setField(controller, "userService", userService);
+        ReflectionTestUtils.setField(controller, "studentAccessPolicy", accessPolicy(userService));
         UserContext.set(new UserContext.UserInfo(1L, "student"));
 
-        Result<?> result = controller.getRadarData(2L);
+        // 越权由 BusinessException 表达，全局处理器会转成同样的 403 响应
+        BusinessException ex = assertThrows(BusinessException.class, () -> controller.getRadarData(2L));
 
-        assertEquals(403, result.getCode());
+        assertEquals(403, ex.getCode());
+    }
+
+    @Test
+    void teacherWithoutACollegeIsDeniedStudentDataRatherThanSeeingEveryone() {
+        User teacher = new User();
+        teacher.setId(2L);
+        teacher.setRole("teacher");
+        teacher.setCollege(null);
+
+        User student = new User();
+        student.setId(4L);
+        student.setCollege("计算机学院");
+
+        UserService userService = mock(UserService.class);
+        when(userService.getById(2L)).thenReturn(teacher);
+        when(userService.getById(4L)).thenReturn(student);
+        UserContext.set(new UserContext.UserInfo(2L, "teacher"));
+
+        StudentAccessPolicy policy = accessPolicy(userService);
+
+        assertFalse(policy.canAccess(student));
+        assertThrows(BusinessException.class, policy::requireScopedCollege);
+    }
+
+    @Test
+    void teacherSeesStudentsFiledUnderTheCollegesFormerName() {
+        User teacher = new User();
+        teacher.setId(2L);
+        teacher.setRole("teacher");
+        teacher.setCollege("计算机与人工智能学院");
+
+        User student = new User();
+        student.setId(4L);
+        student.setCollege("计算机学院");
+
+        UserService userService = mock(UserService.class);
+        when(userService.getById(2L)).thenReturn(teacher);
+        UserContext.set(new UserContext.UserInfo(2L, "teacher"));
+
+        assertTrue(accessPolicy(userService).canAccess(student));
+    }
+
+    private StudentAccessPolicy accessPolicy(UserService userService) {
+        StudentAccessPolicyImpl policy = new StudentAccessPolicyImpl();
+        ReflectionTestUtils.setField(policy, "userService", userService);
+        return policy;
     }
 
     @Test
@@ -260,6 +318,7 @@ class ContractBaselineTest {
         ReflectionTestUtils.setField(service, "userService", userService);
         ReflectionTestUtils.setField(service, "registrationService", registrationService);
         ReflectionTestUtils.setField(service, "submissionService", submissionService);
+        ReflectionTestUtils.setField(service, "studentAccessPolicy", accessPolicy(userService));
 
         assertEquals(17.0, service.getComprehensiveData("2025-2026", null).get(0).getComprehensiveScore());
     }
@@ -278,6 +337,7 @@ class ContractBaselineTest {
         when(userService.getById(2L)).thenReturn(teacher);
 
         ReflectionTestUtils.setField(service, "userService", userService);
+        ReflectionTestUtils.setField(service, "studentAccessPolicy", accessPolicy(userService));
 
         assertEquals(List.of("计算机学院"), service.listColleges());
     }

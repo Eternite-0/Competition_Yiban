@@ -30,6 +30,7 @@ import com.etsaion.service.MessageService;
 import com.etsaion.service.ParticipationService;
 import com.etsaion.service.RegistrationService;
 import com.etsaion.service.ReviewTaskService;
+import com.etsaion.service.StudentAccessPolicy;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.UserService;
 import com.etsaion.utils.UserContext;
@@ -86,6 +87,9 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
     private AwardProofService awardProofService;
 
     @Autowired
+    private StudentAccessPolicy studentAccessPolicy;
+
+    @Autowired
     private CompetitionService competitionService;
 
     @Autowired
@@ -134,13 +138,8 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
                 .like(StrUtil.isNotBlank(keyword), ReviewTask::getTitle, keyword);
 
         // Apply college filter at query level for teachers
-        String scopedCollege = currentReviewerCollege();
-        if (StrUtil.isNotBlank(scopedCollege)) {
-            List<User> collegeStudents = userService.list(new LambdaQueryWrapper<User>()
-                    .eq(User::getRole, "student")
-                    .eq(User::getCollege, scopedCollege)
-                    .select(User::getId));
-            List<Long> collegeStudentIds = collegeStudents.stream().map(User::getId).collect(Collectors.toList());
+        List<Long> collegeStudentIds = studentAccessPolicy.scopedStudentIds();
+        if (collegeStudentIds != null) {
             if (collegeStudentIds.isEmpty()) {
                 Page<ReviewTaskVO> emptyPage = new Page<>(current, size, 0);
                 emptyPage.setRecords(new ArrayList<>());
@@ -157,44 +156,23 @@ public class ReviewTaskServiceImpl extends ServiceImpl<ReviewTaskMapper, ReviewT
         return voPage;
     }
 
-    private String currentReviewerCollege() {
-        String role = UserContext.getUserRole();
-        if (!"teacher".equalsIgnoreCase(role)) {
-            return null;
-        }
-        Long userId = UserContext.getUserId();
-        if (userId == null) {
-            return null;
-        }
-        User reviewer = userService.getById(userId);
-        return reviewer != null ? reviewer.getCollege() : null;
-    }
-
     @Override
     public Map<String, Object> getStats() {
         Map<String, Object> stats = new HashMap<>();
 
-        String college = currentReviewerCollege();
-        java.util.List<Long> collegeStudentIds = null;
-        if (StrUtil.isNotBlank(college)) {
-            collegeStudentIds = userService.list(new LambdaQueryWrapper<User>()
-                    .eq(User::getRole, "student")
-                    .eq(User::getCollege, college)
-                    .select(User::getId))
-                    .stream().map(User::getId).collect(Collectors.toList());
-            if (collegeStudentIds.isEmpty()) {
-                for (ReviewTaskStatus status : ReviewTaskStatus.values()) {
-                    stats.put(status.getValue(), 0L);
-                }
-                stats.put("competition", 0L);
-                stats.put("volunteer", 0L);
-                stats.put("culture_sports", 0L);
-                stats.put("overdue", 0L);
-                return stats;
+        List<Long> collegeStudentIds = studentAccessPolicy.scopedStudentIds();
+        if (collegeStudentIds != null && collegeStudentIds.isEmpty()) {
+            for (ReviewTaskStatus status : ReviewTaskStatus.values()) {
+                stats.put(status.getValue(), 0L);
             }
+            stats.put("competition", 0L);
+            stats.put("volunteer", 0L);
+            stats.put("culture_sports", 0L);
+            stats.put("overdue", 0L);
+            return stats;
         }
 
-        final java.util.List<Long> ids = collegeStudentIds;
+        final List<Long> ids = collegeStudentIds;
 
         for (ReviewTaskStatus status : ReviewTaskStatus.values()) {
             stats.put(status.getValue(), this.count(buildStatsWrapper(ids, status.getValue(), null, null)));

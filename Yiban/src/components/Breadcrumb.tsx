@@ -45,7 +45,7 @@ export default function Breadcrumb() {
   if (breadcrumbs.length <= 1) return null;
 
   return (
-    <nav className="mb-4 flex items-center gap-1.5 text-[12.5px] text-placeholder" aria-label="面包屑">
+    <nav className="mb-4 flex items-center gap-1.5 text-caption text-placeholder" aria-label="面包屑">
       {breadcrumbs.map((item, index) => (
         <span key={`${item.path}-${index}`} className="flex items-center gap-1.5">
           {index > 0 && (

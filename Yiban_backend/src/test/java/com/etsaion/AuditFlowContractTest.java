@@ -25,8 +25,10 @@ import com.etsaion.service.SubmissionService;
 import com.etsaion.service.SubmissionStudentService;
 import com.etsaion.service.UserService;
 import com.etsaion.service.RegistrationStatusManager;
+import com.etsaion.service.StudentAccessPolicy;
 import com.etsaion.service.impl.RegistrationServiceImpl;
 import com.etsaion.service.impl.RegistrationStatusManagerImpl;
+import com.etsaion.service.impl.StudentAccessPolicyImpl;
 import com.etsaion.service.impl.ReviewTaskServiceImpl;
 import com.etsaion.service.impl.SubmissionServiceImpl;
 import com.etsaion.utils.UserContext;
@@ -311,6 +313,13 @@ class AuditFlowContractTest {
         return manager;
     }
 
+    /** 这些用例不带用户上下文，等同于管理员视角，不限范围。 */
+    private static StudentAccessPolicy unrestrictedAccess() {
+        StudentAccessPolicyImpl policy = new StudentAccessPolicyImpl();
+        ReflectionTestUtils.setField(policy, "userService", mock(UserService.class));
+        return policy;
+    }
+
     /**
      * 报名审核夹具：一条待审报名 + 全部协作者的 mock。
      * approve/reject/returnForSupplement 三个方法封装了"如何表达审核动作"，
@@ -352,6 +361,7 @@ class AuditFlowContractTest {
                     mock(StudentStageProgressService.class));
             ReflectionTestUtils.setField(service, "registrationStatusManager",
                     statusManager(mock(RegistrationService.class)));
+            ReflectionTestUtils.setField(service, "studentAccessPolicy", unrestrictedAccess());
         }
 
         void approve(String note) {
@@ -429,6 +439,7 @@ class AuditFlowContractTest {
             ReflectionTestUtils.setField(service, "submissionStudentService", submissionStudentService);
             ReflectionTestUtils.setField(service, "reviewTaskService", reviewTaskService);
             ReflectionTestUtils.setField(service, "registrationStatusManager", statusManager(registrationService));
+            ReflectionTestUtils.setField(service, "studentAccessPolicy", unrestrictedAccess());
         }
 
         void approve(String note) {

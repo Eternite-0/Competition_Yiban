@@ -217,6 +217,31 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public boolean syncStudentAccountFromRoster(StudentRoster roster) {
+        if (roster == null || StrUtil.isBlank(roster.getStudentNo())) {
+            return false;
+        }
+        User user = this.getOne(new LambdaQueryWrapper<User>()
+                .eq(User::getUsername, roster.getStudentNo()));
+        if (user == null) {
+            return false;
+        }
+        applyRosterFields(user, roster);
+        this.updateById(user);
+        return true;
+    }
+
+    /** 花名册是院系信息的来源，账号只是它的投影。 */
+    private void applyRosterFields(User user, StudentRoster roster) {
+        user.setRealName(roster.getRealName());
+        user.setCollege(roster.getCollege());
+        user.setMajor(getMajorName(roster.getMajorId()));
+        user.setClassName(getClassName(roster.getClassId()));
+        user.setGrade(roster.getGrade());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> syncStudentAccountsFromRoster(String grade, boolean resetPassword) {
         String normalizedGrade = StrUtil.blankToDefault(grade, "2024").trim();
         List<StudentRoster> rosters = studentRosterService.list(new LambdaQueryWrapper<StudentRoster>()
@@ -239,12 +264,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 passwordReset++;
             }
 
-            user.setRealName(roster.getRealName());
+            applyRosterFields(user, roster);
             user.setRole("student");
-            user.setCollege(roster.getCollege());
-            user.setMajor(getMajorName(roster.getMajorId()));
-            user.setClassName(getClassName(roster.getClassId()));
-            user.setGrade(roster.getGrade());
             user.setStatus("active");
 
             if (isNew) {

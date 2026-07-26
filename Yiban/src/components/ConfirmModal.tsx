@@ -54,9 +54,9 @@ export default function ConfirmModal({
                 <div className="grid h-9 w-9 place-items-center rounded-lg bg-surface-tile-1 text-body-muted">
                   <span className="material-symbols-outlined text-[20px]">{icon}</span>
                 </div>
-                <h3 className="text-[15px] font-medium text-ink">{title}</h3>
+                <h3 className="text-subhead font-medium text-ink">{title}</h3>
               </div>
-              <p className="text-[13.5px] leading-relaxed text-body-subtle">{message}</p>
+              <p className="text-footnote leading-relaxed text-body-subtle">{message}</p>
               <div className="mt-5 flex justify-end gap-2">
                 <button type="button" onClick={onClose} className="btn-secondary">
                   {cancelText}

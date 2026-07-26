@@ -197,7 +197,7 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
         <div className="section-card-header">
           <div>
             <h2 className="section-card-title">选择导入方式</h2>
-            <p className="mt-1 text-[12px] text-placeholder">上传赛事通知文件或提供公开网页地址</p>
+            <p className="mt-1 text-caption text-placeholder">上传赛事通知文件或提供公开网页地址</p>
           </div>
           <div className="flex rounded-sm border border-hairline bg-surface-tile-1 p-1">
             {([
@@ -212,7 +212,7 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
                   setResult(null);
                   setError('');
                 }}
-                className={`flex h-8 items-center gap-1.5 rounded-sm px-3 text-[13px] transition ${
+                className={`flex h-8 items-center gap-1.5 rounded-sm px-3 text-footnote transition ${
                   mode === item.value
                     ? 'bg-canvas text-ink shadow-none'
                     : 'text-body-muted hover:text-ink'
@@ -258,10 +258,10 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
                   <span className="material-symbols-outlined mb-3 text-[38px] text-body-muted">
                     {file ? 'description' : 'upload_file'}
                   </span>
-                  <span className="text-[15px] font-medium text-ink">
+                  <span className="text-subhead font-medium text-ink">
                     {file ? file.name : '点击选择或拖拽赛事通知'}
                   </span>
-                  <span className="mt-2 max-w-[420px] text-[12px] leading-5 text-placeholder" style={{ textWrap: 'pretty' }}>
+                  <span className="mt-2 max-w-[420px] text-caption leading-5 text-placeholder" style={{ textWrap: 'pretty' }}>
                     {file
                       ? `${(file.size / 1024 / 1024).toFixed(2)} MB · 点击可重新选择`
                       : '支持 PDF、DOCX、TXT、Markdown、HTML 与常见图片格式，最大 20MB'}
@@ -283,7 +283,7 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
                 exit={{ opacity: 0, y: -4 }}
                 className="flex min-h-[200px] flex-col justify-center"
               >
-                <label htmlFor="competition-url" className="mb-2 text-[13px] font-medium text-ink">
+                <label htmlFor="competition-url" className="mb-2 text-footnote font-medium text-ink">
                   赛事网页地址
                 </label>
                 <div className="relative">
@@ -305,7 +305,7 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
                     }}
                   />
                 </div>
-                <p className="mt-3 text-[12px] leading-5 text-placeholder">
+                <p className="mt-3 text-caption leading-5 text-placeholder">
                   仅支持无需登录即可访问的公开网页、PDF 或赛事详情页。
                 </p>
               </motion.div>
@@ -313,7 +313,7 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
           </AnimatePresence>
 
           {error ? (
-            <div className="mt-md flex items-start gap-2 rounded-sm border border-border bg-surface-tile-1 px-md py-3 text-[13px] text-error">
+            <div className="mt-md flex items-start gap-2 rounded-sm border border-border bg-surface-tile-1 px-md py-3 text-footnote text-error">
               <span className="material-symbols-outlined mt-px text-[18px]">error</span>
               <span className="min-w-0 flex-1">{error}</span>
             </div>
@@ -327,17 +327,17 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
                 const done = progress ? ['scraping', 'analyzing', 'generating'].indexOf(progress.step) > i : false;
                 return (
                   <div key={step} className="flex items-center gap-2">
-                    {i > 0 && <span className="text-[11px] text-placeholder">—</span>}
+                    {i > 0 && <span className="text-caption-2 text-placeholder">—</span>}
                     <span className={`material-symbols-outlined text-[16px] ${done ? 'text-success' : current ? 'text-body-muted animate-spin' : 'text-placeholder'}`}>
                       {done ? 'check_circle' : current ? 'progress_activity' : 'radio_button_unchecked'}
                     </span>
-                    <span className={`text-[12px] ${done ? 'text-success' : current ? 'text-body-muted font-medium' : 'text-placeholder'}`}>
+                    <span className={`text-caption ${done ? 'text-success' : current ? 'text-body-muted font-medium' : 'text-placeholder'}`}>
                       {labels[step]}
                     </span>
                   </div>
                 );
               })}
-              <span className="ml-auto text-[12px] text-body-muted">{progress?.message || '正在解析'}</span>
+              <span className="ml-auto text-caption text-body-muted">{progress?.message || '正在解析'}</span>
             </div>
           )}
 
@@ -376,7 +376,7 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
                     <span key={item} className="chip chip-warning">{warningLabel(item)}</span>
                   ))}
                 </div>
-                <h2 className="mt-2 truncate text-[18px] font-medium text-ink" title={result.sourceTitle || undefined}>
+                <h2 className="mt-2 truncate text-title-3 font-medium text-ink" title={result.sourceTitle || undefined}>
                   {result.sourceTitle || result.sourceUrl || 'AI 解析结果'}
                 </h2>
               </div>
@@ -391,8 +391,8 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
             {drafts.length === 0 ? (
               <div className="flex min-h-[220px] flex-col items-center justify-center px-lg text-center">
                 <span className="material-symbols-outlined text-[42px] text-placeholder">find_in_page</span>
-                <p className="mt-3 text-[14px] text-ink">暂未识别到可用赛事</p>
-                <p className="mt-1 text-[12px] text-placeholder">可以换用赛事详情页、通知 PDF，或把文本更完整的文件上传。</p>
+                <p className="mt-3 text-subhead text-ink">暂未识别到可用赛事</p>
+                <p className="mt-1 text-caption text-placeholder">可以换用赛事详情页、通知 PDF，或把文本更完整的文件上传。</p>
               </div>
             ) : (
               <motion.div variants={listContainer} initial="hidden" animate="visible" className="grid grid-cols-1 divide-y divide-hairline">
@@ -445,7 +445,7 @@ function DraftResultCard({
           )}
           {draft.duplicateCompetitionId && <span className="chip chip-warning">疑似重复</span>}
         </div>
-        <h3 className="mt-2 text-[17px] font-medium text-ink" title={draft.name || undefined}>
+        <h3 className="mt-2 text-callout font-medium text-ink" title={draft.name || undefined}>
           {draft.name || '未识别到赛事名称'}
         </h3>
         <dl className="mt-md grid grid-cols-1 gap-x-lg gap-y-md sm:grid-cols-2">
@@ -458,8 +458,8 @@ function DraftResultCard({
             ['比赛时间', `${formatDate(draft.competitionStart)} 至 ${formatDate(draft.competitionEnd)}`],
           ].map(([label, value]) => (
             <div key={label}>
-              <dt className="text-[11px] text-placeholder">{label}</dt>
-              <dd className="mt-1 text-[13px] text-ink">{value}</dd>
+              <dt className="text-caption-2 text-placeholder">{label}</dt>
+              <dd className="mt-1 text-footnote text-ink">{value}</dd>
             </div>
           ))}
         </dl>
@@ -471,7 +471,7 @@ function DraftResultCard({
           </div>
         )}
         {draft.sourceUrl && (
-          <a href={draft.sourceUrl} target="_blank" rel="noreferrer" className="mt-md inline-flex items-center gap-1 text-[12px] text-body-muted hover:underline">
+          <a href={draft.sourceUrl} target="_blank" rel="noreferrer" className="mt-md inline-flex items-center gap-1 text-caption text-body-muted hover:underline">
             <span className="material-symbols-outlined text-[14px]">link</span>
             {draft.sourceUrl}
           </a>
@@ -479,18 +479,18 @@ function DraftResultCard({
       </div>
 
       <div className="border-t border-hairline p-lg lg:border-l lg:border-t-0">
-        <h4 className="text-[13px] font-medium text-body-muted">质量检查</h4>
+        <h4 className="text-footnote font-medium text-body-muted">质量检查</h4>
         <div className="mt-md flex flex-col gap-3">
           <QualityRow label="字段置信度" value={confidenceItems.length ? `${confidenceItems.length} 项` : '暂无数据'} />
           <QualityRow label="证据片段" value={`${evidenceItems.length} 条`} />
           <QualityRow label="风险提示" value={riskItems.length ? `${riskItems.length} 项` : '未发现'} tone={riskItems.length ? 'warning' : 'success'} />
           {draft.duplicateCompetitionId && (
-            <div className="rounded-sm border border-border bg-surface-tile-1 px-3 py-2 text-[12px] leading-5 text-body-muted">
+            <div className="rounded-sm border border-border bg-surface-tile-1 px-3 py-2 text-caption leading-5 text-body-muted">
               疑似与赛事 #{draft.duplicateCompetitionId} 重复，相似度 {formatConfidence(draft.duplicateScore)}
             </div>
           )}
           {riskItems.slice(0, 3).map((item) => (
-            <div key={`${item.label}-${item.value}`} className="rounded-sm border border-hairline bg-surface-tile-1 px-3 py-2 text-[11px] leading-5 text-body-muted">
+            <div key={`${item.label}-${item.value}`} className="rounded-sm border border-hairline bg-surface-tile-1 px-3 py-2 text-caption-2 leading-5 text-body-muted">
               {warningLabel(item.value)}
             </div>
           ))}
@@ -515,8 +515,8 @@ function QualityRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="text-[12px] text-placeholder">{label}</span>
-      <span className={`text-[13px] font-medium ${tone === 'success' ? 'text-success' : tone === 'warning' ? 'text-warning' : 'text-ink'}`}>
+      <span className="text-caption text-placeholder">{label}</span>
+      <span className={`text-footnote font-medium ${tone === 'success' ? 'text-success' : tone === 'warning' ? 'text-warning' : 'text-ink'}`}>
         {value}
       </span>
     </div>

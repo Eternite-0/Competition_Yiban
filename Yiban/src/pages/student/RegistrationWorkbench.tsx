@@ -84,7 +84,7 @@ export default function RegistrationWorkbench() {
     return (
       <div className="page-stack">
         <PageHero eyebrow="报名" title="报名材料填写" description="正在加载赛事信息…" />
-        <p className="py-10 text-center text-[13.5px] text-placeholder">加载中…</p>
+        <p className="py-10 text-center text-footnote text-placeholder">加载中…</p>
       </div>
     );
   }
@@ -94,7 +94,7 @@ export default function RegistrationWorkbench() {
       <div className="page-stack">
         <PageHero eyebrow="报名" title="报名材料填写" description="未找到对应赛事。" />
         <div className="py-10 text-center">
-          <p className="text-[13.5px] text-placeholder">赛事不存在</p>
+          <p className="text-footnote text-placeholder">赛事不存在</p>
           <button type="button" onClick={() => navigate('/student/competitions')} className="btn-primary mt-4">
             返回赛事大厅
           </button>
@@ -208,7 +208,7 @@ export default function RegistrationWorkbench() {
         title="报名工作台"
         description="在一个页面完成组队、赛道选择和报名确认。"
         prefix={(
-          <nav className="mb-1 flex items-center gap-1 text-[13px] text-placeholder">
+          <nav className="mb-1 flex items-center gap-1 text-footnote text-placeholder">
             <button type="button" onClick={() => navigate('/student/competitions')} className="transition hover:text-ink">竞赛中心</button>
             <span className="material-symbols-outlined text-[16px]">chevron_right</span>
             <span className="truncate text-body-subtle">{comp.name}</span>
@@ -239,8 +239,8 @@ export default function RegistrationWorkbench() {
       {existingRegistration ? (
         <section className="flex flex-col gap-3 border-y border-hairline py-4 md:flex-row md:items-center">
           <div className="min-w-0 flex-1">
-            <p className="text-[14px] font-medium text-ink">您已报名该赛事</p>
-            <p className="mt-0.5 text-[13px] text-body-subtle">
+            <p className="text-subhead font-medium text-ink">您已报名该赛事</p>
+            <p className="mt-0.5 text-footnote text-body-subtle">
               当前状态：{existingRegistration.status}。请在我的报名中查看审核进度和下一步操作。
             </p>
           </div>
@@ -265,7 +265,7 @@ export default function RegistrationWorkbench() {
           <div className="page-section-head">
             <h2 className="page-section-title">赛事信息</h2>
           </div>
-          <ul className="flat-list text-[13px]">
+          <ul className="flat-list text-footnote">
             <li className="flat-row justify-between"><span className="text-placeholder">级别</span><span className="text-ink">{comp.level}</span></li>
             <li className="flat-row justify-between"><span className="text-placeholder">类别</span><span className="text-ink">{comp.category} 类</span></li>
             <li className="flat-row justify-between"><span className="text-placeholder">报名截止</span><span className="tabular-nums text-ink">{formatDate(comp.endTime)}</span></li>
@@ -281,7 +281,7 @@ export default function RegistrationWorkbench() {
           </div>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[13px] font-medium text-ink">
+              <label className="text-footnote font-medium text-ink">
                 {!isSoloCompetition ? <span className="mr-1 text-error">*</span> : null}
                 {isSoloCompetition ? '报名名称（选填）' : '队伍名称'}
               </label>
@@ -297,28 +297,28 @@ export default function RegistrationWorkbench() {
             {!isSoloCompetition ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-[13px] font-medium text-ink">团队成员（队友学号）</label>
+                  <label className="text-footnote font-medium text-ink">团队成员（队友学号）</label>
                   <button
                     type="button"
                     onClick={addMember}
                     disabled={Boolean(existingRegistration)}
-                    className="text-[12px] font-medium text-primary transition hover:text-primary-focus disabled:opacity-50"
+                    className="text-caption font-medium text-primary transition hover:text-primary-focus disabled:opacity-50"
                   >
                     添加成员
                   </button>
                 </div>
-                <p className="text-[12px] text-placeholder">
+                <p className="text-caption text-placeholder">
                   本赛事最多 {maxTeamSize} 人，除本人外最多添加 {maxMemberCount} 名队友。
                 </p>
                 <div className="border-y border-hairline">
-                  <div className="grid grid-cols-[60px_1fr_60px] border-b border-hairline px-1 py-2 text-[11px] text-placeholder">
+                  <div className="grid grid-cols-[60px_1fr_60px] border-b border-hairline px-1 py-2 text-caption-2 text-placeholder">
                     <span className="text-center">序号</span>
                     <span>学号</span>
                     <span className="text-center">操作</span>
                   </div>
                   {members.map((member, idx) => (
                     <div key={idx} className="grid grid-cols-[60px_1fr_60px] items-center border-b border-hairline px-1 py-2 last:border-b-0">
-                      <span className="text-center text-[13px] tabular-nums text-placeholder">{idx + 1}</span>
+                      <span className="text-center text-footnote tabular-nums text-placeholder">{idx + 1}</span>
                       <input
                         className="input-glass !h-8"
                         placeholder="输入队友学号"
@@ -341,12 +341,12 @@ export default function RegistrationWorkbench() {
                     </div>
                   ))}
                 </div>
-                {memberError ? <p className="text-[12px] text-error">{memberError}</p> : null}
+                {memberError ? <p className="text-caption text-error">{memberError}</p> : null}
               </div>
             ) : null}
 
             <div className="flex flex-col gap-2">
-              <label className="text-[13px] font-medium text-ink">选择赛道</label>
+              <label className="text-footnote font-medium text-ink">选择赛道</label>
               <div className="filter-strip !border-b-0 !pb-0">
                 {trackList.map((track) => (
                   <button
@@ -369,8 +369,8 @@ export default function RegistrationWorkbench() {
             <div className="page-section-head">
               <h2 className="page-section-title">报名提示</h2>
             </div>
-            <p className="text-[12.5px] leading-relaxed text-body-subtle">请核对截止时间、组队人数和赛道后再提交。</p>
-            <div className="flat-list text-[13px]">
+            <p className="text-caption leading-relaxed text-body-subtle">请核对截止时间、组队人数和赛道后再提交。</p>
+            <div className="flat-list text-footnote">
               <div className="flat-row justify-between"><span className="text-placeholder">报名截止</span><span className="tabular-nums text-ink">{formatDate(comp.endTime)}</span></div>
               <div className="flat-row justify-between"><span className="text-placeholder">团队要求</span><span className="text-ink">{isSoloCompetition ? '个人赛' : `最多 ${maxTeamSize} 人`}</span></div>
               <div className="flat-row justify-between"><span className="text-placeholder">赛道选择</span><span className="text-ink">{selectedTrack || '未选择'}</span></div>
@@ -382,7 +382,7 @@ export default function RegistrationWorkbench() {
                 { done: isSoloCompetition || validMembers.length <= maxMemberCount, label: '成员数量未超限' },
                 { done: !isClosed && !isNotOpen, label: '当前处于报名期' },
               ].map((it) => (
-                <li key={it.label} className="flex items-center gap-2 text-[12.5px]">
+                <li key={it.label} className="flex items-center gap-2 text-caption">
                   <span className={`material-symbols-outlined text-[16px] ${it.done ? 'text-primary' : 'text-placeholder'}`}>
                     {it.done ? 'check_circle' : 'radio_button_unchecked'}
                   </span>
@@ -396,7 +396,7 @@ export default function RegistrationWorkbench() {
             <div className="page-section-head">
               <h2 className="page-section-title">遇到问题？</h2>
             </div>
-            <p className="text-[12.5px] text-placeholder">请先查看赛事原始通知，必要时联系组委会。</p>
+            <p className="text-caption text-placeholder">请先查看赛事原始通知，必要时联系组委会。</p>
           </section>
         </div>
       </div>

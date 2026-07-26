@@ -222,7 +222,7 @@ export default function CompetitionDetail() {
         title={comp.name}
         description={`${displayLevel(comp.level)} · ${comp.category}类 · ${statusLabel(comp.status)}`}
         prefix={(
-          <nav className="mb-1 flex items-center gap-1 text-[13px] text-placeholder">
+          <nav className="mb-1 flex items-center gap-1 text-footnote text-placeholder">
             <button type="button" onClick={() => navigate('/student/competitions')} className="hover:text-ink transition">竞赛中心</button>
             <span className="material-symbols-outlined text-[16px]">chevron_right</span>
             <span className="truncate text-body-subtle">{comp.name}</span>
@@ -248,22 +248,22 @@ export default function CompetitionDetail() {
       <section className="metric-row" aria-label="赛事摘要">
         <div className="metric-item">
           <div className="metric-item-label">状态</div>
-          <div className="metric-item-value text-[18px]">{statusLabel(comp.status)}</div>
+          <div className="metric-item-value text-title-3">{statusLabel(comp.status)}</div>
           <div className="metric-item-hint">{displayLevel(comp.level)} · {comp.category}类</div>
         </div>
         <div className="metric-item">
           <div className="metric-item-label">报名截止</div>
-          <div className="metric-item-value text-[18px]">{formatDate(comp.endTime)}</div>
+          <div className="metric-item-value text-title-3">{formatDate(comp.endTime)}</div>
           <div className="metric-item-hint">{cta.disabled ? cta.label : `剩余 ${daysLeft} 天`}</div>
         </div>
         <div className="metric-item">
           <div className="metric-item-label">比赛开始</div>
-          <div className="metric-item-value text-[18px]">{formatDate(comp.competitionStart)}</div>
+          <div className="metric-item-value text-title-3">{formatDate(comp.competitionStart)}</div>
           <div className="metric-item-hint">结束 {formatDate(comp.competitionEnd)}</div>
         </div>
         <div className="metric-item">
           <div className="metric-item-label">组队上限</div>
-          <div className="metric-item-value text-[18px]">{comp.maxTeamSize ?? '—'}</div>
+          <div className="metric-item-value text-title-3">{comp.maxTeamSize ?? '—'}</div>
           <div className="metric-item-hint">人 / 队</div>
         </div>
       </section>
@@ -277,8 +277,8 @@ export default function CompetitionDetail() {
         >
           <span className="material-symbols-outlined text-[20px] text-body-muted">open_in_new</span>
           <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-medium text-ink">访问赛事官网 / 查看原始公告</p>
-            <p className="mt-0.5 truncate text-[12px] text-placeholder">{comp.sourceUrl}</p>
+            <p className="text-footnote font-medium text-ink">访问赛事官网 / 查看原始公告</p>
+            <p className="mt-0.5 truncate text-caption text-placeholder">{comp.sourceUrl}</p>
           </div>
           <span className="material-symbols-outlined text-[18px] text-placeholder">chevron_right</span>
         </a>
@@ -291,7 +291,7 @@ export default function CompetitionDetail() {
               <h2 className="page-section-title">赛事简介</h2>
             </div>
             <div
-              className="prose prose-sm max-w-none text-[14px] leading-[1.65] text-body-subtle"
+              className="prose prose-sm max-w-none text-subhead leading-[1.65] text-body-subtle"
               dangerouslySetInnerHTML={{
                 __html: comp.content
                   ? DOMPurify.sanitize(comp.content)
@@ -318,12 +318,12 @@ export default function CompetitionDetail() {
                     }`}
                   />
                   <div className="flex flex-wrap items-baseline gap-2">
-                    <span className={`text-[13.5px] font-medium ${it.state === 'pending' ? 'text-placeholder' : 'text-ink'}`}>
+                    <span className={`text-footnote font-medium ${it.state === 'pending' ? 'text-placeholder' : 'text-ink'}`}>
                       {it.phase}
                     </span>
-                    <span className="text-[12px] tabular-nums text-placeholder">{it.range}</span>
+                    <span className="text-caption tabular-nums text-placeholder">{it.range}</span>
                   </div>
-                  <p className="mt-1 text-[13px] text-body-subtle">{it.desc}</p>
+                  <p className="mt-1 text-footnote text-body-subtle">{it.desc}</p>
                 </li>
               ))}
             </ol>
@@ -352,18 +352,18 @@ export default function CompetitionDetail() {
                           }`}
                         />
                         <div className="flex flex-wrap items-baseline gap-2">
-                          <span className={`text-[13.5px] font-medium ${!isClosed && !isActive ? 'text-placeholder' : 'text-ink'}`}>
+                          <span className={`text-footnote font-medium ${!isClosed && !isActive ? 'text-placeholder' : 'text-ink'}`}>
                             {stage.name}
                           </span>
-                          <span className="text-[12px] tabular-nums text-placeholder">
+                          <span className="text-caption tabular-nums text-placeholder">
                             {stage.startTime ? new Date(stage.startTime).toLocaleDateString('zh-CN') : ''}
                             {stage.startTime && stage.endTime ? ' — ' : ''}
                             {stage.endTime ? new Date(stage.endTime).toLocaleDateString('zh-CN') : ''}
                           </span>
-                          {isActive ? <span className="chip chip-primary !text-[10px]">进行中</span> : null}
-                          {isClosed ? <span className="chip chip-success !text-[10px]">已结束</span> : null}
+                          {isActive ? <span className="chip chip-primary !text-caption-2">进行中</span> : null}
+                          {isClosed ? <span className="chip chip-success !text-caption-2">已结束</span> : null}
                         </div>
-                        {stage.description ? <p className="mt-1 text-[13px] text-body-subtle">{stage.description}</p> : null}
+                        {stage.description ? <p className="mt-1 text-footnote text-body-subtle">{stage.description}</p> : null}
                       </div>
                     );
                   })}
@@ -376,7 +376,7 @@ export default function CompetitionDetail() {
             <div className="page-section-head">
               <h2 className="page-section-title">参赛说明</h2>
             </div>
-            <ul className="space-y-2 text-[13.5px] text-body-subtle">
+            <ul className="space-y-2 text-footnote text-body-subtle">
               <li><b className="text-ink">参赛对象：</b>全日制普通高等院校在校学生。</li>
               <li><b className="text-ink">组队要求：</b>每队最多 {comp.maxTeamSize ?? '—'} 人。</li>
               <li><b className="text-ink">赛事级别：</b>{displayLevel(comp.level)} · {comp.category} 类。</li>
@@ -393,9 +393,9 @@ export default function CompetitionDetail() {
                 {registration ? '已有报名' : cta.disabled ? cta.label : `还剩 ${daysLeft} 天`}
               </span>
             </div>
-            <p className="text-[13px] text-body-subtle">{cta.hint}</p>
+            <p className="text-footnote text-body-subtle">{cta.hint}</p>
             {registration?.teamName ? (
-              <p className="text-[13px] text-body-muted">队伍：{registration.teamName}</p>
+              <p className="text-footnote text-body-muted">队伍：{registration.teamName}</p>
             ) : null}
             <div className="flex flex-col gap-2">
               {primaryButton}
@@ -421,16 +421,16 @@ export default function CompetitionDetail() {
                   <div key={post.id} className="flat-row !items-start">
                     <div className="min-w-0 flex-1">
                       <div className="mb-0.5 flex flex-wrap items-center gap-2">
-                        <span className="text-[13px] font-medium text-ink">{post.authorName}</span>
-                        <span className="truncate text-[11px] text-placeholder">{post.competitionName}</span>
+                        <span className="text-footnote font-medium text-ink">{post.authorName}</span>
+                        <span className="truncate text-caption-2 text-placeholder">{post.competitionName}</span>
                       </div>
-                      <p className="line-clamp-2 text-[12.5px] leading-snug text-body-subtle">{post.content}</p>
+                      <p className="line-clamp-2 text-caption leading-snug text-body-subtle">{post.content}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="py-4 text-[13px] text-placeholder">暂无组队招募</p>
+              <p className="py-4 text-footnote text-placeholder">暂无组队招募</p>
             )}
           </section>
         </aside>

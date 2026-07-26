@@ -27,6 +27,7 @@ import com.etsaion.service.MessageService;
 import com.etsaion.service.RegistrationService;
 import com.etsaion.service.RegistrationStatusManager;
 import com.etsaion.service.ReviewTaskService;
+import com.etsaion.service.StudentAccessPolicy;
 import com.etsaion.service.StudentStageProgressService;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.UserService;
@@ -75,6 +76,9 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
 
     @Autowired
     private RegistrationStatusManager registrationStatusManager;
+
+    @Autowired
+    private StudentAccessPolicy studentAccessPolicy;
 
     @Override
     @Transactional
@@ -178,12 +182,11 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         wrapper.in(Registration::getStatus, RegistrationStatus.valuesOf(RegistrationStatus.REVIEWABLE));
 
         // 教师只能看到本学院学生的报名
-        String teacherCollege = getTeacherCollege();
-        if (teacherCollege != null) {
-            java.util.List<Long> collegeStudentIds = getStudentIdsByCollege(teacherCollege);
+        List<Long> collegeStudentIds = studentAccessPolicy.scopedStudentIds();
+        if (collegeStudentIds != null) {
             if (collegeStudentIds.isEmpty()) {
                 Page<RegistrationVO> emptyPage = new Page<>(current, size, 0);
-                emptyPage.setRecords(new java.util.ArrayList<>());
+                emptyPage.setRecords(new ArrayList<>());
                 return emptyPage;
             }
             wrapper.in(Registration::getStudentId, collegeStudentIds);
@@ -202,12 +205,9 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         registrationStatusManager.requireReviewable(reg);
 
         // 教师只能审核本学院学生的报名
-        String teacherCollege = getTeacherCollege();
-        if (teacherCollege != null) {
-            User student = userService.getById(reg.getStudentId());
-            if (student == null || !teacherCollege.equals(student.getCollege())) {
-                throw new BusinessException(403, "无权审核其他学院学生的报名");
-            }
+        if (studentAccessPolicy.isCollegeScoped()
+                && !studentAccessPolicy.canAccess(userService.getById(reg.getStudentId()))) {
+            throw new BusinessException(403, "无权审核其他学院学生的报名");
         }
 
         Competition comp = competitionService.getById(reg.getCompetitionId());
@@ -371,32 +371,4 @@ public class RegistrationServiceImpl extends ServiceImpl<RegistrationMapper, Reg
         return voPage;
     }
 
-    /**
-     * 获取当前教师的学院，管理员返回 null 表示不限制
-     */
-    private String getTeacherCollege() {
-        String role = com.etsaion.utils.UserContext.getUserRole();
-        if ("admin".equalsIgnoreCase(role)) {
-            return null; // 管理员不限制
-        }
-        if (!"teacher".equalsIgnoreCase(role)) {
-            return null;
-        }
-        Long userId = com.etsaion.utils.UserContext.getUserId();
-        if (userId == null) return null;
-        User teacher = userService.getById(userId);
-        return teacher != null ? teacher.getCollege() : null;
-    }
-
-    /**
-     * 获取指定学院的所有学生 ID
-     */
-    private java.util.List<Long> getStudentIdsByCollege(String college) {
-        if (college == null || college.isBlank()) return java.util.Collections.emptyList();
-        return userService.list(new LambdaQueryWrapper<User>()
-                .eq(User::getRole, "student")
-                .eq(User::getCollege, college)
-                .select(User::getId))
-                .stream().map(User::getId).collect(Collectors.toList());
-    }
 }

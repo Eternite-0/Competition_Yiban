@@ -67,10 +67,10 @@ export default function ErrorState({
       <span className="material-symbols-outlined text-[48px] text-ink-muted-48 mb-4">
         {config.icon}
       </span>
-      <h3 className="empty-state-copy text-[16px] font-medium text-ink mb-1">
+      <h3 className="empty-state-copy text-callout font-medium text-ink mb-1">
         {title || config.title}
       </h3>
-      <p className="empty-state-copy text-[14px] text-body-subtle mb-6">
+      <p className="empty-state-copy text-subhead text-body-subtle mb-6">
         {message || config.message}
       </p>
       {onRetry && (
@@ -104,11 +104,11 @@ export function InlineError({
       <span className="material-symbols-outlined text-[18px] text-error shrink-0">
         error_outline
       </span>
-      <span className="text-[13px] text-ink flex-1">{message}</span>
+      <span className="text-footnote text-ink flex-1">{message}</span>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="text-[13px] text-primary font-medium hover:underline shrink-0"
+          className="text-footnote text-primary font-medium hover:underline shrink-0"
         >
           重试
         </button>

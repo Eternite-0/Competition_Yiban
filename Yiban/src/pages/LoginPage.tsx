@@ -94,7 +94,7 @@ export default function LoginPage() {
       <main className="auth-form-area">
         <header className="auth-mobile-brand">
           <BrandLogo size={36} withWordmark />
-          <span className="text-[11px] text-placeholder">校园竞赛一体化平台</span>
+          <span className="text-caption-2 text-placeholder">校园竞赛一体化平台</span>
         </header>
         <div className="auth-system-status">
           <span className={`h-1.5 w-1.5 rounded-full ${
@@ -171,7 +171,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-[12.5px]">
+              <div className="flex items-center justify-between text-caption">
                 <label className="flex cursor-pointer items-center gap-2 text-body-muted">
                   <input type="checkbox" className="h-3.5 w-3.5 accent-primary" />
                   记住账号
@@ -181,7 +181,7 @@ export default function LoginPage() {
                 </button>
               </div>
 
-              <button className="btn-primary mt-1 h-11 w-full text-[14px]" type="submit" disabled={loading}>
+              <button className="btn-primary mt-1 h-11 w-full text-subhead" type="submit" disabled={loading}>
                 {loading && <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>}
                 {loading ? '登录中…' : '继续'}
               </button>
@@ -196,7 +196,7 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <p className="mt-5 text-center text-[13px] text-body-subtle">
+            <p className="mt-5 text-center text-footnote text-body-subtle">
               还没有账号？
               <Link to="/register" className="ml-1 font-medium text-primary hover:text-primary-focus">
                 注册
@@ -204,7 +204,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <p className="mt-6 text-center text-[11.5px] leading-relaxed text-placeholder">
+          <p className="mt-6 text-center text-caption-2 leading-relaxed text-placeholder">
             登录即表示同意
             <Link to="/terms" className="mx-1 text-body-muted hover:text-ink">服务协议</Link>
             与

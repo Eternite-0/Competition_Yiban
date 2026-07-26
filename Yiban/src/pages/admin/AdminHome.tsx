@@ -349,7 +349,7 @@ export default function AdminHome() {
                 <div className="stat-card-label">{m.label}</div>
                 <div className="stat-card-value">
                   {(m as { loaded?: boolean }).loaded === false ? '—' : m.value}
-                  <span className="ml-1 text-[13px] font-normal text-placeholder">{m.suffix}</span>
+                  <span className="ml-1 text-footnote font-normal text-placeholder">{m.suffix}</span>
                 </div>
                 <div className="stat-card-hint">
                   <span className="material-symbols-outlined align-middle text-[14px] text-placeholder">{m.icon}</span>
@@ -370,7 +370,7 @@ export default function AdminHome() {
                 {barData.every((b) => b.value === 0) ? (
                   <div className="empty-panel h-40">
                     <span className="material-symbols-outlined">bar_chart</span>
-                    <p className="text-[13px]">暂无数据</p>
+                    <p className="text-footnote">暂无数据</p>
                   </div>
                 ) : (
                   <>
@@ -379,7 +379,7 @@ export default function AdminHome() {
                         const isMax = bar.value === maxBar && bar.value > 0;
                         return (
                           <div key={bar.label} className="group flex flex-1 flex-col items-center gap-2">
-                            <span className="text-[11px] tabular-nums text-placeholder opacity-0 transition group-hover:opacity-100">
+                            <span className="text-caption-2 tabular-nums text-placeholder opacity-0 transition group-hover:opacity-100">
                               {bar.value}
                             </span>
                             <div className="flex h-full w-full items-end justify-center">
@@ -396,7 +396,7 @@ export default function AdminHome() {
                     </div>
                     <div className="mt-2 flex items-center gap-2">
                       {barData.map((d) => (
-                        <span key={d.label} className="flex-1 text-center text-[11px] text-placeholder">{d.label}</span>
+                        <span key={d.label} className="flex-1 text-center text-caption-2 text-placeholder">{d.label}</span>
                       ))}
                     </div>
                   </>
@@ -411,7 +411,7 @@ export default function AdminHome() {
               <div className="section-card-body flex flex-col justify-center gap-4">
                 {levelDist.map((s) => (
                   <div key={s.label}>
-                    <div className="mb-1.5 flex items-center justify-between text-[12px]">
+                    <div className="mb-1.5 flex items-center justify-between text-caption">
                       <span className="text-body-muted">{s.label}</span>
                       <span className="font-medium tabular-nums text-ink">{s.pct}%</span>
                     </div>
@@ -454,7 +454,7 @@ export default function AdminHome() {
                       <td colSpan={5}>
                         <div className="empty-panel py-12">
                           <span className="material-symbols-outlined">event_busy</span>
-                          <p className="text-[13px]">暂无赛事数据</p>
+                          <p className="text-footnote">暂无赛事数据</p>
                         </div>
                       </td>
                     </tr>
@@ -526,7 +526,7 @@ export default function AdminHome() {
             </div>
             {totalCompPages > 1 && (
               <div className="flex items-center justify-between border-t border-hairline px-4 py-3">
-                <span className="text-[12px] text-placeholder">
+                <span className="text-caption text-placeholder">
                   共 <span className="font-medium tabular-nums text-ink">{recentCompetitions.length}</span> 条
                 </span>
                 <Pagination
@@ -560,10 +560,10 @@ export default function AdminHome() {
                   }`}
                 />
                 <div className="min-w-0 flex-1">
-                  <div className={`text-[13px] font-medium ${task.tone === 'error' ? 'text-error' : 'text-ink'}`}>
+                  <div className={`text-footnote font-medium ${task.tone === 'error' ? 'text-error' : 'text-ink'}`}>
                     {task.title}
                   </div>
-                  <p className="mt-0.5 text-[12px] leading-relaxed text-body-muted">{task.description}</p>
+                  <p className="mt-0.5 text-caption leading-relaxed text-body-muted">{task.description}</p>
                 </div>
               </button>
             ))}

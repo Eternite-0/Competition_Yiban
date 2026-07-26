@@ -102,7 +102,7 @@ export default function RegistrationAudit() {
         ) : teachers.length === 0 ? (
           <div className="empty-panel py-16">
             <span className="material-symbols-outlined">check_circle</span>
-            <p className="text-[13px]">暂无待审核的注册申请</p>
+            <p className="text-footnote">暂无待审核的注册申请</p>
           </div>
         ) : (
           <div className="data-table-wrap !rounded-none !border-0">
@@ -123,11 +123,11 @@ export default function RegistrationAudit() {
                     <td>{t.college}</td>
                     <td className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button type="button" onClick={() => handleApprove(t.id)} className="btn-primary !h-8 !px-3 !text-[12px]">
+                        <button type="button" onClick={() => handleApprove(t.id)} className="btn-primary !h-8 !px-3 !text-caption">
                           <span className="material-symbols-outlined text-[16px]">check</span>
                           通过
                         </button>
-                        <button type="button" onClick={() => handleOpenReject(t.id)} className="btn-danger !h-8 !px-3 !text-[12px]">
+                        <button type="button" onClick={() => handleOpenReject(t.id)} className="btn-danger !h-8 !px-3 !text-caption">
                           <span className="material-symbols-outlined text-[16px]">close</span>
                           驳回
                         </button>
@@ -154,7 +154,7 @@ export default function RegistrationAudit() {
                 <h3 id="reject-modal-title" className="section-card-title">驳回注册申请</h3>
               </div>
               <div className="section-card-body">
-                <label className="mb-2 block text-[13px] text-body-muted">驳回原因（选填）</label>
+                <label className="mb-2 block text-footnote text-body-muted">驳回原因（选填）</label>
                 <textarea
                   className="input-glass !h-[120px] resize-none"
                   placeholder="请输入驳回原因，将通知给申请人"

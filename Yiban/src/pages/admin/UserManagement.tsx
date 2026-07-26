@@ -176,7 +176,7 @@ export default function UserManagement() {
           </span>
           <input
             name="userKeyword"
-            className="input-glass h-9 pl-9 text-[13px]"
+            className="input-glass h-9 pl-9 text-footnote"
             placeholder="搜索用户名 / 姓名"
             aria-label="搜索用户名 / 姓名"
             value={keyword}
@@ -188,7 +188,7 @@ export default function UserManagement() {
         </div>
         <select
           name="userRole"
-          className="input-glass h-9 min-w-[120px] text-[13px]"
+          className="input-glass h-9 min-w-[120px] text-footnote"
           value={filterRole}
           onChange={(e) => {
             setFilterRole(e.target.value);
@@ -202,7 +202,7 @@ export default function UserManagement() {
         </select>
         <input
           name="userCollege"
-          className="input-glass h-9 w-full text-[13px] md:w-[180px]"
+          className="input-glass h-9 w-full text-footnote md:w-[180px]"
           placeholder="学院筛选"
           value={filterCollege}
           onChange={(e) => {
@@ -243,7 +243,7 @@ export default function UserManagement() {
                       <span className="material-symbols-outlined">
                         {loading ? 'progress_activity' : 'search_off'}
                       </span>
-                      <p className="text-[13px]">{loading ? '加载中…' : '暂无用户数据'}</p>
+                      <p className="text-footnote">{loading ? '加载中…' : '暂无用户数据'}</p>
                     </div>
                   </td>
                 </tr>
@@ -277,7 +277,7 @@ export default function UserManagement() {
           </table>
         </div>
         <div className="flex items-center justify-between border-t border-hairline px-4 py-3">
-          <span className="text-[12px] text-placeholder">
+          <span className="text-caption text-placeholder">
             共 <span className="font-medium tabular-nums text-ink">{total}</span> 条
           </span>
           <Pagination current={currentPage} total={total} pageSize={pageSize} onChange={setCurrentPage} />

@@ -225,7 +225,7 @@ function RadarChart({ data }: { data: { dimension: string; score: number; maxSco
         return (
           <g key={d.dimension}>
             <circle cx={point.x} cy={point.y} r="3" fill="var(--color-ink)" />
-            <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="text-[11px]" fill="var(--color-body-subtle)">{d.dimension.replace('能力', '')}</text>
+            <text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" className="text-caption-2" fill="var(--color-body-subtle)">{d.dimension.replace('能力', '')}</text>
           </g>
         );
       })}
@@ -279,7 +279,7 @@ export default function StudentGrowth() {
     return (
       <div className="page-stack">
         <PageHero eyebrow="成长" title="我的成长画像" description="加载中…" />
-        <p className="py-10 text-center text-[13.5px] text-placeholder">加载中…</p>
+        <p className="py-10 text-center text-footnote text-placeholder">加载中…</p>
       </div>
     );
   }
@@ -287,7 +287,7 @@ export default function StudentGrowth() {
     return (
       <div className="page-stack">
         <PageHero eyebrow="成长" title="我的成长画像" description="加载失败" />
-        <p className="py-10 text-center text-[13.5px] text-error">{error}</p>
+        <p className="py-10 text-center text-footnote text-error">{error}</p>
       </div>
     );
   }
@@ -295,7 +295,7 @@ export default function StudentGrowth() {
     return (
       <div className="page-stack">
         <PageHero eyebrow="成长" title="我的成长画像" description="查看竞赛、志愿、文体活动与认证荣誉沉淀。" />
-        <p className="py-10 text-center text-[13.5px] text-placeholder">暂无成长数据</p>
+        <p className="py-10 text-center text-footnote text-placeholder">暂无成长数据</p>
       </div>
     );
   }
@@ -392,14 +392,14 @@ export default function StudentGrowth() {
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-hairline pb-4">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-[16px] font-medium text-ink">{currentUser?.name || '同学'}</h2>
+              <h2 className="text-callout font-medium text-ink">{currentUser?.name || '同学'}</h2>
               <span className="chip chip-primary">优势：{highest.dimension}</span>
               {approvedAwards.length > 0 ? <span className="chip chip-success">荣誉 {approvedAwards.length}</span> : null}
               {(profile?.totalActivities ?? 0) > 0 ? <span className="chip">活动 {profile?.totalActivities}</span> : null}
               {teamParticipationCount > 0 ? <span className="chip">组队 {teamParticipationCount}</span> : null}
             </div>
-            <p className="mt-1 text-[13px] text-body-subtle">{currentUser?.department || '学院信息暂未同步'}</p>
-            <div className="mt-2 flex flex-wrap gap-1.5 text-[12px] text-placeholder">
+            <p className="mt-1 text-footnote text-body-subtle">{currentUser?.department || '学院信息暂未同步'}</p>
+            <div className="mt-2 flex flex-wrap gap-1.5 text-caption text-placeholder">
               <span>国家级 {levelCounts['国家级'] || 0}</span>
               <span>·</span>
               <span>省级 {levelCounts['省级'] || 0}</span>
@@ -408,8 +408,8 @@ export default function StudentGrowth() {
             </div>
           </div>
           <div className="text-right">
-            <p className="text-[12px] text-placeholder">能力均值</p>
-            <p className="mt-1 text-[24px] font-semibold tabular-nums tracking-tight text-ink">{averageScore}</p>
+            <p className="text-caption text-placeholder">能力均值</p>
+            <p className="mt-1 text-title-2 font-semibold tabular-nums tracking-tight text-ink">{averageScore}</p>
           </div>
         </div>
       </section>
@@ -420,7 +420,7 @@ export default function StudentGrowth() {
             <div className="metric-item-label">{metric.label}</div>
             <div className="metric-item-value">
               {metric.value}
-              <span className="ml-1 text-[12px] font-normal text-placeholder">{metric.suffix}</span>
+              <span className="ml-1 text-caption font-normal text-placeholder">{metric.suffix}</span>
             </div>
             <div className="metric-item-hint">{metric.hint}</div>
           </div>
@@ -456,7 +456,7 @@ export default function StudentGrowth() {
                 {registrations.slice(0, 8).map((reg) => <CompetitionRow key={reg.id} registration={reg} />)}
               </div>
             ) : (
-              <p className="py-6 text-[13px] text-placeholder">暂无参赛记录，去赛事大厅报名后会自动沉淀到这里。</p>
+              <p className="py-6 text-footnote text-placeholder">暂无参赛记录，去赛事大厅报名后会自动沉淀到这里。</p>
             )}
           </section>
         </div>
@@ -473,13 +473,13 @@ export default function StudentGrowth() {
               </div>
             ) : approvedSubmissions.length > 0 ? (
               <div className="flat-list">
-                <p className="py-3 text-[12.5px] text-placeholder">暂无已认证获奖证明。以下为已通过的成果材料。</p>
+                <p className="py-3 text-caption text-placeholder">暂无已认证获奖证明。以下为已通过的成果材料。</p>
                 {approvedSubmissions.slice(0, 3).map((submission) => (
                   <SubmissionRow key={submission.id} submission={submission} />
                 ))}
               </div>
             ) : (
-              <p className="py-6 text-[13px] text-placeholder">暂无荣誉记录。上传获奖证书并通过审核后显示。</p>
+              <p className="py-6 text-footnote text-placeholder">暂无荣誉记录。上传获奖证书并通过审核后显示。</p>
             )}
           </section>
 
@@ -495,14 +495,14 @@ export default function StudentGrowth() {
                   <button
                     type="button"
                     onClick={() => setShowAllTimeline((value) => !value)}
-                    className="mt-2 self-start text-[12.5px] text-body-muted hover:text-primary"
+                    className="mt-2 self-start text-caption text-body-muted hover:text-primary"
                   >
                     {showAllTimeline ? '收起' : `查看更多（${timelineItems.length - 4}）`}
                   </button>
                 ) : null}
               </>
             ) : (
-              <p className="py-6 text-[13px] text-placeholder">暂无成长时间线。报名、提交成果或认证荣誉后会自动生成。</p>
+              <p className="py-6 text-footnote text-placeholder">暂无成长时间线。报名、提交成果或认证荣誉后会自动生成。</p>
             )}
           </section>
 
@@ -510,7 +510,7 @@ export default function StudentGrowth() {
             <div className="page-section-head">
               <h3 className="page-section-title">下一步建议</h3>
             </div>
-            <ul className="flex flex-col gap-2 text-[13px] leading-relaxed text-body-subtle">
+            <ul className="flex flex-col gap-2 text-footnote leading-relaxed text-body-subtle">
               {suggestions.map((item) => (
                 <li key={item} className="border-b border-hairline py-2 last:border-b-0">
                   {item}
@@ -528,11 +528,11 @@ function DimensionRow({ label, score, hint }: { label: string; score: number; hi
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between gap-3">
-        <p className="text-[13px] font-medium text-ink">{label}</p>
-        <span className="text-[13px] font-semibold tabular-nums text-primary">{score}</span>
+        <p className="text-footnote font-medium text-ink">{label}</p>
+        <span className="text-footnote font-semibold tabular-nums text-primary">{score}</span>
       </div>
       <ProgressBar value={Math.min(100, score)} size="sm" segments={4} showThumb instant />
-      <p className="mt-1.5 text-[11px] text-placeholder">{hint}</p>
+      <p className="mt-1.5 text-caption-2 text-placeholder">{hint}</p>
     </div>
   );
 }
@@ -542,8 +542,8 @@ function CompetitionRow({ registration }: { registration: Registration }) {
   return (
     <div className="flat-row !items-start">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13.5px] font-medium text-ink">{registration.competitionName || `赛事 #${registration.competitionId}`}</p>
-        <p className="mt-0.5 text-[12px] text-placeholder">
+        <p className="truncate text-footnote font-medium text-ink">{registration.competitionName || `赛事 #${registration.competitionId}`}</p>
+        <p className="mt-0.5 text-caption text-placeholder">
           {registration.track || '未选赛道'} · {registration.status}
           {registration.teamName ? ` · 团队 ${registration.teamName}` : ''} · {formatDate(registration.submitDate)}
         </p>
@@ -557,8 +557,8 @@ function HonorRow({ award }: { award: AwardProof }) {
   return (
     <div className="flat-row !items-start">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13.5px] font-medium text-ink">{award.competitionName || '获奖证明'}</p>
-        <p className="mt-0.5 text-[12px] text-placeholder">
+        <p className="truncate text-footnote font-medium text-ink">{award.competitionName || '获奖证明'}</p>
+        <p className="mt-0.5 text-caption text-placeholder">
           {award.winnerName || '—'} · {formatDate(award.awardTime || award.createTime)}
           {award.organizer ? ` · ${award.organizer}` : ''}
         </p>
@@ -572,8 +572,8 @@ function SubmissionRow({ submission }: { submission: Submission }) {
   return (
     <div className="flat-row">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-medium text-ink">{submission.competitionName || '成果材料'}</p>
-        <p className="mt-0.5 truncate text-[12px] text-placeholder">{submission.fileName || '附件'} · {formatDate(submission.uploadDate)}</p>
+        <p className="truncate text-footnote font-medium text-ink">{submission.competitionName || '成果材料'}</p>
+        <p className="mt-0.5 truncate text-caption text-placeholder">{submission.fileName || '附件'} · {formatDate(submission.uploadDate)}</p>
       </div>
     </div>
   );
@@ -589,14 +589,14 @@ function GrowthTimeline({ items }: { items: TimelineItem[] }) {
             <span className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-ink" />
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate text-[13px] font-medium text-ink">{item.title}</p>
-                <p className="mt-0.5 truncate text-[12px] text-placeholder">{item.subtitle}</p>
+                <p className="truncate text-footnote font-medium text-ink">{item.title}</p>
+                <p className="mt-0.5 truncate text-caption text-placeholder">{item.subtitle}</p>
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {item.level && <span className={level.chip}>{level.label}</span>}
                   {item.status && <span className="chip">{item.status}</span>}
                 </div>
               </div>
-              <span className="shrink-0 text-[11px] tabular-nums text-placeholder">{formatDate(item.date)}</span>
+              <span className="shrink-0 text-caption-2 tabular-nums text-placeholder">{formatDate(item.date)}</span>
             </div>
           </li>
         );

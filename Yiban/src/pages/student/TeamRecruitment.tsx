@@ -266,17 +266,17 @@ export default function TeamRecruitment() {
                 search
               </span>
               <input
-                className="input-glass h-9 pl-9 text-[14px]"
+                className="input-glass h-9 pl-9 text-subhead"
                 placeholder="搜索招募内容、队伍或关键字"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <label className="flex items-center gap-2 text-[13px] text-body-muted">
+              <label className="flex items-center gap-2 text-footnote text-body-muted">
                 <span className="shrink-0">按赛事筛选</span>
                 <select
-                  className="input-glass h-9 min-w-[200px] max-w-[320px] text-[13px]"
+                  className="input-glass h-9 min-w-[200px] max-w-[320px] text-footnote"
                   value={selectedCompetitionId}
                   onChange={(e) => { setSelectedCompetitionId(e.target.value); setPage(1); }}
                 >
@@ -289,7 +289,7 @@ export default function TeamRecruitment() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="input-glass h-9 w-auto text-[13px]"
+                className="input-glass h-9 w-auto text-footnote"
               >
                 <option>最新发布</option>
                 <option>即将截止</option>
@@ -298,7 +298,7 @@ export default function TeamRecruitment() {
           </div>
           {competitionOptions.length > 0 && (
             <div className="flex min-w-0 items-center gap-2 border-t border-hairline pt-3">
-              <span className="shrink-0 text-[12px] text-placeholder">快捷筛选</span>
+              <span className="shrink-0 text-caption text-placeholder">快捷筛选</span>
               <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto no-scrollbar">
                 <button
                   type="button"
@@ -322,7 +322,7 @@ export default function TeamRecruitment() {
             </div>
           )}
           {selectedCompetitionId ? (
-            <p className="text-[12.5px] text-body-subtle">
+            <p className="text-caption text-body-subtle">
               当前筛选：
               <span className="font-medium text-ink">
                 {competitionOptions.find((c) => String(c.id) === selectedCompetitionId)?.name || '指定赛事'}
@@ -347,24 +347,24 @@ export default function TeamRecruitment() {
           </div>
 
           {loading ? (
-            <p className="py-10 text-center text-[13.5px] text-placeholder">加载中…</p>
+            <p className="py-10 text-center text-footnote text-placeholder">加载中…</p>
           ) : error ? (
-            <p className="py-10 text-center text-[13.5px] text-error">{error}</p>
+            <p className="py-10 text-center text-footnote text-error">{error}</p>
           ) : filtered.length === 0 ? (
-            <p className="py-10 text-center text-[13.5px] text-placeholder">暂无招募信息</p>
+            <p className="py-10 text-center text-footnote text-placeholder">暂无招募信息</p>
           ) : (
             <div className="flat-list">
               {filtered.map((post) => (
                 <article key={post.id} className="flat-row !items-start flex-col gap-2 py-4 sm:flex-row sm:items-start">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-[14px] font-medium text-ink">{post.authorName || '匿名用户'} 的队伍</h3>
+                      <h3 className="text-subhead font-medium text-ink">{post.authorName || '匿名用户'} 的队伍</h3>
                       <span className="chip chip-success">{post.status || '招募中'}</span>
                     </div>
-                    <p className="mt-0.5 text-[12.5px] text-placeholder">
+                    <p className="mt-0.5 text-caption text-placeholder">
                       {post.competitionName} · 发布于 {formatDate(post.date)}
                     </p>
-                    <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-body-subtle">{post.content}</p>
+                    <p className="mt-2 line-clamp-2 text-footnote leading-relaxed text-body-subtle">{post.content}</p>
                     {post.rolesNeeded && post.rolesNeeded.length > 0 ? (
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {post.rolesNeeded.map((role) => (
@@ -420,7 +420,7 @@ export default function TeamRecruitment() {
               </div>
               {showMyPosts ? (
                 teamPosts.filter((p) => String(p.authorId) === String(currentUser.id)).length === 0 ? (
-                  <p className="py-4 text-[12.5px] text-placeholder">暂无发布的帖子</p>
+                  <p className="py-4 text-caption text-placeholder">暂无发布的帖子</p>
                 ) : (
                   <div className="flat-list">
                     {teamPosts
@@ -428,13 +428,13 @@ export default function TeamRecruitment() {
                       .map((post) => (
                         <div key={post.id} className="flat-row !items-start">
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-[13px] font-medium text-ink">{post.competitionName}</p>
-                            <p className="mt-0.5 truncate text-[12px] text-placeholder">{post.content?.slice(0, 30)}...</p>
+                            <p className="truncate text-footnote font-medium text-ink">{post.competitionName}</p>
+                            <p className="mt-0.5 truncate text-caption text-placeholder">{post.content?.slice(0, 30)}...</p>
                           </div>
                           <button
                             type="button"
                             onClick={() => fetchTeamApplications(post)}
-                            className="btn-secondary !h-8 shrink-0 !px-2 !text-[12px]"
+                            className="btn-secondary !h-8 shrink-0 !px-2 !text-caption"
                           >
                             申请
                           </button>
@@ -451,18 +451,18 @@ export default function TeamRecruitment() {
               <h3 className="page-section-title">我的申请</h3>
             </div>
             {loadingApps ? (
-              <p className="py-4 text-[12.5px] text-placeholder">加载中…</p>
+              <p className="py-4 text-caption text-placeholder">加载中…</p>
             ) : myApplications.length === 0 ? (
-              <p className="py-4 text-[12.5px] text-placeholder">暂无申请记录</p>
+              <p className="py-4 text-caption text-placeholder">暂无申请记录</p>
             ) : (
               <div className="flat-list">
                 {myApplications.slice(0, 5).map((app) => (
                   <div key={app.id} className="flat-row">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] font-medium text-ink">#{app.teamId} · {app.role}</p>
-                      <p className="mt-0.5 text-[12px] text-placeholder">{formatDate(app.createTime)}</p>
+                      <p className="truncate text-footnote font-medium text-ink">#{app.teamId} · {app.role}</p>
+                      <p className="mt-0.5 text-caption text-placeholder">{formatDate(app.createTime)}</p>
                     </div>
-                    <span className={`chip !text-[11px] ${
+                    <span className={`chip !text-caption-2 ${
                       app.status === 'approved' ? 'chip-success' :
                       app.status === 'rejected' ? 'chip-error' : ''
                     }`}>
@@ -479,7 +479,7 @@ export default function TeamRecruitment() {
             <div className="page-section-head">
               <h3 className="page-section-title">组队小贴士</h3>
             </div>
-            <ul className="flex flex-col gap-1.5 text-[12.5px] leading-relaxed text-body-subtle">
+            <ul className="flex flex-col gap-1.5 text-caption leading-relaxed text-body-subtle">
               <li>· 招募内容请详细描述项目方向与团队优势。</li>
               <li>· 使用 "/" 分隔多个角色，例如：前端 / UI / 算法。</li>
               <li>· 选择正确的关联赛事，便于其他同学检索到。</li>
@@ -491,10 +491,10 @@ export default function TeamRecruitment() {
       {showCreateModal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" role="dialog" aria-modal="true" aria-label="创建招募">
           <div className="w-full max-w-md rounded-lg border border-hairline bg-canvas p-5 shadow-lg">
-            <h3 className="mb-4 border-b border-hairline pb-3 text-[15px] font-medium text-ink">创建招募</h3>
+            <h3 className="mb-4 border-b border-hairline pb-3 text-subhead font-medium text-ink">创建招募</h3>
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-body-subtle">关联赛事</label>
+                <label className="text-footnote font-medium text-body-subtle">关联赛事</label>
                 <select
                   className="input-glass"
                   value={createForm.competitionId}
@@ -507,7 +507,7 @@ export default function TeamRecruitment() {
                 </select>
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-body-subtle">招募描述</label>
+                <label className="text-footnote font-medium text-body-subtle">招募描述</label>
                 <textarea
                   className="input-glass !h-auto resize-none py-2.5"
                   rows={4}
@@ -517,7 +517,7 @@ export default function TeamRecruitment() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-body-subtle">需要角色（用 / 分隔）</label>
+                <label className="text-footnote font-medium text-body-subtle">需要角色（用 / 分隔）</label>
                 <input
                   className="input-glass"
                   placeholder="例如：前端开发 / UI 设计"
@@ -547,17 +547,17 @@ export default function TeamRecruitment() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" role="dialog" aria-modal="true" aria-label="联系 TA">
           <div className="w-full max-w-lg rounded-lg border border-hairline bg-canvas p-5 shadow-lg">
             <div className="mb-4 flex items-center justify-between border-b border-hairline pb-3">
-              <h3 className="text-[15px] font-medium text-ink">联系 TA</h3>
+              <h3 className="text-subhead font-medium text-ink">联系 TA</h3>
               <button type="button" onClick={() => setContactTarget(null)} className="icon-button !h-8 !w-8" aria-label="关闭">
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
             <div className="flex flex-col gap-4">
-              <p className="text-[13px] text-placeholder">
+              <p className="text-footnote text-placeholder">
                 向 <strong className="text-ink">{contactTarget.authorName}</strong> 发送站内消息
               </p>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-body-subtle">标题</label>
+                <label className="text-footnote font-medium text-body-subtle">标题</label>
                 <input
                   className="input-glass"
                   placeholder="消息标题"
@@ -566,7 +566,7 @@ export default function TeamRecruitment() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-body-subtle">内容</label>
+                <label className="text-footnote font-medium text-body-subtle">内容</label>
                 <textarea
                   className="input-glass !h-auto resize-none py-2.5"
                   rows={5}
@@ -597,17 +597,17 @@ export default function TeamRecruitment() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" role="dialog" aria-modal="true" aria-label="申请加入">
           <div className="w-full max-w-lg rounded-lg border border-hairline bg-canvas p-5 shadow-lg">
             <div className="mb-4 flex items-center justify-between border-b border-hairline pb-3">
-              <h3 className="text-[15px] font-medium text-ink">申请加入</h3>
+              <h3 className="text-subhead font-medium text-ink">申请加入</h3>
               <button type="button" onClick={() => setApplyTarget(null)} className="icon-button !h-8 !w-8" aria-label="关闭">
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
             <div className="flex flex-col gap-4">
-              <p className="text-[13px] text-placeholder">
+              <p className="text-footnote text-placeholder">
                 申请加入 <strong className="text-ink">{applyTarget.authorName}</strong> 的队伍（{applyTarget.competitionName}）
               </p>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-body-subtle">申请角色</label>
+                <label className="text-footnote font-medium text-body-subtle">申请角色</label>
                 {applyTarget.rolesNeeded && applyTarget.rolesNeeded.length > 0 ? (
                   <>
                     <div className="flex flex-wrap gap-2">
@@ -623,7 +623,7 @@ export default function TeamRecruitment() {
                       ))}
                     </div>
                     <input
-                      className="input-glass mt-1 text-[13px]"
+                      className="input-glass mt-1 text-footnote"
                       placeholder="或输入自定义角色"
                       value={applyTarget.rolesNeeded.includes(applyForm.role) ? '' : applyForm.role}
                       onChange={(e) => setApplyForm({ ...applyForm, role: e.target.value })}
@@ -639,7 +639,7 @@ export default function TeamRecruitment() {
                 )}
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-body-subtle">申请理由（选填）</label>
+                <label className="text-footnote font-medium text-body-subtle">申请理由（选填）</label>
                 <textarea
                   className="input-glass !h-auto resize-none py-2.5"
                   rows={4}
@@ -670,7 +670,7 @@ export default function TeamRecruitment() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" role="dialog" aria-modal="true" aria-label="申请管理">
           <div className="flex max-h-[80vh] w-full max-w-lg flex-col rounded-lg border border-hairline bg-canvas p-5 shadow-lg">
             <div className="mb-3 flex items-center justify-between border-b border-hairline pb-3">
-              <h3 className="text-[15px] font-medium text-ink">申请管理</h3>
+              <h3 className="text-subhead font-medium text-ink">申请管理</h3>
               <button
                 type="button"
                 onClick={() => { setApplicationsTarget(null); setTeamApplications([]); }}
@@ -681,25 +681,25 @@ export default function TeamRecruitment() {
               </button>
             </div>
             <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
-              <p className="text-[13px] text-placeholder">
+              <p className="text-footnote text-placeholder">
                 帖子：<strong className="text-ink">{applicationsTarget.competitionName}</strong>
                 <span className="ml-2">{applicationsTarget.content?.slice(0, 40)}...</span>
               </p>
               <div className="min-h-[120px] flex-1 overflow-y-auto">
                 {loadingTeamApps ? (
-                  <p className="py-8 text-center text-[13px] text-placeholder">加载中…</p>
+                  <p className="py-8 text-center text-footnote text-placeholder">加载中…</p>
                 ) : teamApplications.length === 0 ? (
-                  <p className="py-8 text-center text-[13px] text-placeholder">暂无申请</p>
+                  <p className="py-8 text-center text-footnote text-placeholder">暂无申请</p>
                 ) : (
                   <div className="flat-list">
                     {teamApplications.map((app) => (
                       <div key={app.id} className="border-b border-hairline py-3 last:border-b-0">
                         <div className="mb-2 flex items-start justify-between gap-2">
                           <div>
-                            <p className="text-[13px] font-medium text-ink">用户 #{app.applicantId}</p>
-                            <p className="text-[11px] text-placeholder">{formatDate(app.createTime)}</p>
+                            <p className="text-footnote font-medium text-ink">用户 #{app.applicantId}</p>
+                            <p className="text-caption-2 text-placeholder">{formatDate(app.createTime)}</p>
                           </div>
-                          <span className={`chip !text-[11px] ${
+                          <span className={`chip !text-caption-2 ${
                             app.status === 'approved' ? 'chip-success' :
                             app.status === 'rejected' ? 'chip-error' : ''
                           }`}>
@@ -708,11 +708,11 @@ export default function TeamRecruitment() {
                           </span>
                         </div>
                         <div className="mb-2 flex items-center gap-2">
-                          <span className="text-[12px] text-placeholder">申请角色</span>
-                          <span className="chip chip-primary !text-[11px]">{app.role}</span>
+                          <span className="text-caption text-placeholder">申请角色</span>
+                          <span className="chip chip-primary !text-caption-2">{app.role}</span>
                         </div>
                         {app.reason && (
-                          <p className="mb-3 text-[12px] leading-relaxed text-body-subtle">{app.reason}</p>
+                          <p className="mb-3 text-caption leading-relaxed text-body-subtle">{app.reason}</p>
                         )}
                         {app.status === 'pending' && (
                           <div className="flex justify-end gap-2">

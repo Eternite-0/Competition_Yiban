@@ -36,7 +36,7 @@ export default function LoadingSpinner({
         progress_activity
       </span>
       {message && (
-        <span className="text-[14px] text-ink-muted-48">{message}</span>
+        <span className="text-subhead text-ink-muted-48">{message}</span>
       )}
     </motion.div>
   );

@@ -3,6 +3,7 @@ package com.etsaion.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etsaion.dto.Result;
 import com.etsaion.interceptor.RequireRole;
+import com.etsaion.service.ActivityScore;
 import com.etsaion.service.TeacherService;
 import com.etsaion.utils.ExcelUtil;
 import com.etsaion.vo.RegistrationVO;
@@ -189,7 +190,7 @@ public class TeacherController {
         if (student != null) {
             int totalComps = (Integer) detail.get("totalCompetitions");
             int totalAwards = (Integer) detail.get("totalAwards");
-            double weightedScore = totalComps * 2.0 + totalAwards * 15.0;
+            double weightedScore = ActivityScore.of(totalComps, totalAwards);
             list.add(new StudentComprehensiveVO(
                     (String) student.get("realName"),
                     (String) student.get("username"),

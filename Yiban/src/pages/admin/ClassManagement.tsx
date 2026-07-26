@@ -164,7 +164,7 @@ export default function ClassManagement() {
       <div className="filter-bar" role="search">
         <select
           name="filterCollege"
-          className="input-glass h-9 w-full text-[13px] sm:w-[160px]"
+          className="input-glass h-9 w-full text-footnote sm:w-[160px]"
           value={filterCollege}
           aria-label="筛选学院"
           onChange={(e) => {
@@ -179,7 +179,7 @@ export default function ClassManagement() {
         </select>
         <select
           name="filterMajor"
-          className="input-glass h-9 w-full text-[13px] sm:w-[160px]"
+          className="input-glass h-9 w-full text-footnote sm:w-[160px]"
           value={filterMajor}
           aria-label="筛选专业"
           onChange={(e) => setFilterMajor(e.target.value)}
@@ -191,7 +191,7 @@ export default function ClassManagement() {
         </select>
         <select
           name="filterGrade"
-          className="input-glass h-9 w-full text-[13px] sm:w-[120px]"
+          className="input-glass h-9 w-full text-footnote sm:w-[120px]"
           value={filterGrade}
           aria-label="筛选年级"
           onChange={(e) => setFilterGrade(e.target.value)}
@@ -216,7 +216,7 @@ export default function ClassManagement() {
         ) : classes.length === 0 ? (
           <div className="empty-panel py-16">
             <span className="material-symbols-outlined">class</span>
-            <p className="text-[13px]">暂无班级数据</p>
+            <p className="text-footnote">暂无班级数据</p>
           </div>
         ) : (
           <div className="data-table-wrap !rounded-none !border-0">
@@ -245,13 +245,13 @@ export default function ClassManagement() {
                     </td>
                     <td className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button type="button" onClick={() => handleOpenModal(cls)} className="btn-utility !h-8 !px-3 !text-[12px]">
+                        <button type="button" onClick={() => handleOpenModal(cls)} className="btn-utility !h-8 !px-3 !text-caption">
                           编辑
                         </button>
-                        <button type="button" onClick={() => handleToggleStatus(cls)} className="btn-secondary !h-8 !px-3 !text-[12px]">
+                        <button type="button" onClick={() => handleToggleStatus(cls)} className="btn-secondary !h-8 !px-3 !text-caption">
                           {cls.status === 'active' ? '停用' : '启用'}
                         </button>
-                        <button type="button" onClick={() => handleDelete(cls.id)} className="btn-danger !h-8 !px-3 !text-[12px]">
+                        <button type="button" onClick={() => handleDelete(cls.id)} className="btn-danger !h-8 !px-3 !text-caption">
                           删除
                         </button>
                       </div>

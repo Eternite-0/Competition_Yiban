@@ -20,6 +20,7 @@ import com.etsaion.service.ai.AiCompetitionDraftService;
 import com.etsaion.service.ai.AiArtifactService;
 import com.etsaion.service.ai.AiTaskService;
 import com.etsaion.service.ai.AssistantToolRegistry;
+import com.etsaion.service.impl.StudentAccessPolicyImpl;
 import com.etsaion.vo.CompetitionVO;
 import com.etsaion.vo.ComprehensiveScoreVO;
 import cn.hutool.json.JSONObject;
@@ -229,6 +230,9 @@ class AssistantToolPermissionTest {
         ReflectionTestUtils.setField(registry, "reviewTaskService", mock(ReviewTaskService.class));
         ReflectionTestUtils.setField(registry, "growthRecordService", mock(GrowthRecordService.class));
         ReflectionTestUtils.setField(registry, "userService", userService);
+        StudentAccessPolicyImpl accessPolicy = new StudentAccessPolicyImpl();
+        ReflectionTestUtils.setField(accessPolicy, "userService", userService);
+        ReflectionTestUtils.setField(registry, "studentAccessPolicy", accessPolicy);
         ReflectionTestUtils.setField(registry, "aiTaskService", mock(AiTaskService.class));
         ReflectionTestUtils.setField(registry, "aiCompetitionDraftService", mock(AiCompetitionDraftService.class));
         ReflectionTestUtils.setField(registry, "activityService", mock(ActivityService.class));

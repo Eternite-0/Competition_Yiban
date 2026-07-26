@@ -207,7 +207,7 @@ export default function StudentHome() {
           title="点击切换排名/百分位"
         >
           <div className="metric-item-label">综测{comprehensiveMode === 'rank' ? '排名' : '百分位'}</div>
-          <div className="metric-item-value text-[20px]">
+          <div className="metric-item-value text-title-3">
             {comprehensiveMode === 'rank'
               ? formatRank(comprehensive)
               : formatPercent(comprehensive?.comprehensiveRankPercent)}
@@ -231,7 +231,7 @@ export default function StudentHome() {
           </button>
         </div>
         {todos.length === 0 ? (
-          <p className="py-6 text-[13.5px] text-placeholder">
+          <p className="py-6 text-footnote text-placeholder">
             暂无待办。去活动大厅看看有没有适合的赛事吧。
           </p>
         ) : (
@@ -244,10 +244,10 @@ export default function StudentHome() {
                 onClick={() => navigate(`/student/registrations/workbench/${r.competitionId}`)}
               >
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[14px] font-medium text-ink">
+                  <div className="truncate text-subhead font-medium text-ink">
                     {r.competitionName || r.teamName || `报名 #${r.id}`}
                   </div>
-                  <div className="mt-0.5 text-[12.5px] text-placeholder">
+                  <div className="mt-0.5 text-caption text-placeholder">
                     {r.submitDate ? `提交于 ${String(r.submitDate).slice(0, 10)}` : '点击进入工作台'}
                   </div>
                 </div>
@@ -273,7 +273,7 @@ export default function StudentHome() {
             </button>
           </div>
           {hotEvents.length === 0 ? (
-            <p className="py-6 text-[13.5px] text-placeholder">暂无可报名活动</p>
+            <p className="py-6 text-footnote text-placeholder">暂无可报名活动</p>
           ) : (
             <div className="flat-list">
               {hotEvents.map((event) => (
@@ -284,8 +284,8 @@ export default function StudentHome() {
                   onClick={() => navigate(`/student/competitions/${event.id}`)}
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[14px] font-medium text-ink">{event.name}</div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[12px] text-placeholder">
+                    <div className="truncate text-subhead font-medium text-ink">{event.name}</div>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-caption text-placeholder">
                       <span>{event.level || '级别待定'}</span>
                       <span>·</span>
                       <span>{event.category || '未分类'}</span>
@@ -309,23 +309,23 @@ export default function StudentHome() {
             <h2 className="page-section-title">公告</h2>
           </div>
           {announcements.length === 0 ? (
-            <p className="py-6 text-[13.5px] text-placeholder">暂无公告</p>
+            <p className="py-6 text-footnote text-placeholder">暂无公告</p>
           ) : (
             <div className="flat-list">
               {announcements.map((a: any) => (
                 <div key={a.id} className="flat-row items-start">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-[14px] font-medium text-ink">{a.title}</span>
+                      <span className="text-subhead font-medium text-ink">{a.title}</span>
                       {a.isPinned ? <span className="chip chip-warning !py-0">置顶</span> : null}
                     </div>
                     {a.content ? (
-                      <p className="mt-1 line-clamp-2 text-[12.5px] leading-relaxed text-body-subtle">
+                      <p className="mt-1 line-clamp-2 text-caption leading-relaxed text-body-subtle">
                         {a.content}
                       </p>
                     ) : null}
                   </div>
-                  <span className="shrink-0 text-[12px] text-placeholder">
+                  <span className="shrink-0 text-caption text-placeholder">
                     {a.createTime ? new Date(a.createTime).toLocaleDateString('zh-CN') : ''}
                   </span>
                 </div>

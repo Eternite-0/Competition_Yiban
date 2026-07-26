@@ -295,7 +295,7 @@ export default function CompetitionsHub() {
             : '按级别、类别和截止时间发现赛事，报名后在「我的赛事」继续处理。'
         }
         actions={(
-          <div className="text-[13px] text-body-subtle">
+          <div className="text-footnote text-body-subtle">
             共 <span className="font-semibold tabular-nums text-ink">{total}</span> 项
             <span className="mx-2 text-hairline">|</span>
             本页报名中 <span className="font-semibold tabular-nums text-ink">{publishedCount}</span>
@@ -315,7 +315,7 @@ export default function CompetitionsHub() {
             <div className="relative w-full lg:max-w-[300px]">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-placeholder">search</span>
               <input
-                className="input-glass h-9 pl-9 text-[14px]"
+                className="input-glass h-9 pl-9 text-subhead"
                 placeholder={`搜索${typeLabel[selectedType]}`}
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
@@ -323,13 +323,13 @@ export default function CompetitionsHub() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 border-t border-hairline pt-3">
-            <span className="text-[12px] text-placeholder">级别</span>
+            <span className="text-caption text-placeholder">级别</span>
             <Segmented
               options={LEVELS}
               value={selectedLevel}
               onChange={(v) => { setSelectedLevel(v); setPage(1); }}
             />
-            <span className="ml-2 text-[12px] text-placeholder">状态</span>
+            <span className="ml-2 text-caption text-placeholder">状态</span>
             <Segmented
               options={isAdmin ? STATUSES : STATUSES.filter((s) => s.value !== 'draft')}
               value={selectedStatus}
@@ -337,7 +337,7 @@ export default function CompetitionsHub() {
             />
           </div>
           <div className="flex min-w-0 items-center gap-2 border-t border-hairline pt-3">
-            <span className="shrink-0 text-[12px] text-placeholder">分类</span>
+            <span className="shrink-0 text-caption text-placeholder">分类</span>
             <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto no-scrollbar">
               {categoryOptions.map((cat) => (
                 <CategoryButton
@@ -355,8 +355,8 @@ export default function CompetitionsHub() {
 
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-[15px] font-semibold text-ink">{activeCategoryName}</h2>
-          <p className="mt-0.5 text-[12.5px] text-placeholder">{activeTypeLabel} · {total} 个结果</p>
+          <h2 className="text-subhead font-semibold text-ink">{activeCategoryName}</h2>
+          <p className="mt-0.5 text-caption text-placeholder">{activeTypeLabel} · {total} 个结果</p>
         </div>
       </div>
 
@@ -375,7 +375,7 @@ export default function CompetitionsHub() {
           }}
         />
       ) : items.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-hairline py-16 text-center text-[13.5px] text-placeholder">
+        <div className="rounded-xl border border-dashed border-hairline py-16 text-center text-footnote text-placeholder">
           {searchQuery ? '没有找到匹配的活动' : '暂无符合条件的活动'}
         </div>
       ) : (
@@ -427,12 +427,12 @@ export default function CompetitionsHub() {
                   </div>
 
                   <button type="button" className="text-left" onClick={() => navigate(detailPath)}>
-                    <h3 className="line-clamp-2 min-h-[44px] text-[15px] font-semibold leading-snug tracking-tight text-ink transition-colors group-hover:text-primary">
+                    <h3 className="line-clamp-2 min-h-[44px] text-subhead font-semibold leading-snug tracking-tight text-ink transition-colors group-hover:text-primary">
                       {item.name}
                     </h3>
                   </button>
 
-                  <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-body-subtle">
+                  <div className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-body-subtle">
                     <span className="inline-flex items-center gap-1">
                       <span className="material-symbols-outlined text-[14px] text-placeholder">category</span>
                       {typeLabel[item.type]} · {categoryName}
@@ -445,7 +445,7 @@ export default function CompetitionsHub() {
                   </div>
 
                   {urgent ? (
-                    <p className="mt-2 inline-flex w-fit items-center gap-1 rounded-md bg-warning/10 px-2 py-1 text-[12px] font-medium text-warning">
+                    <p className="mt-2 inline-flex w-fit items-center gap-1 rounded-md bg-warning/10 px-2 py-1 text-caption font-medium text-warning">
                       <span className="material-symbols-outlined text-[14px]">schedule</span>
                       {remainingDays === 0 ? '今天截止' : `还剩 ${remainingDays} 天截止`}
                     </p>

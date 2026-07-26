@@ -280,7 +280,7 @@ export default function TeacherHome() {
             <div className="stat-card-label">{metric.label}</div>
             <div className="stat-card-value">
               {loading ? '—' : metric.value}
-              <span className="ml-1 text-[13px] font-normal text-placeholder">{metric.suffix}</span>
+              <span className="ml-1 text-footnote font-normal text-placeholder">{metric.suffix}</span>
             </div>
             <div className="stat-card-hint">{metric.hint}</div>
           </div>
@@ -308,7 +308,7 @@ export default function TeacherHome() {
         <div className="section-card-header">
           <div>
             <h2 className="section-card-title">关键状态分布</h2>
-            <p className="mt-0.5 text-[12px] text-placeholder">按报名/成果流转状态统计</p>
+            <p className="mt-0.5 text-caption text-placeholder">按报名/成果流转状态统计</p>
           </div>
           <span className="chip">{monitorRows.length} 条记录</span>
         </div>
@@ -326,18 +326,18 @@ export default function TeacherHome() {
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {statusGroups.map((item) => (
               <div key={item.key} className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
-                <span className="flex min-w-0 items-center gap-2 text-[12px] text-body-muted">
+                <span className="flex min-w-0 items-center gap-2 text-caption text-body-muted">
                   <span className={`h-2 w-2 shrink-0 rounded-md ${item.tone}`} />
                   <span className="truncate">{item.label}</span>
                 </span>
-                <span className="text-[13px] font-medium tabular-nums text-ink">{item.count}</span>
+                <span className="text-footnote font-medium tabular-nums text-ink">{item.count}</span>
               </div>
             ))}
           </div>
           <div className="rounded-md border border-border bg-surface-tile-1 px-3 py-2.5">
-            <p className="text-[12px] text-placeholder">重点专业</p>
-            <p className="mt-0.5 text-[14px] font-medium text-ink">{strongestMajor?.major || '暂无数据'}</p>
-            <p className="mt-0.5 text-[12px] text-placeholder">
+            <p className="text-caption text-placeholder">重点专业</p>
+            <p className="mt-0.5 text-subhead font-medium text-ink">{strongestMajor?.major || '暂无数据'}</p>
+            <p className="mt-0.5 text-caption text-placeholder">
               {strongestMajor ? `${strongestMajor.registrationCount} 次参与，覆盖 ${strongestMajor.studentCount} 名学生` : '筛选后暂无专业参与记录'}
             </p>
           </div>
@@ -345,7 +345,7 @@ export default function TeacherHome() {
       </section>
 
       <div className="filter-bar">
-        <div className="flex items-center gap-2 text-[13px] font-medium text-ink">
+        <div className="flex items-center gap-2 text-footnote font-medium text-ink">
           <span className="material-symbols-outlined text-[18px] text-body-muted">tune</span>
           教师授权范围
         </div>
@@ -357,7 +357,7 @@ export default function TeacherHome() {
           <div className="section-card-header">
             <div>
               <h2 className="section-card-title">参赛趋势监测</h2>
-              <p className="mt-0.5 text-[12px] text-placeholder">近 {Math.max(trend.length, 1)} 个月报名活跃度</p>
+              <p className="mt-0.5 text-caption text-placeholder">近 {Math.max(trend.length, 1)} 个月报名活跃度</p>
             </div>
             <div className="flex gap-1.5">
               <span className="chip">峰值 {trendMax}</span>
@@ -368,12 +368,12 @@ export default function TeacherHome() {
             {loading ? (
               <div className="empty-panel h-[280px]">
                 <span className="material-symbols-outlined animate-spin">progress_activity</span>
-                <p className="text-[13px]">加载中…</p>
+                <p className="text-footnote">加载中…</p>
               </div>
             ) : trend.length === 0 || trend.every((t) => t.count === 0) ? (
               <div className="empty-panel h-[280px]">
                 <span className="material-symbols-outlined">bar_chart</span>
-                <p className="text-[13px]">暂无趋势数据</p>
+                <p className="text-footnote">暂无趋势数据</p>
               </div>
             ) : (
               <div className="relative h-[280px] rounded-md border border-border p-3">
@@ -394,12 +394,12 @@ export default function TeacherHome() {
                             className={`relative w-full max-w-[48px] rounded-t-md ${active ? 'bg-ink' : 'bg-ink/20'} group-hover:bg-ink/55`}
                             style={{ height: `${height}%` }}
                           >
-                            <span className={`absolute -top-6 left-1/2 -translate-x-1/2 text-[12px] font-medium tabular-nums ${active ? 'text-ink' : 'text-placeholder'}`}>
+                            <span className={`absolute -top-6 left-1/2 -translate-x-1/2 text-caption font-medium tabular-nums ${active ? 'text-ink' : 'text-placeholder'}`}>
                               {point.count}
                             </span>
                           </div>
                         </div>
-                        <span className="text-center text-[11px] text-placeholder">{label}</span>
+                        <span className="text-center text-caption-2 text-placeholder">{label}</span>
                       </div>
                     );
                   })}
@@ -413,14 +413,14 @@ export default function TeacherHome() {
           <div className="section-card-header">
             <div>
               <h2 className="section-card-title">需要关注</h2>
-              <p className="mt-0.5 text-[12px] text-placeholder">退回、驳回、待完善与待审</p>
+              <p className="mt-0.5 text-caption text-placeholder">退回、驳回、待完善与待审</p>
             </div>
           </div>
           <div className="section-card-body tight flex-1">
             {riskRows.length === 0 ? (
               <div className="empty-panel min-h-[240px]">
                 <span className="material-symbols-outlined">task_alt</span>
-                <p className="text-[13px]">暂无风险事项</p>
+                <p className="text-footnote">暂无风险事项</p>
               </div>
             ) : (
               riskRows.map((row, index) => (
@@ -431,8 +431,8 @@ export default function TeacherHome() {
                   className="list-row list-row-clickable w-full text-left"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13.5px] font-medium text-ink">{row.studentName}</p>
-                    <p className="mt-0.5 truncate text-[12px] text-placeholder">{row.className || '未分班'} · {row.competitionName}</p>
+                    <p className="truncate text-footnote font-medium text-ink">{row.studentName}</p>
+                    <p className="mt-0.5 truncate text-caption text-placeholder">{row.className || '未分班'} · {row.competitionName}</p>
                   </div>
                   <span className={row.status === '审核驳回' ? 'chip chip-error' : 'chip chip-warning'}>{row.status}</span>
                 </button>
@@ -447,9 +447,9 @@ export default function TeacherHome() {
           <div className="section-card-header">
             <div>
               <h2 className="section-card-title">班级活跃排行</h2>
-              <p className="mt-0.5 text-[12px] text-placeholder">按参赛记录数排序</p>
+              <p className="mt-0.5 text-caption text-placeholder">按参赛记录数排序</p>
             </div>
-            <button type="button" onClick={() => navigate(`${basePath}/student-growth`)} className="text-[12.5px] text-body-muted hover:text-ink">
+            <button type="button" onClick={() => navigate(`${basePath}/student-growth`)} className="text-caption text-body-muted hover:text-ink">
               学情分析 →
             </button>
           </div>
@@ -457,7 +457,7 @@ export default function TeacherHome() {
             {classRank.length === 0 ? (
               <div className="empty-panel py-10">
                 <span className="material-symbols-outlined">inbox</span>
-                <p className="text-[13px]">暂无班级数据</p>
+                <p className="text-footnote">暂无班级数据</p>
               </div>
             ) : (
               <div className="flex flex-col gap-3">
@@ -466,13 +466,13 @@ export default function TeacherHome() {
                   return (
                     <div key={item.className} className="grid grid-cols-[100px_minmax(0,1fr)_48px] items-center gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-[13px] font-medium text-ink">{item.className}</p>
-                        <p className="truncate text-[11px] text-placeholder">{item.major || '未标注专业'}</p>
+                        <p className="truncate text-footnote font-medium text-ink">{item.className}</p>
+                        <p className="truncate text-caption-2 text-placeholder">{item.major || '未标注专业'}</p>
                       </div>
                       <ProgressBar value={width} size="sm" segments={4} showThumb instant className="min-w-0" />
                       <div className="text-right">
-                        <p className="text-[14px] font-medium tabular-nums text-ink">{item.count}</p>
-                        <p className="text-[10px] text-placeholder">人次</p>
+                        <p className="text-subhead font-medium tabular-nums text-ink">{item.count}</p>
+                        <p className="text-caption-2 text-placeholder">人次</p>
                       </div>
                     </div>
                   );
@@ -486,9 +486,9 @@ export default function TeacherHome() {
           <div className="section-card-header">
             <div>
               <h2 className="section-card-title">近期动态流</h2>
-              <p className="mt-0.5 text-[12px] text-placeholder">最新报名与审核流转</p>
+              <p className="mt-0.5 text-caption text-placeholder">最新报名与审核流转</p>
             </div>
-            <button type="button" onClick={() => navigate(`${basePath}/student-competitions`)} className="text-[12.5px] text-body-muted hover:text-ink">
+            <button type="button" onClick={() => navigate(`${basePath}/student-competitions`)} className="text-caption text-body-muted hover:text-ink">
               查看学生 →
             </button>
           </div>
@@ -496,17 +496,17 @@ export default function TeacherHome() {
             {recentActivities.length === 0 ? (
               <div className="empty-panel py-10">
                 <span className="material-symbols-outlined">inbox</span>
-                <p className="text-[13px]">暂无近期动态</p>
+                <p className="text-footnote">暂无近期动态</p>
               </div>
             ) : (
               recentActivities.map((item, index) => (
                 <div key={index} className="list-row">
-                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-surface-tile-1 text-[12px] font-medium text-body-muted">
+                  <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-surface-tile-1 text-caption font-medium text-body-muted">
                     {(item.studentName || '?')[0]}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13.5px] font-medium text-ink">{item.studentName || '未知学生'}</p>
-                    <p className="truncate text-[12px] text-placeholder">
+                    <p className="truncate text-footnote font-medium text-ink">{item.studentName || '未知学生'}</p>
+                    <p className="truncate text-caption text-placeholder">
                       {item.class || '未分班'} · {item.submitDate ? new Date(item.submitDate).toLocaleDateString() : '—'}
                     </p>
                   </div>
@@ -524,9 +524,9 @@ export default function TeacherHome() {
         <div className="section-card-header">
           <div>
             <h2 className="section-card-title">待审核报名</h2>
-            <p className="mt-0.5 text-[12px] text-placeholder">可直接进入审核中心处理</p>
+            <p className="mt-0.5 text-caption text-placeholder">可直接进入审核中心处理</p>
           </div>
-          <button type="button" onClick={() => navigate(`${basePath}/audit`)} className="text-[12.5px] text-body-muted hover:text-ink">
+          <button type="button" onClick={() => navigate(`${basePath}/audit`)} className="text-caption text-body-muted hover:text-ink">
             查看全部 →
           </button>
         </div>
@@ -534,7 +534,7 @@ export default function TeacherHome() {
           {pending.length === 0 ? (
             <div className="empty-panel py-10">
               <span className="material-symbols-outlined">task_alt</span>
-              <p className="text-[13px]">暂无待审核</p>
+              <p className="text-footnote">暂无待审核</p>
             </div>
           ) : (
             pending.map((item) => (
@@ -545,8 +545,8 @@ export default function TeacherHome() {
                 className="list-row list-row-clickable w-full text-left"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13.5px] font-medium text-ink">{item.studentLabel}</p>
-                  <p className="mt-0.5 truncate text-[12px] text-placeholder">{item.competitionLabel}</p>
+                  <p className="truncate text-footnote font-medium text-ink">{item.studentLabel}</p>
+                  <p className="mt-0.5 truncate text-caption text-placeholder">{item.competitionLabel}</p>
                 </div>
                 <span className="chip chip-warning">{item.status}</span>
                 <span className="material-symbols-outlined text-[18px] text-placeholder">chevron_right</span>

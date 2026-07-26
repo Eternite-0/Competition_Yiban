@@ -11,11 +11,13 @@ import com.etsaion.mapper.StudentRosterMapper;
 import com.etsaion.service.ClassInfoService;
 import com.etsaion.service.MajorService;
 import com.etsaion.service.StudentRosterService;
+import com.etsaion.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,6 +35,10 @@ public class StudentRosterServiceImpl extends ServiceImpl<StudentRosterMapper, S
 
     @Autowired
     private ClassInfoService classInfoService;
+
+    @Autowired
+    @Lazy
+    private UserService userService;
 
     @Override
     public Page<Map<String, Object>> listRoster(String keyword, String college, Long majorId, String grade, String status, int current, int size) {
@@ -289,6 +295,9 @@ public class StudentRosterServiceImpl extends ServiceImpl<StudentRosterMapper, S
         }
         roster.setUpdateTime(LocalDateTime.now());
         this.updateById(roster);
+        // 花名册是院系信息的来源，改动要立刻反映到学生账号上，
+        // 否则教师端读的 user 表会一直停在旧值
+        userService.syncStudentAccountFromRoster(roster);
         return roster;
     }
 

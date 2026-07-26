@@ -314,7 +314,7 @@ export default function CompetitionSourceManagement() {
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
-            className={`flex h-9 items-center gap-1.5 rounded-sm px-4 text-[13px] font-medium transition ${
+            className={`flex h-9 items-center gap-1.5 rounded-sm px-4 text-footnote font-medium transition ${
               activeTab === tab.key
                 ? 'bg-canvas text-ink shadow-none'
                 : 'text-body-muted hover:text-ink'
@@ -351,14 +351,14 @@ export default function CompetitionSourceManagement() {
             search
           </span>
           <input
-            className="input-glass h-9 !pl-9 text-[13px]"
+            className="input-glass h-9 !pl-9 text-footnote"
             placeholder="搜索来源名称或 URL"
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
           />
         </div>
         <select
-          className="input-glass h-9 w-full text-[13px] sm:w-[140px]"
+          className="input-glass h-9 w-full text-footnote sm:w-[140px]"
           value={enabledFilter}
           onChange={(event) => setEnabledFilter(event.target.value as typeof enabledFilter)}
           aria-label="筛选启用状态"
@@ -367,7 +367,7 @@ export default function CompetitionSourceManagement() {
           <option value="enabled">已启用</option>
           <option value="disabled">已停用</option>
         </select>
-        <span className="text-[12px] text-placeholder sm:ml-auto">显示 {filteredSources.length} 条</span>
+        <span className="text-caption text-placeholder sm:ml-auto">显示 {filteredSources.length} 条</span>
       </section>
 
       <section className="section-card">
@@ -382,8 +382,8 @@ export default function CompetitionSourceManagement() {
         ) : filteredSources.length === 0 ? (
           <div className="empty-panel py-16">
             <span className="material-symbols-outlined">travel_explore</span>
-            <p className="text-[13px]">暂无赛事来源</p>
-            <p className="text-[12px] text-placeholder">新增公开网页来源后即可触发采集</p>
+            <p className="text-footnote">暂无赛事来源</p>
+            <p className="text-caption text-placeholder">新增公开网页来源后即可触发采集</p>
             {!keyword && enabledFilter === 'all' && (
               <button type="button" className="btn-primary mt-2" onClick={openCreate}>
                 <span className="material-symbols-outlined">add</span>
@@ -415,13 +415,13 @@ export default function CompetitionSourceManagement() {
                     >
                       <td className="px-md py-md">
                         <div className="max-w-[340px]">
-                          <p className="text-[13px] font-medium text-ink">{source.name}</p>
+                          <p className="text-footnote font-medium text-ink">{source.name}</p>
                           <a
                             href={source.url}
                             target="_blank"
                             rel="noreferrer"
                             title={source.url}
-                            className="mt-1 block truncate text-[12px] text-body-muted hover:underline"
+                            className="mt-1 block truncate text-caption text-body-muted hover:underline"
                           >
                             {source.url}
                           </a>
@@ -440,7 +440,7 @@ export default function CompetitionSourceManagement() {
                           aria-checked={isEnabled(source)}
                           disabled={String(togglingId) === String(source.id)}
                           onClick={() => handleToggle(source)}
-                          className="flex items-center gap-2 text-[12px] text-body-muted"
+                          className="flex items-center gap-2 text-caption text-body-muted"
                         >
                           <span className={`relative h-5 w-9 rounded-full transition ${
                             isEnabled(source) ? 'bg-primary' : 'bg-hairline'
@@ -464,9 +464,9 @@ export default function CompetitionSourceManagement() {
                             </span>
                             {crawling ? '采集中' : status.label}
                           </span>
-                          <p className="mt-1.5 text-[11px] text-placeholder">{formatDateTime(source.lastCrawlTime)}</p>
+                          <p className="mt-1.5 text-caption-2 text-placeholder">{formatDateTime(source.lastCrawlTime)}</p>
                           {source.lastErrorMessage && (
-                            <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-error" title={source.lastErrorMessage}>
+                            <p className="mt-1 line-clamp-2 text-caption-2 leading-4 text-error" title={source.lastErrorMessage}>
                               {source.lastErrorMessage}
                             </p>
                           )}
@@ -519,8 +519,8 @@ export default function CompetitionSourceManagement() {
           ) : crawlDrafts.length === 0 ? (
             <div className="flex min-h-[360px] w-full min-w-0 flex-col items-center justify-center px-lg text-center">
               <span className="material-symbols-outlined text-[46px] text-placeholder">analytics</span>
-              <p className="empty-state-copy mt-3 text-[14px] text-ink">暂无采集结果</p>
-              <p className="empty-state-copy mt-1 text-[12px] text-placeholder">触发采集后，抓取到的赛事将显示在这里</p>
+              <p className="empty-state-copy mt-3 text-subhead text-ink">暂无采集结果</p>
+              <p className="empty-state-copy mt-1 text-caption text-placeholder">触发采集后，抓取到的赛事将显示在这里</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 divide-y divide-hairline">
@@ -533,7 +533,7 @@ export default function CompetitionSourceManagement() {
                   <div key={draft.id} className="flex items-center gap-4 px-lg py-md transition hover:bg-hover-overlay">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-[14px] font-medium text-ink">{draft.name || '未命名赛事'}</h3>
+                        <h3 className="text-subhead font-medium text-ink">{draft.name || '未命名赛事'}</h3>
                         <span className={`chip shrink-0 ${statusClass}`}>{statusLabel}</span>
                         {risky && (
                           <span className="flex items-center gap-1 chip shrink-0 chip-warning">
@@ -542,7 +542,7 @@ export default function CompetitionSourceManagement() {
                           </span>
                         )}
                       </div>
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-placeholder">
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption text-placeholder">
                         {draft.sourceUrl && (
                           <a href={draft.sourceUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-ink truncate max-w-[300px]">
                             <span className="material-symbols-outlined text-[14px]">link</span>
@@ -552,7 +552,7 @@ export default function CompetitionSourceManagement() {
                         <span>{draft.createTime ? new Date(draft.createTime).toLocaleString('zh-CN') : '—'}</span>
                       </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2 text-[12px]">
+                    <div className="flex shrink-0 items-center gap-2 text-caption">
                       {avg !== null && (
                         <span className={`tabular-nums ${avg < 0.7 ? 'text-warning' : 'text-placeholder'}`}>
                           置信度 {formatConfidence(avg)}
@@ -560,7 +560,7 @@ export default function CompetitionSourceManagement() {
                       )}
                       <button
                         type="button"
-                        className="btn-secondary !py-1.5 !text-[12px]"
+                        className="btn-secondary !py-1.5 !text-caption"
                         onClick={() => navigate(`/admin/drafts?draft=${draft.id}&source=ai`)}
                       >
                         查看
@@ -597,10 +597,10 @@ export default function CompetitionSourceManagement() {
             >
               <div className="flex items-center justify-between border-b border-hairline px-lg py-md">
                 <div>
-                  <h2 id="source-form-title" className="text-[17px] font-medium text-ink">
+                  <h2 id="source-form-title" className="text-callout font-medium text-ink">
                     {editingId !== null ? '编辑赛事来源' : '新增赛事来源'}
                   </h2>
-                  <p className="mt-1 text-[12px] text-placeholder">仅配置公开可访问的网页地址</p>
+                  <p className="mt-1 text-caption text-placeholder">仅配置公开可访问的网页地址</p>
                 </div>
                 <button type="button" className="icon-button" onClick={() => setShowForm(false)} aria-label="关闭">
                   <span className="material-symbols-outlined text-[19px]">close</span>
@@ -654,8 +654,8 @@ export default function CompetitionSourceManagement() {
                 </Field>
                 <label className="flex items-center justify-between rounded-sm border border-hairline bg-surface-tile-1 px-md py-3 sm:col-span-2">
                   <span>
-                    <span className="block text-[13px] font-medium text-ink">启用来源</span>
-                    <span className="mt-0.5 block text-[11px] text-placeholder">停用后不会执行手动或定时采集</span>
+                    <span className="block text-footnote font-medium text-ink">启用来源</span>
+                    <span className="mt-0.5 block text-caption-2 text-placeholder">停用后不会执行手动或定时采集</span>
                   </span>
                   <input
                     type="checkbox"
@@ -708,7 +708,7 @@ function Field({
 }) {
   return (
     <label className={`flex flex-col gap-1.5 ${className}`}>
-      <span className="text-[12px] font-medium text-body-muted">
+      <span className="text-caption font-medium text-body-muted">
         {required && <span className="mr-1 text-error">*</span>}
         {label}
       </span>

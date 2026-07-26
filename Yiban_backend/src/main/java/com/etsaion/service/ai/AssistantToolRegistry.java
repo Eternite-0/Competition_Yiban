@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class AssistantToolRegistry {
 
     @Autowired private CompetitionService competitionService;
+    @Autowired private StudentAccessPolicy studentAccessPolicy;
     @Autowired private RegistrationService registrationService;
     @Autowired private SubmissionService submissionService;
     @Autowired private AwardProofService awardProofService;
@@ -654,27 +655,19 @@ public class AssistantToolRegistry {
         return String.format(Locale.ROOT, "%.1f%%", value.doubleValue() * 100.0);
     }
 
+    // 学院匹配交给 StudentAccessPolicy——助手能查到的学生必须与教师在页面上
+    // 查到的完全一致，两边各维护一套别名规则时并非如此
+
     private boolean sameCollege(String left, String right) {
-        if (left == null || right == null) {
-            return false;
-        }
-        return collegeAliases(left).contains(right) || collegeAliases(right).contains(left);
+        return studentAccessPolicy.sameCollege(left, right);
+    }
+
+    private List<String> collegeAliases(String college) {
+        return studentAccessPolicy.collegeAliases(college);
     }
 
     private String displayMajor(String major) {
         return "软件工程(创新班)".equals(major) ? "软件工程" : major;
-    }
-
-    private List<String> collegeAliases(String college) {
-        if (college == null || college.isBlank()) {
-            return List.of();
-        }
-        if ("计算机学院".equals(college)
-                || "计算机与人工智能学院".equals(college)
-                || "计算机与智能教育学院".equals(college)) {
-            return List.of("计算机学院", "计算机与人工智能学院", "计算机与智能教育学院");
-        }
-        return List.of(college);
     }
 
     @SuppressWarnings("unchecked")

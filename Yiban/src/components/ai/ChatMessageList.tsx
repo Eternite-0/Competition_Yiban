@@ -51,7 +51,7 @@ function ThinkingIndicator({ progress }: { progress?: AiToolProgress }) {
   }, [progress?.message]);
 
   return (
-    <span className="inline-flex items-center gap-2 text-[12px] font-medium text-body-subtle" aria-live="polite">
+    <span className="inline-flex items-center gap-2 text-caption font-medium text-body-subtle" aria-live="polite">
       <span className="relative flex h-1.5 w-1.5 rounded-full bg-indigo-400">
         <span className="absolute inset-0 animate-ping rounded-full bg-indigo-300/50" />
       </span>
@@ -120,10 +120,10 @@ function MessageBubble({ message, onRetry }: { message: AssistantChatMessage; on
     ? stripArtifactDownloadLinks(message.content)
     : message.content;
   const containerClassName = isUser
-    ? 'max-w-[82%] rounded-[18px] rounded-br-[6px] bg-surface-tile-2 px-3.5 py-2 text-[13px] leading-[1.65] text-ink'
+    ? 'max-w-[82%] rounded-[18px] rounded-br-[6px] bg-surface-tile-2 px-3.5 py-2 text-footnote leading-[1.65] text-ink'
     : message.status === 'error'
-      ? 'max-w-[88%] rounded-[15px] rounded-bl-[5px] border border-red-200/80 bg-red-50/80 px-3.5 py-2.5 text-[13px] leading-[1.68] text-red-700'
-      : 'w-full max-w-none text-[13px] leading-[1.75] text-ink';
+      ? 'max-w-[88%] rounded-[15px] rounded-bl-[5px] border border-red-200/80 bg-red-50/80 px-3.5 py-2.5 text-footnote leading-[1.68] text-red-700'
+      : 'w-full max-w-none text-footnote leading-[1.75] text-ink';
 
   return (
     <div className={containerClassName}>
@@ -149,13 +149,13 @@ function MessageBubble({ message, onRetry }: { message: AssistantChatMessage; on
       ) : isUser ? (
         <p className="whitespace-pre-wrap break-words">{message.content}</p>
       ) : (
-        <div className="ai-chat-markdown prose prose-sm max-w-none break-words prose-headings:font-semibold prose-headings:text-ink prose-h1:text-[15px] prose-h1:mt-3 prose-h1:mb-1.5 prose-h2:text-[14px] prose-h2:mt-3 prose-h2:mb-1.5 prose-h3:text-[13px] prose-h3:mt-2 prose-h3:mb-1 prose-p:my-1.5 prose-p:leading-[1.75] prose-p:text-ink prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-li:text-ink prose-li:leading-[1.7] prose-pre:my-2.5 prose-pre:rounded-[9px] prose-pre:bg-surface-tile-1 prose-pre:border prose-pre:border-border/70 prose-pre:text-[12px] prose-pre:leading-[1.55] prose-code:before:content-none prose-code:after:content-none prose-code:bg-surface-tile-2 prose-code:text-body prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-[12px] prose-code:font-normal prose-blockquote:my-2 prose-blockquote:border-l-border prose-blockquote:bg-surface-tile-1/70 prose-blockquote:py-1 prose-blockquote:pr-2 prose-blockquote:rounded-r prose-blockquote:text-body-muted prose-strong:text-ink prose-strong:font-semibold prose-a:text-ink prose-a:underline prose-a:decoration-border prose-a:underline-offset-2 prose-hr:my-4 prose-hr:border-border/80 prose-img:rounded-[10px]">
+        <div className="ai-chat-markdown prose prose-sm max-w-none break-words prose-headings:font-semibold prose-headings:text-ink prose-h1:text-subhead prose-h1:mt-3 prose-h1:mb-1.5 prose-h2:text-subhead prose-h2:mt-3 prose-h2:mb-1.5 prose-h3:text-footnote prose-h3:mt-2 prose-h3:mb-1 prose-p:my-1.5 prose-p:leading-[1.75] prose-p:text-ink prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-li:text-ink prose-li:leading-[1.7] prose-pre:my-2.5 prose-pre:rounded-[9px] prose-pre:bg-surface-tile-1 prose-pre:border prose-pre:border-border/70 prose-pre:text-caption prose-pre:leading-[1.55] prose-code:before:content-none prose-code:after:content-none prose-code:bg-surface-tile-2 prose-code:text-body prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-caption prose-code:font-normal prose-blockquote:my-2 prose-blockquote:border-l-border prose-blockquote:bg-surface-tile-1/70 prose-blockquote:py-1 prose-blockquote:pr-2 prose-blockquote:rounded-r prose-blockquote:text-body-muted prose-strong:text-ink prose-strong:font-semibold prose-a:text-ink prose-a:underline prose-a:decoration-border prose-a:underline-offset-2 prose-hr:my-4 prose-hr:border-border/80 prose-img:rounded-[10px]">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
               table: ({ children }) => (
                 <div className="my-2 max-w-full overflow-x-auto rounded-[10px] border border-border/70 bg-canvas">
-                  <table className="m-0 w-max min-w-full border-collapse text-[12px] leading-5">{children}</table>
+                  <table className="m-0 w-max min-w-full border-collapse text-caption leading-5">{children}</table>
                 </div>
               ),
               thead: ({ children }) => <thead className="bg-surface-tile-1 text-body">{children}</thead>,
@@ -224,12 +224,12 @@ function MessageBubble({ message, onRetry }: { message: AssistantChatMessage; on
 
       {message.status === 'error' && (
         <div className="mt-2 flex items-center justify-between gap-3">
-          <span className="text-[12px] text-red-400">{message.error || '回复失败'}</span>
+          <span className="text-caption text-red-400">{message.error || '回复失败'}</span>
           {onRetry && (
             <button
               type="button"
               onClick={onRetry}
-              className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-red-200/80 bg-canvas px-2.5 text-[12px] text-red-500 transition hover:bg-red-50 hover:border-red-300"
+              className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-red-200/80 bg-canvas px-2.5 text-caption text-red-500 transition hover:bg-red-50 hover:border-red-300"
             >
               <span className="material-symbols-outlined text-[14px]">refresh</span>
               重试
@@ -272,18 +272,18 @@ function ComprehensiveScoreCard({ score }: { score: ComprehensiveScoreSummary })
       className="mt-2 grid w-full gap-2 rounded-[12px] border border-border/80 bg-canvas p-3 text-left transition hover:border-border-emphasis hover:bg-surface-tile-1"
       title="点击切换排名/百分比"
     >
-      <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-body-muted">
+      <span className="inline-flex items-center gap-1.5 text-caption font-semibold text-body-muted">
         <span className="material-symbols-outlined text-[16px]">leaderboard</span>
         综测排名
       </span>
-      <span className="text-[18px] font-medium leading-none text-ink tabular-nums">
+      <span className="text-title-3 font-medium leading-none text-ink tabular-nums">
         {value}
       </span>
-      <span className="flex flex-wrap items-center gap-1.5 text-[11px] text-placeholder">
+      <span className="flex flex-wrap items-center gap-1.5 text-caption-2 text-placeholder">
         <span>{score.rankScope || '本专业'}</span>
         <span>·</span>
         <span>{score.academicYear || '官方综测'}</span>
-        <span className="ml-auto rounded-full bg-surface-tile-2 px-2 py-0.5 text-[11px] text-body-subtle">
+        <span className="ml-auto rounded-full bg-surface-tile-2 px-2 py-0.5 text-caption-2 text-body-subtle">
           {mode === 'rank' ? '点击查看百分比' : '点击查看排名'}
         </span>
       </span>
@@ -316,15 +316,15 @@ function DetailTableCards({ tables, onOpen }: { tables: DetailTable[]; onOpen: (
               <span className="material-symbols-outlined text-[19px]">table_view</span>
             </span>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] font-semibold text-ink">{table.title}</div>
-              <div className="mt-0.5 text-[11px] text-placeholder">
+              <div className="truncate text-footnote font-semibold text-ink">{table.title}</div>
+              <div className="mt-0.5 text-caption-2 text-placeholder">
                 {table.academicYear ? `${table.academicYear} · ` : ''}共 {table.total ?? table.rows.length} 条
               </div>
             </div>
             <button
               type="button"
               onClick={() => onOpen(table)}
-              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-[9px] bg-ink px-2.5 text-[11px] font-medium text-on-primary transition hover:bg-primary-focus"
+              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-[9px] bg-ink px-2.5 text-caption-2 font-medium text-on-primary transition hover:bg-primary-focus"
             >
               <span className="material-symbols-outlined text-[14px]">open_in_new</span>
               查看详细
@@ -334,9 +334,9 @@ function DetailTableCards({ tables, onOpen }: { tables: DetailTable[]; onOpen: (
             <div className="mt-2 overflow-hidden rounded-[10px] border border-hairline bg-surface-tile-1/70">
               {table.previewRows.slice(0, 3).map((row, index) => (
                 <div key={index} className="flex items-center gap-2 border-b border-hairline px-2.5 py-1.5 last:border-b-0">
-                  <span className="w-7 shrink-0 text-[11px] text-placeholder">#{valueToDisplay(row['序号'] ?? index + 1)}</span>
-                  <span className="min-w-0 flex-1 truncate text-[12px] text-body">{valueToDisplay(row['姓名'])}</span>
-                  <span className="shrink-0 text-[11px] tabular-nums text-body-subtle">
+                  <span className="w-7 shrink-0 text-caption-2 text-placeholder">#{valueToDisplay(row['序号'] ?? index + 1)}</span>
+                  <span className="min-w-0 flex-1 truncate text-caption text-body">{valueToDisplay(row['姓名'])}</span>
+                  <span className="shrink-0 text-caption-2 tabular-nums text-body-subtle">
                     综测 {valueToDisplay(row['综测名次'] ?? row['学业名次'])}
                   </span>
                 </div>
@@ -379,8 +379,8 @@ function DetailTableModal({ table, onClose }: { table: DetailTable | null; onClo
       <div className="flex max-h-[86vh] w-full max-w-[980px] flex-col overflow-hidden rounded-[16px] border border-white/70 bg-canvas shadow-[0_32px_120px_rgba(15,23,42,0.28)]">
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border/70 px-4 py-3">
           <div className="min-w-0">
-            <h3 className="truncate text-[16px] font-semibold text-ink">{table.title}</h3>
-            <p className="mt-0.5 text-[12px] text-body-subtle">
+            <h3 className="truncate text-callout font-semibold text-ink">{table.title}</h3>
+            <p className="mt-0.5 text-caption text-body-subtle">
               {table.description || '完整表格'}{table.academicYear ? ` · ${table.academicYear}` : ''}
             </p>
           </div>
@@ -395,7 +395,7 @@ function DetailTableModal({ table, onClose }: { table: DetailTable | null; onClo
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-auto p-3">
-          <table className="min-w-[760px] w-full border-separate border-spacing-0 text-left text-[12px]">
+          <table className="min-w-[760px] w-full border-separate border-spacing-0 text-left text-caption">
             <thead className="sticky top-0 z-10 bg-canvas shadow-[0_1px_0_rgba(226,232,240,1)]">
               <tr>
                 {table.columns.map((column) => (
@@ -437,15 +437,15 @@ function ArtifactList({ artifacts }: { artifacts: AiArtifact[] }) {
             </span>
           </span>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[12px] font-medium text-ink">{artifact.name}</div>
-            <div className="truncate text-[11px] text-placeholder">
+            <div className="truncate text-caption font-medium text-ink">{artifact.name}</div>
+            <div className="truncate text-caption-2 text-placeholder">
               {artifact.description || (artifact.type === 'xlsx' ? 'AI 生成表格' : 'AI 生成文档')}
             </div>
           </div>
           <button
             type="button"
             onClick={() => void downloadArtifact(artifact)}
-            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-[9px] bg-ink px-2.5 text-[11px] font-medium text-on-primary transition hover:bg-primary-focus"
+            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-[9px] bg-ink px-2.5 text-caption-2 font-medium text-on-primary transition hover:bg-primary-focus"
             aria-label={`下载 ${artifact.name}`}
             title="下载文件"
           >
@@ -492,7 +492,7 @@ function SourceSummary({ sources }: { sources: AiSourceSummary[] }) {
   const overflow = sources.length - visible.length;
 
   return (
-    <div className="mt-2 border-t border-hairline pt-1.5 text-[11px] leading-5 text-placeholder">
+    <div className="mt-2 border-t border-hairline pt-1.5 text-caption-2 leading-5 text-placeholder">
       <span className="mr-1">来源：</span>
       {visible.map((source, index) => (
         <span key={`${source.label}-${index}`} className="mr-1.5 inline-flex items-center rounded-full bg-surface-tile-1 px-1.5 text-body-subtle">

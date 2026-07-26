@@ -142,11 +142,11 @@ export default function MyRegistrations() {
       </div>
 
       {loading ? (
-        <p className="py-8 text-[13.5px] text-placeholder">加载中…</p>
+        <p className="py-8 text-footnote text-placeholder">加载中…</p>
       ) : error ? (
         <ErrorState message={error} onRetry={() => window.location.reload()} />
       ) : filtered.length === 0 ? (
-        <p className="py-10 text-center text-[13.5px] text-placeholder">
+        <p className="py-10 text-center text-footnote text-placeholder">
           {activeTab !== '全部' ? '当前筛选无记录' : '还没有报名，去活动大厅看看'}
         </p>
       ) : (
@@ -166,21 +166,21 @@ export default function MyRegistrations() {
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      className="text-left text-[14.5px] font-medium text-ink hover:text-primary"
+                      className="text-left text-subhead font-medium text-ink hover:text-primary"
                       onClick={() => navigate(`/student/registrations/workbench/${reg.competitionId}`)}
                     >
                       {compName}
                     </button>
                     <span className={statusInfo.chip}>{statusInfo.label}</span>
                   </div>
-                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[12.5px] text-placeholder">
+                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-caption text-placeholder">
                     <span>{reg.teamName ? `队伍 ${reg.teamName}` : '单人'}</span>
                     <span>{reg.track || '未选赛道'}</span>
                     <span>{getMaterialState(reg.status)}</span>
                     <span>报名 {formatDate(reg.submitDate)}</span>
                   </div>
                   {note ? (
-                    <p className="mt-2 text-[12.5px] leading-relaxed text-warning">备注：{note}</p>
+                    <p className="mt-2 text-caption leading-relaxed text-warning">备注：{note}</p>
                   ) : null}
                 </div>
                 <div className="flex shrink-0 flex-col gap-2 sm:flex-row">

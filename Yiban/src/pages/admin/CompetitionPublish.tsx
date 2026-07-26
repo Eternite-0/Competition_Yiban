@@ -476,7 +476,7 @@ export default function CompetitionPublish() {
     return (
       <div className="py-section text-center text-placeholder">
         <span className="material-symbols-outlined animate-spin text-[32px]">progress_activity</span>
-        <p className="mt-2 text-[14px]">加载中…</p>
+        <p className="mt-2 text-subhead">加载中…</p>
       </div>
     );
   }
@@ -499,7 +499,7 @@ export default function CompetitionPublish() {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`flex h-9 items-center gap-1.5 rounded-sm px-4 text-[13px] font-medium transition ${
+              className={`flex h-9 items-center gap-1.5 rounded-sm px-4 text-footnote font-medium transition ${
                 activeTab === tab.key ? 'bg-canvas text-ink shadow-none' : 'text-body-muted hover:text-ink'
               }`}
             >
@@ -544,11 +544,11 @@ export default function CompetitionPublish() {
                             active ? 'border-primary bg-primary-soft text-ink' : 'border-border bg-canvas hover:border-primary/40'
                           }`}
                         >
-                          <div className="flex items-center gap-2 text-[14px] font-medium">
+                          <div className="flex items-center gap-2 text-subhead font-medium">
                             <span className={`material-symbols-outlined text-[20px] ${active ? 'text-primary' : 'text-placeholder'}`}>{type.icon}</span>
                             {type.label}
                           </div>
-                          <p className={`mt-2 text-[12px] leading-5 ${active ? 'text-body-muted' : 'text-placeholder'}`}>{type.hint}</p>
+                          <p className={`mt-2 text-caption leading-5 ${active ? 'text-body-muted' : 'text-placeholder'}`}>{type.hint}</p>
                         </button>
                       );
                     })}
@@ -577,7 +577,7 @@ export default function CompetitionPublish() {
                     </select>
                     <div className="flex gap-2">
                       <input
-                        className="input-glass !h-9 text-[13px]"
+                        className="input-glass !h-9 text-footnote"
                         placeholder="新建分类，如：机器人、社区公益"
                         value={newCategoryName}
                         onChange={(e) => setNewCategoryName(e.target.value)}
@@ -588,7 +588,7 @@ export default function CompetitionPublish() {
                           }
                         }}
                       />
-                      <button type="button" onClick={handleCreateCategory} disabled={categoryLoading} className="btn-secondary !h-9 !px-3 !text-[12px] disabled:opacity-60">
+                      <button type="button" onClick={handleCreateCategory} disabled={categoryLoading} className="btn-secondary !h-9 !px-3 !text-caption disabled:opacity-60">
                         新建
                       </button>
                     </div>
@@ -658,15 +658,15 @@ export default function CompetitionPublish() {
                     {form.coverUrl ? (
                       <>
                         <LazyImage src={coverDisplayUrl || form.coverUrl} alt="封面预览" className="absolute inset-0 w-full h-full object-cover" onError={handleCoverLoadError} />
-                        <div className="relative z-10 bg-canvas border border-hairline px-3 py-1.5 rounded-lg text-ink text-[12px]">点击或拖拽以替换封面</div>
+                        <div className="relative z-10 bg-canvas border border-hairline px-3 py-1.5 rounded-lg text-ink text-caption">点击或拖拽以替换封面</div>
                       </>
                     ) : (
                       <>
                         <div className="w-12 h-12 rounded-md bg-surface-tile-1 grid place-items-center text-placeholder mb-3">
                           <span className="material-symbols-outlined">{uploading ? 'hourglass_top' : 'add_photo_alternate'}</span>
                         </div>
-                        <p className="text-[14px] text-ink">{uploading ? '上传中…' : '点击或拖拽上传图片'}</p>
-                        <p className="text-[12px] text-placeholder mt-1">推荐 16:9，JPG / PNG，最大 5MB</p>
+                        <p className="text-subhead text-ink">{uploading ? '上传中…' : '点击或拖拽上传图片'}</p>
+                        <p className="text-caption text-placeholder mt-1">推荐 16:9，JPG / PNG，最大 5MB</p>
                       </>
                     )}
                     <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onCoverInputChange} />
@@ -705,7 +705,7 @@ export default function CompetitionPublish() {
                 </h2>
               </div>
               <div className="section-card-body">
-              <p className="mb-4 text-[13px] text-body-muted">{text.trackHint}</p>
+              <p className="mb-4 text-footnote text-body-muted">{text.trackHint}</p>
 
               <div className="mb-4 flex flex-wrap gap-2">
                 {defaultTracks[form.activityType].map((track) => {
@@ -714,7 +714,7 @@ export default function CompetitionPublish() {
                     <button key={track}
                       type="button"
                       onClick={() => toggleTrack(track)}
-                      className={`group relative flex items-center gap-2 rounded-md border py-2 pl-3 pr-4 text-[13px] font-medium transition-all ${
+                      className={`group relative flex items-center gap-2 rounded-md border py-2 pl-3 pr-4 text-footnote font-medium transition-all ${
                         selected ? 'border-primary bg-primary text-on-primary' : 'border-border bg-canvas text-body-muted hover:border-primary/40 hover:text-ink'
                       }`}
                     >
@@ -745,18 +745,18 @@ export default function CompetitionPublish() {
                     }}
                   />
                 </div>
-                <span className="text-[12px] text-placeholder">按回车添加</span>
+                <span className="text-caption text-placeholder">按回车添加</span>
               </div>
 
               {form.tracks.length > 0 && (
                 <div className="rounded-md border border-border bg-surface-tile-1 p-3">
                   <div className="mb-2 flex items-center gap-2">
                     <span className="material-symbols-outlined text-[16px] text-placeholder">flag</span>
-                    <span className="text-[12px] font-medium text-body-muted">已选 {form.tracks.length} 项</span>
+                    <span className="text-caption font-medium text-body-muted">已选 {form.tracks.length} 项</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {form.tracks.map((t) => (
-                      <span key={t} className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-md bg-surface-tile-1 border border-primary/20 text-[13px] text-body-muted font-medium group">
+                      <span key={t} className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-md bg-surface-tile-1 border border-primary/20 text-footnote text-body-muted font-medium group">
                         <span className="w-1.5 h-1.5 rounded-md bg-primary" />
                         {t}
                         <button type="button" onClick={() => toggleTrack(t)} className="ml-1 p-0.5 rounded-full hover:bg-surface-tile-1 text-ink hover:text-ink transition">
@@ -779,7 +779,7 @@ export default function CompetitionPublish() {
                   </h2>
                 </div>
                 <div className="section-card-body">
-                  <p className="mb-4 text-[13px] text-placeholder">按需添加赛事阶段，如院赛、校赛、省赛等。不添加阶段则使用默认报名流程。</p>
+                  <p className="mb-4 text-footnote text-placeholder">按需添加赛事阶段，如院赛、校赛、省赛等。不添加阶段则使用默认报名流程。</p>
                   <StageManager competitionId={Number(id)} />
                 </div>
               </motion.section>
@@ -788,7 +788,7 @@ export default function CompetitionPublish() {
 
           <div id="publish-preview" className="w-full shrink-0 scroll-mt-24 xl:w-[340px] 2xl:w-[380px]">
             <div className="flex flex-col gap-3 xl:sticky xl:top-[88px]">
-              <h3 className="text-[12px] text-placeholder px-1 flex items-center gap-2">
+              <h3 className="text-caption text-placeholder px-1 flex items-center gap-2">
                 <span className="material-symbols-outlined text-[14px]">visibility</span>
                 发布效果预览
               </h3>
@@ -801,7 +801,7 @@ export default function CompetitionPublish() {
                   </div>
                 </div>
                 <div className="p-md">
-                  <h4 className="font-display font-semibold text-[17px] leading-snug text-ink mb-2 break-words">
+                  <h4 className="font-display font-semibold text-callout leading-snug text-ink mb-2 break-words">
                     {form.title || `${text.noun}名称将在这里显示…`}
                   </h4>
                   <div className="flex flex-wrap gap-1.5 mb-3">
@@ -810,7 +810,7 @@ export default function CompetitionPublish() {
                     {form.level && <span className={levelChipClass(form.level)}>{form.level}</span>}
                     {form.tracks.length > 0 && <span className="chip">{form.tracks.length} 项{trackUnit}</span>}
                   </div>
-                  <div className="flex flex-col gap-2 mb-4 text-[12px]">
+                  <div className="flex flex-col gap-2 mb-4 text-caption">
                     <PreviewLine icon="apartment" label="主办" value={form.organizer || '主办单位名称'} />
                     <PreviewLine icon="how_to_reg" label="报名" value={form.regStart && form.regEnd ? `${form.regStart} ~ ${form.regEnd}` : 'YYYY/MM/DD - YYYY/MM/DD'} />
                     <PreviewLine icon="event" label={text.stage.replace('时间', '')} value={form.activityStart && form.activityEnd ? `${form.activityStart} ~ ${form.activityEnd}` : 'YYYY/MM/DD - YYYY/MM/DD'} />
@@ -913,16 +913,16 @@ function StageManager({ competitionId }: { competitionId: number }) {
     <div className="flex flex-col gap-3">
       {stages.map((stage) => (
         <div key={stage.id} className="flex items-center gap-3 p-3 rounded-lg border border-hairline bg-canvas">
-          <span className="w-6 h-6 rounded-md bg-surface-tile-1 text-ink text-[12px] font-medium grid place-items-center">{stage.stageOrder}</span>
+          <span className="w-6 h-6 rounded-md bg-surface-tile-1 text-ink text-caption font-medium grid place-items-center">{stage.stageOrder}</span>
           <div className="flex-1 min-w-0">
-            <span className="text-[14px] font-medium text-ink">{stage.name}</span>
+            <span className="text-subhead font-medium text-ink">{stage.name}</span>
             {stage.startTime && (
-              <span className="text-[12px] text-placeholder ml-2">
+              <span className="text-caption text-placeholder ml-2">
                 {new Date(stage.startTime).toLocaleDateString('zh-CN')} — {stage.endTime ? new Date(stage.endTime).toLocaleDateString('zh-CN') : ''}
               </span>
             )}
           </div>
-          <select value={stage.status} onChange={(e) => handleStatusChange(stage.id, e.target.value)} className="input-glass !w-auto !h-8 !text-[12px] !px-2">
+          <select value={stage.status} onChange={(e) => handleStatusChange(stage.id, e.target.value)} className="input-glass !w-auto !h-8 !text-caption !px-2">
             <option value="upcoming">未开始</option>
             <option value="active">进行中</option>
             <option value="closed">已结束</option>
@@ -951,13 +951,13 @@ function StageManager({ competitionId }: { competitionId: number }) {
               </div>
               <input className="input-glass !h-9" placeholder="阶段说明（选填）" value={newStage.description} onChange={e => setNewStage(s => ({ ...s, description: e.target.value }))} />
               <div className="flex gap-2 justify-end">
-                <button type="button" className="btn-secondary !py-1.5 !text-[12px]" onClick={() => setShowAdd(false)}>取消</button>
-                <button type="button" className="btn-primary !py-1.5 !text-[12px]" onClick={handleAdd}>添加</button>
+                <button type="button" className="btn-secondary !py-1.5 !text-caption" onClick={() => setShowAdd(false)}>取消</button>
+                <button type="button" className="btn-primary !py-1.5 !text-caption" onClick={handleAdd}>添加</button>
               </div>
             </div>
           </motion.div>
         ) : (
-          <button key="add-btn" type="button" onClick={() => setShowAdd(true)} className="flex items-center gap-2 text-[13px] text-body-muted hover:text-ink font-medium">
+          <button key="add-btn" type="button" onClick={() => setShowAdd(true)} className="flex items-center gap-2 text-footnote text-body-muted hover:text-ink font-medium">
             <span className="material-symbols-outlined text-[18px]">add_circle</span>
             添加阶段
           </button>
@@ -972,11 +972,11 @@ function StageManager({ competitionId }: { competitionId: number }) {
 function Field({ label, required, error, children, className = '' }: { label: string; required?: boolean; error?: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
-      <label className="text-[14px] font-medium text-body-muted">
+      <label className="text-subhead font-medium text-body-muted">
         {label}{required && <span className="text-error ml-0.5">*</span>}
       </label>
       {children}
-      {error && <span className="text-[11px] text-error">{error}</span>}
+      {error && <span className="text-caption-2 text-error">{error}</span>}
     </div>
   );
 }

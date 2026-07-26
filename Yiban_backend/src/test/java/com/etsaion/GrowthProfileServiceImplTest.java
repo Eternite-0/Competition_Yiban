@@ -11,6 +11,7 @@ import com.etsaion.service.SubmissionService;
 import com.etsaion.service.UserService;
 import com.etsaion.service.impl.ActivityCategoryServiceImpl;
 import com.etsaion.service.impl.GrowthProfileServiceImpl;
+import com.etsaion.service.impl.StudentAccessPolicyImpl;
 import com.etsaion.service.impl.TeacherServiceImpl;
 import com.etsaion.vo.GrowthDimensionVO;
 import com.etsaion.vo.GrowthProfileVO;
@@ -135,6 +136,10 @@ class GrowthProfileServiceImplTest {
         ReflectionTestUtils.setField(service, "submissionService", submissionService);
         ReflectionTestUtils.setField(service, "participationService", participationService);
         ReflectionTestUtils.setField(service, "activityService", activityService);
+
+        StudentAccessPolicyImpl accessPolicy = new StudentAccessPolicyImpl();
+        ReflectionTestUtils.setField(accessPolicy, "userService", userService);
+        ReflectionTestUtils.setField(service, "studentAccessPolicy", accessPolicy);
 
         TeacherGrowthOverviewVO overview = service.getGrowthOverview(null, null, null, null);
 

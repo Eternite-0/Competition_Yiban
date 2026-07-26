@@ -37,15 +37,15 @@ export default function PageHero({
         <div className={`min-w-0 ${contentClassName}`.trim()}>
           {prefix}
           {eyebrow ? (
-            <div className="mb-1 text-[12px] font-medium tracking-wide text-placeholder">
+            <div className="mb-1 text-caption font-medium tracking-wide text-placeholder">
               {eyebrow}
             </div>
           ) : null}
-          <h1 className={`text-[22px] font-semibold leading-tight tracking-tight text-ink ${titleClassName}`.trim()}>
+          <h1 className={`text-title-2 font-semibold leading-tight tracking-tight text-ink ${titleClassName}`.trim()}>
             {title}
           </h1>
           {description ? (
-            <p className={`mt-1.5 max-w-2xl text-[13.5px] leading-relaxed text-body-subtle ${descriptionClassName}`.trim()}>
+            <p className={`mt-1.5 max-w-2xl text-footnote leading-relaxed text-body-subtle ${descriptionClassName}`.trim()}>
               {description}
             </p>
           ) : null}

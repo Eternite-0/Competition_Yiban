@@ -240,7 +240,7 @@ function ManualDraftDetail({ competition, onEdit }: { competition: any; onEdit: 
             <span className="chip chip-warning">草稿</span>
             <span className="chip">手动创建</span>
           </div>
-          <h2 className="mt-2 text-[18px] font-medium text-ink">{competition.name || '未命名赛事'}</h2>
+          <h2 className="mt-2 text-title-3 font-medium text-ink">{competition.name || '未命名赛事'}</h2>
         </div>
         <button type="button" className="btn-primary" onClick={onEdit}>
           <span className="material-symbols-outlined text-[18px]">edit</span>
@@ -258,16 +258,16 @@ function ManualDraftDetail({ competition, onEdit }: { competition: any; onEdit: 
           ['比赛时间', competition.competitionStart && competition.competitionEnd ? `${formatDateShort(competition.competitionStart)} ~ ${formatDateShort(competition.competitionEnd)}` : '—'],
         ].map(([label, value]) => (
           <div key={label}>
-            <dt className="text-[11px] text-placeholder">{label}</dt>
-            <dd className="mt-1 text-[13px] text-ink">{value}</dd>
+            <dt className="text-caption-2 text-placeholder">{label}</dt>
+            <dd className="mt-1 text-footnote text-ink">{value}</dd>
           </div>
         ))}
       </div>
 
       {competition.content && (
         <div className="mt-md border-t border-hairline pt-md">
-          <h3 className="text-[13px] font-medium text-body-muted mb-2">赛事简介</h3>
-          <p className="text-[13px] text-ink line-clamp-4">{competition.content}</p>
+          <h3 className="text-footnote font-medium text-body-muted mb-2">赛事简介</h3>
+          <p className="text-footnote text-ink line-clamp-4">{competition.content}</p>
         </div>
       )}
 
@@ -306,7 +306,7 @@ function QualityPanel({
 
   return (
     <div className="sticky top-[78px]">
-      <h2 className="flex items-center gap-2 text-[15px] font-medium text-ink">
+      <h2 className="flex items-center gap-2 text-subhead font-medium text-ink">
         <span className="material-symbols-outlined text-[19px] text-body-muted">fact_check</span>
         AI 质量信息
       </h2>
@@ -320,7 +320,7 @@ function QualityPanel({
             key={value}
             type="button"
             onClick={() => setTab(value)}
-            className={`rounded-sm px-2 py-2 text-[12px] transition ${
+            className={`rounded-sm px-2 py-2 text-caption transition ${
               tab === value ? 'bg-surface-tile-1 text-ink' : 'text-placeholder hover:text-ink'
             }`}
           >
@@ -342,7 +342,7 @@ function QualityPanel({
               <div className="flex flex-col gap-3">
                 {confidenceItems.map((item) => (
                   <div key={item.field}>
-                    <div className="mb-1.5 flex items-center justify-between text-[12px]">
+                    <div className="mb-1.5 flex items-center justify-between text-caption">
                       <span className="text-body-muted">{item.label}</span>
                       <span className={item.confidence < 0.7 ? 'text-warning' : 'text-ink'}>
                         {formatConfidence(item.confidence)}
@@ -367,8 +367,8 @@ function QualityPanel({
               <div className="flex flex-col gap-2">
                 {evidenceItems.map((item, index) => (
                   <div key={`${item.label}-${index}`} className="rounded-sm border border-hairline bg-canvas px-3 py-2.5">
-                    <p className="text-[11px] font-medium text-body-muted">{item.label}</p>
-                    <p className="mt-1 break-words text-[12px] leading-5 text-body-muted">{item.value}</p>
+                    <p className="text-caption-2 font-medium text-body-muted">{item.label}</p>
+                    <p className="mt-1 break-words text-caption leading-5 text-body-muted">{item.value}</p>
                   </div>
                 ))}
               </div>
@@ -380,23 +380,23 @@ function QualityPanel({
               <div className="flex flex-col gap-2">
                 {duplicateCompetitionId && (
                   <div className="rounded-sm border border-border bg-surface-tile-1 px-3 py-3">
-                    <p className="flex items-center gap-1.5 text-[12px] font-medium text-warning">
+                    <p className="flex items-center gap-1.5 text-caption font-medium text-warning">
                       <span className="material-symbols-outlined text-[17px]">content_copy</span>
                       疑似重复赛事
                     </p>
-                    <p className="mt-1 text-[12px] leading-5 text-body-muted">
+                    <p className="mt-1 text-caption leading-5 text-body-muted">
                       匹配赛事 #{duplicateCompetitionId}，相似度 {formatConfidence(duplicateScore)}
                     </p>
-                    <button type="button" className="mt-2 text-[12px] text-body-muted hover:underline" onClick={onOpenDuplicate}>
+                    <button type="button" className="mt-2 text-caption text-body-muted hover:underline" onClick={onOpenDuplicate}>
                       打开已有赛事
                     </button>
                   </div>
                 )}
                 {riskItems.map((item, index) => (
                   <div key={`${item.label}-${index}`} className="rounded-sm border border-border bg-surface-tile-1 px-3 py-2.5">
-                    <p className="text-[11px] font-medium text-error">{riskLabel(item.value)}</p>
+                    <p className="text-caption-2 font-medium text-error">{riskLabel(item.value)}</p>
                     {riskLabel(item.value) !== item.value && (
-                      <p className="mt-1 break-words text-[12px] leading-5 text-error">{item.value}</p>
+                      <p className="mt-1 break-words text-caption leading-5 text-error">{item.value}</p>
                     )}
                   </div>
                 ))}
@@ -415,7 +415,7 @@ function EmptyQuality({ text, positive = false }: { text: string; positive?: boo
       <span className={`material-symbols-outlined text-[34px] ${positive ? 'text-success' : 'text-placeholder'}`}>
         {positive ? 'verified' : 'data_info_alert'}
       </span>
-      <p className="empty-state-copy mt-2 text-[12px] text-placeholder">{text}</p>
+      <p className="empty-state-copy mt-2 text-caption text-placeholder">{text}</p>
     </div>
   );
 }
@@ -435,7 +435,7 @@ function Field({
 }) {
   return (
     <label className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
-      <span className="flex items-center justify-between gap-2 text-[12px] font-medium text-body-muted">
+      <span className="flex items-center justify-between gap-2 text-caption font-medium text-body-muted">
         <span>{required && <span className="mr-1 text-error">*</span>}{label}</span>
         {hint && <span className="font-normal text-placeholder">{hint}</span>}
       </span>
@@ -744,7 +744,7 @@ export default function DraftsBox() {
             search
           </span>
           <input
-            className="input-glass h-9 !pl-9 text-[13px]"
+            className="input-glass h-9 !pl-9 text-footnote"
             placeholder="搜索赛事名称"
             value={keywordInput}
             onChange={(event) => setKeywordInput(event.target.value)}
@@ -765,7 +765,7 @@ export default function DraftsBox() {
               key={item.value}
               type="button"
               onClick={() => setFilterSource(item.value)}
-              className={`flex h-8 items-center rounded-sm px-3 text-[13px] transition ${
+              className={`flex h-8 items-center rounded-sm px-3 text-footnote transition ${
                 filterSource === item.value
                   ? 'bg-canvas text-ink shadow-none'
                   : 'text-body-muted hover:text-ink'
@@ -779,7 +779,7 @@ export default function DraftsBox() {
         {/* Status filter (AI drafts only) */}
         {filterSource !== 'manual' && (
           <select
-            className="input-glass h-9 w-full text-[13px] lg:w-[150px]"
+            className="input-glass h-9 w-full text-footnote lg:w-[150px]"
             value={status}
             onChange={(event) => setStatus(event.target.value)}
             aria-label="筛选草稿状态"
@@ -794,7 +794,7 @@ export default function DraftsBox() {
           查询
         </button>
 
-        <div className="flex items-center gap-3 text-[12px] text-placeholder lg:ml-auto">
+        <div className="flex items-center gap-3 text-caption text-placeholder lg:ml-auto">
           <span>当前 {unifiedDrafts.length} 条</span>
           <span className="h-3 w-px bg-hairline" />
           <span className={pendingCount ? 'text-warning' : ''}>待审核 {pendingCount} 条</span>
@@ -817,8 +817,8 @@ export default function DraftsBox() {
             ) : unifiedDrafts.length === 0 ? (
               <div className="empty-panel py-16">
                 <span className="material-symbols-outlined">draft</span>
-                <p className="text-[13px]">暂无匹配草稿</p>
-                <p className="text-[12px] text-placeholder">尝试调整筛选条件或新建赛事</p>
+                <p className="text-footnote">暂无匹配草稿</p>
+                <p className="text-caption text-placeholder">尝试调整筛选条件或新建赛事</p>
               </div>
             ) : (
               <motion.div variants={listContainer} initial="hidden" animate="visible">
@@ -837,7 +837,7 @@ export default function DraftsBox() {
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <h3 className="line-clamp-2 min-w-0 text-[14px] font-medium leading-5 text-ink">
+                        <h3 className="line-clamp-2 min-w-0 text-subhead font-medium leading-5 text-ink">
                           {item.name}
                         </h3>
                         <div className="flex shrink-0 items-center gap-1.5">
@@ -849,7 +849,7 @@ export default function DraftsBox() {
                           )}
                         </div>
                       </div>
-                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-placeholder">
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-caption-2 text-placeholder">
                         {item.source === 'ai' && item.aiDraft && (
                           <span className="flex items-center gap-1">
                             <span className="material-symbols-outlined text-[14px]">
@@ -868,16 +868,16 @@ export default function DraftsBox() {
                       </div>
                       {item.source === 'ai' && (
                         <div className="mt-3 flex items-center justify-between">
-                          <span className={`text-[11px] ${avg !== null && avg < 0.7 ? 'text-warning' : 'text-body-muted'}`}>
+                          <span className={`text-caption-2 ${avg !== null && avg < 0.7 ? 'text-warning' : 'text-body-muted'}`}>
                             置信度 {formatConfidence(avg)}
                           </span>
                           {risky ? (
-                            <span className="flex items-center gap-1 text-[11px] text-warning">
+                            <span className="flex items-center gap-1 text-caption-2 text-warning">
                               <span className="material-symbols-outlined text-[14px]">warning</span>
                               存在风险
                             </span>
                           ) : (
-                            <span className="text-[11px] text-success">未发现重复</span>
+                            <span className="text-caption-2 text-success">未发现重复</span>
                           )}
                         </div>
                       )}
@@ -894,7 +894,7 @@ export default function DraftsBox() {
           {!selectedId ? (
             <div className="empty-panel min-h-[620px]">
               <span className="material-symbols-outlined">select_window</span>
-              <p className="text-[13px]">选择一条草稿开始审核</p>
+              <p className="text-footnote">选择一条草稿开始审核</p>
             </div>
           ) : selectedSource === 'manual' ? (
             selectedManualDraft ? (
@@ -919,9 +919,9 @@ export default function DraftsBox() {
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusChip status={selectedDraft.status} />
                     <span className="chip">{sourceLabel(selectedDraft.sourceType)}</span>
-                    {selectedDraft.aiTaskId && <span className="text-[11px] text-placeholder">任务 #{selectedDraft.aiTaskId}</span>}
+                    {selectedDraft.aiTaskId && <span className="text-caption-2 text-placeholder">任务 #{selectedDraft.aiTaskId}</span>}
                   </div>
-                  <p className="mt-2 truncate text-[12px] text-placeholder" title={selectedDraft.sourceUrl}>
+                  <p className="mt-2 truncate text-caption text-placeholder" title={selectedDraft.sourceUrl}>
                     {selectedDraft.sourceUrl || '无来源地址'}
                   </p>
                 </div>
@@ -957,8 +957,8 @@ export default function DraftsBox() {
                   <div className="flex items-start gap-2">
                     <span className="material-symbols-outlined text-[20px] text-success">check_circle</span>
                     <div>
-                      <p className="text-[13px] font-medium text-success">已创建未发布赛事</p>
-                      <p className="mt-1 text-[12px] text-success">请在现有赛事编辑页补充封面并完成发布。</p>
+                      <p className="text-footnote font-medium text-success">已创建未发布赛事</p>
+                      <p className="mt-1 text-caption text-success">请在现有赛事编辑页补充封面并完成发布。</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -983,7 +983,7 @@ export default function DraftsBox() {
                 <div className="p-lg">
                   <fieldset disabled={selectedDraft.status !== 'pending_review'} className="flex flex-col gap-4 disabled:opacity-75">
                     <div>
-                      <h2 className="mb-md flex items-center gap-2 text-[15px] font-medium text-ink">
+                      <h2 className="mb-md flex items-center gap-2 text-subhead font-medium text-ink">
                         <span className="material-symbols-outlined text-[19px] text-body-muted">edit_note</span>
                         赛事字段
                       </h2>
@@ -1047,7 +1047,7 @@ export default function DraftsBox() {
                     </div>
 
                     <div className="border-t border-hairline pt-lg">
-                      <h2 className="mb-md flex items-center gap-2 text-[15px] font-medium text-ink">
+                      <h2 className="mb-md flex items-center gap-2 text-subhead font-medium text-ink">
                         <span className="material-symbols-outlined text-[19px] text-body-muted">rate_review</span>
                         审核意见
                       </h2>
@@ -1077,7 +1077,7 @@ export default function DraftsBox() {
               {/* AI draft action bar */}
               {selectedDraft.status === 'pending_review' && (
                 <div className="sticky bottom-0 flex flex-col gap-3 border-t border-hairline bg-canvas/95 px-lg py-md backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-[12px] text-placeholder">确认操作会先保存当前页面中的修改。</p>
+                  <p className="text-caption text-placeholder">确认操作会先保存当前页面中的修改。</p>
                   <div className="flex items-center justify-end gap-2">
                     <button type="button" className="btn-danger" disabled={Boolean(action) || saving} onClick={handleIgnore}>
                       <span className={`material-symbols-outlined text-[18px] ${action === 'ignore' ? 'animate-spin' : ''}`}>

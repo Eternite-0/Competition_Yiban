@@ -49,7 +49,7 @@ function ExportButton({ filters, fixedCollege }: { filters: FilterValues; fixedC
     <button
       onClick={handleExport}
       disabled={exporting}
-      className="btn-secondary h-9 flex items-center gap-1.5 text-[13px] disabled:opacity-60 disabled:cursor-not-allowed"
+      className="btn-secondary h-9 flex items-center gap-1.5 text-footnote disabled:opacity-60 disabled:cursor-not-allowed"
     >
       <span className="material-symbols-outlined text-[16px]">{exporting ? 'hourglass_top' : 'download'}</span>
       {exporting ? '导出中...' : '导出综测'}
@@ -180,7 +180,7 @@ function RadarChart({ data }: { data: RadarDim[] }) {
         const x = cx + labelRadius * Math.cos(angle);
         const y = cy + labelRadius * Math.sin(angle);
         return (
-          <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle" className="text-[10px] font-medium" fill="var(--color-ink)">
+          <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="middle" className="text-caption-2 font-medium" fill="var(--color-ink)">
             {d.dimension}
           </text>
         );
@@ -498,7 +498,7 @@ export default function TeacherStudentGrowth() {
             <div className="relative w-[220px]">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-placeholder">search</span>
               <input
-                className="input-glass h-9 pl-9 text-[13px] !rounded-lg"
+                className="input-glass h-9 pl-9 text-footnote !rounded-lg"
                 placeholder="搜索姓名或学号"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -507,7 +507,7 @@ export default function TeacherStudentGrowth() {
             {selectedId && (
               <button
                 onClick={() => navigate(`${basePath}/student-detail?studentId=${selectedId}`)}
-                className="btn-secondary h-9 flex items-center gap-1.5 text-[13px]"
+                className="btn-secondary h-9 flex items-center gap-1.5 text-footnote"
               >
                 <span className="material-symbols-outlined text-[16px]">person</span>
                 查看详情
@@ -516,7 +516,7 @@ export default function TeacherStudentGrowth() {
             {compareIds.size >= 2 && (
               <button
                 onClick={() => navigate(`${basePath}/student-compare?ids=${Array.from(compareIds).join(',')}`)}
-                className="btn-primary h-9 flex items-center gap-1.5 text-[13px]"
+                className="btn-primary h-9 flex items-center gap-1.5 text-footnote"
               >
                 <span className="material-symbols-outlined text-[16px]">compare</span>
                 对比 ({compareIds.size})
@@ -529,12 +529,12 @@ export default function TeacherStudentGrowth() {
 
       <div className="filter-bar justify-between">
         <CascadeFilter onChange={handleFilterChange} fixedCollege={scopeCollege || undefined} showCollege={!scopeCollege} />
-        <label className="flex items-center gap-2 text-[13px] text-body-muted">
+        <label className="flex items-center gap-2 text-footnote text-body-muted">
           <span className="material-symbols-outlined text-[17px] text-body-muted">sort</span>
           <select
             value={studentSort}
             onChange={(e) => setStudentSort(e.target.value as 'default' | 'comprehensive_desc')}
-            className="h-9 min-w-[190px] rounded-sm border border-hairline bg-canvas pl-3 pr-9 text-[14px] font-normal text-ink transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
+            className="h-9 min-w-[190px] rounded-sm border border-hairline bg-canvas pl-3 pr-9 text-subhead font-normal text-ink transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
           >
             <option value="default">默认排序</option>
             <option value="comprehensive_desc">专业综测从高到低</option>
@@ -548,7 +548,7 @@ export default function TeacherStudentGrowth() {
             <span className="material-symbols-outlined text-[18px] text-body-muted">monitoring</span>
             当前范围概览
           </h2>
-          <span className="text-[12px] text-placeholder">
+          <span className="text-caption text-placeholder">
             {filters.className || filters.major || filters.grade || scopeCollege || '全部学生'}
           </span>
         </div>
@@ -556,14 +556,14 @@ export default function TeacherStudentGrowth() {
           {overviewCards.map((card) => (
             <div key={card.label} className="stat-card">
               <div className="flex justify-between items-start mb-2">
-                <p className="text-[13px] text-body-muted">{card.label}</p>
+                <p className="text-footnote text-body-muted">{card.label}</p>
                 <span className="material-symbols-outlined text-[18px] text-body-muted">{card.icon}</span>
               </div>
               <div className="flex items-baseline gap-2">
-                <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{card.value}</span>
-                <span className="text-[12px] text-placeholder">{card.suffix}</span>
+                <span className="font-display font-medium text-title-2 leading-none tabular-nums text-ink">{card.value}</span>
+                <span className="text-caption text-placeholder">{card.suffix}</span>
               </div>
-              <p className="mt-2 truncate text-[11px] text-placeholder">{card.hint}</p>
+              <p className="mt-2 truncate text-caption-2 text-placeholder">{card.hint}</p>
             </div>
           ))}
         </div>
@@ -578,15 +578,15 @@ export default function TeacherStudentGrowth() {
             className="stat-card text-left"
           >
             <div className="flex justify-between items-start mb-2">
-              <p className="text-[13px] text-body-muted">{card.label}</p>
+              <p className="text-footnote text-body-muted">{card.label}</p>
               <span className="material-symbols-outlined text-[18px] text-body-muted">{card.icon}</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="font-display font-medium text-[22px] leading-none tabular-nums text-ink">{card.value}</span>
-              <span className="text-[12px] text-placeholder">{card.suffix}</span>
+              <span className="font-display font-medium text-title-2 leading-none tabular-nums text-ink">{card.value}</span>
+              <span className="text-caption text-placeholder">{card.suffix}</span>
             </div>
             {'hint' in card && card.hint && (
-              <p className="mt-2 truncate text-[11px] text-placeholder">
+              <p className="mt-2 truncate text-caption-2 text-placeholder">
                 {card.hint}{'toggle' in card && card.toggle ? ` · ${comprehensiveMode === 'rank' ? '点击看前百分位' : '点击看排名'}` : ''}
               </p>
             )}
@@ -611,7 +611,7 @@ export default function TeacherStudentGrowth() {
             ) : filteredStudents.length === 0 ? (
               <div className="py-10 grid place-items-center text-placeholder gap-2">
                 <span className="material-symbols-outlined text-[28px] opacity-40">person_off</span>
-                <p className="text-[12px]">暂无学生</p>
+                <p className="text-caption">暂无学生</p>
               </div>
             ) : (
               <div>
@@ -631,20 +631,20 @@ export default function TeacherStudentGrowth() {
                       />
                       <button onClick={() => setSelectedId(s.studentId)} className="flex-1 text-left min-w-0">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className={`text-[13px] ${selectedId === s.studentId ? 'text-ink font-semibold' : 'text-ink font-medium'} truncate`}>
+                          <span className={`text-footnote ${selectedId === s.studentId ? 'text-ink font-semibold' : 'text-ink font-medium'} truncate`}>
                             {s.studentName}
                           </span>
                           {studentSort !== 'default' && s.comprehensiveRank ? (
-                            <span className="ml-auto shrink-0 rounded-sm bg-surface-tile-1 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-body-muted">
+                            <span className="ml-auto shrink-0 rounded-sm bg-surface-tile-1 px-1.5 py-0.5 text-caption-2 font-medium tabular-nums text-body-muted">
                               第 {s.comprehensiveRank} 名
                             </span>
                           ) : null}
                         </div>
-                        <div className="text-[11px] text-placeholder mt-0.5 truncate">
+                        <div className="text-caption-2 text-placeholder mt-0.5 truncate">
                           {s.studentNo ?? s.studentId}{s.major ? ` · ${s.major}` : ''}{s.className ? ` · ${s.className}` : ''}
                         </div>
                         {rankPercentText !== '暂无数据' && (
-                          <div className="mt-1 text-[11px] text-body-muted tabular-nums">
+                          <div className="mt-1 text-caption-2 text-body-muted tabular-nums">
                             综测排名 {rankPercentText}
                           </div>
                         )}
@@ -661,8 +661,8 @@ export default function TeacherStudentGrowth() {
           {!selectedId ? (
             <div className="empty-panel flex-1">
               <span className="material-symbols-outlined">insights</span>
-              <p className="text-[13px] font-medium text-body-muted">请从左侧选择学生</p>
-              <p className="text-[12px] text-placeholder">查看成长档案与能力画像</p>
+              <p className="text-footnote font-medium text-body-muted">请从左侧选择学生</p>
+              <p className="text-caption text-placeholder">查看成长档案与能力画像</p>
             </div>
           ) : loadingGrowth ? (
             <div className="empty-panel flex-1">
@@ -671,19 +671,19 @@ export default function TeacherStudentGrowth() {
           ) : error ? (
             <div className="empty-panel flex-1 text-error">
               <span className="material-symbols-outlined">error_outline</span>
-              <p className="text-[13px]">{error}</p>
+              <p className="text-footnote">{error}</p>
             </div>
           ) : (
             <div className="flex flex-1 flex-col gap-4 overflow-y-auto section-card-body">
               <div className="flex items-center gap-3">
-                <div className="grid h-12 w-12 place-items-center rounded-md bg-surface-tile-1 text-[16px] font-medium text-body-muted">
+                <div className="grid h-12 w-12 place-items-center rounded-md bg-surface-tile-1 text-callout font-medium text-body-muted">
                   {(selectedStudent?.studentName || '?')[0]}
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-[16px] font-medium text-ink">
+                  <p className="truncate text-callout font-medium text-ink">
                     {selectedStudent?.studentName || `学号 ${selectedId}`}
                   </p>
-                  <p className="truncate text-[12px] text-placeholder">
+                  <p className="truncate text-caption text-placeholder">
                     {selectedStudent?.studentNo ?? selectedId}
                     {selectedStudent?.major ? ` · ${selectedStudent.major}` : ''}
                     {selectedStudent?.className ? ` · ${selectedStudent.className}` : ''}
@@ -701,7 +701,7 @@ export default function TeacherStudentGrowth() {
                 ) : (
                   <div className="empty-panel py-10">
                     <span className="material-symbols-outlined">insights</span>
-                    <p className="text-[13px]">暂无画像数据</p>
+                    <p className="text-footnote">暂无画像数据</p>
                   </div>
                 )}
               </div>
@@ -712,7 +712,7 @@ export default function TeacherStudentGrowth() {
                   <div className="flex flex-col gap-3">
                     {growth.radar.map((d) => (
                       <div key={d.dimension}>
-                        <div className="mb-1 flex justify-between text-[12px]">
+                        <div className="mb-1 flex justify-between text-caption">
                           <span className="text-body-muted">{d.dimension}</span>
                           <span className="font-medium tabular-nums text-ink">{d.score} / {d.maxScore}</span>
                         </div>

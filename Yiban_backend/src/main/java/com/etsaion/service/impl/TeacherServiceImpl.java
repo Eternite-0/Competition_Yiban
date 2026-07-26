@@ -56,48 +56,45 @@ public class TeacherServiceImpl implements TeacherService {
     @Autowired
     private ActivityService activityService;
 
+    @Autowired
+    private StudentAccessPolicy studentAccessPolicy;
+
+    @Autowired
+    private MajorService majorService;
+
     // ---- helpers ----
 
     private boolean isTeacherScopedRole() {
-        String role = UserContext.getUserRole();
-        return "teacher".equalsIgnoreCase(role);
+        return studentAccessPolicy.isCollegeScoped();
     }
 
     private String currentTeacherCollege() {
-        if (!isTeacherScopedRole() || UserContext.getUserId() == null) {
-            return null;
-        }
-        User teacher = userService.getById(UserContext.getUserId());
-        return teacher != null ? teacher.getCollege() : null;
+        return isTeacherScopedRole() ? scopedCollege(null) : null;
     }
 
+    /**
+     * 把请求的学院收敛到当前用户的可见范围。
+     *
+     * 越权与"教师没有学院因而无法判定范围"两种情况，
+     * 在这里都表现为 {@link #DENIED_COLLEGE}——调用方据此返回空结果，
+     * 而不是把异常抛给按学院筛选的列表接口。
+     */
     private String scopedCollege(String requestedCollege) {
-        String ownCollege = currentTeacherCollege();
-        if (StrUtil.isBlank(ownCollege)) {
-            // 教师未设置学院时拒绝访问，而非放行
-            return "__NO_ACCESS__";
+        try {
+            return studentAccessPolicy.resolveRequestedCollege(requestedCollege);
+        } catch (BusinessException e) {
+            return DENIED_COLLEGE;
         }
-        if (StrUtil.isBlank(requestedCollege)) {
-            return ownCollege;
-        }
-        return ownCollege.equals(requestedCollege) ? requestedCollege : "__NO_ACCESS__";
     }
+
+    private static final String DENIED_COLLEGE = "__NO_ACCESS__";
 
     private boolean deniedCollege(String college) {
-        return "__NO_ACCESS__".equals(college);
+        return DENIED_COLLEGE.equals(college);
     }
 
     private boolean canAccessStudent(User student) {
-        String ownCollege = currentTeacherCollege();
-        if (StrUtil.isBlank(ownCollege)) {
-            // Teacher with no college set: deny access rather than allow all
-            String role = UserContext.getUserRole();
-            if ("teacher".equalsIgnoreCase(role)) {
-                return false;
-            }
-            return true; // admin can access all
-        }
-        return student != null && ownCollege.equals(student.getCollege());
+        return studentAccessPolicy.canAccess(student);
     }
 
     private String normalizeGrade(String grade) {
@@ -407,13 +404,12 @@ public class TeacherServiceImpl implements TeacherService {
             List<Registration> studentRegs = regsByStudent.getOrDefault(student.getId(), Collections.emptyList());
             int participationCount = studentRegs.size();
 
-            double score = participationCount * 2.0;
             int approvedCount = 0;
             for (Registration reg : studentRegs) {
                 List<Submission> subs = approvedSubsByRegId.getOrDefault(reg.getId(), Collections.emptyList());
                 approvedCount += subs.size();
             }
-            score += approvedCount * 15.0;
+            double score = ActivityScore.of(participationCount, approvedCount);
 
             result.add(new StudentComprehensiveVO(
                     student.getRealName(),
@@ -435,13 +431,11 @@ public class TeacherServiceImpl implements TeacherService {
     public List<String> listColleges() {
         String ownCollege = currentTeacherCollege();
         if (StrUtil.isNotBlank(ownCollege)) {
-            return List.of(ownCollege);
+            return deniedCollege(ownCollege) ? new ArrayList<>() : List.of(ownCollege);
         }
-        return userService.list(new LambdaQueryWrapper<User>()
-                .eq(User::getRole, "student")
-                .select(User::getCollege)
-                .groupBy(User::getCollege))
-                .stream().map(User::getCollege).filter(Objects::nonNull).sorted().collect(Collectors.toList());
+        // 学院以管理员维护的专业表为准，而不是从学生档案里 distinct 出来——
+        // 后者会把录入笔误和已停办的学院一起带出来，也与 /api/meta/colleges 对不上
+        return majorService.listColleges();
     }
 
     @Override
@@ -533,16 +527,27 @@ public class TeacherServiceImpl implements TeacherService {
                         .eq(Submission::getApproved, 1))
                 : new ArrayList<>();
 
+        // 先按学生把报名和获奖数出来，后面按专业汇总就只是查表；
+        // 否则每个专业都要重扫一遍全部提交，每条提交再线性找它的报名
+        Map<Long, Long> regsByStudent = allRegs.stream()
+                .collect(Collectors.groupingBy(Registration::getStudentId, Collectors.counting()));
+        Map<Long, Long> regIdToStudentId = allRegs.stream()
+                .collect(Collectors.toMap(Registration::getId, Registration::getStudentId, (a, b) -> a));
+        Map<Long, Long> awardsByStudent = allApproved.stream()
+                .map(s -> regIdToStudentId.get(s.getRegistrationId()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.groupingBy(id -> id, Collectors.counting()));
+
         for (Map.Entry<String, List<User>> entry : majorGroups.entrySet()) {
             String majorName = entry.getKey();
             List<User> majorStudents = entry.getValue();
-            Set<Long> majorStudentIds = majorStudents.stream().map(User::getId).collect(Collectors.toSet());
 
-            long regCount = allRegs.stream().filter(r -> majorStudentIds.contains(r.getStudentId())).count();
-            long awardCount = allApproved.stream().filter(s -> {
-                Registration reg = allRegs.stream().filter(r -> r.getId().equals(s.getRegistrationId())).findFirst().orElse(null);
-                return reg != null && majorStudentIds.contains(reg.getStudentId());
-            }).count();
+            long regCount = 0;
+            long awardCount = 0;
+            for (User s : majorStudents) {
+                regCount += regsByStudent.getOrDefault(s.getId(), 0L);
+                awardCount += awardsByStudent.getOrDefault(s.getId(), 0L);
+            }
 
             Map<String, Object> m = new HashMap<>();
             m.put("major", majorName);
@@ -695,7 +700,7 @@ public class TeacherServiceImpl implements TeacherService {
             for (User peer : peers) {
                 long peerRegCount = regsByPeer.getOrDefault(peer.getId(), Collections.emptyList()).size();
                 long peerAwards = awardsByStudent.getOrDefault(peer.getId(), 0L);
-                double score = peerRegCount * 2.0 + peerAwards * 15.0;
+                double score = ActivityScore.of((int) peerRegCount, (int) peerAwards);
                 Map<String, Object> r = new HashMap<>();
                 r.put("studentId", peer.getId());
                 r.put("realName", peer.getRealName());

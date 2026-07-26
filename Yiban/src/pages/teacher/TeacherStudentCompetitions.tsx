@@ -104,7 +104,7 @@ export default function TeacherStudentCompetitions() {
       <div className="filter-bar">
         <CascadeFilter onChange={handleFilterChange} />
         <select
-          className="input-glass h-9 min-w-[120px] text-[13px]"
+          className="input-glass h-9 min-w-[120px] text-footnote"
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
         >
@@ -116,7 +116,7 @@ export default function TeacherStudentCompetitions() {
         <div className="relative w-full md:w-[260px]">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[17px] text-placeholder">search</span>
           <input
-            className="input-glass h-9 pl-9 text-[13px]"
+            className="input-glass h-9 pl-9 text-footnote"
             placeholder="搜索学生姓名"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -139,7 +139,7 @@ export default function TeacherStudentCompetitions() {
       <section className="section-card">
         <div className="section-card-header">
           <h2 className="section-card-title">学生近期参赛动态</h2>
-          <span className="text-[12px] text-placeholder">共 {total || rows.length} 条</span>
+          <span className="text-caption text-placeholder">共 {total || rows.length} 条</span>
         </div>
         <div className="section-card-body tight">
           <div className="data-table-wrap !border-0 !rounded-none">
@@ -167,7 +167,7 @@ export default function TeacherStudentCompetitions() {
                     <td colSpan={5}>
                       <div className="empty-panel py-12">
                         <span className="material-symbols-outlined">search_off</span>
-                        <p className="text-[13px]">暂无匹配的参赛记录</p>
+                        <p className="text-footnote">暂无匹配的参赛记录</p>
                       </div>
                     </td>
                   </tr>
@@ -176,18 +176,18 @@ export default function TeacherStudentCompetitions() {
                     <tr key={reg.id}>
                       <td>
                         <div className="flex items-center gap-3">
-                          <div className="grid h-8 w-8 place-items-center rounded-md bg-surface-tile-1 text-[12px] font-medium text-body-muted">
+                          <div className="grid h-8 w-8 place-items-center rounded-md bg-surface-tile-1 text-caption font-medium text-body-muted">
                             {reg.studentName[0]}
                           </div>
                           <div>
-                            <div className="text-[13px] font-medium text-ink">{reg.studentName}</div>
-                            <div className="text-[11px] text-placeholder">{reg.studentId || '—'}</div>
+                            <div className="text-footnote font-medium text-ink">{reg.studentName}</div>
+                            <div className="text-caption-2 text-placeholder">{reg.studentId || '—'}</div>
                           </div>
                         </div>
                       </td>
                       <td>
                         <div className="max-w-[260px] truncate text-ink">{reg.competitionTitle}</div>
-                        <div className="text-[11px] text-placeholder">{reg.teamName || '个人'}</div>
+                        <div className="text-caption-2 text-placeholder">{reg.teamName || '个人'}</div>
                       </td>
                       <td className="tabular-nums text-body-muted">
                         {reg.submitDate ? new Date(reg.submitDate).toLocaleDateString() : '—'}
@@ -200,14 +200,14 @@ export default function TeacherStudentCompetitions() {
                           <button
                             type="button"
                             onClick={() => navigate(`/teacher/student-detail?studentId=${reg.studentId}`)}
-                            className="text-[12.5px] text-body-muted hover:text-ink"
+                            className="text-caption text-body-muted hover:text-ink"
                           >
                             详情
                           </button>
                           <button
                             type="button"
                             onClick={() => navigate(`/teacher/student-growth?studentId=${reg.studentId}`)}
-                            className="text-[12.5px] text-body-muted hover:text-ink"
+                            className="text-caption text-body-muted hover:text-ink"
                           >
                             成长
                           </button>

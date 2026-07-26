@@ -98,7 +98,7 @@ export default function ProgressBar({
       </div>
 
       {showLabel ? (
-        <span className="shrink-0 tabular-nums text-[12.5px] font-semibold text-primary">
+        <span className="shrink-0 tabular-nums text-caption font-semibold text-primary">
           {Math.round(pct)}%
         </span>
       ) : null}

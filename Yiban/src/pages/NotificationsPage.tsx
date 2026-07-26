@@ -126,12 +126,12 @@ export default function NotificationsPage() {
         {loading && messages.length === 0 ? (
           <div className="empty-panel py-16">
             <span className="material-symbols-outlined animate-spin text-body-muted">progress_activity</span>
-            <p className="text-[13px]">加载中…</p>
+            <p className="text-footnote">加载中…</p>
           </div>
         ) : messages.length === 0 ? (
           <div className="empty-panel py-16">
             <span className="material-symbols-outlined">notifications_none</span>
-            <p className="text-[13px]">暂无消息</p>
+            <p className="text-footnote">暂无消息</p>
           </div>
         ) : (
           <div className="section-card-body tight">
@@ -152,11 +152,11 @@ export default function NotificationsPage() {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className={`text-[13.5px] ${msg.isRead === 0 ? 'font-medium text-ink' : 'text-body-muted'}`}>
+                    <div className={`text-footnote ${msg.isRead === 0 ? 'font-medium text-ink' : 'text-body-muted'}`}>
                       {msg.title}
                     </div>
-                    <p className="mt-1 text-[13px] leading-relaxed text-body-subtle">{msg.content}</p>
-                    <span className="mt-1.5 block text-[12px] text-placeholder">{formatTime(msg.createTime)}</span>
+                    <p className="mt-1 text-footnote leading-relaxed text-body-subtle">{msg.content}</p>
+                    <span className="mt-1.5 block text-caption text-placeholder">{formatTime(msg.createTime)}</span>
                   </div>
                   <button
                     type="button"

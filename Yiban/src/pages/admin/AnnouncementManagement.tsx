@@ -136,7 +136,7 @@ export default function AnnouncementManagement() {
             <div className="section-card-body flex flex-col gap-4">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[13px] font-medium text-ink">公告类型</label>
+                  <label className="text-footnote font-medium text-ink">公告类型</label>
                   <select
                     className="input-glass"
                     value={form.type}
@@ -147,7 +147,7 @@ export default function AnnouncementManagement() {
                   </select>
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[13px] font-medium text-ink">关联赛事ID（赛事公告必填）</label>
+                  <label className="text-footnote font-medium text-ink">关联赛事ID（赛事公告必填）</label>
                   <input
                     className="input-glass"
                     placeholder="留空表示系统公告"
@@ -157,7 +157,7 @@ export default function AnnouncementManagement() {
                 </div>
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-ink">
+                <label className="text-footnote font-medium text-ink">
                   <span className="mr-1 text-error">*</span>标题
                 </label>
                 <input
@@ -168,7 +168,7 @@ export default function AnnouncementManagement() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[13px] font-medium text-ink">
+                <label className="text-footnote font-medium text-ink">
                   <span className="mr-1 text-error">*</span>内容
                 </label>
                 <textarea
@@ -187,7 +187,7 @@ export default function AnnouncementManagement() {
                   onChange={(e) => setForm((f) => ({ ...f, isPinned: e.target.checked }))}
                   className="rounded"
                 />
-                <label htmlFor="pinned" className="text-[13px] text-ink">置顶</label>
+                <label htmlFor="pinned" className="text-footnote text-ink">置顶</label>
               </div>
               <div className="flex justify-end gap-2">
                 <button
@@ -219,7 +219,7 @@ export default function AnnouncementManagement() {
             key={tab.value}
             type="button"
             onClick={() => setFilterType(tab.value as AnnouncementType | '')}
-            className={filterType === tab.value ? 'btn-primary !h-8 !px-3 !text-[12px]' : 'btn-utility !h-8 !px-3 !text-[12px]'}
+            className={filterType === tab.value ? 'btn-primary !h-8 !px-3 !text-caption' : 'btn-utility !h-8 !px-3 !text-caption'}
           >
             {tab.label}
           </button>
@@ -231,12 +231,12 @@ export default function AnnouncementManagement() {
       {loading ? (
         <div className="empty-panel py-16">
           <span className="material-symbols-outlined animate-spin">progress_activity</span>
-          <p className="text-[13px]">加载中…</p>
+          <p className="text-footnote">加载中…</p>
         </div>
       ) : announcements.length === 0 ? (
         <div className="empty-panel py-16">
           <span className="material-symbols-outlined">campaign</span>
-          <p className="text-[13px]">暂无公告</p>
+          <p className="text-footnote">暂无公告</p>
         </div>
       ) : (
         <section className="section-card">

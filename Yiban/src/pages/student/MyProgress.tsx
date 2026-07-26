@@ -322,7 +322,7 @@ function matchesFilter(card: ProgressCard, filter: FilterKey) {
 function StageTimeline({ stages }: { stages: StudentStageProgress[] }) {
   if (stages.length === 0) {
     return (
-      <p className="pt-3 text-[12.5px] text-placeholder">
+      <p className="pt-3 text-caption text-placeholder">
         暂无阶段配置，报名与审核状态会在这里持续更新。
       </p>
     );
@@ -374,10 +374,10 @@ function StageTimeline({ stages }: { stages: StudentStageProgress[] }) {
                 >
                   <span className="material-symbols-outlined text-[18px]">{cfg.icon}</span>
                 </div>
-                <p className="mt-2.5 max-w-[7.5rem] truncate text-[12.5px] font-semibold text-ink">{stage.stageName}</p>
-                <p className={`mt-0.5 text-[11px] font-medium ${cfg.text}`}>{cfg.label}</p>
+                <p className="mt-2.5 max-w-[7.5rem] truncate text-caption font-semibold text-ink">{stage.stageName}</p>
+                <p className={`mt-0.5 text-caption-2 font-medium ${cfg.text}`}>{cfg.label}</p>
                 {stageDate ? (
-                  <p className="mt-0.5 text-[11px] tabular-nums text-placeholder">{formatDate(stageDate)}</p>
+                  <p className="mt-0.5 text-caption-2 tabular-nums text-placeholder">{formatDate(stageDate)}</p>
                 ) : null}
               </div>
             );
@@ -402,8 +402,8 @@ function EmptyProgress({ recommendations }: { recommendations: Recommendation[] 
   return (
     <section className="page-section">
       <div className="py-10 text-center">
-        <p className="text-[14px] font-medium text-ink">暂无赛事进度</p>
-        <p className="mt-1 text-[13px] text-placeholder">报名赛事后，进度会出现在列表中。</p>
+        <p className="text-subhead font-medium text-ink">暂无赛事进度</p>
+        <p className="mt-1 text-footnote text-placeholder">报名赛事后，进度会出现在列表中。</p>
         <button type="button" onClick={() => navigate('/student/competitions')} className="btn-primary mt-4">
           去报名赛事
         </button>
@@ -426,8 +426,8 @@ function EmptyProgress({ recommendations }: { recommendations: Recommendation[] 
                 className="flat-row flat-row-clickable"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-medium text-ink">{item.name}</p>
-                  <p className="mt-0.5 flex flex-wrap gap-2 text-[12px] text-placeholder">
+                  <p className="truncate text-subhead font-medium text-ink">{item.name}</p>
+                  <p className="mt-0.5 flex flex-wrap gap-2 text-caption text-placeholder">
                     {item.level ? <span>{displayLevel(item.level)}</span> : null}
                     {item.category ? <span>{item.category} 类</span> : null}
                     <span>截止 {formatDate(item.endTime)}</span>
@@ -487,26 +487,26 @@ function ProgressDetail({ card, onBack }: { card: ProgressCard; onBack: () => vo
       <section className="metric-row">
         <div className="metric-item">
           <div className="metric-item-label">状态</div>
-          <div className="metric-item-value text-[16px]">{status.label}</div>
+          <div className="metric-item-value text-callout">{status.label}</div>
         </div>
         <div className="metric-item">
           <div className="metric-item-label">当前阶段</div>
-          <div className="metric-item-value text-[16px]">{currentStage}</div>
+          <div className="metric-item-value text-callout">{currentStage}</div>
         </div>
         <div className="metric-item">
           <div className="metric-item-label">完成度</div>
-          <div className="metric-item-value text-[16px]">{percent}%</div>
+          <div className="metric-item-value text-callout">{percent}%</div>
         </div>
         <div className="metric-item">
           <div className="metric-item-label">级别</div>
-          <div className="metric-item-value text-[16px]">{displayLevel(card.competitionLevel)}</div>
+          <div className="metric-item-value text-callout">{displayLevel(card.competitionLevel)}</div>
         </div>
       </section>
 
       <ProgressBar value={percent} size="lg" showThumb showLabel segments={Math.min(6, Math.max(3, card.stages.length || 4))} />
 
       {(reg?.teamName || reg?.track || reg?.submitDate) ? (
-        <p className="text-[13px] text-body-subtle">
+        <p className="text-footnote text-body-subtle">
           {[
             reg?.teamName ? `队伍：${reg.teamName}` : '个人报名',
             reg?.track ? `赛道：${reg.track}` : null,
@@ -517,7 +517,7 @@ function ProgressDetail({ card, onBack }: { card: ProgressCard; onBack: () => vo
       ) : null}
 
       {note && (isReturned(reg) || isRejected(reg)) ? (
-        <p className={`rounded-lg border px-3 py-2.5 text-[13px] leading-relaxed ${
+        <p className={`rounded-lg border px-3 py-2.5 text-footnote leading-relaxed ${
           isRejected(reg) ? 'border-error/25 bg-error/5 text-error' : 'border-warning/25 bg-warning/5 text-warning'
         }`}>
           {isRejected(reg) ? '驳回原因：' : '补充说明：'}{note}
@@ -525,7 +525,7 @@ function ProgressDetail({ card, onBack }: { card: ProgressCard; onBack: () => vo
       ) : null}
 
       {activeStage?.description ? (
-        <p className="text-[13px] leading-relaxed text-body-subtle">{activeStage.description}</p>
+        <p className="text-footnote leading-relaxed text-body-subtle">{activeStage.description}</p>
       ) : null}
 
       <section className="page-section">
@@ -686,13 +686,13 @@ export default function MyProgress() {
           </div>
 
           {filteredCards.length === 0 ? (
-            <p className="py-10 text-center text-[13.5px] text-placeholder">
+            <p className="py-10 text-center text-footnote text-placeholder">
               当前筛选下暂无赛事，可切换到「全部」查看。
             </p>
           ) : (
             <>
               <div className="overflow-hidden rounded-xl border border-hairline bg-canvas">
-                <div className="hidden grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_88px] gap-3 border-b border-hairline bg-canvas-parchment px-4 py-2.5 text-[12px] font-medium text-placeholder sm:grid">
+                <div className="hidden grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_88px] gap-3 border-b border-hairline bg-canvas-parchment px-4 py-2.5 text-caption font-medium text-placeholder sm:grid">
                   <span>赛事</span>
                   <span>最新进度</span>
                   <span className="text-right">操作</span>
@@ -710,15 +710,15 @@ export default function MyProgress() {
                       >
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="truncate text-[14px] font-medium text-ink">{card.competitionName}</span>
+                            <span className="truncate text-subhead font-medium text-ink">{card.competitionName}</span>
                             <span className={status.chip}>{status.label}</span>
                           </div>
-                          <p className="mt-0.5 text-[12px] text-placeholder sm:hidden">
+                          <p className="mt-0.5 text-caption text-placeholder sm:hidden">
                             {latestProgressText(card)}
                           </p>
                         </div>
                         <div className="hidden min-w-0 sm:block">
-                          <p className="truncate text-[13px] text-body-muted">{latestProgressText(card)}</p>
+                          <p className="truncate text-footnote text-body-muted">{latestProgressText(card)}</p>
                           <ProgressBar
                             value={percent}
                             size="sm"
@@ -729,7 +729,7 @@ export default function MyProgress() {
                           />
                         </div>
                         <div className="flex items-center justify-end text-placeholder">
-                          <span className="text-[12.5px] text-primary sm:hidden">查看详情</span>
+                          <span className="text-caption text-primary sm:hidden">查看详情</span>
                           <span className="material-symbols-outlined text-[20px]">chevron_right</span>
                         </div>
                       </button>
@@ -746,7 +746,7 @@ export default function MyProgress() {
                   onChange={setPage}
                 />
               ) : (
-                <p className="text-center text-[12.5px] text-placeholder">
+                <p className="text-center text-caption text-placeholder">
                   共 {totalFiltered} 场赛事
                 </p>
               )}

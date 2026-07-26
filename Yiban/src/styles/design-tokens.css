@@ -70,14 +70,17 @@
   --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "HarmonyOS Sans SC", "Alibaba PuHuiTi 3", "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
 
   /* 字阶（对齐 SF 语义命名，按中文密度收窄）
-     生成 text-caption / text-footnote / text-body … 语义类，
-     不覆盖 Tailwind 原生 text-xs/sm/base，避免影响存量调用 */
+     生成 text-caption / text-footnote / text-subhead … 语义类，
+     不覆盖 Tailwind 原生 text-xs/sm/base，避免影响存量调用。
+     注意：不能叫 --text-body —— 已有 --color-body，两者都生成 .text-body 会冲突。 */
+  --text-caption-2: 11px;
+  --text-caption-2--line-height: 1.45;
   --text-caption: 12px;
   --text-caption--line-height: 1.45;
   --text-footnote: 13px;
   --text-footnote--line-height: 1.5;
-  --text-body: 15px;
-  --text-body--line-height: 1.6;
+  --text-subhead: 15px;
+  --text-subhead--line-height: 1.6;
   --text-callout: 16px;
   --text-callout--line-height: 1.55;
   --text-title-3: 18px;

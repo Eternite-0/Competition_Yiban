@@ -134,7 +134,7 @@ export default function SubmissionUpload() {
     return (
       <div className="page-stack">
         <PageHero eyebrow="成果" title="上传成果" description="正在加载报名信息…" />
-        <p className="py-10 text-center text-[13.5px] text-placeholder">加载中…</p>
+        <p className="py-10 text-center text-footnote text-placeholder">加载中…</p>
       </div>
     );
   }
@@ -144,7 +144,7 @@ export default function SubmissionUpload() {
       <div className="page-stack">
         <PageHero eyebrow="成果" title="上传成果" description="未找到对应报名记录。" />
         <div className="py-10 text-center">
-          <p className="text-[13.5px] text-placeholder">报名记录不存在</p>
+          <p className="text-footnote text-placeholder">报名记录不存在</p>
           <button type="button" onClick={() => navigate('/student/registrations')} className="btn-primary mt-4">
             返回我的报名
           </button>
@@ -160,7 +160,7 @@ export default function SubmissionUpload() {
         title="上传成果"
         description="上传赛事成果附件，提交后进入审核流程。"
         prefix={(
-          <nav className="mb-1 flex items-center gap-1 text-[13px] text-placeholder">
+          <nav className="mb-1 flex items-center gap-1 text-footnote text-placeholder">
             <button type="button" onClick={() => navigate('/student/registrations')} className="transition hover:text-ink">
               我的报名
             </button>
@@ -197,7 +197,7 @@ export default function SubmissionUpload() {
                 const isReturn = registration.status === '退回补充' || note.startsWith('【退回补充】');
                 const displayNote = isReturn ? note.replace('【退回补充】', '') : note;
                 return (
-                  <p className={`text-[13px] leading-relaxed ${isReturn ? 'text-warning' : 'text-error'}`}>
+                  <p className={`text-footnote leading-relaxed ${isReturn ? 'text-warning' : 'text-error'}`}>
                     {isReturn ? '补充意见：' : '驳回原因：'}{displayNote}
                   </p>
                 );
@@ -205,17 +205,17 @@ export default function SubmissionUpload() {
 
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div className="flex flex-col gap-1.5 md:col-span-2">
-                  <label className="text-[13px] font-medium text-ink">
+                  <label className="text-footnote font-medium text-ink">
                     <span className="mr-1 text-error">*</span>赛事名称
                   </label>
                   <input className="input-glass" readOnly value={competitionName || `赛事 #${registration.competitionId}`} />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[13px] font-medium text-ink">团队名称</label>
+                  <label className="text-footnote font-medium text-ink">团队名称</label>
                   <input className="input-glass" readOnly value={registration.teamName || '未设置'} />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[13px] font-medium text-ink">报名日期</label>
+                  <label className="text-footnote font-medium text-ink">报名日期</label>
                   <input className="input-glass" readOnly value={formatDate(registration.submitDate)} />
                 </div>
               </div>
@@ -231,8 +231,8 @@ export default function SubmissionUpload() {
               {fileName ? (
                 <div className="flat-row">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[14px] font-medium text-ink">{fileName}</p>
-                    <p className="mt-0.5 text-[11px] text-placeholder">{formatFileSize(fileSize)}</p>
+                    <p className="truncate text-subhead font-medium text-ink">{fileName}</p>
+                    <p className="mt-0.5 text-caption-2 text-placeholder">{formatFileSize(fileSize)}</p>
                   </div>
                   <button
                     type="button"
@@ -255,8 +255,8 @@ export default function SubmissionUpload() {
                   onDragLeave={handleDragLeave}
                   onClick={() => document.getElementById('file-input')?.click()}
                 >
-                  <p className="mb-1 text-[14px] font-medium text-ink">点击或拖拽文件到这里</p>
-                  <p className="text-[12px] text-placeholder">支持 .pdf, .doc, .docx, .jpg, .png, .zip · 限 50 MB</p>
+                  <p className="mb-1 text-subhead font-medium text-ink">点击或拖拽文件到这里</p>
+                  <p className="text-caption text-placeholder">支持 .pdf, .doc, .docx, .jpg, .png, .zip · 限 50 MB</p>
                   <input
                     id="file-input"
                     type="file"
@@ -268,7 +268,7 @@ export default function SubmissionUpload() {
               )}
               {submitting && (
                 <div className="mt-3">
-                  <div className="mb-2 flex justify-between text-[11px] text-placeholder">
+                  <div className="mb-2 flex justify-between text-caption-2 text-placeholder">
                     <span>上传中…</span>
                     <span className="tabular-nums font-medium text-primary">{uploadProgress}%</span>
                   </div>
@@ -286,20 +286,20 @@ export default function SubmissionUpload() {
             </div>
             <div className="flex flex-col gap-4">
               <div>
-                <h4 className="mb-1.5 text-[13px] font-medium text-ink">材料要求</h4>
-                <p className="text-[12.5px] leading-relaxed text-body-subtle">
+                <h4 className="mb-1.5 text-footnote font-medium text-ink">材料要求</h4>
+                <p className="text-caption leading-relaxed text-body-subtle">
                   附件需清晰可见，包含完整的赛事名称、获奖级别、个人姓名及主办方公章。
                 </p>
               </div>
               <div>
-                <h4 className="mb-1.5 text-[13px] font-medium text-ink">常见驳回原因</h4>
+                <h4 className="mb-1.5 text-footnote font-medium text-ink">常见驳回原因</h4>
                 <ul className="flex flex-col gap-1.5">
                   {[
                     '证书图片模糊，无法辨认关键信息',
                     '填写的获奖等级与上传证书不符',
                     '证明材料缺失官方印章或防伪标识',
                   ].map((item) => (
-                    <li key={item} className="flex items-start gap-1.5 text-[12px] leading-relaxed text-body-subtle">
+                    <li key={item} className="flex items-start gap-1.5 text-caption leading-relaxed text-body-subtle">
                       <span className="text-placeholder">·</span>
                       <span>{item}</span>
                     </li>

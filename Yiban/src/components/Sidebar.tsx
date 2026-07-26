@@ -82,7 +82,7 @@ export default function Sidebar({
               return (
                 <li
                   key={`${item.label}-${index}`}
-                  className="px-3 pb-1 pt-4 first:pt-1 text-[11px] font-semibold tracking-[0.06em] text-placeholder"
+                  className="px-3 pb-1 pt-4 first:pt-1 text-caption-2 font-semibold tracking-[0.06em] text-placeholder"
                 >
                   {item.label}
                 </li>
@@ -96,7 +96,7 @@ export default function Sidebar({
                   end={item.path.split('/').length <= 2}
                   title={item.hint}
                   className={({ isActive }) =>
-                    `group relative flex min-h-[44px] items-center gap-3 overflow-hidden rounded-xl px-3 py-2 text-[14px] font-medium transition-colors ${
+                    `group relative flex min-h-[44px] items-center gap-3 overflow-hidden rounded-xl px-3 py-2 text-subhead font-medium transition-colors ${
                       isActive
                         ? 'bg-primary-soft text-primary'
                         : 'text-body-muted hover:bg-hover-overlay hover:text-ink'
@@ -133,14 +133,14 @@ export default function Sidebar({
       {/* User */}
       <div className="border-t border-hairline p-3">
         <div className="flex items-center gap-3 rounded-xl bg-canvas-parchment px-2.5 py-2.5">
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-[13px] font-semibold text-on-primary">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-footnote font-semibold text-on-primary">
             {user?.name?.[0] ?? 'U'}
           </div>
           <div className="min-w-0 flex-1">
-            <span className="block truncate text-[13.5px] font-medium text-ink">
+            <span className="block truncate text-footnote font-medium text-ink">
               {user?.name ?? '未登录用户'}
             </span>
-            <span className="block text-[12px] text-placeholder">{roleLabel[role]}</span>
+            <span className="block text-caption text-placeholder">{roleLabel[role]}</span>
           </div>
           <button
             onClick={handleLogout}

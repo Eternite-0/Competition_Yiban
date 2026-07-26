@@ -120,7 +120,7 @@ export default function MajorManagement() {
       <div className="filter-bar" role="search">
         <select
           name="filterCollege"
-          className="input-glass h-9 w-full text-[13px] sm:w-[200px]"
+          className="input-glass h-9 w-full text-footnote sm:w-[200px]"
           value={filterCollege}
           aria-label="筛选学院"
           onChange={(e) => setFilterCollege(e.target.value)}
@@ -145,7 +145,7 @@ export default function MajorManagement() {
         ) : majors.length === 0 ? (
           <div className="empty-panel py-16">
             <span className="material-symbols-outlined">school</span>
-            <p className="text-[13px]">暂无专业数据</p>
+            <p className="text-footnote">暂无专业数据</p>
           </div>
         ) : (
           <div className="data-table-wrap !rounded-none !border-0">
@@ -172,13 +172,13 @@ export default function MajorManagement() {
                     </td>
                     <td className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button type="button" onClick={() => handleOpenModal(major)} className="btn-utility !h-8 !px-3 !text-[12px]">
+                        <button type="button" onClick={() => handleOpenModal(major)} className="btn-utility !h-8 !px-3 !text-caption">
                           编辑
                         </button>
-                        <button type="button" onClick={() => handleToggleStatus(major)} className="btn-secondary !h-8 !px-3 !text-[12px]">
+                        <button type="button" onClick={() => handleToggleStatus(major)} className="btn-secondary !h-8 !px-3 !text-caption">
                           {major.status === 'active' ? '停用' : '启用'}
                         </button>
-                        <button type="button" onClick={() => handleDelete(major.id)} className="btn-danger !h-8 !px-3 !text-[12px]">
+                        <button type="button" onClick={() => handleDelete(major.id)} className="btn-danger !h-8 !px-3 !text-caption">
                           删除
                         </button>
                       </div>

@@ -177,7 +177,7 @@ export default function ExcellentWorks() {
             search
           </span>
           <input
-            className="input-glass h-9 pl-9 text-[14px]"
+            className="input-glass h-9 pl-9 text-subhead"
             placeholder="搜索作品、学生、赛事"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -186,11 +186,11 @@ export default function ExcellentWorks() {
       </div>
 
       {loading ? (
-        <p className="py-10 text-center text-[13.5px] text-placeholder">加载中…</p>
+        <p className="py-10 text-center text-footnote text-placeholder">加载中…</p>
       ) : error ? (
-        <p className="py-10 text-center text-[13.5px] text-error">{error}</p>
+        <p className="py-10 text-center text-footnote text-error">{error}</p>
       ) : filtered.length === 0 ? (
-        <p className="py-10 text-center text-[13.5px] text-placeholder">
+        <p className="py-10 text-center text-footnote text-placeholder">
           {works.length === 0 ? '暂无优秀作品展示' : '暂无符合条件的作品'}
         </p>
       ) : (
@@ -207,14 +207,14 @@ export default function ExcellentWorks() {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="truncate text-[14px] font-medium text-ink">
+                      <span className="truncate text-subhead font-medium text-ink">
                         {work.fileName || '未命名作品'}
                       </span>
                       {work.competitionLevel ? (
                         <span className={levelChipClass(work.competitionLevel)}>{work.competitionLevel}</span>
                       ) : null}
                     </div>
-                    <p className="mt-0.5 truncate text-[12.5px] text-placeholder">
+                    <p className="mt-0.5 truncate text-caption text-placeholder">
                       {work.competitionName || '—'}
                       {' · '}
                       {work.submitterName || work.studentName || '—'}
@@ -244,8 +244,8 @@ export default function ExcellentWorks() {
           >
             <div className="mb-4 flex items-start justify-between gap-3 border-b border-hairline pb-3">
               <div className="min-w-0">
-                <h3 className="text-[15px] font-medium text-ink">作品详情</h3>
-                <p className="mt-0.5 truncate text-[12px] text-placeholder">
+                <h3 className="text-subhead font-medium text-ink">作品详情</h3>
+                <p className="mt-0.5 truncate text-caption text-placeholder">
                   {detailWork.fileName || '未命名作品'}
                 </p>
               </div>
@@ -265,7 +265,7 @@ export default function ExcellentWorks() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-[13px]">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-footnote">
                 <DetailRow label="作品名称" value={detailWork.fileName || '未命名'} span={2} />
                 <DetailRow label="所属赛事" value={detailWork.competitionName || '—'} span={2} />
                 <DetailRow label="提交人" value={detailWork.submitterName || detailWork.studentName || '—'} />
@@ -309,8 +309,8 @@ export default function ExcellentWorks() {
 function DetailRow({ label, value, span = 1 }: { label: string; value: string; span?: 1 | 2 }) {
   return (
     <div className={span === 2 ? 'col-span-2' : ''}>
-      <p className="mb-0.5 text-[11px] text-placeholder">{label}</p>
-      <p className="break-words text-[13px] font-medium text-ink">{value}</p>
+      <p className="mb-0.5 text-caption-2 text-placeholder">{label}</p>
+      <p className="break-words text-footnote font-medium text-ink">{value}</p>
     </div>
   );
 }

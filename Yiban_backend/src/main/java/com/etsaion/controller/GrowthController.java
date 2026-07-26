@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.etsaion.dto.Result;
 import com.etsaion.entity.GrowthRecord;
 import com.etsaion.entity.User;
+import com.etsaion.exception.BusinessException;
 import com.etsaion.interceptor.RequireRole;
 import com.etsaion.service.GrowthProfileService;
 import com.etsaion.service.ComprehensiveScoreService;
 import com.etsaion.service.GrowthRecordService;
+import com.etsaion.service.StudentAccessPolicy;
 import com.etsaion.service.UserService;
 import com.etsaion.utils.UserContext;
 import com.etsaion.vo.ComprehensiveScoreVO;
@@ -37,34 +39,31 @@ public class GrowthController {
     @Autowired
     private ComprehensiveScoreService comprehensiveScoreService;
 
+    @Autowired
+    private StudentAccessPolicy studentAccessPolicy;
+
+    /**
+     * 解析目标学生并校验访问权限。
+     *
+     * 这段判断此前在本类的四个方法里各抄了一遍，且与
+     * {@code TeacherServiceImpl} 的规则相左：那里没有学院的教师被拒绝，
+     * 这里 {@code teacher.getCollege() != null} 的写法却把他放行了。
+     * 现在统一由 {@link StudentAccessPolicy} 裁决。
+     */
+    private Long resolveAccessibleStudent(Long studentId) {
+        Long targetStudentId = studentId != null ? studentId : UserContext.getUserId();
+        if (targetStudentId == null) {
+            throw new BusinessException(401, "请先登录或传入目标学生ID");
+        }
+        studentAccessPolicy.requireAccess(targetStudentId);
+        return targetStudentId;
+    }
+
     @Operation(summary = "根据学生ID获取能力画像雷达图数据与参赛汇总 (TS 格式对齐)")
     @GetMapping("/radar")
     @RequireRole({"student", "teacher", "admin"})
     public Result<StudentGrowthVO> getRadarData(@RequestParam(required = false) Long studentId) {
-        Long targetStudentId = studentId;
-        if (targetStudentId == null) {
-            targetStudentId = UserContext.getUserId();
-        }
-        
-        if (targetStudentId == null) {
-            return Result.error(401, "请先登录或传入目标学生ID");
-        }
-        if ("student".equalsIgnoreCase(UserContext.getUserRole())
-                && !targetStudentId.equals(UserContext.getUserId())) {
-            return Result.error(403, "学生只能查看自己的成长档案");
-        }
-        if ("teacher".equalsIgnoreCase(UserContext.getUserRole())) {
-            Long teacherId = UserContext.getUserId();
-            User teacher = userService.getById(teacherId);
-            User student = userService.getById(targetStudentId);
-            if (teacher != null && student != null && teacher.getCollege() != null
-                    && !teacher.getCollege().equals(student.getCollege())) {
-                return Result.error(403, "无权查看其他学院学生的成长档案");
-            }
-        }
-
-        StudentGrowthVO growth = growthRecordService.getStudentGrowth(targetStudentId);
-        return Result.success(growth);
+        return Result.success(growthRecordService.getStudentGrowth(resolveAccessibleStudent(studentId)));
     }
 
     @Operation(summary = "获取学生校园成长画像")
@@ -73,26 +72,7 @@ public class GrowthController {
     public Result<GrowthProfileVO> getGrowthProfile(
             @RequestParam(required = false) Long studentId,
             @RequestParam(required = false) String academicYear) {
-        Long targetStudentId = studentId;
-        if (targetStudentId == null) {
-            targetStudentId = UserContext.getUserId();
-        }
-        if (targetStudentId == null) {
-            return Result.error(401, "请先登录或传入目标学生ID");
-        }
-        if ("student".equalsIgnoreCase(UserContext.getUserRole())
-                && !targetStudentId.equals(UserContext.getUserId())) {
-            return Result.error(403, "学生只能查看自己的成长档案");
-        }
-        if ("teacher".equalsIgnoreCase(UserContext.getUserRole())) {
-            Long teacherId = UserContext.getUserId();
-            User teacher = userService.getById(teacherId);
-            User student = userService.getById(targetStudentId);
-            if (teacher != null && student != null && teacher.getCollege() != null
-                    && !teacher.getCollege().equals(student.getCollege())) {
-                return Result.error(403, "无权查看其他学院学生的成长档案");
-            }
-        }
+        Long targetStudentId = resolveAccessibleStudent(studentId);
         return Result.success(growthProfileService.getStudentProfile(targetStudentId, academicYear));
     }
 
@@ -102,31 +82,12 @@ public class GrowthController {
     public Result<ComprehensiveScoreVO> getComprehensiveScore(
             @RequestParam(required = false) Long studentId,
             @RequestParam(required = false) String academicYear) {
-        Long targetStudentId = studentId;
-        if (targetStudentId == null) {
-            targetStudentId = UserContext.getUserId();
-        }
-        if (targetStudentId == null) {
-            return Result.error(401, "please login or pass studentId");
-        }
-        if ("student".equalsIgnoreCase(UserContext.getUserRole())
-                && !targetStudentId.equals(UserContext.getUserId())) {
-            return Result.error(403, "students can only view their own comprehensive score");
-        }
+        Long targetStudentId = resolveAccessibleStudent(studentId);
 
         User student = userService.getById(targetStudentId);
         if (student == null || !"student".equalsIgnoreCase(student.getRole())) {
             return Result.error(404, "student not found");
         }
-        if ("teacher".equalsIgnoreCase(UserContext.getUserRole())) {
-            Long teacherId = UserContext.getUserId();
-            User teacher = userService.getById(teacherId);
-            if (teacher != null && teacher.getCollege() != null
-                    && !teacher.getCollege().equals(student.getCollege())) {
-                return Result.error(403, "no permission to view students from another college");
-            }
-        }
-
         return Result.success(comprehensiveScoreService.getByStudentNo(student.getUsername(), academicYear));
     }
 
@@ -137,26 +98,7 @@ public class GrowthController {
             @RequestParam(required = false) Long studentId,
             @RequestParam(defaultValue = "1") int current,
             @RequestParam(defaultValue = "20") int size) {
-        Long targetStudentId = studentId;
-        if (targetStudentId == null) {
-            targetStudentId = UserContext.getUserId();
-        }
-        if (targetStudentId == null) {
-            return Result.error(401, "请先登录或传入目标学生ID");
-        }
-        if ("student".equalsIgnoreCase(UserContext.getUserRole())
-                && !targetStudentId.equals(UserContext.getUserId())) {
-            return Result.error(403, "学生只能查看自己的成长档案");
-        }
-        if ("teacher".equalsIgnoreCase(UserContext.getUserRole())) {
-            Long teacherId = UserContext.getUserId();
-            User teacher = userService.getById(teacherId);
-            User student = userService.getById(targetStudentId);
-            if (teacher != null && student != null && teacher.getCollege() != null
-                    && !teacher.getCollege().equals(student.getCollege())) {
-                return Result.error(403, "无权查看其他学院学生的成长档案");
-            }
-        }
+        Long targetStudentId = resolveAccessibleStudent(studentId);
         return Result.success(growthRecordService.getTimelinePage(targetStudentId, current, size));
     }
 }

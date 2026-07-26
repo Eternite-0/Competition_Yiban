@@ -15,11 +15,14 @@ import com.etsaion.service.MessageService;
 import com.etsaion.service.RegistrationService;
 import com.etsaion.service.RegistrationStatusManager;
 import com.etsaion.service.ReviewTaskService;
+import com.etsaion.service.StudentAccessPolicy;
 import com.etsaion.service.SubmissionService;
 import com.etsaion.service.SubmissionStudentService;
+import com.etsaion.service.UserService;
 import com.etsaion.service.impl.GrowthRecordServiceImpl;
 import com.etsaion.service.impl.RegistrationServiceImpl;
 import com.etsaion.service.impl.RegistrationStatusManagerImpl;
+import com.etsaion.service.impl.StudentAccessPolicyImpl;
 import com.etsaion.service.impl.SubmissionServiceImpl;
 import com.etsaion.vo.StudentGrowthVO;
 import com.fasterxml.jackson.core.JsonParser;
@@ -48,6 +51,13 @@ class AdditionalUnitTest {
         RegistrationStatusManagerImpl manager = new RegistrationStatusManagerImpl();
         ReflectionTestUtils.setField(manager, "registrationService", mock(RegistrationService.class));
         return manager;
+    }
+
+    /** 这些用例不带用户上下文，等同于管理员视角，不限范围。 */
+    private static StudentAccessPolicy unrestrictedAccess() {
+        StudentAccessPolicyImpl policy = new StudentAccessPolicyImpl();
+        ReflectionTestUtils.setField(policy, "userService", mock(UserService.class));
+        return policy;
     }
 
     // =========================================================================
@@ -443,6 +453,7 @@ class AdditionalUnitTest {
         ReflectionTestUtils.setField(service, "reviewTaskService", reviewTaskService);
         ReflectionTestUtils.setField(service, "submissionService", subService);
         ReflectionTestUtils.setField(service, "registrationStatusManager", statusManager());
+        ReflectionTestUtils.setField(service, "studentAccessPolicy", unrestrictedAccess());
 
         service.audit(1L, 2L, AuditAction.APPROVE, "通过");
 
@@ -480,6 +491,7 @@ class AdditionalUnitTest {
         ReflectionTestUtils.setField(service, "reviewTaskService", reviewTaskService);
         ReflectionTestUtils.setField(service, "submissionService", subService);
         ReflectionTestUtils.setField(service, "registrationStatusManager", statusManager());
+        ReflectionTestUtils.setField(service, "studentAccessPolicy", unrestrictedAccess());
 
         service.audit(1L, 2L, AuditAction.REJECT, "不符合要求");
 
@@ -517,6 +529,7 @@ class AdditionalUnitTest {
         ReflectionTestUtils.setField(service, "reviewTaskService", reviewTaskService);
         ReflectionTestUtils.setField(service, "submissionService", subService);
         ReflectionTestUtils.setField(service, "registrationStatusManager", statusManager());
+        ReflectionTestUtils.setField(service, "studentAccessPolicy", unrestrictedAccess());
 
         service.audit(1L, 2L, AuditAction.RETURN, "请补充指导老师信息");
 
@@ -537,6 +550,7 @@ class AdditionalUnitTest {
         when(regMapper.selectById(1L)).thenReturn(reg);
         ReflectionTestUtils.setField(service, "baseMapper", regMapper);
         ReflectionTestUtils.setField(service, "registrationStatusManager", statusManager());
+        ReflectionTestUtils.setField(service, "studentAccessPolicy", unrestrictedAccess());
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> service.audit(1L, 2L, AuditAction.APPROVE, null));
@@ -552,6 +566,7 @@ class AdditionalUnitTest {
         when(regMapper.selectById(999L)).thenReturn(null);
         ReflectionTestUtils.setField(service, "baseMapper", regMapper);
         ReflectionTestUtils.setField(service, "registrationStatusManager", statusManager());
+        ReflectionTestUtils.setField(service, "studentAccessPolicy", unrestrictedAccess());
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> service.audit(999L, 2L, AuditAction.APPROVE, null));
@@ -595,6 +610,7 @@ class AdditionalUnitTest {
         ReflectionTestUtils.setField(service, "reviewTaskService", reviewTaskService);
         ReflectionTestUtils.setField(service, "submissionService", subService);
         ReflectionTestUtils.setField(service, "registrationStatusManager", statusManager());
+        ReflectionTestUtils.setField(service, "studentAccessPolicy", unrestrictedAccess());
 
         service.audit(1L, 2L, AuditAction.APPROVE, "通过");
 

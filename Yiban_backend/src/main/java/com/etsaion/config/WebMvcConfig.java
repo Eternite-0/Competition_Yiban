@@ -26,6 +26,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/api/auth/login",
                         "/api/auth/register",
+                        // 注册页在登录前就要填学院/专业
+                        "/api/meta/**",
                         "/swagger-ui.html",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",

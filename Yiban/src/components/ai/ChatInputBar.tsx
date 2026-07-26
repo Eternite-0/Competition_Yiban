@@ -101,7 +101,7 @@ export default function ChatInputBar({
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
-          className="max-h-24 min-h-9 w-full resize-none bg-transparent px-1.5 py-1 text-[14px] leading-relaxed text-ink outline-none placeholder:text-placeholder disabled:cursor-not-allowed"
+          className="max-h-24 min-h-9 w-full resize-none bg-transparent px-1.5 py-1 text-subhead leading-relaxed text-ink outline-none placeholder:text-placeholder disabled:cursor-not-allowed"
           placeholder={disabled ? '正在处理...' : '说出你要完成的任务，查询、整理、导出都可以…'}
           aria-label="输入问题"
         />

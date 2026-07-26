@@ -271,7 +271,7 @@ export default function StudentRosterManagement() {
           </span>
           <input
             name="rosterKeyword"
-            className="input-glass h-9 pl-9 text-[13px]"
+            className="input-glass h-9 pl-9 text-footnote"
             placeholder="搜索学号/姓名"
             aria-label="搜索学号/姓名"
             value={filters.keyword}
@@ -280,7 +280,7 @@ export default function StudentRosterManagement() {
         </div>
         <select
           name="filterCollege"
-          className="input-glass h-9 w-full text-[13px] sm:w-[140px]"
+          className="input-glass h-9 w-full text-footnote sm:w-[140px]"
           value={filters.college}
           aria-label="筛选学院"
           onChange={(e) => setFilters({ ...filters, college: e.target.value, majorId: '' })}
@@ -292,7 +292,7 @@ export default function StudentRosterManagement() {
         </select>
         <select
           name="filterMajor"
-          className="input-glass h-9 w-full text-[13px] sm:w-[140px]"
+          className="input-glass h-9 w-full text-footnote sm:w-[140px]"
           value={filters.majorId}
           aria-label="筛选专业"
           onChange={(e) => setFilters({ ...filters, majorId: e.target.value })}
@@ -304,7 +304,7 @@ export default function StudentRosterManagement() {
         </select>
         <select
           name="filterGrade"
-          className="input-glass h-9 w-full text-[13px] sm:w-[100px]"
+          className="input-glass h-9 w-full text-footnote sm:w-[100px]"
           value={filters.grade}
           aria-label="筛选年级"
           onChange={(e) => setFilters({ ...filters, grade: e.target.value })}
@@ -316,7 +316,7 @@ export default function StudentRosterManagement() {
         </select>
         <select
           name="filterStatus"
-          className="input-glass h-9 w-full text-[13px] sm:w-[100px]"
+          className="input-glass h-9 w-full text-footnote sm:w-[100px]"
           value={filters.status}
           aria-label="筛选状态"
           onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -339,7 +339,7 @@ export default function StudentRosterManagement() {
         ) : records.length === 0 ? (
           <div className="empty-panel py-16">
             <span className="material-symbols-outlined">group</span>
-            <p className="text-[13px]">暂无花名册数据</p>
+            <p className="text-footnote">暂无花名册数据</p>
           </div>
         ) : (
           <>
@@ -373,10 +373,10 @@ export default function StudentRosterManagement() {
                       </td>
                       <td className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button type="button" onClick={() => handleOpenModal(r)} className="btn-utility !h-8 !px-3 !text-[12px]">
+                          <button type="button" onClick={() => handleOpenModal(r)} className="btn-utility !h-8 !px-3 !text-caption">
                             编辑
                           </button>
-                          <button type="button" onClick={() => handleDelete(r.id)} className="btn-danger !h-8 !px-3 !text-[12px]">
+                          <button type="button" onClick={() => handleDelete(r.id)} className="btn-danger !h-8 !px-3 !text-caption">
                             删除
                           </button>
                         </div>
@@ -387,7 +387,7 @@ export default function StudentRosterManagement() {
               </table>
             </div>
             <div className="flex items-center justify-between border-t border-hairline px-4 py-3">
-              <span className="text-[12px] text-placeholder">
+              <span className="text-caption text-placeholder">
                 共 {pagination.total} 条记录
               </span>
               <Pagination
@@ -496,7 +496,7 @@ export default function StudentRosterManagement() {
                 <h3 id="import-modal-title" className="section-card-title">导入花名册</h3>
               </div>
               <div className="section-card-body">
-                <div className="mb-4 rounded-md border border-border bg-surface-tile-1 p-4 text-[13px]">
+                <div className="mb-4 rounded-md border border-border bg-surface-tile-1 p-4 text-footnote">
                   <div className="mb-2 font-medium text-primary">Excel 格式要求</div>
                   <ul className="list-disc space-y-1 pl-4 text-body-muted">
                     <li>第一行为表头，从第二行开始为数据</li>
@@ -511,12 +511,12 @@ export default function StudentRosterManagement() {
                     type="file"
                     accept=".xlsx,.xls"
                     onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                    className="text-[13px] text-body-muted"
+                    className="text-footnote text-body-muted"
                   />
                 </div>
 
                 {importResult && (
-                  <div className="mb-4 rounded-md border border-border bg-surface-tile-1 p-4 text-[13px]">
+                  <div className="mb-4 rounded-md border border-border bg-surface-tile-1 p-4 text-footnote">
                     <div className="mb-2 font-medium text-ink">导入结果</div>
                     <div className="grid grid-cols-3 gap-2">
                       <div>成功: <span className="font-semibold text-success">{importResult.success}</span></div>
