@@ -8,8 +8,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @Slf4j
 @RestControllerAdvice
@@ -25,6 +27,20 @@ public class GlobalExceptionHandler {
     public Result<?> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
         log.warn("Request Body Parse Exception: {}", e.getMostSpecificCause().getMessage());
         return Result.error(400, "请求格式错误");
+    }
+
+    /**
+     * 缺参数或参数类型不对是调用方的问题，不是服务端故障。
+     * 没有这个处理器时它们会落到兜底分支，被报成 500。
+     */
+    @ExceptionHandler({MissingServletRequestParameterException.class,
+            MethodArgumentTypeMismatchException.class})
+    public Result<?> handleBadRequestParameter(Exception e) {
+        String name = e instanceof MissingServletRequestParameterException
+                ? ((MissingServletRequestParameterException) e).getParameterName()
+                : ((MethodArgumentTypeMismatchException) e).getName();
+        log.warn("Bad request parameter: {}", name);
+        return Result.error(400, "请求参数不正确：" + name);
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
