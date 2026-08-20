@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
@@ -33,6 +33,18 @@ interface FailedTurn {
 
 interface AIAssistantWidgetProps {
   onWorkspaceChange?: (state: { open: boolean; mode: AssistantPanelMode }) => void;
+}
+
+interface LauncherPosition {
+  left: number;
+  top: number;
+}
+
+interface LauncherDragState extends LauncherPosition {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  moved: boolean;
 }
 
 const MAX_IMAGE_COUNT = 4;
@@ -100,6 +112,11 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
     readStoredOption('yiban.ai.avatar-style', 'classic', avatarStyleLabels)
   ));
   const abortRef = useRef<AbortController | null>(null);
+  const launcherRef = useRef<HTMLDivElement>(null);
+  const launcherDragRef = useRef<LauncherDragState | null>(null);
+  const launcherDraggedRef = useRef(false);
+  const [launcherPosition, setLauncherPosition] = useState<LauncherPosition | null>(null);
+  const [launcherDragging, setLauncherDragging] = useState(false);
   const isBusy = status === 'loading' || status === 'streaming';
   const hasMessages = messages.length > 0;
 
@@ -118,6 +135,62 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
     setOpen(nextOpen);
     onWorkspaceChange?.({ open: nextOpen, mode: panelMode });
   }, [onWorkspaceChange, open, panelMode]);
+
+  const handleLauncherPointerDown = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.button !== 0 || !launcherRef.current) return;
+    const rect = launcherRef.current.getBoundingClientRect();
+    launcherDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      left: rect.left,
+      top: rect.top,
+      moved: false,
+    };
+    launcherDraggedRef.current = false;
+    setLauncherDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, []);
+
+  const handleLauncherPointerMove = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    const drag = launcherDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - drag.startX;
+    const deltaY = event.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(deltaX, deltaY) < 4) return;
+    drag.moved = true;
+    launcherDraggedRef.current = true;
+
+    const rect = launcherRef.current?.getBoundingClientRect();
+    const width = rect?.width || 100;
+    const height = rect?.height || 100;
+    const maxLeft = Math.max(8, window.innerWidth - width - 8);
+    const maxTop = Math.max(8, window.innerHeight - height - 8);
+    setLauncherPosition({
+      left: Math.min(Math.max(8, drag.left + deltaX), maxLeft),
+      top: Math.min(Math.max(8, drag.top + deltaY), maxTop),
+    });
+  }, []);
+
+  const handleLauncherPointerUp = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    const drag = launcherDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    launcherDragRef.current = null;
+    setLauncherDragging(false);
+  }, []);
+
+  const handleLauncherClick = useCallback((event: ReactMouseEvent<HTMLButtonElement>) => {
+    if (launcherDraggedRef.current) {
+      event.preventDefault();
+      launcherDraggedRef.current = false;
+      return;
+    }
+    toggleAssistant();
+  }, [toggleAssistant]);
 
   const togglePanelMode = useCallback(() => {
     const nextMode = panelMode === 'sidebar' ? 'floating' : 'sidebar';
@@ -425,26 +498,42 @@ export default function AIAssistantWidget({ onWorkspaceChange }: AIAssistantWidg
 
   return (
     <>
-      <motion.button
-        type="button"
-        whileTap={{ scale: 0.92 }}
-        onClick={toggleAssistant}
-        className="ai-assistant-launcher fixed bottom-5 right-4 z-50 grid h-12 w-12 place-items-center rounded-full border border-border/80 bg-canvas text-body shadow-[0_8px_30px_rgba(15,23,42,0.12),0_0_0_1px_rgba(15,23,42,0.05)] transition hover:shadow-[0_12px_40px_rgba(15,23,42,0.18)] md:bottom-6 md:right-6"
-        aria-label={open ? '关闭 AI 助手' : '打开 AI 助手'}
-        title="AI 助手"
+      <div
+        ref={launcherRef}
+        className={`ai-assistant-launcher-wrap fixed bottom-5 right-4 z-50 md:bottom-6 md:right-6 ${launcherPosition ? 'is-dragged' : ''} ${launcherDragging ? 'is-dragging' : ''}`}
+        style={launcherPosition ? { left: launcherPosition.left, top: launcherPosition.top } : undefined}
       >
-        <img
-          className="ai-launcher-avatar"
-          src={avatarAssets[avatarStyle]}
-          alt=""
-          draggable={false}
-        />
-        {open && (
-          <span className="ai-launcher-close material-symbols-outlined" aria-hidden="true">
-            close
-          </span>
+        {!open && (
+          <div className="ai-launcher-tip" role="status">
+            <span>有需要就来咨询 AI 助手</span>
+            <span className="ai-launcher-tip-arrow" aria-hidden="true" />
+          </div>
         )}
-      </motion.button>
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.92 }}
+          onPointerDown={handleLauncherPointerDown}
+          onPointerMove={handleLauncherPointerMove}
+          onPointerUp={handleLauncherPointerUp}
+          onPointerCancel={handleLauncherPointerUp}
+          onClick={handleLauncherClick}
+          className="ai-assistant-launcher grid h-[102px] w-[88px] place-items-center rounded-[28px] border-0 bg-transparent text-body transition"
+          aria-label={open ? '关闭 AI 助手' : '打开 AI 助手'}
+          title="拖动 AI 助手入口，点击打开"
+        >
+          <img
+            className="ai-launcher-mascot"
+            src="/ai-assistant-mascot-transparent.png"
+            alt=""
+            draggable={false}
+          />
+          {open && (
+            <span className="ai-launcher-close material-symbols-outlined" aria-hidden="true">
+              close
+            </span>
+          )}
+        </motion.button>
+      </div>
 
       <AnimatePresence>
         {open && (

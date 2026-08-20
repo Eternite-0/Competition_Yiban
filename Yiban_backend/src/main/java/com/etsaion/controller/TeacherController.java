@@ -153,6 +153,19 @@ public class TeacherController {
         return Result.success(teacherService.getStudentDetail(studentId));
     }
 
+    @Operation(summary = "教师端学业风险预警数据")
+    @GetMapping("/academic-warnings")
+    public Result<Map<String, Object>> academicWarnings(
+            @RequestParam(required = false) String college,
+            @RequestParam(required = false) String grade,
+            @RequestParam(required = false) String major,
+            @RequestParam(required = false) String className,
+            @RequestParam(required = false) String riskLevel,
+            @RequestParam(required = false) String keyword) {
+
+        return Result.success(teacherService.getAcademicWarnings(college, grade, major, className, riskLevel, keyword));
+    }
+
     // ---- trend ----
 
     @Operation(summary = "参赛趋势数据")

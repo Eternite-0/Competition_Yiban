@@ -32,6 +32,15 @@ interface RadarDim {
   maxScore: number;
 }
 interface ComprehensiveScore {
+  moralFinalScore?: number | null;
+  sportsFinalScore?: number | null;
+  abilityFinalScore?: number | null;
+  academicScore?: number | null;
+  comprehensiveScore?: number | null;
+  moralRank?: number | null;
+  sportsRank?: number | null;
+  abilityRank?: number | null;
+  academicRank?: number | null;
   academicYear?: string;
   major?: string;
   grade?: string;
@@ -84,6 +93,15 @@ function formatOfficialPercent(value?: number | string) {
   if (!Number.isFinite(n)) return '暂无';
   const percent = n > 1 ? n : n * 100;
   return `前 ${percent.toFixed(1)}%`;
+}
+
+function formatScore(value?: number | null) {
+  return typeof value === 'number' && Number.isFinite(value) ? value.toFixed(1) : '暂无';
+}
+
+function formatDimensionRank(rank?: number | null, total?: number | null) {
+  if (!rank) return '暂无排名';
+  return total ? `第 ${rank} 名 / ${total}` : `第 ${rank} 名`;
 }
 
 function RadarChart({ data }: { data: RadarDim[] }) {
@@ -201,6 +219,16 @@ export default function StudentDetail() {
     ? RADAR_FIELDS.map((f) => ({ dimension: f.label, score: data.radar!.radarData[f.key] ?? 0, maxScore: 100 }))
     : [];
 
+  const score = data?.comprehensive;
+  const scoreDimensions = score
+    ? [
+        { key: 'moral', label: '品德发展', score: score.moralFinalScore, rank: score.moralRank, icon: 'volunteer_activism', tone: '#7c3aed' },
+        { key: 'academic', label: '学业成绩', score: score.academicScore, rank: score.academicRank, icon: 'menu_book', tone: '#2563eb' },
+        { key: 'sports', label: '体育健康', score: score.sportsFinalScore, rank: score.sportsRank, icon: 'sports_score', tone: '#0f766e' },
+        { key: 'ability', label: '能力素质', score: score.abilityFinalScore, rank: score.abilityRank, icon: 'rocket_launch', tone: '#b45309' },
+      ]
+    : [];
+
   const kpiCards = data
     ? [
         { label: '参赛总数', value: String(data.totalCompetitions), suffix: '次', icon: 'format_list_numbered' },
@@ -250,16 +278,23 @@ export default function StudentDetail() {
       ) : (
         <>
           <section className="section-card">
-            <div className="section-card-body flex items-center gap-4">
-              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-md bg-surface-tile-1 text-title-3 font-medium text-body-muted">
+            <div className="section-card-body flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-primary text-title-2 font-semibold text-white shadow-sm">
                 {data.student.realName[0]}
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-subhead font-medium text-ink">{data.student.realName}</h2>
-                <p className="mt-1 text-footnote text-body-muted">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-title-3 font-semibold text-ink">{data.student.realName}</h2>
+                  <span className="chip chip-primary">{data.student.grade}级</span>
+                </div>
+                <p className="mt-1.5 text-footnote text-body-muted">
                   学号 {data.student.username} · {data.student.grade}级 · {data.student.major} · {data.student.className}
                 </p>
-                <p className="mt-0.5 text-caption text-placeholder">{data.student.college}</p>
+                <p className="mt-1 text-caption text-placeholder">{data.student.college}</p>
+              </div>
+              <div className="rounded-lg bg-surface-tile-1 px-3 py-2 text-left sm:min-w-[150px] sm:text-right">
+                <div className="text-caption text-body-muted">综测学年</div>
+                <div className="mt-1 text-footnote font-medium text-ink">{data.comprehensive?.academicYear || '暂无数据'}</div>
               </div>
             </div>
           </section>
@@ -281,6 +316,62 @@ export default function StudentDetail() {
               </button>
             ))}
           </div>
+
+          <section className="section-card overflow-hidden">
+            <div className="section-card-header">
+              <div>
+                <h2 className="section-card-title">成绩与综测</h2>
+                <p className="mt-1 text-caption text-body-muted">四项维度共同构成学生综合表现</p>
+              </div>
+              <span className="chip chip-primary">{score?.academicYear || '暂无学年'}</span>
+            </div>
+            {score ? (
+              <div className="grid grid-cols-1 gap-0 lg:grid-cols-[minmax(230px,.75fr)_1.25fr]">
+                <div className="relative overflow-hidden border-b border-border bg-gradient-to-br from-primary-soft to-surface-pearl px-5 py-6 lg:border-b-0 lg:border-r">
+                  <div className="pointer-events-none absolute -bottom-16 -right-8 h-36 w-36 rounded-full bg-primary/10 blur-2xl" />
+                  <div className="relative">
+                    <div className="text-caption font-medium uppercase tracking-[0.14em] text-primary">Comprehensive score</div>
+                    <div className="mt-2 flex items-end gap-2">
+                      <span className="text-[46px] font-semibold leading-none tracking-tight tabular-nums text-ink">{formatScore(score.comprehensiveScore)}</span>
+                      <span className="mb-1 text-footnote text-body-muted">/ 100</span>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-caption text-body-muted">
+                      <span><span className="text-ink">综合排名</span> {formatDimensionRank(score.comprehensiveRank, score.rankTotal)}</span>
+                      <span><span className="text-ink">超过</span> {formatOfficialPercent(score.comprehensiveRankPercent).replace('前 ', '')}</span>
+                    </div>
+                    <div className="mt-5 h-2 overflow-hidden rounded-full bg-surface-tile-2">
+                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(Math.max(Number(score.comprehensiveScore) || 0, 0), 100)}%` }} />
+                    </div>
+                    <p className="mt-2 text-caption-2 text-placeholder">排名范围：{score.rankScope || '当前专业'}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-2">
+                  {scoreDimensions.map((dimension) => (
+                    <div key={dimension.key} className="bg-surface-pearl px-4 py-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface-tile-1" style={{ color: dimension.tone }}>
+                            <span className="material-symbols-outlined text-[17px]">{dimension.icon}</span>
+                          </span>
+                          <span className="truncate text-footnote font-medium text-ink">{dimension.label}</span>
+                        </div>
+                        <span className="text-subhead font-semibold tabular-nums text-ink">{formatScore(dimension.score)}</span>
+                      </div>
+                      <div className="mt-3">
+                        <ProgressBar value={Math.min(Math.max(Number(dimension.score) || 0, 0), 100)} size="sm" showThumb instant />
+                      </div>
+                      <div className="mt-2 text-caption-2 text-body-muted">{formatDimensionRank(dimension.rank, score.rankTotal)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="empty-panel py-12">
+                <span className="material-symbols-outlined">scoreboard</span>
+                <p className="text-footnote">暂无综测成绩数据</p>
+              </div>
+            )}
+          </section>
 
           <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <section className="section-card">

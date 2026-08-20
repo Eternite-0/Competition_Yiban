@@ -18,6 +18,7 @@ const MyRegistrations = lazy(() => import('../pages/student/MyRegistrations'));
 const RegistrationWorkbench = lazy(() => import('../pages/student/RegistrationWorkbench'));
 const SubmissionUpload = lazy(() => import('../pages/student/SubmissionUpload'));
 const StudentGrowth = lazy(() => import('../pages/student/StudentGrowth'));
+const StudentAcademic = lazy(() => import('../pages/student/StudentAcademic'));
 const AchievementUpload = lazy(() => import('../pages/student/AchievementUpload'));
 const CompetitionCalendar = lazy(() => import('../pages/student/CompetitionCalendar'));
 const StudentExcellentWorks = lazy(() => import('../pages/student/ExcellentWorks'));
@@ -29,6 +30,7 @@ const SubmissionAudit = lazy(() => import('../pages/teacher/SubmissionAudit'));
 const TeacherStudentCompetitions = lazy(() => import('../pages/teacher/TeacherStudentCompetitions'));
 const TeacherStudentGrowth = lazy(() => import('../pages/teacher/TeacherStudentGrowth'));
 const CollegeOverview = lazy(() => import('../pages/teacher/CollegeOverview'));
+const AcademicWarning = lazy(() => import('../pages/teacher/AcademicWarning'));
 const StudentDetail = lazy(() => import('../pages/teacher/StudentDetail'));
 const StudentCompare = lazy(() => import('../pages/teacher/StudentCompare'));
 
@@ -89,6 +91,7 @@ export const router = createBrowserRouter([
       { path: 'registrations/workbench/:competitionId', element: <LazyPage><RegistrationWorkbench /></LazyPage> },
       { path: 'upload/:registrationId', element: <LazyPage><SubmissionUpload /></LazyPage> },
       { path: 'growth', element: <LazyPage><StudentGrowth /></LazyPage> },
+      { path: 'academic', element: <LazyPage><StudentAcademic /></LazyPage> },
       { path: 'achievements/upload', element: <LazyPage><AchievementUpload /></LazyPage> },
       { path: 'calendar', element: <LazyPage><CompetitionCalendar /></LazyPage> },
       { path: 'works', element: <LazyPage><StudentExcellentWorks /></LazyPage> },
@@ -102,6 +105,7 @@ export const router = createBrowserRouter([
       { index: true, element: <LazyPage><TeacherHome /></LazyPage> },
       { path: 'notifications', element: <LazyPage><NotificationsPage /></LazyPage> },
       { path: 'college-overview', element: <LazyPage><CollegeOverview /></LazyPage> },
+      { path: 'academic-warning', element: <LazyPage><AcademicWarning /></LazyPage> },
       { path: 'competitions', element: <LazyPage><CompetitionsHub /></LazyPage> },
       { path: 'audit', element: <LazyPage><SubmissionAudit /></LazyPage> },
       { path: 'student-competitions', element: <LazyPage><TeacherStudentCompetitions /></LazyPage> },

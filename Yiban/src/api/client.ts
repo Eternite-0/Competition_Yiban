@@ -68,7 +68,8 @@ apiClient.interceptors.response.use(
       const message = res.message || res.msg || STATUS_MESSAGES[res.code] || '操作失败';
       console.error('API Error:', message);
       // If unauthorized, clear stale token and Zustand state so the user is forced to re-login
-      if (res.code === 401) {
+      const platformAuthError = res.code === 401 && ['请先登录', '未登录或登录已过期'].includes(String(message));
+      if (platformAuthError) {
         localStorage.removeItem('token');
         useStore.getState().logout();
       }

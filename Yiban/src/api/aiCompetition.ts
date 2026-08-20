@@ -348,9 +348,11 @@ export function updateAiCompetitionDraft(
 export function confirmAiCompetitionDraft(
   id: number | string,
   reviewNote?: string,
+  publish = false,
 ): Promise<AiCompetitionDraftVO> {
   return apiClient.post(`/ai/competition/drafts/${id}/confirm`, {
     reviewNote: reviewNote?.trim() || undefined,
+    publish: publish || undefined,
   });
 }
 

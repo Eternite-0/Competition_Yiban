@@ -829,7 +829,7 @@ export default function CompetitionPublish() {
           setForm((prev) => ({ ...prev, ...mapped, activityType: 'competition' }));
           setActiveTab('manual');
           toast.success('已将 AI 解析结果填入赛事表单，请核对后保存');
-        }} />
+        }} onPublished={() => navigate('/admin/competitions')} />
       )}
 
       <div className="publish-action-bar fixed bottom-0 left-0 right-0 z-40 md:left-[var(--sidebar-width)]">

@@ -40,6 +40,11 @@ jwt:
 file:
   upload-path: ./uploads
 
+academic:
+  sync-enabled: ${ACADEMIC_SYNC_ENABLED:true}
+  base-url: ${ACADEMIC_BASE_URL:https://csvpn.lingnan.edu.cn/http/77726476706e69737468656265737421fae00f902e3e6f5e7f06c7a99c406d36a1/}
+  session-ttl-minutes: ${ACADEMIC_SESSION_TTL_MINUTES:20}
+
 oss:
   qiniu:
     access-key: ${QINIU_ACCESS_KEY:your_qiniu_access_key}

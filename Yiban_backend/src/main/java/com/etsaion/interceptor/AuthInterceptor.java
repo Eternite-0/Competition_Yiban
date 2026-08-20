@@ -1,10 +1,13 @@
 package com.etsaion.interceptor;
 
 import cn.hutool.core.util.StrUtil;
+import com.etsaion.entity.User;
 import com.etsaion.exception.BusinessException;
+import com.etsaion.service.UserService;
 import com.etsaion.utils.JwtUtil;
 import com.etsaion.utils.UserContext;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -16,6 +19,9 @@ import java.util.Arrays;
 @Slf4j
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
+
+    @Autowired
+    private UserService userService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -47,7 +53,13 @@ public class AuthInterceptor implements HandlerInterceptor {
             if (JwtUtil.validateToken(token)) {
                 Long userId = JwtUtil.getUserIdFromToken(token);
                 String role = JwtUtil.getRoleFromToken(token);
-                UserContext.set(new UserContext.UserInfo(userId, role));
+                String username = JwtUtil.getUsernameFromToken(token);
+                if (isTokenOwnerStillValid(userId, role, username)) {
+                    UserContext.set(new UserContext.UserInfo(userId, role));
+                } else {
+                    log.warn("Token identity mismatch: userId={}, username={}, role={}, URI={}",
+                            userId, username, role, request.getRequestURI());
+                }
             }
         }
 
@@ -71,6 +83,16 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         return true;
+    }
+
+    private boolean isTokenOwnerStillValid(Long userId, String role, String username) {
+        if (userId == null || StrUtil.isBlank(role) || StrUtil.isBlank(username)) {
+            return false;
+        }
+        User user = userService.getById(userId);
+        return user != null
+                && username.equals(user.getUsername())
+                && role.equalsIgnoreCase(user.getRole());
     }
 
     @Override

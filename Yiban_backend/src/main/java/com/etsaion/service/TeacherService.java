@@ -35,6 +35,10 @@ public interface TeacherService {
     // Growth overview
     TeacherGrowthOverviewVO getGrowthOverview(String college, String grade, String major, String className);
 
+    // Academic warning dashboard
+    Map<String, Object> getAcademicWarnings(String college, String grade, String major, String className,
+                                             String riskLevel, String keyword);
+
     // Student detail export
     Map<String, Object> getStudentExportData(Long studentId);
 }

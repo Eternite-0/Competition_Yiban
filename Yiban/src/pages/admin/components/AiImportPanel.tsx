@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   averageConfidence,
+  confirmAiCompetitionDraft,
   formatConfidence,
   parseCompetitionFileBatch,
   streamParseCompetitionUrlBatch,
@@ -106,9 +107,10 @@ export function aiDraftToPublishForm(draft: AiCompetitionDraftVO) {
 
 interface AiImportPanelProps {
   onParsed: (draft: AiCompetitionDraftVO) => void;
+  onPublished?: (draft: AiCompetitionDraftVO) => void;
 }
 
-export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
+export default function AiImportPanel({ onParsed, onPublished }: AiImportPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const [mode, setMode] = useState<ImportMode>('file');
@@ -397,7 +399,7 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
             ) : (
               <motion.div variants={listContainer} initial="hidden" animate="visible" className="grid grid-cols-1 divide-y divide-hairline">
                 {drafts.map((draft) => (
-                  <DraftResultCard key={draft.id} draft={draft} onParsed={onParsed} />
+                  <DraftResultCard key={draft.id} draft={draft} onParsed={onParsed} onPublished={onPublished} />
                 ))}
               </motion.div>
             )}
@@ -411,10 +413,13 @@ export default function AiImportPanel({ onParsed }: AiImportPanelProps) {
 function DraftResultCard({
   draft,
   onParsed,
+  onPublished,
 }: {
   draft: AiCompetitionDraftVO;
   onParsed: (draft: AiCompetitionDraftVO) => void;
+  onPublished?: (draft: AiCompetitionDraftVO) => void;
 }) {
+  const [publishing, setPublishing] = useState(false);
   const confidenceItems = useMemo(
     () => toConfidenceItems(draft.fieldConfidenceJson),
     [draft.fieldConfidenceJson],
@@ -432,6 +437,20 @@ function DraftResultCard({
     [draft.fieldConfidenceJson],
   );
   const tags = [...toStringList(draft.tags), ...toStringList(draft.tracks)];
+
+  const publishDirectly = async () => {
+    if (!draft.id || publishing) return;
+    setPublishing(true);
+    try {
+      const published = await confirmAiCompetitionDraft(draft.id, undefined, true);
+      toast.success('赛事已解析并发布');
+      onPublished?.(published);
+    } catch (error: any) {
+      toast.error(error?.message || '发布失败，请先检查解析结果');
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   return (
     <motion.div variants={listItem} className="grid grid-cols-1 gap-0 lg:grid-cols-[1fr_260px]">
@@ -494,10 +513,18 @@ function DraftResultCard({
               {warningLabel(item.value)}
             </div>
           ))}
-          <button type="button" className="btn-primary mt-1 w-full justify-center" onClick={() => onParsed(draft)}>
-            <span className="material-symbols-outlined text-[18px]">edit</span>
-            填入表单
-          </button>
+          <div className="mt-1 grid grid-cols-1 gap-2">
+            <button type="button" className="btn-primary w-full justify-center" onClick={publishDirectly} disabled={publishing || draft.status === 'confirmed'}>
+              <span className={`material-symbols-outlined text-[18px] ${publishing ? 'animate-spin' : ''}`}>
+                {publishing ? 'progress_activity' : 'publish'}
+              </span>
+              {publishing ? '发布中…' : draft.status === 'confirmed' ? '已发布' : '解析并发布'}
+            </button>
+            <button type="button" className="btn-secondary w-full justify-center" onClick={() => onParsed(draft)}>
+              <span className="material-symbols-outlined text-[18px]">edit</span>
+              填入表单后核对
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>

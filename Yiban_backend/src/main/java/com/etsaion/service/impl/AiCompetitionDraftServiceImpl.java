@@ -596,8 +596,11 @@ public class AiCompetitionDraftServiceImpl extends ServiceImpl<AiCompetitionDraf
 
         // 走与发布接口相同的通道：同一套默认值、同一套校验。
         // 直接 save 会写出发布接口写不出的数据。
+        String defaultStatus = dto != null && Boolean.TRUE.equals(dto.getPublish())
+                ? CompetitionStatus.PUBLISHED.getValue()
+                : CompetitionStatus.DRAFT.getValue();
         Competition competition = competitionPublishService.create(
-                toPublishDTO(draft), CompetitionStatus.DRAFT.getValue());
+                toPublishDTO(draft), defaultStatus);
 
         createStages(competition.getId(), draft.getStagesJson());
 

@@ -1,6 +1,7 @@
 package com.etsaion.exception;
 
 import com.etsaion.dto.Result;
+import com.etsaion.academic.AcademicRemoteException;
 import com.etsaion.filter.CorrelationIdFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -21,6 +22,16 @@ public class GlobalExceptionHandler {
     public Result<?> handleBusinessException(BusinessException e) {
         log.warn("Business Exception: {}", e.getMessage());
         return Result.error(e.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(AcademicRemoteException.class)
+    public Result<?> handleAcademicRemoteException(AcademicRemoteException e) {
+        log.warn("教务系统请求失败: {}", e.getMessage());
+        // 401 from the remote school system is not an expired 易赛通 JWT.
+        // Returning it as 422 prevents the frontend auth interceptor from
+        // clearing the platform login and sending the student back to /login.
+        int code = e.getStatus() == 401 ? 422 : e.getStatus();
+        return Result.error(code, e.getMessage());
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

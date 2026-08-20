@@ -13,9 +13,11 @@ import com.etsaion.entity.GrowthRecord;
 import com.etsaion.entity.ComprehensiveScore;
 import com.etsaion.entity.Activity;
 import com.etsaion.entity.Participation;
+import com.etsaion.entity.StudentAcademicSnapshot;
 import com.etsaion.enums.RegistrationStatus;
 import com.etsaion.enums.SubmissionStatus;
 import com.etsaion.exception.BusinessException;
+import com.etsaion.mapper.StudentAcademicSnapshotMapper;
 import com.etsaion.service.*;
 import com.etsaion.utils.UserContext;
 import com.etsaion.vo.*;
@@ -27,6 +29,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -61,6 +64,9 @@ public class TeacherServiceImpl implements TeacherService {
 
     @Autowired
     private MajorService majorService;
+
+    @Autowired
+    private StudentAcademicSnapshotMapper studentAcademicSnapshotMapper;
 
     // ---- helpers ----
 
@@ -881,6 +887,163 @@ public class TeacherServiceImpl implements TeacherService {
     private GrowthDimensionVO averageDimension(String key, String label, Map<String, Integer> totals, int divisor) {
         int score = Math.min(100, Math.round((float) totals.getOrDefault(key, 0) / divisor));
         return new GrowthDimensionVO(key, label, score, 100, 0, "学院范围平均画像");
+    }
+
+    // ---- academic warning dashboard ----
+
+    @Override
+    public Map<String, Object> getAcademicWarnings(String college, String grade, String major, String className,
+                                                    String riskLevel, String keyword) {
+        List<User> students = userService.list(studentQuery(college, grade, major, className));
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("totalStudents", students.size());
+
+        if (CollUtil.isEmpty(students)) {
+            result.put("syncedStudents", 0);
+            result.put("unsyncedStudents", 0);
+            result.put("highCount", 0);
+            result.put("attentionCount", 0);
+            result.put("normalCount", 0);
+            result.put("unknownCount", 0);
+            result.put("failedCourseCount", 0);
+            result.put("missingCreditsTotal", BigDecimal.ZERO);
+            result.put("records", new ArrayList<>());
+            return result;
+        }
+
+        List<Long> ids = studentIds(students);
+        List<StudentAcademicSnapshot> snapshots = studentAcademicSnapshotMapper.selectList(
+                new LambdaQueryWrapper<StudentAcademicSnapshot>()
+                        .in(StudentAcademicSnapshot::getStudentId, ids)
+                        .orderByDesc(StudentAcademicSnapshot::getSyncedAt));
+        Map<Long, StudentAcademicSnapshot> latestByStudent = new HashMap<>();
+        for (StudentAcademicSnapshot snapshot : snapshots) {
+            latestByStudent.putIfAbsent(snapshot.getStudentId(), snapshot);
+        }
+
+        List<TeacherAcademicWarningVO> allRecords = students.stream()
+                .map(student -> toAcademicWarning(student, latestByStudent.get(student.getId())))
+                .sorted(Comparator
+                        .comparingInt((TeacherAcademicWarningVO item) -> academicRiskWeight(item.getRiskLevel())).reversed()
+                        .thenComparing(TeacherAcademicWarningVO::getFailedCourses, Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(TeacherAcademicWarningVO::getMissingCredits, Comparator.nullsLast(Comparator.reverseOrder()))
+                        .thenComparing(TeacherAcademicWarningVO::getRealName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .collect(Collectors.toList());
+
+        List<TeacherAcademicWarningVO> records = allRecords.stream()
+                .filter(item -> StrUtil.isBlank(riskLevel) || riskLevel.equalsIgnoreCase(item.getRiskLevel()))
+                .filter(item -> StrUtil.isBlank(keyword) || matchesAcademicKeyword(item, keyword))
+                .collect(Collectors.toList());
+
+        result.put("syncedStudents", allRecords.stream().filter(item -> item.getSyncedAt() != null).count());
+        result.put("unsyncedStudents", allRecords.stream().filter(item -> item.getSyncedAt() == null).count());
+        result.put("highCount", allRecords.stream().filter(item -> "high".equals(item.getRiskLevel())).count());
+        result.put("attentionCount", allRecords.stream().filter(item -> "attention".equals(item.getRiskLevel())).count());
+        result.put("normalCount", allRecords.stream().filter(item -> "normal".equals(item.getRiskLevel())).count());
+        result.put("unknownCount", allRecords.stream().filter(item -> "unknown".equals(item.getRiskLevel())).count());
+        result.put("failedCourseCount", allRecords.stream().mapToInt(item -> item.getFailedCourses() == null ? 0 : item.getFailedCourses()).sum());
+        result.put("missingCreditsTotal", allRecords.stream()
+                .map(TeacherAcademicWarningVO::getMissingCredits)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add));
+        result.put("records", records);
+        return result;
+    }
+
+    private TeacherAcademicWarningVO toAcademicWarning(User student, StudentAcademicSnapshot snapshot) {
+        TeacherAcademicWarningVO item = new TeacherAcademicWarningVO();
+        item.setStudentId(student.getId());
+        item.setUsername(student.getUsername());
+        item.setRealName(student.getRealName());
+        item.setCollege(student.getCollege());
+        item.setMajor(displayMajor(student.getMajor()));
+        item.setClassName(student.getClassName());
+        item.setGrade(student.getGrade());
+
+        List<AcademicRiskVO> risks = new ArrayList<>();
+        if (snapshot == null) {
+            risks.add(academicRisk("unknown", "尚未同步教务数据", "该学生还没有可用于风险判断的成绩与培养方案数据。"));
+            item.setRiskLevel("unknown");
+            item.setRiskLabel(academicRiskLabel("unknown"));
+            item.setRisks(risks);
+            return item;
+        }
+
+        item.setGpa(snapshot.getGpa());
+        item.setRequiredCredits(snapshot.getRequiredCredits());
+        item.setEarnedCredits(snapshot.getEarnedCredits());
+        item.setMissingCredits(snapshot.getMissingCredits());
+        item.setFailedCourses(snapshot.getPlannedFailedCourses());
+        item.setMissedCourses(snapshot.getPlannedMissedCourses());
+        item.setInProgressCourses(snapshot.getPlannedInProgressCourses());
+        item.setSyncedAt(snapshot.getSyncedAt());
+
+        BigDecimal missingCredits = snapshot.getMissingCredits() == null ? BigDecimal.ZERO : snapshot.getMissingCredits();
+        int failedCourses = snapshot.getPlannedFailedCourses() == null ? 0 : snapshot.getPlannedFailedCourses();
+        int missedCourses = snapshot.getPlannedMissedCourses() == null ? 0 : snapshot.getPlannedMissedCourses();
+        BigDecimal gpa = snapshot.getGpa();
+
+        if (missingCredits.compareTo(BigDecimal.ZERO) > 0) {
+            String level = missingCredits.compareTo(BigDecimal.valueOf(12)) >= 0 ? "high" : "attention";
+            risks.add(academicRisk(level, "培养方案仍有学分缺口", "当前还缺 " + missingCredits.stripTrailingZeros().toPlainString() + " 学分。"));
+        }
+        if (failedCourses > 0) {
+            String level = failedCourses >= 3 ? "high" : "attention";
+            risks.add(academicRisk(level, "存在未通过课程", "培养方案内有 " + failedCourses + " 门课程尚未通过。"));
+        }
+        if (missedCourses > 0) {
+            risks.add(academicRisk("attention", "存在未修课程", "培养方案内有 " + missedCourses + " 门课程尚未修读。"));
+        }
+        if (gpa != null && gpa.compareTo(BigDecimal.valueOf(2)) < 0) {
+            String level = gpa.compareTo(BigDecimal.valueOf(1.5)) < 0 ? "high" : "attention";
+            risks.add(academicRisk(level, "平均学分绩点偏低", "当前 GPA 为 " + gpa.stripTrailingZeros().toPlainString() + "，建议关注后续课程表现。"));
+        }
+        if (risks.isEmpty()) {
+            risks.add(academicRisk("normal", "当前未发现明显风险", "最近一次同步的学分、课程和 GPA 指标处于正常范围。"));
+        }
+
+        String resolvedLevel = risks.stream()
+                .map(AcademicRiskVO::getLevel)
+                .max(Comparator.comparingInt(this::academicRiskWeight))
+                .orElse("unknown");
+        if (academicRiskWeight(snapshot.getRiskLevel()) > academicRiskWeight(resolvedLevel)) {
+            resolvedLevel = snapshot.getRiskLevel();
+        }
+        item.setRiskLevel(resolvedLevel);
+        item.setRiskLabel(academicRiskLabel(resolvedLevel));
+        item.setRisks(risks);
+        return item;
+    }
+
+    private AcademicRiskVO academicRisk(String level, String title, String detail) {
+        AcademicRiskVO risk = new AcademicRiskVO();
+        risk.setLevel(level);
+        risk.setTitle(title);
+        risk.setDetail(detail);
+        return risk;
+    }
+
+    private int academicRiskWeight(String level) {
+        if ("high".equalsIgnoreCase(level)) return 3;
+        if ("attention".equalsIgnoreCase(level)) return 2;
+        if ("normal".equalsIgnoreCase(level)) return 1;
+        return 0;
+    }
+
+    private String academicRiskLabel(String level) {
+        if ("high".equalsIgnoreCase(level)) return "高风险";
+        if ("attention".equalsIgnoreCase(level)) return "需要关注";
+        if ("normal".equalsIgnoreCase(level)) return "情况正常";
+        return "待同步";
+    }
+
+    private boolean matchesAcademicKeyword(TeacherAcademicWarningVO item, String keyword) {
+        String normalized = keyword == null ? "" : keyword.trim().toLowerCase(Locale.ROOT);
+        if (normalized.isEmpty()) return true;
+        return Stream.of(item.getRealName(), item.getUsername(), item.getMajor(), item.getClassName())
+                .filter(Objects::nonNull)
+                .map(value -> value.toLowerCase(Locale.ROOT))
+                .anyMatch(value -> value.contains(normalized));
     }
 
     // ---- trend ----

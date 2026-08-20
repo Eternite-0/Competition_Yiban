@@ -46,12 +46,17 @@ public class JwtUtil {
     }
 
     public static String generateToken(Long userId, String role) {
+        return generateToken(userId, role, null);
+    }
+
+    public static String generateToken(Long userId, String role, String username) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + staticExpire);
 
         return Jwts.builder()
                 .setSubject(String.valueOf(userId))
                 .claim("role", role)
+                .claim("username", username)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(key, SignatureAlgorithm.HS256)
@@ -60,8 +65,10 @@ public class JwtUtil {
 
     public static boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-            return true;
+            Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+            return claims.getSubject() != null
+                    && claims.get("role", String.class) != null
+                    && claims.get("username", String.class) != null;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
@@ -83,5 +90,14 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
         return claims.get("role", String.class);
+    }
+
+    public static String getUsernameFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("username", String.class);
     }
 }

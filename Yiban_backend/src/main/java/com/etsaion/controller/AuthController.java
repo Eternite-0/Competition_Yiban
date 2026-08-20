@@ -43,7 +43,7 @@ public class AuthController {
 
         // 学生注册自动登录，教师注册返回提示
         if ("student".equals(user.getRole())) {
-            String token = JwtUtil.generateToken(user.getId(), user.getRole());
+            String token = JwtUtil.generateToken(user.getId(), user.getRole(), user.getUsername());
             UserVO vo = new UserVO();
             BeanUtils.copyProperties(user, vo);
             Map<String, Object> data = new HashMap<>();
@@ -71,7 +71,7 @@ public class AuthController {
             User user = userService.login(dto.getUsername(), dto.getPassword());
 
             // Generate Token
-            String token = JwtUtil.generateToken(user.getId(), user.getRole());
+            String token = JwtUtil.generateToken(user.getId(), user.getRole(), user.getUsername());
 
             UserVO vo = new UserVO();
             BeanUtils.copyProperties(user, vo);

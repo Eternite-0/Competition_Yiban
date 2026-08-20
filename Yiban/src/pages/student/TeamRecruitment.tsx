@@ -545,7 +545,7 @@ export default function TeamRecruitment() {
 
       {contactTarget && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" role="dialog" aria-modal="true" aria-label="联系 TA">
-          <div className="w-full max-w-lg rounded-lg border border-hairline bg-canvas p-5 shadow-lg">
+          <div className="w-full max-w-[32rem] rounded-lg border border-hairline bg-canvas p-5 shadow-lg">
             <div className="mb-4 flex items-center justify-between border-b border-hairline pb-3">
               <h3 className="text-subhead font-medium text-ink">联系 TA</h3>
               <button type="button" onClick={() => setContactTarget(null)} className="icon-button !h-8 !w-8" aria-label="关闭">
@@ -595,7 +595,7 @@ export default function TeamRecruitment() {
 
       {applyTarget && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" role="dialog" aria-modal="true" aria-label="申请加入">
-          <div className="w-full max-w-lg rounded-lg border border-hairline bg-canvas p-5 shadow-lg">
+          <div className="w-full max-w-[32rem] rounded-lg border border-hairline bg-canvas p-5 shadow-lg">
             <div className="mb-4 flex items-center justify-between border-b border-hairline pb-3">
               <h3 className="text-subhead font-medium text-ink">申请加入</h3>
               <button type="button" onClick={() => setApplyTarget(null)} className="icon-button !h-8 !w-8" aria-label="关闭">
@@ -668,7 +668,7 @@ export default function TeamRecruitment() {
 
       {applicationsTarget && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4" role="dialog" aria-modal="true" aria-label="申请管理">
-          <div className="flex max-h-[80vh] w-full max-w-lg flex-col rounded-lg border border-hairline bg-canvas p-5 shadow-lg">
+          <div className="flex max-h-[80vh] w-full max-w-[32rem] flex-col rounded-lg border border-hairline bg-canvas p-5 shadow-lg">
             <div className="mb-3 flex items-center justify-between border-b border-hairline pb-3">
               <h3 className="text-subhead font-medium text-ink">申请管理</h3>
               <button

@@ -128,6 +128,24 @@ interface TeacherGrowthOverview {
   }>;
 }
 
+interface OverviewMetricCard {
+  label: string;
+  value: string;
+  suffix: string;
+  icon: string;
+  hint: string;
+  progress?: number;
+}
+
+interface StudentMetricCard {
+  label: string;
+  value: string;
+  suffix: string;
+  icon: string;
+  hint?: string;
+  interactive?: boolean;
+}
+
 const RADAR_FIELDS: Array<{ key: string; label: string }> = [
   { key: 'innovation', label: '创新能力' },
   { key: 'engineering', label: '工程实践' },
@@ -437,52 +455,59 @@ export default function TeacherStudentGrowth() {
   const totalStudents = overview?.totalStudents ?? supervised.length;
   const lowParticipationCount = overview?.lowParticipationCount ?? overview?.lowParticipationStudents?.length ?? 0;
   const coveredStudents = Math.max(0, totalStudents - lowParticipationCount);
-  const firstLowParticipation = overview?.lowParticipationStudents?.[0];
-  const overviewCards = [
+  const coveragePercent = totalStudents > 0
+    ? Number(((coveredStudents / totalStudents) * 100).toFixed(1))
+    : 0;
+  const volunteerParticipation = Number(activityDistribution.volunteer ?? 0);
+  const cultureSportsParticipation = Number(activityDistribution.culture_sports ?? 0);
+  const campusParticipation = volunteerParticipation + cultureSportsParticipation;
+  const scopeLabel = filters.className || filters.major || filters.grade || scopeCollege || '全部学生';
+  const hasOfficialRank = Boolean(comprehensive?.comprehensiveRank);
+
+  const overviewCards: OverviewMetricCard[] = [
     {
-      label: '画像覆盖',
+      label: '已形成成长档案',
       value: loadingOverview ? '...' : `${coveredStudents}/${totalStudents}`,
       suffix: '人',
       icon: 'groups',
-      hint: '已有竞赛/志愿/文体沉淀',
+      hint: loadingOverview ? '正在汇总当前范围数据' : `覆盖率 ${coveragePercent}% · 已有审核成长记录`,
+      progress: loadingOverview ? 0 : coveragePercent,
     },
     {
-      label: '志愿服务',
-      value: loadingOverview ? '...' : String(activityDistribution.volunteer ?? 0),
+      label: '已审核校园参与',
+      value: loadingOverview ? '...' : String(campusParticipation),
       suffix: '人次',
       icon: 'volunteer_activism',
-      hint: `累计 ${formatHours(overview?.totalVolunteerHours)} 小时`,
+      hint: loadingOverview ? '正在汇总审核记录' : `志愿 ${volunteerParticipation} 人次 · 文体 ${cultureSportsParticipation} 人次`,
     },
     {
-      label: '文体活动',
-      value: loadingOverview ? '...' : String(activityDistribution.culture_sports ?? 0),
-      suffix: '人次',
-      icon: 'sports_soccer',
-      hint: '审核通过后计入文体素养',
-    },
-    {
-      label: '待激活学生',
+      label: '尚未沉淀成长记录',
       value: loadingOverview ? '...' : String(lowParticipationCount),
       suffix: '人',
       icon: 'person_alert',
-      hint: firstLowParticipation?.studentName ? `优先关注：${firstLowParticipation.studentName}` : '当前范围暂无低参与提示',
+      hint: '缺少已审核的竞赛、志愿或文体记录',
     },
   ];
 
-  const kpiCards = [
+  const kpiCards: StudentMetricCard[] = [
     { label: '竞赛实践', value: String(growth?.totalCompetitions ?? 0), suffix: '次', icon: 'emoji_events' },
-    { label: '校园活动', value: String(growth?.totalActivities ?? 0), suffix: '次', icon: 'event_available', hint: `认证荣誉 ${growth?.awards ?? 0} 项` },
-    { label: '志愿公益', value: formatHours(growth?.totalVolunteerHours), suffix: '小时', icon: 'volunteer_activism' },
-    { label: '文体活动', value: String(growth?.totalCultureSports ?? 0), suffix: '次', icon: 'sports_soccer' },
+    { label: '校园活动参与', value: String(growth?.totalActivities ?? 0), suffix: '次', icon: 'event_available' },
+    { label: '志愿时长', value: formatHours(growth?.totalVolunteerHours), suffix: '小时', icon: 'volunteer_activism' },
+    { label: '文体参与', value: String(growth?.totalCultureSports ?? 0), suffix: '次', icon: 'sports_soccer' },
+    { label: '认证荣誉', value: String(growth?.awards ?? 0), suffix: '项', icon: 'verified' },
     {
       label: '综测排名',
-      value: comprehensiveMode === 'rank'
+      value: hasOfficialRank && comprehensiveMode === 'rank'
         ? formatOfficialRank(comprehensive)
-        : formatOfficialPercent(comprehensive?.comprehensiveRankPercent),
+        : hasOfficialRank
+          ? formatOfficialPercent(comprehensive?.comprehensiveRankPercent)
+          : '暂无数据',
       suffix: '',
       icon: 'leaderboard',
-      toggle: true,
-      hint: comprehensive?.rankScope || comprehensive?.major || '本专业',
+      interactive: hasOfficialRank,
+      hint: hasOfficialRank
+        ? `${comprehensive?.rankScope || comprehensive?.major || '本专业'} · 点击查看${comprehensiveMode === 'rank' ? '前百分位' : '排名'}`
+        : '本学年综测数据未同步',
     },
   ];
 
@@ -546,13 +571,13 @@ export default function TeacherStudentGrowth() {
         <div className="flex items-center justify-between gap-3">
           <h2 className="section-card-title flex items-center gap-2">
             <span className="material-symbols-outlined text-[18px] text-body-muted">monitoring</span>
-            当前范围概览
+            范围健康度
           </h2>
           <span className="text-caption text-placeholder">
-            {filters.className || filters.major || filters.grade || scopeCollege || '全部学生'}
+            当前筛选：{scopeLabel}
           </span>
         </div>
-        <div className="stat-grid">
+        <div className="stat-grid !grid-cols-1 sm:!grid-cols-3">
           {overviewCards.map((card) => (
             <div key={card.label} className="stat-card">
               <div className="flex justify-between items-start mb-2">
@@ -564,34 +589,115 @@ export default function TeacherStudentGrowth() {
                 <span className="text-caption text-placeholder">{card.suffix}</span>
               </div>
               <p className="mt-2 truncate text-caption-2 text-placeholder">{card.hint}</p>
+              {typeof card.progress === 'number' && (
+                <ProgressBar
+                  value={card.progress}
+                  size="sm"
+                  segments={2}
+                  showThumb={false}
+                  instant
+                  className="mt-3"
+                />
+              )}
             </div>
           ))}
         </div>
       </section>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-2.5">
-        {kpiCards.map((card) => (
-          <button
-            type="button"
-            key={card.label}
-            onClick={() => card.toggle && setComprehensiveMode((mode) => mode === 'rank' ? 'percent' : 'rank')}
-            className="stat-card text-left"
-          >
-            <div className="flex justify-between items-start mb-2">
-              <p className="text-footnote text-body-muted">{card.label}</p>
-              <span className="material-symbols-outlined text-[18px] text-body-muted">{card.icon}</span>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="font-display font-medium text-title-2 leading-none tabular-nums text-ink">{card.value}</span>
-              <span className="text-caption text-placeholder">{card.suffix}</span>
-            </div>
-            {'hint' in card && card.hint && (
-              <p className="mt-2 truncate text-caption-2 text-placeholder">
-                {card.hint}{'toggle' in card && card.toggle ? ` · ${comprehensiveMode === 'rank' ? '点击看前百分位' : '点击看排名'}` : ''}
+      <section className="section-card overflow-hidden">
+        <div className="section-card-header flex-wrap gap-2">
+          <div>
+            <h2 className="section-card-title flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-body-muted">person</span>
+              学生画像
+            </h2>
+            <p className="mt-1 text-caption-2 text-placeholder">仅展示当前选中学生的个人累计数据</p>
+          </div>
+          {selectedStudent ? (
+            <div className="ml-auto min-w-0 text-right">
+              <p className="truncate text-footnote font-medium text-ink">{selectedStudent.studentName}</p>
+              <p className="truncate text-caption-2 text-placeholder">
+                {selectedStudent.studentNo ?? selectedStudent.studentId}
+                {selectedStudent.major ? ` · ${selectedStudent.major}` : ''}
+                {selectedStudent.className ? ` · ${selectedStudent.className}` : ''}
               </p>
-            )}
-          </button>
-        ))}
+            </div>
+          ) : null}
+        </div>
+        {!selectedStudent ? (
+          <div className="empty-panel py-8">
+            <span className="material-symbols-outlined">person_search</span>
+            <p className="text-footnote">请从下方学生列表选择一名学生</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2.5 p-3 md:grid-cols-3 xl:grid-cols-6">
+            {kpiCards.map((card) => {
+              const content = (
+                <>
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="text-footnote text-body-muted">{card.label}</p>
+                    <span className="material-symbols-outlined text-[18px] text-body-muted">{card.icon}</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-display font-medium text-title-2 leading-none tabular-nums text-ink">{card.value}</span>
+                    <span className="text-caption text-placeholder">{card.suffix}</span>
+                  </div>
+                  {card.hint && <p className="mt-2 truncate text-caption-2 text-placeholder">{card.hint}</p>}
+                </>
+              );
+
+              return card.interactive ? (
+                <button
+                  type="button"
+                  key={card.label}
+                  onClick={() => setComprehensiveMode((mode) => mode === 'rank' ? 'percent' : 'rank')}
+                  className="stat-card text-left transition hover:bg-hover-overlay"
+                >
+                  {content}
+                </button>
+              ) : (
+                <div key={card.label} className="stat-card">{content}</div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="section-card">
+        <div className="section-card-header flex-wrap gap-2">
+          <div>
+            <h2 className="section-card-title flex items-center gap-2">
+              <span className="material-symbols-outlined text-[18px] text-body-muted">donut_small</span>
+              已审核校园活动构成
+            </h2>
+            <p className="mt-1 text-caption-2 text-placeholder">仅统计当前范围内审核通过的志愿与文体参与记录</p>
+          </div>
+          <span className="ml-auto text-caption text-placeholder">{scopeLabel}</span>
+        </div>
+        <div className="grid grid-cols-1 divide-y divide-hairline border-t border-hairline sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+          <div className="p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-footnote text-body-muted">志愿服务</p>
+                <p className="mt-1 text-caption-2 text-placeholder">累计 {formatHours(overview?.totalVolunteerHours)} 小时</p>
+              </div>
+              <p className="font-display text-title-2 font-medium tabular-nums text-ink">
+                {loadingOverview ? '...' : volunteerParticipation}<span className="ml-1 text-caption font-normal text-placeholder">人次</span>
+              </p>
+            </div>
+          </div>
+          <div className="p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-footnote text-body-muted">文体活动</p>
+                <p className="mt-1 text-caption-2 text-placeholder">审核通过后计入文体素养</p>
+              </div>
+              <p className="font-display text-title-2 font-medium tabular-nums text-ink">
+                {loadingOverview ? '...' : cultureSportsParticipation}<span className="ml-1 text-caption font-normal text-placeholder">人次</span>
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="flex flex-col lg:flex-row gap-3 min-h-[500px] lg:h-[720px]">

@@ -121,7 +121,7 @@ export default function CascadeFilter({
   };
 
   const selectClass =
-    'input-glass h-9 min-w-[120px] !py-0 pl-3 pr-9 text-footnote';
+    'input-glass h-9 min-w-[120px] !w-auto !py-0 pl-3 pr-9 text-footnote';
 
   return (
     <div className="flex flex-wrap items-center gap-2">
