@@ -53,16 +53,21 @@ DELETE FROM demo_data_registry WHERE batch_key = @demo_batch;
 DELETE aps
 FROM award_proof_student aps
 JOIN award_proof a ON a.id = aps.award_proof_id
-WHERE a.file_name LIKE '演示·%';
-DELETE FROM award_proof WHERE file_name LIKE '演示·%';
-DELETE FROM submission WHERE file_name LIKE '演示·%';
+WHERE a.certificate_no REGEXP '^DEMO-[0-9]+$';
+DELETE FROM award_proof
+WHERE certificate_no REGEXP '^DEMO-[0-9]+$';
+DELETE s
+FROM submission s
+JOIN registration r ON r.id = s.registration_id
+WHERE r.team_name LIKE '演示·%'
+  AND s.file_url LIKE '/api/file/serve/demo-%';
 DELETE FROM review_task WHERE title LIKE '演示报名审核 ·%';
 DELETE FROM team_post WHERE content LIKE '演示招募：%';
 DELETE FROM registration WHERE team_name LIKE '演示·%';
 
 SELECT 'demo-scale-cleaned' AS status,
        (SELECT COUNT(*) FROM registration WHERE team_name LIKE '演示·%') AS demo_registrations,
-       (SELECT COUNT(*) FROM submission WHERE file_name LIKE '演示·%') AS demo_submissions,
-       (SELECT COUNT(*) FROM award_proof WHERE file_name LIKE '演示·%') AS demo_awards,
+       (SELECT COUNT(*) FROM submission WHERE file_url LIKE '/api/file/serve/demo-%') AS demo_submissions,
+       (SELECT COUNT(*) FROM award_proof WHERE file_url LIKE '/api/file/serve/demo-award-%') AS demo_awards,
        (SELECT COUNT(*) FROM review_task WHERE title LIKE '演示报名审核 ·%') AS demo_review_tasks,
        (SELECT COUNT(*) FROM team_post WHERE content LIKE '演示招募：%') AS demo_team_posts;

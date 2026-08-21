@@ -9,6 +9,12 @@ V2__reference_data.sql     活动分类、AI 采集源
 V3__seed_students.sql      院系、班级、花名册、测试账号
 V4__seed_scores.sql        官方综测成绩
 V5__seed_competitions.sql  赛事、活动、公告
+V6__student_academic_snapshots.sql  学业快照
+V7__academic_data_detail.sql        学业明细
+V8__expand_competition_catalog.sql  赛事目录扩展
+V9__expand_volunteer_and_culture_activities.sql  志愿与文体活动扩展
+V10__backfill_activity_covers.sql   活动封面回填
+V11__normalize_demo_artifact_names.sql  演示数据登记表与成果文件名规范化
 ```
 
 ## 全新环境

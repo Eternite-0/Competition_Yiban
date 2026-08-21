@@ -1,5 +1,5 @@
 -- 本地演示数据：扩充三端的报名、审核、成果与获奖统计。
--- 仅用于本地演示，不代表真实业务数据；所有生成记录都带有“演示·”前缀，便于识别和清理。
+-- 仅用于本地演示，不代表真实业务数据；报名和组队记录保留“演示·”标记，成果文件名不再添加该前缀。
 -- 可重复执行。清理请执行 cleanup-demo-scale.sql。
 
 SET NAMES utf8mb4;
@@ -161,7 +161,7 @@ SELECT
   r.id,
   r.competition_id,
   r.student_id,
-  CONCAT('演示·', r.team_name, '·成果材料.pdf'),
+   CONCAT(REGEXP_REPLACE(r.team_name, '^演示·', ''), '·成果材料.pdf'),
   CASE MOD(r.id, 4)
     WHEN 0 THEN '/api/file/serve/demo-ai-lu.pdf'
     WHEN 1 THEN '/api/file/serve/demo-design-zhou.pdf'
@@ -180,13 +180,17 @@ WHERE r.team_name LIKE '演示·%'
   AND MOD(r.id, 3) = 0
   AND NOT EXISTS (
     SELECT 1 FROM submission s
-    WHERE s.registration_id = r.id AND s.file_name LIKE '演示·%'
+    WHERE s.registration_id = r.id AND s.file_url LIKE '/api/file/serve/demo-%'
   );
 
 INSERT INTO demo_data_registry (batch_key, table_name, record_id, business_key)
 SELECT @demo_batch, 'submission', s.id, s.file_name
 FROM submission s
-WHERE s.file_name LIKE '演示·%'
+ JOIN demo_data_registry dr
+   ON dr.batch_key = @demo_batch
+  AND dr.table_name = 'registration'
+  AND dr.record_id = s.registration_id
+ WHERE s.file_url LIKE '/api/file/serve/demo-%'
   AND NOT EXISTS (
     SELECT 1 FROM demo_data_registry d
     WHERE d.batch_key = @demo_batch AND d.table_name = 'submission' AND d.record_id = s.id
@@ -207,7 +211,7 @@ SELECT
   u.real_name,
   CONCAT('DEMO-', s.id),
   '本地演示数据',
-  CONCAT('演示·', s.file_name, '·获奖证明.pdf'),
+   CONCAT(s.file_name, '·获奖证明.pdf'),
   CASE MOD(s.id, 4)
     WHEN 0 THEN '/api/file/serve/demo-award-ai.pdf'
     WHEN 1 THEN '/api/file/serve/demo-award-art.pdf'
@@ -223,8 +227,12 @@ SELECT
 FROM submission s
 JOIN competition c ON c.id = s.competition_id
 JOIN `user` u ON u.id = s.submitter_id
-WHERE s.file_name LIKE '演示·%'
-  AND s.approved = 1
+ JOIN demo_data_registry ds
+   ON ds.batch_key = @demo_batch
+  AND ds.table_name = 'submission'
+  AND ds.record_id = s.id
+ WHERE s.file_url LIKE '/api/file/serve/demo-%'
+   AND s.approved = 1
   AND MOD(s.id, 4) = 0
   AND NOT EXISTS (SELECT 1 FROM award_proof a WHERE a.file_hash = SHA2(CONCAT('demo-award-', s.id), 256));
 
@@ -232,7 +240,7 @@ INSERT INTO award_proof_student (award_proof_id, student_id)
 SELECT a.id, a.submitter_id
 FROM award_proof a
 WHERE a.file_hash LIKE '%'
-  AND a.file_name LIKE '演示·%'
+   AND a.certificate_no REGEXP '^DEMO-[0-9]+$'
   AND NOT EXISTS (
     SELECT 1 FROM award_proof_student x
     WHERE x.award_proof_id = a.id AND x.student_id = a.submitter_id
@@ -241,7 +249,7 @@ WHERE a.file_hash LIKE '%'
 INSERT INTO demo_data_registry (batch_key, table_name, record_id, business_key)
 SELECT @demo_batch, 'award_proof', a.id, a.file_hash
 FROM award_proof a
-WHERE a.file_name LIKE '演示·%'
+WHERE a.certificate_no REGEXP '^DEMO-[0-9]+$'
   AND NOT EXISTS (
     SELECT 1 FROM demo_data_registry d
     WHERE d.batch_key = @demo_batch AND d.table_name = 'award_proof' AND d.record_id = a.id
@@ -304,7 +312,7 @@ WHERE p.content LIKE '演示招募：%'
 
 SELECT 'demo-scale' AS batch_key,
        (SELECT COUNT(*) FROM registration WHERE team_name LIKE '演示·%') AS demo_registrations,
-       (SELECT COUNT(*) FROM submission WHERE file_name LIKE '演示·%') AS demo_submissions,
-       (SELECT COUNT(*) FROM award_proof WHERE file_name LIKE '演示·%') AS demo_awards,
+       (SELECT COUNT(*) FROM demo_data_registry WHERE batch_key = @demo_batch AND table_name = 'submission') AS demo_submissions,
+       (SELECT COUNT(*) FROM demo_data_registry WHERE batch_key = @demo_batch AND table_name = 'award_proof') AS demo_awards,
        (SELECT COUNT(*) FROM review_task WHERE title LIKE '演示报名审核 ·%') AS demo_review_tasks,
        (SELECT COUNT(*) FROM team_post WHERE content LIKE '演示招募：%') AS demo_team_posts;
