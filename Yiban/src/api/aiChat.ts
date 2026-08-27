@@ -62,7 +62,7 @@ interface ParsedStreamEvent {
 
 export function sendAiChatMessage(payload: AiChatPayload): Promise<AiChatResponse> {
   return apiClient
-    .post('/ai/chat', payload, { timeout: 60000 })
+    .post('/ai/chat', payload, { timeout: 120000 })
     .then((data) => normalizeAiChatResponse(data));
 }
 

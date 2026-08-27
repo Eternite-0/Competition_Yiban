@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -39,6 +40,7 @@ public class AssistantToolRegistry {
     @Autowired private TeacherService teacherService;
     @Autowired private AiArtifactService aiArtifactService;
     @Autowired private ComprehensiveScoreService comprehensiveScoreService;
+    @Autowired private AiFeatureService aiFeatureService;
 
     // ────────────── 工具定义 ──────────────
 
@@ -75,6 +77,25 @@ public class AssistantToolRegistry {
                     "type", "object", "properties", Map.of(), "required", List.of())));
             tools.add(tool("get_announcements", "查看平台最新公告", Map.of(
                     "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("get_personalized_recommendations", "根据学生专业、年级、历史参赛和截止时间推荐适合的赛事", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("check_registration_materials", "检查指定赛事的报名材料完整度、附件格式和组队要求", Map.of(
+                    "type", "object",
+                    "properties", Map.of(
+                            "competition_id", Map.of("type", "integer", "description", "赛事ID"),
+                            "project_name", Map.of("type", "string", "description", "作品名称"),
+                            "mentor_name", Map.of("type", "string", "description", "指导教师"),
+                            "team_member_count", Map.of("type", "integer", "description", "团队人数"),
+                            "attachments", Map.of("type", "array", "items", Map.of("type", "string"), "description", "附件文件名列表")
+                    ),
+                    "required", List.of("competition_id"))));
+            tools.add(tool("match_team_members", "根据意向赛事和技能方向推荐互补队友", Map.of(
+                    "type", "object",
+                    "properties", Map.of(
+                            "competition_id", Map.of("type", "integer", "description", "赛事ID"),
+                            "desired_role", Map.of("type", "string", "description", "希望招募的技能，如 UI 设计")
+                    ),
+                    "required", List.of("competition_id"))));
         }
 
         if ("teacher".equalsIgnoreCase(role)) {
@@ -116,6 +137,8 @@ public class AssistantToolRegistry {
                     "type", "object", "properties", Map.of(), "required", List.of())));
             tools.add(tool("get_award_proof_audit", "查看待审核的获奖证明", Map.of(
                     "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("get_teacher_ai_cockpit", "总结教师今天需要优先处理的审核、补交和预警事项", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
         }
 
         if ("admin".equalsIgnoreCase(role)) {
@@ -131,6 +154,8 @@ public class AssistantToolRegistry {
             tools.add(tool("get_user_stats", "查看平台用户统计", Map.of(
                     "type", "object", "properties", Map.of(), "required", List.of())));
             tools.add(tool("get_announcements", "查看平台最新公告", Map.of(
+                    "type", "object", "properties", Map.of(), "required", List.of())));
+            tools.add(tool("get_admin_ai_report", "生成赛事运行简报，分析发布、报名、审核和临近截止异常并给出建议", Map.of(
                     "type", "object", "properties", Map.of(), "required", List.of())));
         }
 
@@ -202,6 +227,11 @@ public class AssistantToolRegistry {
                 case "get_my_participations" -> toJson(getMyParticipations(userId));
                 case "get_my_messages" -> toJson(getMyMessages(userId));
                 case "get_announcements" -> toJson(getRecentAnnouncements());
+                case "get_personalized_recommendations" -> toJson(studentFeature(() -> aiFeatureService.recommendCompetitions(userId), role));
+                case "check_registration_materials" -> toJson(studentFeature(() -> aiFeatureService.precheckMaterials(userId,
+                        toLong(args.get("competition_id")), precheckPayload(args)), role));
+                case "match_team_members" -> toJson(studentFeature(() -> aiFeatureService.matchTeamMembers(userId,
+                        toLong(args.get("competition_id")), (String) args.getOrDefault("desired_role", "")), role));
                 case "search_students" -> toJson(searchStudents(
                         (String) args.getOrDefault("keyword", ""), userId, role));
                 case "get_student_detail" -> toJson(getStudentDetailById(toLong(args.get("student_id")), userId, role));
@@ -220,9 +250,11 @@ public class AssistantToolRegistry {
                         toInt(args.getOrDefault("limit", 5))));
                 case "get_college_overview" -> toJson(getCollegeOverview());
                 case "get_award_proof_audit" -> toJson(getAwardProofAuditList());
+                case "get_teacher_ai_cockpit" -> toJson(roleFeature(() -> aiFeatureService.teacherCockpit(userId), role, "teacher"));
                 case "get_pending_drafts" -> toJson(getPendingDrafts());
                 case "get_ai_task_stats" -> toJson(getAiTaskStats());
                 case "get_user_stats" -> toJson(getUserStats());
+                case "get_admin_ai_report" -> toJson(roleFeature(() -> aiFeatureService.adminAnalytics(userId), role, "admin"));
                 case "create_excel_artifact" -> toJson(createExcelArtifact(args));
                 case "create_docx_artifact" -> toJson(createDocxArtifact(args));
                 default -> toJson(Map.of("error", "未知工具: " + name));
@@ -719,5 +751,24 @@ public class AssistantToolRegistry {
         if (!expected.equalsIgnoreCase(actual)) {
             throw new BusinessException(403, "当前角色无权使用该工具");
         }
+    }
+
+    private Map<String, Object> studentFeature(Supplier<Map<String, Object>> action, String role) {
+        requireRole(role, "student");
+        return action.get();
+    }
+
+    private Map<String, Object> precheckPayload(Map<String, Object> args) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("projectName", args.getOrDefault("project_name", ""));
+        payload.put("mentorName", args.getOrDefault("mentor_name", ""));
+        payload.put("teamMemberCount", args.getOrDefault("team_member_count", 1));
+        payload.put("attachments", args.getOrDefault("attachments", List.of()));
+        return payload;
+    }
+
+    private Map<String, Object> roleFeature(Supplier<Map<String, Object>> action, String role, String expected) {
+        requireRole(role, expected);
+        return action.get();
     }
 }

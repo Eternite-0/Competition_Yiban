@@ -313,10 +313,16 @@ export default function AdminHome() {
         title="管理工作台"
         description={`${greetingName}，先处理运营待办，再查看赛事发布与平台数据。`}
         actions={(
-          <button type="button" onClick={() => navigate('/admin/publish')} className="btn-primary">
-            <span className="material-symbols-outlined">add</span>
-            发布新赛事
-          </button>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => navigate('/admin/ai')} className="btn-secondary">
+              <span className="material-symbols-outlined">auto_awesome</span>
+              AI 运行简报
+            </button>
+            <button type="button" onClick={() => navigate('/admin/publish')} className="btn-primary">
+              <span className="material-symbols-outlined">add</span>
+              发布新赛事
+            </button>
+          </div>
         )}
       />
 

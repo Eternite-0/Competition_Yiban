@@ -26,7 +26,10 @@ import java.util.Map;
 public class MimoModelClient {
     private static final Logger log = LoggerFactory.getLogger(MimoModelClient.class);
     private static final String MISSING_KEY_MESSAGE = "AI_API_KEY 未配置，无法调用 AI 模型服务";
-    private static final int MAX_INTERACTIVE_TIMEOUT_SECONDS = 25;
+    // Vision requests can take considerably longer than text-only requests,
+    // especially when the image is sent as an inline data URL. Keep a sane
+    // upper bound while allowing certificate recognition to finish reliably.
+    private static final int MAX_INTERACTIVE_TIMEOUT_SECONDS = 90;
     private static final int MAX_INTERACTIVE_RETRIES = 0;
     private static final int ERROR_LOG_LIMIT = 1200;
     private static final int ERROR_DETAIL_LIMIT = 180;
@@ -142,7 +145,12 @@ public class MimoModelClient {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("model", StringUtils.hasText(model) ? model : properties.getModel());
         body.put("messages", messages);
-        if (jsonMode) {
+        // Agnes AI accepts the OpenAI-compatible messages format, but its
+        // public model docs do not list response_format=json_object. JSON
+        // extraction is enforced by the prompt/schema validator instead;
+        // callers using a gateway that supports the field can opt in via
+        // AI_JSON_RESPONSE_FORMAT=true.
+        if (jsonMode && properties.isJsonResponseFormat()) {
             body.put("response_format", Map.of("type", "json_object"));
         }
 
@@ -199,6 +207,11 @@ public class MimoModelClient {
     public static String describeHttpError(int statusCode, String rawBody) {
         String detail = cleanErrorDetail(extractErrorDetail(rawBody));
         String searchable = (detail + " " + (rawBody == null ? "" : rawBody)).toLowerCase();
+        if (searchable.contains("insufficient_user_quota")
+                || searchable.contains("额度不足")
+                || searchable.contains("quota")) {
+            return "AI 账户额度不足，请在 Agnes 控制台充值或启用可用的免费额度后重试。";
+        }
         if (searchable.contains("support image input")) {
             return "当前 AI 视觉模型不支持图片输入，请检查 AI_VISION_MODEL 配置。";
         }

@@ -15,18 +15,23 @@ interface QuickPromptChipsProps {
 
 const promptsByRole: Record<UserRole, QuickPrompt[]> = {
   student: [
+    { label: '赛事推荐', icon: 'auto_awesome', prompt: '根据我的专业、年级和历史参赛，推荐当前最适合我的比赛。' },
+    { label: '智能组队', icon: 'group_add', prompt: '我想参加互联网+，帮我找一名会 UI 设计的互补队友。' },
+    { label: '材料预检', icon: 'rule', prompt: '帮我检查当前报名材料是否完整，重点看附件、作品名称、团队人数和指导教师。' },
     { label: '导出报名表', icon: 'table_view', prompt: '请查询我的报名记录，并生成一个 Excel 文件让我下载。' },
     { label: '材料清单', icon: 'inventory_2', prompt: '根据我的参赛和成果情况，整理一份需要提交的材料清单。' },
     { label: '成长报告', icon: 'description', prompt: '分析我的成长档案，生成一份简洁的 DOCX 成长建议报告。' },
     { label: '截止提醒', icon: 'event', prompt: '帮我找出近期快截止的赛事和任务，并按紧急程度整理。' },
   ],
   teacher: [
+    { label: '今日驾驶舱', icon: 'auto_awesome', prompt: '帮我看看今天有哪些事情需要优先处理。' },
     { label: '审核清单', icon: 'fact_check', prompt: '列出我当前需要处理的待审核任务，并生成 Excel 清单。' },
     { label: '学生档案', icon: 'person_search', prompt: '查一下张三同学的参赛和成果情况，并整理成简短报告。' },
     { label: '学院汇总', icon: 'account_balance', prompt: '概览学院近期参赛、获奖和待审核情况，生成 DOCX 汇总。' },
     { label: '审核意见', icon: 'edit_note', prompt: '根据当前待审核任务，帮我草拟一段简洁、规范的审核意见。' },
   ],
   admin: [
+    { label: '运行简报', icon: 'auto_awesome', prompt: '总结一下本月赛事运行情况，发现异常并给出运营建议。' },
     { label: '待办导出', icon: 'table_view', prompt: '汇总当前需要管理员处理的待办事项，并生成 Excel 文件。' },
     { label: 'AI任务报告', icon: 'smart_toy', prompt: '查看最近 AI 任务执行情况和失败项，生成一份 DOCX 诊断报告。' },
     { label: '赛事草稿', icon: 'edit_note', prompt: '列出待审核的赛事草稿、主要风险，并生成 Excel 清单。' },

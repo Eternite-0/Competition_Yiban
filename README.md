@@ -84,6 +84,8 @@ $env:AI_API_KEY = [Environment]::GetEnvironmentVariable('AI_API_KEY', 'User')
 .\scripts\start-local-backend.ps1
 ```
 
+AI 默认使用 OpenAI 兼容接口：`https://sshzyu.com/v1`，模型为 `gpt-5.6-terra`（文本和视觉）。如需覆盖配置，可在启动前设置 `AI_BASE_URL`、`AI_MODEL`、`AI_VISION_MODEL`；API Key 只通过 `AI_API_KEY` 环境变量提供。
+
 脚本会自动创建空的 `etsaion` 库、检查 Flyway 状态并启动后端。启动后验证：
 
 ```powershell

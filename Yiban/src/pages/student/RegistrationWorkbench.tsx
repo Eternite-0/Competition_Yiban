@@ -403,6 +403,10 @@ export default function RegistrationWorkbench() {
 
       <div className="registration-submit-bar flex justify-end gap-2 border-t border-hairline pt-4">
         <button type="button" className="btn-secondary" onClick={() => navigate(-1)}>返回</button>
+        <button type="button" className="btn-secondary" onClick={() => navigate(`/student/ai?competitionId=${competitionId}`)}>
+          <span className="material-symbols-outlined text-[17px]">auto_awesome</span>
+          AI 材料预检
+        </button>
         <button
           type="button"
           onClick={handleSubmit}

@@ -17,9 +17,10 @@ class AiConfigContractTest {
         Class<?> type = Class.forName("com.etsaion.config.AiProperties");
         Object props = type.getDeclaredConstructor().newInstance();
 
-        assertEquals("https://token-plan-cn.xiaomimimo.com/v1", type.getMethod("getBaseUrl").invoke(props));
-        assertEquals("mimo-v2.5-pro", type.getMethod("getModel").invoke(props));
-        assertEquals("mimo-v2-omni", type.getMethod("getVisionModel").invoke(props));
+        assertEquals("https://api.agnes-ai.cn/v1", type.getMethod("getBaseUrl").invoke(props));
+        assertEquals("agnes-2.5-pro", type.getMethod("getModel").invoke(props));
+        assertEquals("agnes-2.5-pro", type.getMethod("getVisionModel").invoke(props));
+        assertEquals(false, type.getMethod("isJsonResponseFormat").invoke(props));
         assertEquals(1000000, type.getMethod("getContextWindow").invoke(props));
         assertEquals(25, type.getMethod("getTimeoutSeconds").invoke(props));
         assertEquals(0, type.getMethod("getMaxRetries").invoke(props));
@@ -33,10 +34,11 @@ class AiConfigContractTest {
         Properties properties = yaml.getObject();
 
         assertNotNull(properties);
-        assertEquals("${AI_BASE_URL:https://token-plan-cn.xiaomimimo.com/v1}", properties.getProperty("ai.base-url"));
+        assertEquals("${AI_BASE_URL:https://api.agnes-ai.cn/v1}", properties.getProperty("ai.base-url"));
         assertEquals("${AI_API_KEY:}", properties.getProperty("ai.api-key"));
-        assertEquals("${AI_MODEL:mimo-v2.5-pro}", properties.getProperty("ai.model"));
-        assertEquals("${AI_VISION_MODEL:mimo-v2-omni}", properties.getProperty("ai.vision-model"));
+        assertEquals("${AI_MODEL:agnes-2.5-pro}", properties.getProperty("ai.model"));
+        assertEquals("${AI_VISION_MODEL:agnes-2.5-pro}", properties.getProperty("ai.vision-model"));
+        assertEquals("${AI_JSON_RESPONSE_FORMAT:false}", properties.getProperty("ai.json-response-format"));
         assertEquals("${AI_CONTEXT_WINDOW:1000000}", properties.getProperty("ai.context-window"));
         assertEquals("${AI_TIMEOUT_SECONDS:25}", properties.getProperty("ai.timeout-seconds"));
         assertEquals("${AI_MAX_RETRIES:0}", properties.getProperty("ai.max-retries"));

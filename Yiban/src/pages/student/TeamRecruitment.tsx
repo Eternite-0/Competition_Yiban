@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../../api/client';
 import PageHero from '../../components/PageHero';
 import Pagination from '../../components/Pagination';
@@ -41,6 +42,7 @@ function formatDate(value?: string) {
 }
 
 export default function TeamRecruitment() {
+  const navigate = useNavigate();
   const [teamPosts, setTeamPosts] = useState<TeamVO[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -252,9 +254,13 @@ export default function TeamRecruitment() {
         title="组队招募中心"
         description="发现优质项目，寻找志同道合的队友。"
         actions={(
-          <button type="button" onClick={() => setShowCreateModal(true)} className="btn-primary">
-            创建招募
-          </button>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => navigate('/student/ai')} className="btn-secondary">
+              <span className="material-symbols-outlined text-[17px]">auto_awesome</span>
+              AI 智能匹配
+            </button>
+            <button type="button" onClick={() => setShowCreateModal(true)} className="btn-primary">创建招募</button>
+          </div>
         )}
       />
 

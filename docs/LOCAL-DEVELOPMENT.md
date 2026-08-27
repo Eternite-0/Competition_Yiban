@@ -34,6 +34,8 @@ $env:AI_API_KEY = [Environment]::GetEnvironmentVariable('AI_API_KEY', 'User')
 .\scripts\start-local-backend.ps1
 ```
 
+当前默认 AI 配置为 OpenAI 兼容接口（`https://sshzyu.com/v1` + `gpt-5.6-terra`，同时支持文本和图像输入）。如需覆盖，请设置 `AI_BASE_URL`、`AI_MODEL`、`AI_VISION_MODEL`；不要把 API Key 写入源码或文档，只设置 `AI_API_KEY` 环境变量。
+
 启动脚本会：
 
 1. 检查 JDK、Maven 和 MySQL 客户端；

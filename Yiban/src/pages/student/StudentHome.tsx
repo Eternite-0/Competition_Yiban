@@ -141,9 +141,13 @@ export default function StudentHome() {
           <h1>你好，{currentUser?.name ?? '同学'}</h1>
           <p>先处理最重要的一件事，其余参赛信息已经为你归好类。</p>
         </div>
-        <button type="button" onClick={() => navigate('/student/competitions')} className="btn-secondary">
-          浏览竞赛
-        </button>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => navigate('/student/ai')} className="btn-primary">
+            <span className="material-symbols-outlined text-[17px]">auto_awesome</span>
+            AI 推荐与预检
+          </button>
+          <button type="button" onClick={() => navigate('/student/competitions')} className="btn-secondary">浏览竞赛</button>
+        </div>
       </section>
 
       <section className="student-focus-panel">

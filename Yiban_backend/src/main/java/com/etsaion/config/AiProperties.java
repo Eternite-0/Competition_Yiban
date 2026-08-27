@@ -7,12 +7,23 @@ import org.springframework.util.StringUtils;
 @Component
 @ConfigurationProperties(prefix = "ai")
 public class AiProperties {
-    private String baseUrl = "https://token-plan-cn.xiaomimimo.com/v1";
+    /**
+     * OpenAI-compatible API base URL. Agnes AI is the default provider; the
+     * existing environment variables can still override this for another
+     * compatible provider.
+     */
+    private String baseUrl = "https://api.agnes-ai.cn/v1";
     private String apiKey = "";
-    private String model = "mimo-v2.5-pro";
-    private String visionModel = "mimo-v2-omni";
+    private String model = "agnes-2.5-flash";
+    private String visionModel = "agnes-2.5-flash";
+    /**
+     * Agnes documents the standard Chat Completions fields but does not
+     * document response_format=json_object. Keep it opt-in so JSON prompts
+     * remain compatible with Agnes and other OpenAI-compatible gateways.
+     */
+    private boolean jsonResponseFormat = false;
     private int contextWindow = 1000000;
-    private int timeoutSeconds = 25;
+    private int timeoutSeconds = 90;
     private int maxRetries = 0;
 
     public boolean hasApiKey() {
@@ -49,6 +60,14 @@ public class AiProperties {
 
     public void setVisionModel(String visionModel) {
         this.visionModel = visionModel;
+    }
+
+    public boolean isJsonResponseFormat() {
+        return jsonResponseFormat;
+    }
+
+    public void setJsonResponseFormat(boolean jsonResponseFormat) {
+        this.jsonResponseFormat = jsonResponseFormat;
     }
 
     public int getContextWindow() {

@@ -45,6 +45,18 @@ academic:
   base-url: ${ACADEMIC_BASE_URL:https://csvpn.lingnan.edu.cn/http/77726476706e69737468656265737421fae00f902e3e6f5e7f06c7a99c406d36a1/}
   session-ttl-minutes: ${ACADEMIC_SESSION_TTL_MINUTES:20}
 
+ai:
+  # OpenAI-compatible Chat Completions API.
+  base-url: ${AI_BASE_URL:https://sshzyu.com/v1}
+  api-key: ${AI_API_KEY:}
+  model: ${AI_MODEL:gpt-5.6-terra}
+  vision-model: ${AI_VISION_MODEL:gpt-5.6-terra}
+  # Keep response_format opt-in for gateway compatibility.
+  json-response-format: ${AI_JSON_RESPONSE_FORMAT:false}
+  context-window: ${AI_CONTEXT_WINDOW:1000000}
+  timeout-seconds: ${AI_TIMEOUT_SECONDS:90}
+  max-retries: ${AI_MAX_RETRIES:0}
+
 oss:
   qiniu:
     access-key: ${QINIU_ACCESS_KEY:your_qiniu_access_key}

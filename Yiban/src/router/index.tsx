@@ -23,6 +23,7 @@ const AchievementUpload = lazy(() => import('../pages/student/AchievementUpload'
 const CompetitionCalendar = lazy(() => import('../pages/student/CompetitionCalendar'));
 const StudentExcellentWorks = lazy(() => import('../pages/student/ExcellentWorks'));
 const MyProgress = lazy(() => import('../pages/student/MyProgress'));
+const AiWorkbench = lazy(() => import('../pages/ai/AiWorkbench'));
 
 // Teacher pages (lazy loaded)
 const TeacherHome = lazy(() => import('../pages/teacher/TeacherHome'));
@@ -96,6 +97,7 @@ export const router = createBrowserRouter([
       { path: 'calendar', element: <LazyPage><CompetitionCalendar /></LazyPage> },
       { path: 'works', element: <LazyPage><StudentExcellentWorks /></LazyPage> },
       { path: 'progress', element: <LazyPage><MyProgress /></LazyPage> },
+      { path: 'ai', element: <LazyPage><AiWorkbench /></LazyPage> },
     ],
   },
   {
@@ -112,6 +114,7 @@ export const router = createBrowserRouter([
       { path: 'student-growth', element: <LazyPage><TeacherStudentGrowth /></LazyPage> },
       { path: 'student-detail', element: <LazyPage><StudentDetail /></LazyPage> },
       { path: 'student-compare', element: <LazyPage><StudentCompare /></LazyPage> },
+      { path: 'ai', element: <LazyPage><AiWorkbench /></LazyPage> },
     ],
   },
   {
@@ -136,6 +139,7 @@ export const router = createBrowserRouter([
       { path: 'classes', element: <LazyPage><ClassManagement /></LazyPage> },
       { path: 'roster', element: <LazyPage><StudentRosterManagement /></LazyPage> },
       { path: 'registration-audit', element: <LazyPage><RegistrationAudit /></LazyPage> },
+      { path: 'ai', element: <LazyPage><AiWorkbench /></LazyPage> },
     ],
   },
   { path: '*', element: <Navigate to="/" replace /> },

@@ -76,7 +76,7 @@ export interface AwardProofReviewPayload {
 }
 
 export function recognizeCertificate(payload: CertificateRecognizePayload): Promise<AwardProofVO> {
-  return apiClient.post('/ai/certificate/recognize', payload, { timeout: 60000 });
+  return apiClient.post('/ai/certificate/recognize', payload, { timeout: 180000 });
 }
 
 export function submitAwardProof(payload: AwardProofSubmitPayload): Promise<AwardProofVO> {

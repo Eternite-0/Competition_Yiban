@@ -255,6 +255,10 @@ export default function TeacherHome() {
               <span className="material-symbols-outlined">groups</span>
               学生看板
             </button>
+            <button type="button" className="btn-secondary" onClick={() => navigate(`${basePath}/ai`)} aria-label="AI 待办驾驶舱">
+              <span className="material-symbols-outlined">auto_awesome</span>
+              AI 驾驶舱
+            </button>
           </>
         )}
       />

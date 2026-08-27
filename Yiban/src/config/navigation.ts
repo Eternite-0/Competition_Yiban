@@ -38,6 +38,7 @@ export const roleSectionLabel: Record<AppRole, string> = {
 /** 学生：核心流程保持分组，日历、组队与自定义成果上传始终可见。 */
 export const studentNav: NavEntry[] = [
   { icon: 'space_dashboard', label: '首页', path: '/student', hint: '待办与临期赛事' },
+  { icon: 'auto_awesome', label: 'AI 智能工作台', path: '/student/ai', hint: '赛事推荐、材料预检与智能组队' },
   { type: 'group', label: '发现赛事' },
   { icon: 'emoji_events', label: '竞赛中心', path: '/student/competitions', hint: '浏览并报名赛事' },
   { icon: 'calendar_month', label: '赛事日历', path: '/student/calendar', hint: '查看报名与比赛时间' },
@@ -56,6 +57,7 @@ export const studentNav: NavEntry[] = [
 /** 教师：审核与学情为主，活动大厅为辅 */
 export const teacherNav: NavEntry[] = [
   { icon: 'space_dashboard', label: '工作台', path: '/teacher', hint: '学院态势' },
+  { icon: 'auto_awesome', label: 'AI 待办驾驶舱', path: '/teacher/ai', hint: '今日审核与预警优先级' },
   { type: 'group', label: '审核与指导' },
   { icon: 'fact_check', label: '审核中心', path: '/teacher/audit', hint: '报名/成果审核' },
   { type: 'group', label: '学生管理' },
@@ -69,6 +71,7 @@ export const teacherNav: NavEntry[] = [
 /** 管理端：运营 → 审核 → 基础数据 */
 export const adminNav: NavEntry[] = [
   { icon: 'space_dashboard', label: '工作台', path: '/admin', hint: '运营总览' },
+  { icon: 'auto_awesome', label: 'AI 数据助手', path: '/admin/ai', hint: '赛事运行简报与异常建议' },
   { type: 'group', label: '赛事运营' },
   { icon: 'emoji_events', label: '赛事管理', path: '/admin/competitions', hint: '赛事列表与上下架' },
   { icon: 'add_circle', label: '创建赛事', path: '/admin/publish', hint: '手动创建或 AI 导入' },
@@ -90,12 +93,14 @@ export const adminNav: NavEntry[] = [
 export const mobileNavByRole: Record<AppRole, NavItem[]> = {
   student: [
     { icon: 'space_dashboard', label: '首页', path: '/student' },
+    { icon: 'auto_awesome', label: 'AI 工作台', path: '/student/ai' },
     { icon: 'emoji_events', label: '竞赛中心', path: '/student/competitions' },
     { icon: 'assignment_ind', label: '我的赛事', path: '/student/registrations' },
     { icon: 'insights', label: '成果档案', path: '/student/growth' },
   ],
   teacher: [
     { icon: 'space_dashboard', label: '工作台', path: '/teacher' },
+    { icon: 'auto_awesome', label: 'AI 驾驶舱', path: '/teacher/ai' },
     { icon: 'fact_check', label: '审核中心', path: '/teacher/audit' },
     { icon: 'school', label: '学生看板', path: '/teacher/student-competitions' },
     { icon: 'analytics', label: '学院总览', path: '/teacher/college-overview' },
@@ -103,6 +108,7 @@ export const mobileNavByRole: Record<AppRole, NavItem[]> = {
   ],
   admin: [
     { icon: 'space_dashboard', label: '工作台', path: '/admin' },
+    { icon: 'auto_awesome', label: 'AI 助手', path: '/admin/ai' },
     { icon: 'emoji_events', label: '赛事运营', path: '/admin/competitions' },
     { icon: 'fact_check', label: '审核中心', path: '/admin/audit' },
     { icon: 'auto_awesome', label: '成果展示', path: '/admin/works' },
@@ -215,6 +221,7 @@ export const navByRole: Record<AppRole, NavEntry[]> = {
 const pathLabelEntries: Array<[string, string]> = [
   // 完整路径优先
   ['/student', '首页'],
+  ['/student/ai', 'AI 智能工作台'],
   ['/student/competitions', '竞赛中心'],
   ['/student/calendar', '赛事日历'],
   ['/student/teams', '组队招募'],
@@ -226,6 +233,7 @@ const pathLabelEntries: Array<[string, string]> = [
   ['/student/achievements/upload', '上传成果'],
   ['/student/notifications', '消息中心'],
   ['/teacher', '工作台'],
+  ['/teacher/ai', 'AI 待办驾驶舱'],
   ['/teacher/college-overview', '学院总览'],
   ['/teacher/academic-warning', '学业预警'],
   ['/teacher/competitions', '活动大厅'],
@@ -236,6 +244,7 @@ const pathLabelEntries: Array<[string, string]> = [
   ['/teacher/student-compare', '学生对比'],
   ['/teacher/notifications', '消息中心'],
   ['/admin', '工作台'],
+  ['/admin/ai', 'AI 数据助手'],
   ['/admin/competitions', '赛事运营'],
   ['/admin/publish', '创建赛事'],
   ['/admin/drafts', '草稿箱'],

@@ -252,6 +252,11 @@ public class AiChatServiceImpl implements AiChatService {
             case "get_pending_drafts" -> "赛事草稿";
             case "get_ai_task_stats" -> "AI 任务";
             case "get_user_stats" -> "用户统计";
+            case "get_personalized_recommendations" -> "个性化赛事推荐";
+            case "check_registration_materials" -> "报名材料预检";
+            case "match_team_members" -> "智能组队匹配";
+            case "get_teacher_ai_cockpit" -> "教师待办驾驶舱";
+            case "get_admin_ai_report" -> "赛事运行简报";
             case "create_excel_artifact" -> "Excel 文件";
             case "create_docx_artifact" -> "DOCX 文件";
             default -> "平台数据";

@@ -19,6 +19,8 @@ $env:AI_API_KEY = [Environment]::GetEnvironmentVariable('AI_API_KEY', 'User')
 .\scripts\start-local-backend.ps1
 ```
 
+默认 AI 服务为 OpenAI 兼容接口（`https://sshzyu.com/v1`，模型 `gpt-5.6-terra`）。如需使用其他服务，可通过 `AI_BASE_URL`、`AI_MODEL` 和 `AI_VISION_MODEL` 覆盖；密钥仅从 `AI_API_KEY` 环境变量读取。
+
 脚本会检查工具链和数据库、创建空库，并运行 `mvn spring-boot:run`。后端启动后访问：
 
 - 健康检查：`http://localhost:8080/api/health`

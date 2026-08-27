@@ -44,7 +44,7 @@ public class AiChatController {
     @Operation(summary = "SSE 智能体对话")
     @PostMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream(@Validated @RequestBody AiChatRequestDTO dto) {
-        SseEmitter emitter = new SseEmitter(120000L);
+        SseEmitter emitter = new SseEmitter(180000L);
         Long userId = UserContext.getUserId();
         String role = UserContext.getUserRole();
 

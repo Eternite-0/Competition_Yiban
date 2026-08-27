@@ -56,7 +56,8 @@ export async function uploadToQiniu(
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const data = JSON.parse(xhr.responseText);
-          resolve({ ...data, url: `${domain}/${data.key}` });
+          const base = String(domain || '').replace(/\/+$/, '');
+          resolve({ ...data, url: `${base}/${String(data.key || '').replace(/^\/+/, '')}` });
         } catch (err) {
           console.error(err);
           reject(new Error('解析上传响应失败'));

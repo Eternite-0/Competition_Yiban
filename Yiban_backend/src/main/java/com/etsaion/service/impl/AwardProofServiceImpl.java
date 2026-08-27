@@ -29,6 +29,7 @@ import com.etsaion.service.AwardProofStudentService;
 import com.etsaion.service.CompetitionService;
 import com.etsaion.service.GrowthRecordService;
 import com.etsaion.service.MessageService;
+import com.etsaion.service.QiniuService;
 import com.etsaion.service.ReviewTaskService;
 import com.etsaion.service.UserService;
 import com.etsaion.service.ai.AiJsonSchemaService;
@@ -39,11 +40,21 @@ import com.etsaion.vo.ai.AwardProofVO;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.nio.file.Files;
+import java.util.Base64;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -78,6 +89,12 @@ public class AwardProofServiceImpl extends ServiceImpl<AwardProofMapper, AwardPr
     private MessageService messageService;
 
     @Autowired
+    private QiniuService qiniuService;
+
+    @Value("${file.upload-path}")
+    private String uploadPath;
+
+    @Autowired
     private GrowthRecordService growthRecordService;
 
     @Autowired
@@ -92,9 +109,27 @@ public class AwardProofServiceImpl extends ServiceImpl<AwardProofMapper, AwardPr
                 studentId, "student", "certificate_recognition_v1");
         aiTaskService.markRunning(task.getId());
 
+        String aiImageUrl = toAiImageSource(dto.getFileUrl());
+        try {
+            // Qiniu URLs need a temporary signature before being sent to Agnes.
+            // Local uploads are converted to a data URL by toAiImageSource().
+            if (!aiImageUrl.startsWith("data:") && !dto.getFileUrl().startsWith("/api/file/serve/")) {
+                String signedUrl = qiniuService.getSignedUrl(dto.getFileUrl());
+                if (StrUtil.isNotBlank(signedUrl)) {
+                    // Some OpenAI-compatible gateways cannot fetch our private
+                    // CDN URL (they return 401 while downloading it). Download
+                    // the signed object on the backend and inline it instead.
+                    String inlineUrl = downloadImageAsDataUrl(signedUrl);
+                    aiImageUrl = StrUtil.isNotBlank(inlineUrl) ? inlineUrl : signedUrl;
+                }
+            }
+        } catch (Exception ignored) {
+            // Keep the original source when signing is unavailable.
+        }
+
         AiModelResponseVO response = mimoModelClient.chatVisionJson(
                 "你是获奖证书多模态结构化识别助手。只抽取证书中明确出现的信息，不确定字段留空。",
-                dto.getFileUrl(),
+                aiImageUrl,
                 "请识别比赛名称、获奖等级、获奖时间、主办单位、获奖人、证书编号、印章或落款，并返回严格 JSON。",
                 certificateSchemaHint());
         if (!response.isSuccess()) {
@@ -112,6 +147,72 @@ public class AwardProofServiceImpl extends ServiceImpl<AwardProofMapper, AwardPr
         vo.setFileUrl(dto.getFileUrl());
         vo.setFileHash(fileHash);
         return vo;
+    }
+
+    /**
+     * Agnes cannot fetch a browser-relative localhost URL. For files uploaded
+     * through the local storage endpoint, inline the image as a data URL so the
+     * vision model can read it without needing access to the developer machine.
+     */
+    private String toAiImageSource(String fileUrl) {
+        if (StrUtil.isBlank(fileUrl) || !fileUrl.startsWith("/api/file/serve/")) {
+            return fileUrl;
+        }
+        String filename = fileUrl.substring("/api/file/serve/".length());
+        if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
+            return fileUrl;
+        }
+        File file = new File(new File(uploadPath).getAbsoluteFile(), filename);
+        if (!file.isFile()) {
+            return fileUrl;
+        }
+        try {
+            String contentType = Files.probeContentType(file.toPath());
+            if (StrUtil.isBlank(contentType)) {
+                contentType = "image/" + extensionOf(filename, "png");
+            }
+            String encoded = Base64.getEncoder().encodeToString(Files.readAllBytes(file.toPath()));
+            return "data:" + contentType + ";base64," + encoded;
+        } catch (IOException e) {
+            return fileUrl;
+        }
+    }
+
+    private String extensionOf(String filename, String fallback) {
+        int dot = filename.lastIndexOf('.');
+        if (dot < 0 || dot == filename.length() - 1) return fallback;
+        String ext = filename.substring(dot + 1).toLowerCase();
+        return "jpg".equals(ext) ? "jpeg" : ext;
+    }
+
+    private String downloadImageAsDataUrl(String url) {
+        if (StrUtil.isBlank(url) || !(url.startsWith("http://") || url.startsWith("https://"))) {
+            return "";
+        }
+        try {
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(15))
+                    .build();
+            HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+                    .timeout(Duration.ofSeconds(30))
+                    .GET()
+                    .build();
+            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            if (response.statusCode() < 200 || response.statusCode() >= 300
+                    || response.body() == null || response.body().length == 0
+                    || response.body().length > 10 * 1024 * 1024) {
+                return "";
+            }
+            String contentType = response.headers().firstValue("Content-Type").orElse("");
+            int semicolon = contentType.indexOf(';');
+            if (semicolon > 0) contentType = contentType.substring(0, semicolon).trim();
+            if (!contentType.startsWith("image/")) {
+                contentType = "image/png";
+            }
+            return "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(response.body());
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     @Override

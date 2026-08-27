@@ -2,6 +2,25 @@
 @plugin "@tailwindcss/typography";
 @import "./styles/design-tokens.css";
 
+/* AI feature workbench */
+.ai-feature-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary, #6366f1) 18%, transparent);
+  border-radius: 1rem;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--color-primary, #6366f1) 8%, transparent), transparent 70%);
+}
+.ai-feature-banner-icon { display: grid; width: 2.75rem; height: 2.75rem; flex: none; place-items: center; border-radius: .8rem; color: var(--color-primary, #6366f1); background: color-mix(in srgb, var(--color-primary, #6366f1) 13%, transparent); }
+.ai-feature-banner h2 { font-size: 1rem; font-weight: 650; color: var(--color-ink, #111827); }
+.ai-feature-banner p { margin-top: .2rem; font-size: .78rem; color: var(--color-body-subtle, #64748b); }
+.ai-recommendation-card { padding: 1rem; border: 1px solid var(--color-border, #e2e8f0); border-radius: .9rem; background: var(--color-canvas, #fff); transition: border-color .2s ease, transform .2s ease; }
+.ai-recommendation-card:hover { border-color: color-mix(in srgb, var(--color-primary, #6366f1) 35%, var(--color-border, #e2e8f0)); transform: translateY(-1px); }
+.ai-score { display: flex; min-width: 3.4rem; flex-direction: column; align-items: center; border-radius: .7rem; padding: .35rem .45rem; color: var(--color-primary, #6366f1); background: color-mix(in srgb, var(--color-primary, #6366f1) 9%, transparent); }
+.ai-score strong { font-size: 1.2rem; line-height: 1.2; }
+.ai-score span { font-size: .62rem; color: var(--color-body-subtle, #64748b); }
+
 @layer base {
   html {
     scroll-behavior: smooth;
